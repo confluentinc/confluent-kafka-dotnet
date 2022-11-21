@@ -144,7 +144,7 @@ namespace Confluent.Kafka.Impl
             Library.IncrementKafkaHandleCreateCount();
             return kh;
         }
-        
+
         /// <summary>
         ///     Prevent AccessViolationException when handle has already been closed.
         ///     Should be called at start of every function using the handle,
@@ -174,7 +174,7 @@ namespace Confluent.Kafka.Impl
         protected override bool ReleaseHandle()
         {
             Library.IncrementKafkaHandleDestroyCount();
-            
+
             // Librdkafka.destroy / Librdkafka.destroy_flags is a static
             // object which means at this point we can be sure it hasn't
             // already been GC'd.
@@ -346,7 +346,7 @@ namespace Confluent.Kafka.Impl
         }
 
         internal ErrorCode Produce(
-            string topic, 
+            string topic,
             byte[] val, int valOffset, int valLength,
             byte[] key, int keyOffset, int keyLength,
             int partition,
@@ -411,7 +411,7 @@ namespace Confluent.Kafka.Impl
 
                 return errorCode;
             }
-            catch 
+            catch
             {
                 if (headersPtr != IntPtr.Zero)
                 {
@@ -685,7 +685,7 @@ namespace Confluent.Kafka.Impl
                 }
 
                 var result = GetTopicPartitionOffsetErrorList(cOffsets);
-                
+
                 if (result.Where(tpoe => tpoe.Error.Code != ErrorCode.NoError).Count() > 0)
                 {
                     throw new TopicPartitionOffsetException(result);
@@ -745,7 +745,7 @@ namespace Confluent.Kafka.Impl
         internal IntPtr ConsumerPoll(IntPtr millisecondsTimeout)
         {
             ThrowIfHandleClosed();
-            
+
             // TODO: There is a newer librdkafka interface for this now. Use that.
             return Librdkafka.consumer_poll(handle, millisecondsTimeout);
         }
@@ -753,7 +753,7 @@ namespace Confluent.Kafka.Impl
         internal void ConsumerClose()
         {
             ThrowIfHandleClosed();
-            
+
             ErrorCode err = Librdkafka.consumer_close(handle);
             if (err != ErrorCode.NoError)
             {
@@ -951,7 +951,7 @@ namespace Confluent.Kafka.Impl
                 Librdkafka.event_destroy(rkev);
                 throw new KafkaException(CreatePossiblyFatalError(errorCode, errorString));
             }
-            
+
             var result = GetTopicPartitionOffsetErrorList(Librdkafka.event_topic_partition_list(rkev));
             Librdkafka.event_destroy(rkev);
 
@@ -986,7 +986,7 @@ namespace Confluent.Kafka.Impl
             {
                 rkt.DangerousRelease();
             }
-            
+
             if (result != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(result, null));
@@ -1002,21 +1002,21 @@ namespace Confluent.Kafka.Impl
             {
                 throw new Exception("Failed to create pause partition list");
             }
-            
+
             foreach (var partition in partitions)
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
-            
+
             }
             ErrorCode err = Librdkafka.pause_partitions(handle, list);
             var result = GetTopicPartitionErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
-            
+
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
-            
+
             if (result.Where(tpe => tpe.Error.Code != ErrorCode.NoError).Count() > 0)
             {
                 throw new TopicPartitionException(result);
@@ -1028,18 +1028,18 @@ namespace Confluent.Kafka.Impl
         internal List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
         {
             ThrowIfHandleClosed();
-            
+
             IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) partitions.Count());
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create resume partition list");
             }
-            
+
             foreach (var partition in partitions)
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
-            
+
             ErrorCode err = Librdkafka.resume_partitions(handle, list);
             var result = GetTopicPartitionErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
@@ -1071,11 +1071,11 @@ namespace Confluent.Kafka.Impl
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
-            
+
             ErrorCode err = Librdkafka.committed(handle, list, timeout_ms);
             var result = GetTopicPartitionOffsetErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
-            
+
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(err, null));
@@ -1103,7 +1103,7 @@ namespace Confluent.Kafka.Impl
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
-            
+
             ErrorCode err = Librdkafka.position(handle, list);
             var result = GetTopicPartitionOffsetErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
@@ -1116,7 +1116,7 @@ namespace Confluent.Kafka.Impl
             {
                 throw new TopicPartitionOffsetException(result);
             }
-            
+
             return result.Select(r => r.TopicPartitionOffset).ToList();
         }
 
@@ -1373,7 +1373,7 @@ namespace Confluent.Kafka.Impl
                     {
                         throw new ArgumentException($"config name must be specified for {resource}");
                     }
-                    
+
                     var errorCode = Librdkafka.ConfigResource_set_config(resourcePtr, rc.Name, rc.Value);
 
                     if (errorCode != ErrorCode.NoError)
@@ -1596,6 +1596,54 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        internal void DeleteConsumerGroupOffsets(String group, IEnumerable<TopicPartition> partitions, DeleteConsumerGroupOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            options = options == null ? new DeleteConsumerGroupOffsetsOptions() : options;
+            var groupsToDeleteCnt = 1; // Offsets for only one group can be reset at a time
+
+            IntPtr[] deleteGroupOffsetPtrs = new IntPtr[groupsToDeleteCnt];
+            IntPtr optionsPtr = IntPtr.Zero;
+            try
+            {
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteConsumerGroupOffsets);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                if (partitions.Where(tp => tp.Topic == null || tp.Partition == null).Count() > 0)
+                {
+                    throw new ArgumentException("Cannot delete offsets because one or more topics or partitions were specified as null.");
+                }
+
+                List<TopicPartitionOffset> topicPartitionOffsets = partitions.Select(a => new TopicPartitionOffset(a, Offset.Unset)).ToList();
+                IntPtr cOffsets = GetCTopicPartitionList(topicPartitionOffsets);
+                if (cOffsets == IntPtr.Zero)
+                {
+                    throw new ArgumentNullException("Delete offsets partitions collection must not be null");
+                }
+
+                deleteGroupOffsetPtrs[0] = Librdkafka.DeleteConsumerGroupOffsets_new(group, cOffsets); // Offsets for only one group can be reset at a time
+                Librdkafka.DeleteConsumerGroupOffsets(handle, deleteGroupOffsetPtrs, (UIntPtr)deleteGroupOffsetPtrs.Length, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                foreach (var deleteGroupOffsetPtr in deleteGroupOffsetPtrs)
+                {
+                    if (deleteGroupOffsetPtr != IntPtr.Zero)
+                    {
+                        Librdkafka.DeleteConsumerGroupOffsets_destroy(deleteGroupOffsetPtr);
+                    }
+                }
+
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+            }
+        }
+
         internal void DeleteTopics(
             IEnumerable<string> deleteTopics,
             DeleteTopicsOptions options,
@@ -1776,7 +1824,7 @@ namespace Confluent.Kafka.Impl
             setOption_completionSource(optionsPtr, completionSourcePtr);
 
             IntPtr[] newAclsPtrs = new IntPtr[aclBindings.Count()];
-            try 
+            try
             {
                 int idx = 0;
                 foreach (var aclBinding in aclBindings)
@@ -1806,10 +1854,10 @@ namespace Confluent.Kafka.Impl
             {
                 foreach (var newAclPtr in newAclsPtrs)
                 {
-                     if (newAclPtr != IntPtr.Zero)
-                     {
-                         Librdkafka.AclBinding_destroy(newAclPtr);
-                     }
+                    if (newAclPtr != IntPtr.Zero)
+                    {
+                        Librdkafka.AclBinding_destroy(newAclPtr);
+                    }
                 }
                 Librdkafka.AdminOptions_destroy(optionsPtr);
             }
@@ -1889,7 +1937,7 @@ namespace Confluent.Kafka.Impl
             setOption_completionSource(optionsPtr, completionSourcePtr);
 
             IntPtr[] aclBindingFilterPtrs = new IntPtr[aclBindingFilters.Count()];
-            try 
+            try
             {
                 int idx = 0;
                 foreach (var aclBindingFilter in aclBindingFilters)
@@ -1919,10 +1967,10 @@ namespace Confluent.Kafka.Impl
             {
                 foreach (var aclBindingFiltersPtr in aclBindingFilterPtrs)
                 {
-                     if (aclBindingFiltersPtr != IntPtr.Zero)
-                     {
-                         Librdkafka.AclBinding_destroy(aclBindingFiltersPtr);
-                     }
+                    if (aclBindingFiltersPtr != IntPtr.Zero)
+                    {
+                        Librdkafka.AclBinding_destroy(aclBindingFiltersPtr);
+                    }
                 }
                 Librdkafka.AdminOptions_destroy(optionsPtr);
             }
