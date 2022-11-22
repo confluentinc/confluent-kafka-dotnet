@@ -5,6 +5,11 @@
 - Upgraded `NJsonSchema` to v10.6.3
 - Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
   when `UseLatestVersion` is set to true.
+- Added DeleteConsumerGroupOffset to AdminClient.
+
+## Fixes
+
+- During a group rebalance, partitions are now always revoked as a side effect of a call to Consume, whether or not a partitions revoked handler has been specified. Previously, if no handler was specified, the timing of when the consumer lost ownership of partitions during a rebalance was arbitrarily, frequently resulting in an erroneous state exception when committing or storing offsets.
 
 
 # 1.9.4

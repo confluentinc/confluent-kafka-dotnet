@@ -60,7 +60,10 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer2.Subscribe(topic.Name);
 
                 // wait until each consumer is assigned to one partition.
-                cr = consumer2.Consume();
+                consumer2.Consume(TimeSpan.FromSeconds(10));
+                consumer1.Consume(TimeSpan.FromSeconds(10));
+                
+                cr = consumer2.Consume(TimeSpan.FromSeconds(10));
                 Assert.Equal(1, consumer1.Assignment.Count);
 
                 // StoreOffset should throw when attempting to assign to a
