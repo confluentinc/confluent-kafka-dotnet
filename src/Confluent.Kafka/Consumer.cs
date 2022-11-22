@@ -691,7 +691,6 @@ namespace Confluent.Kafka
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
-            // Set the rebalance callback always to prevent the consumer from entering in erroneous state trap.
             Librdkafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
 
             if (offsetsCommittedHandler != null)
