@@ -30,6 +30,14 @@ confluent-kafka-dotnet is derived from Andreas Heider's [rdkafka-dotnet](https:/
 We're fans of his work and were very happy to have been able to leverage rdkafka-dotnet as the basis of this
 client. Thanks Andreas!
 
+## Documentation
+
+* [Wiki](https://github.com/confluentinc/confluent-kafka-dotnet/wiki)
+* [Blog Posts and Presentations](https://github.com/confluentinc/confluent-kafka-dotnet/wiki/Presentations-&-Blogs)
+* [Official (and usually outdated) .NET client documentation](https://docs.confluent.io/current/clients/dotnet.html)
+* [API Reference](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.html)
+
+
 ## Referencing
 
 confluent-kafka-dotnet is distributed via NuGet. We provide five packages:
