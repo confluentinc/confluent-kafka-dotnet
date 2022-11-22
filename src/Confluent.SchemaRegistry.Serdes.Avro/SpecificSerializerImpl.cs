@@ -32,7 +32,7 @@ using Confluent.Kafka;
 
 namespace Confluent.SchemaRegistry.Serdes
 {
-    internal class SpecificSerializerImpl<T> : IAvroSerializerImpl<T>
+    internal class SpecificSerializerImpl<T> : IAvroSerializerImpl<T> where T : class
     {
         internal class SerializerSchemaData
         {
@@ -238,6 +238,11 @@ namespace Confluent.SchemaRegistry.Serdes
                 finally
                 {
                     serializeMutex.Release();
+                }
+
+                if (data == null)
+                {
+                    return null;
                 }
 
                 using (var stream = new MemoryStream(initialBufferSize))
