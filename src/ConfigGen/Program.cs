@@ -265,7 +265,7 @@ namespace ConfigGen
             return
 @"// *** Auto-generated from librdkafka " + branch + @" *** - do not modify manually.
 //
-// Copyright 2018 Confluent Inc.
+// Copyright 2018-2022 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the 'License');
 // you may not use this file except in compliance with the License.
@@ -464,6 +464,20 @@ namespace Confluent.Kafka
                 createClassConstructors("ConsumerConfig") +
 @"
         /// <summary>
+        ///     Check if any properties have been set that have implications for
+        ///     application logic and therefore shouldn't be set via external
+        ///     configuration, independent of the code. Throw an ArgumentException
+        ///     if so.
+        /// </summary>
+        public ConsumerConfig ThrowIfContainsNonUserConfigurable()
+        {
+            var toCheck = new string[] { ""enable.partition.eof"", ""partition.assignment.strategy"", ""enable.auto.commit"", ""enable.auto.offset.store"" };
+            this.Where(kv => toCheck.Contains(kv.Key)).ToList()
+                .ForEach(kv => { throw new ArgumentException($""Consumer config property '{kv.Key}' is not user configurable.""); });
+            return this;
+        }
+
+        /// <summary>
         ///     A comma separated list of fields that may be optionally set
         ///     in <see cref=""Confluent.Kafka.ConsumeResult{TKey,TValue}"" />
         ///     objects returned by the
@@ -485,6 +499,21 @@ namespace Confluent.Kafka
             return
                 createClassConstructors("ProducerConfig") +
 @"
+        /// <summary>
+        ///     Check if any properties have been set that have implications for
+        ///     application logic and therefore shouldn't be set via external
+        ///     configuration, independent of the code. Throw an ArgumentException
+        ///     if so.
+        ///
+        ///     There are currently no such Producer configuration properties
+        ///     and this method will never throw.
+        /// </summary>
+        public ProducerConfig ThrowIfContainsNonUserConfigurable()
+        {
+            // noop
+            return this;
+        }
+
         /// <summary>
         ///     Specifies whether or not the producer should start a background poll
         ///     thread to receive delivery reports and event notifications. Generally,
@@ -522,7 +551,24 @@ namespace Confluent.Kafka
 
         static string createAdminClientSpecific()
         {
-            return createClassConstructors("AdminClientConfig");
+            return createClassConstructors("AdminClientConfig") +
+@"
+        /// <summary>
+        ///     Check if any properties have been set that have implications for
+        ///     application logic and therefore shouldn't be set via external
+        ///     configuration, independent of the code. Throw an ArgumentException
+        ///     if so.
+        ///
+        ///     There are currently no such AdminClient configuration properties
+        ///     and this method will never throw.
+        /// </summary>
+        public AdminClientConfig ThrowIfContainsNonUserConfigurable()
+        {
+            // noop
+            return this;
+        }
+
+";
         }
 
         static List<PropertySpecification> extractAll(string configDoc)

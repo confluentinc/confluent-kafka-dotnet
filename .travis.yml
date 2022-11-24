@@ -8,12 +8,12 @@ matrix:
   include:
   - os: linux
     dist: focal # Ubuntu 20.04
-    dotnet: 5.0.408
+    dotnet: 6.0.403
     mono: none
     sudo: required
   - os: osx
     osx_image: xcode9.4 # macOS 10.13
-    dotnet: 5.0.408
+    dotnet: 6.0.403
     mono: none
 
 before_install:

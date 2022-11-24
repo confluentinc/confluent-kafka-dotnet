@@ -42,9 +42,7 @@ namespace Web
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            new Thread(() => StartConsumerLoop(stoppingToken)).Start();
-
-            return Task.CompletedTask;
+            return Task.Run(() => StartConsumerLoop(stoppingToken), stoppingToken);
         }
         
         private void StartConsumerLoop(CancellationToken cancellationToken)

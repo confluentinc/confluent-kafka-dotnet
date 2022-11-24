@@ -691,10 +691,8 @@ namespace Confluent.Kafka
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
-            if (partitionsAssignedHandler != null || partitionsRevokedHandler != null || partitionsLostHandler != null)
-            {
-                Librdkafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
-            }
+            Librdkafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
+
             if (offsetsCommittedHandler != null)
             {
                 Librdkafka.conf_set_offset_commit_cb(configPtr, commitDelegate);

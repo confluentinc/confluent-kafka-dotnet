@@ -227,7 +227,7 @@ namespace Confluent.Kafka
         ///     The result of the delete records request.
         /// </returns>
         Task<List<DeleteRecordsResult>> DeleteRecordsAsync(IEnumerable<TopicPartitionOffset> topicPartitionOffsets, DeleteRecordsOptions options = null);
-    
+
         /// <summary>
         ///     Creates one or more ACL bindings.
         /// </summary>
@@ -323,6 +323,25 @@ namespace Confluent.Kafka
         ///     A Task returning a List of <see cref="Confluent.Kafka.Admin.DeleteAclsResult"/>.
         /// </returns>
         Task<List<DeleteAclsResult>> DeleteAclsAsync(IEnumerable<AclBindingFilter> aclBindingFilters, DeleteAclsOptions options = null);
+
+        /// <summary>
+        ///    Delete committed offsets for a set of partitions in a consumer
+        ///    group. This will succeed at the partition level only if the group
+        ///    is not actively subscribed to the corresponding topic.
+        /// </summary>
+        /// <param name="group">
+        ///     Consumer group id 
+        /// </param>
+        /// <param name="partitions">
+        ///     Enumerable of topic partitions to delete committed offsets for.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when deleting the committed offset.
+        /// </param>
+        /// <returns>
+        ///     A Task returning <see cref="Confluent.Kafka.Admin.DeleteConsumerGroupOffsetsResult"/>.
+        /// </returns>
+        Task<DeleteConsumerGroupOffsetsResult> DeleteConsumerGroupOffsetsAsync(String group, IEnumerable<TopicPartition> partitions, DeleteConsumerGroupOffsetsOptions options = null);
 
     }
 
