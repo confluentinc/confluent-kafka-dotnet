@@ -1,4 +1,20 @@
-﻿using System;
+﻿// Copyright 2022 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Refer to LICENSE for more information.
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -6,8 +22,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
+/// <summary>
+///     An example showing producer 
+///     with a custom OAUTHBEARER token implementation.
+/// </summary>
 namespace Confluent.Kafka.Examples.OAuthProducer
 {
+    /// <summary>
+    ///     A class to store the token and related properties.
+    /// </summary>
     class OAuthBearerToken
     {
         public string TokenValue { get; set; }
@@ -18,10 +41,8 @@ namespace Confluent.Kafka.Examples.OAuthProducer
 
     public class Program
     {
-        private const String OauthConfigRegexPattern = "^(\\s*(\\w+)\\s*=\\s*(\\w+))+\\s*$";
-
-        private const String OauthconfigKeyValueRegexPattern = "(\\w+)\\s*=\\s*(\\w+)";
-
+        private const String OauthConfigRegexPattern = "^(\\s*(\\w+)\\s*=\\s*(\\w+))+\\s*$"; // 1 or more name=value pairs with optional ignored whitespace
+        private const String OauthconfigKeyValueRegexPattern = "(\\w+)\\s*=\\s*(\\w+)"; // Extract key=value pairs from OAuth Config
         private const String PrincipalClaimNameKey = "principalClaimName";
         private const String PrincipalKey = "principal";
         private const String ScopeKey = "scope";
@@ -52,6 +73,10 @@ namespace Confluent.Kafka.Examples.OAuthProducer
                 SaslOauthbearerConfig = oauthConf,
             };
 
+            // Callback to handle OAuth bearer token refresh. It creates an unsecured JWT based on the configuration defined
+            // in OAuth Config and sets the token on the client for use in any future authentication attempt.
+            // It must be invoked whenever the client requires a token (i.e. when it first starts and when the
+            // previously-received token is 80% of the way to its expiration time).
             void OauthCallback(IClient client, string cfg)
             {
                 var token = retrieveUnsecuredToken(cfg);
