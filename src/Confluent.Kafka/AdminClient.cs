@@ -769,7 +769,7 @@ namespace Confluent.Kafka
         /// </param>
         internal AdminClient(Handle handle)
         {
-            this.cancellationDelayMaxMs = 100;                          
+            Config.ExtractCancellationDelayMaxMs(new AdminClientConfig(), out this.cancellationDelayMaxMs);                          
             this.ownedClient = null;
             this.handle = handle;
             Init();
