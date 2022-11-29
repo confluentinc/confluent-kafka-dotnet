@@ -10,6 +10,7 @@
 ## Fixes
 
 - During a group rebalance, partitions are now always revoked as a side effect of a call to Consume, whether or not a partitions revoked handler has been specified. Previously, if no handler was specified, the timing of when the consumer lost ownership of partitions during a rebalance was arbitrarily, frequently resulting in an erroneous state exception when committing or storing offsets.
+- Fixed 100% CPU usage with `DependentAdminClientBuilder`. 
 
 
 # 1.9.4
