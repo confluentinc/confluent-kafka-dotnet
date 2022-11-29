@@ -42,7 +42,7 @@ namespace Confluent.Kafka.Examples.OAuthProducer
     public class Program
     {
         private const String OauthConfigRegexPattern = "^(\\s*(\\w+)\\s*=\\s*(\\w+))+\\s*$"; // 1 or more name=value pairs with optional ignored whitespace
-        private const String OauthconfigKeyValueRegexPattern = "(\\w+)\\s*=\\s*(\\w+)"; // Extract key=value pairs from OAuth Config
+        private const String OauthConfigKeyValueRegexPattern = "(\\w+)\\s*=\\s*(\\w+)"; // Extract key=value pairs from OAuth Config
         private const String PrincipalClaimNameKey = "principalClaimName";
         private const String PrincipalKey = "principal";
         private const String ScopeKey = "scope";
@@ -79,8 +79,15 @@ namespace Confluent.Kafka.Examples.OAuthProducer
             // previously-received token is 80% of the way to its expiration time).
             void OauthCallback(IClient client, string cfg)
             {
-                var token = retrieveUnsecuredToken(cfg);
-                client.OAuthBearerSetToken(token.TokenValue, token.Expiration, token.Principal);
+                try
+                {
+                    var token = retrieveUnsecuredToken(cfg);
+                    client.OAuthBearerSetToken(token.TokenValue, token.Expiration, token.Principal);
+                }
+                catch (Exception e)
+                {
+                    client.OAuthBearerSetTokenFailure(e.ToString());
+                }
             }
 
 
@@ -126,14 +133,14 @@ namespace Confluent.Kafka.Examples.OAuthProducer
             Console.WriteLine("Refreshing the token");
 
             var parsedConfig = new Dictionary<String, String>();
-            foreach (Match match in Regex.Matches(oauthConfig, OauthconfigKeyValueRegexPattern))
+            foreach (Match match in Regex.Matches(oauthConfig, OauthConfigKeyValueRegexPattern))
             {
                 parsedConfig[match.Groups[1].ToString()] = match.Groups[2].ToString();
             }
 
             if (!parsedConfig.ContainsKey(PrincipalKey) || !parsedConfig.ContainsKey(ScopeKey) || parsedConfig.Count > 2)
             {
-                return null;
+                throw new Exception($"Invalid OAuth config {oauthConfig} passed.");
             }
 
             var principalClaimName = parsedConfig.ContainsKey(PrincipalClaimNameKey) ? parsedConfig[PrincipalClaimNameKey] : "sub";
