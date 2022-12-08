@@ -123,7 +123,7 @@ namespace Confluent.SchemaRegistry.Serdes
             SerializerSchemaData serializerSchemaData = new SerializerSchemaData();
             if (typeof(ISpecificRecord).IsAssignableFrom(writerType))
             {
-                serializerSchemaData.WriterSchema = ((ISpecificRecord)Activator.CreateInstance<T>()).Schema;
+                serializerSchemaData.WriterSchema = ((ISpecificRecord)Activator.CreateInstance(writerType)).Schema;
             }
             else if (writerType.Equals(typeof(int)))
             {
