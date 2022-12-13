@@ -38,6 +38,6 @@ namespace Confluent.Kafka.Admin
         ///
         ///     Default: false
         /// </summary>
-        public bool RequireStable { get; set; } = false;
+        public bool RequireStableOffsets { get; set; } = false;
     }
 }

@@ -14,38 +14,49 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The per-group result for a list consumer group offsets request.
+    ///     Represents a single consumer group's description in the result of a
+    ///     describe consumer group operation.
     /// </summary>
-    public class ListConsumerGroupOffsetsResult
+    public class ConsumerGroupDescription
     {
         /// <summary>
         ///     The groupID.
         /// </summary>
-        public string Group { get; set; }
+        public string GroupId { get; set; }
 
         /// <summary>
-        ///     List of topic TopicPartitionOffsetError containing the read offsets,
-        ///     and errors if any.
-        /// </summary>
-        public List<TopicPartitionOffsetError> Partitions { get; set; }
-
-        /// <summary>
-        ///     Error, if any, on a group-level.
+        ///     Error, if any, of result
         /// </summary>
         public Error Error { get; set; }
 
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Whether the consumer group is simple or not.
         /// </summary>
-        public override string ToString() {
-            var errString = Error.IsError ? Error.ToString() : "";
-            return $"{Group} [ {String.Join(", ", Partitions)} ] {errString}";
-        }
+        public bool IsSimpleConsumerGroup { get; set; }
+
+        /// <summary>
+        ///     Partition assignor identifier.
+        /// </summary>
+        public string PartitionAssignor { get; set; }
+
+        /// <summary>
+        ///     Consumer group state.
+        /// </summary>
+        public ConsumerGroupState State { get; set; }
+
+        /// <summary>
+        ///     Consumer group coordinator (broker).
+        /// </summary>
+        public Node Coordinator { get; set; }
+
+        /// <summary>
+        ///    Members list.
+        /// </summary>
+        public List<MemberDescription> Members { get; set; }
     }
 }

@@ -328,8 +328,12 @@ namespace Confluent.Kafka.Examples
             {
                 try
                 {
-                    await adminClient.AlterConsumerGroupOffsetsAsync(input);
-                    Console.WriteLine("Altered offsets successfully.");
+                    var results = await adminClient.AlterConsumerGroupOffsetsAsync(input);
+                    Console.WriteLine("Successfully altered offsets:");
+                    foreach(var groupResult in results) {
+                        Console.WriteLine(groupResult);
+                    }
+
                 }
                 catch (AlterConsumerGroupOffsetsException e)
                 {
@@ -372,12 +376,11 @@ namespace Confluent.Kafka.Examples
             {
                 try
                 {
-                    await adminClient.ListConsumerGroupOffsetsAsync(input).ContinueWith(ct => {
-                        Console.WriteLine("Successfully listed offsets:");
-                        foreach(var groupResult in ct.Result) {
-                            Console.WriteLine(groupResult);
-                        }
-                    });
+                    var result = await adminClient.ListConsumerGroupOffsetsAsync(input);
+                    Console.WriteLine("Successfully listed offsets:");
+                    foreach(var groupResult in result) {
+                        Console.WriteLine(groupResult);
+                    }
                 }
                 catch (ListConsumerGroupOffsetsException e)
                 {
@@ -388,25 +391,38 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static void ListConsumerGroups(string bootstrapServers, string[] commandArgs) {
+        static async Task ListConsumerGroupsAsync(string bootstrapServers, string[] commandArgs) {
             var timeout = TimeSpan.FromSeconds(30);
-            if (commandArgs.Length > 0)
+            var statesList = new List<ConsumerGroupState>();
+            try
             {
-                timeout = TimeSpan.FromSeconds(Int32.Parse(commandArgs[0]));
+                if (commandArgs.Length > 0)
+                {
+                    timeout = TimeSpan.FromSeconds(Int32.Parse(commandArgs[0]));
+                }
+                if (commandArgs.Length > 1)
+                {
+                    for (int i = 1; i < commandArgs.Length; i++) {
+                        statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
+                    }
+                }
+            }
+            catch (SystemException)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [<timeout_seconds> <match_state_1> <match_state_2> ... <match_state_N>]");
+                Environment.ExitCode = 1;
+                return;
             }
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 try
                 {
-                    List<GroupInfo> groups = adminClient.ListConsumerGroups(new ListConsumerGroupsOptions() { RequestTimeout = timeout });
-                    foreach (var groupInfo in groups) {
-                        var errString = "";
-                        if (groupInfo.Error.Code != ErrorCode.NoError) {
-                            errString = $", Error = ({groupInfo.Error})";
-                        }
-                        Console.WriteLine($"{groupInfo.Group}, State = {groupInfo.StateCode}, Is Simple = {groupInfo.IsSimpleConsumerGroup}{errString}");
-                    }
+                    var result = await adminClient.ListConsumerGroupsAsync(new ListConsumerGroupsOptions() { 
+                        RequestTimeout = timeout,
+                        MatchStates = statesList,
+                    });
+                    Console.WriteLine(result);
                 }
                 catch (KafkaException e)
                 {
@@ -418,37 +434,40 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static void DescribeConsumerGroups(string bootstrapServers, string[] commandArgs) {
-            List<string> groupNames = null;
-            if (commandArgs.Length > 0)
+
+        static async Task DescribeConsumerGroupsAsync(string bootstrapServers, string[] commandArgs) {
+            if (commandArgs.Length < 1)
             {
-                groupNames = commandArgs.ToList();
+                Console.WriteLine("usage: .. <bootstrapServers> describe-consumer-groups <group1> [<group2 ... <groupN>]");
+                Environment.ExitCode = 1;
+                return;
             }
 
+            var groupNames = commandArgs.ToList();
             var timeout = TimeSpan.FromSeconds(30);
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 try
                 {
-                    List<GroupInfo> groups = adminClient.DescribeConsumerGroups(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout });
+                    var groups = await adminClient.DescribeConsumerGroupsAsync(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout });
                     foreach (var group in groups)
                     {
-                        Console.WriteLine($"  Group: {group.Group} {group.Error} {group.StateCode}");
-                        Console.WriteLine($"  Broker: {group.Broker.BrokerId} {group.Broker.Host}:{group.Broker.Port}");
-                        Console.WriteLine($"  Protocol: {group.ProtocolType} {group.Protocol}");
+                        Console.WriteLine($"  Group: {group.GroupId} {group.Error}");
+                        Console.WriteLine($"  Broker: {group.Coordinator}");
                         Console.WriteLine($"  IsSimpleConsumerGroup: {group.IsSimpleConsumerGroup}");
+                        Console.WriteLine($"  PartitionAssignor: {group.PartitionAssignor}");
+                        Console.WriteLine($"  State: {group.State}");
                         Console.WriteLine($"  Members:");
                         foreach (var m in group.Members)
                         {
-                            Console.WriteLine($"    {m.MemberId} {m.ClientId} {m.ClientHost}");
-                            Console.WriteLine($"    Metadata: {m.MemberMetadata.Length} bytes");
-                            Console.WriteLine($"    Assignment: {m.MemberAssignment.Length} bytes");
+                            Console.WriteLine($"    {m.ClientId} {m.ConsumerId} {m.Host}");
+                            Console.WriteLine($"    Assignment:");
                             var topicPartitions = "";
-                            if (m.MemberAssignmentTopicPartitions != null)
+                            if (m.Assignment.TopicPartitions != null)
                             {
-                                topicPartitions = String.Join(", ", m.MemberAssignmentTopicPartitions.Select(tp => tp.ToString()));
+                                topicPartitions = String.Join(", ", m.Assignment.TopicPartitions.Select(tp => tp.ToString()));
                             }
-                            Console.WriteLine($"    TopicPartitions: [{topicPartitions}]");
+                            Console.WriteLine($"      TopicPartitions: [{topicPartitions}]");
                         }
                     }
                 }
@@ -509,10 +528,10 @@ namespace Confluent.Kafka.Examples
                     await ListConsumerGroupOffsetsAsync(bootstrapServers, commandArgs);
                     break;
                 case "list-consumer-groups":
-                    ListConsumerGroups(bootstrapServers, commandArgs);
+                    await ListConsumerGroupsAsync(bootstrapServers, commandArgs);
                     break;
                 case "describe-consumer-groups":
-                    DescribeConsumerGroups(bootstrapServers, commandArgs);
+                    await DescribeConsumerGroupsAsync(bootstrapServers, commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");

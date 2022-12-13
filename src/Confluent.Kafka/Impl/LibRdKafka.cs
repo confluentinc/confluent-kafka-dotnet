@@ -65,8 +65,10 @@ namespace Confluent.Kafka.Impl
             CreateAcls = 9,
             DescribeAcls = 10,
             DeleteAcls = 11,
-            AlterConsumerGroupOffsets = 12,
-            ListConsumerGroupOffsets = 13,
+            ListConsumerGroups = 12,
+            DescribeConsumerGroups = 13,
+            ListConsumerGroupOffsets = 14,
+            AlterConsumerGroupOffsets = 15,
         }
 
         public enum EventType : int
@@ -90,8 +92,10 @@ namespace Confluent.Kafka.Impl
             CreateAcls_Result = 0x400,
             DescribeAcls_Result = 0x800,
             DeleteAcls_Result = 0x1000,
-            AlterConsumerGroupOffsets_Result = 0x1200,
-            ListConsumerGroupOffsets_Result = 0x1400,
+            ListConsumerGroups_Result = 0x2000,
+            DescribeConsumerGroups_Result = 0x4000,
+            ListConsumerGroupOffsets_Result = 0x8000,
+            AlterConsumerGroupOffsets_Result = 0x10000,
         }
 
         // Minimum librdkafka version.
@@ -270,7 +274,8 @@ namespace Confluent.Kafka.Impl
             _AdminOptions_set_incremental = (Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_incremental").CreateDelegate(typeof(Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>));
             _AdminOptions_set_broker = (Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_broker").CreateDelegate(typeof(Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>));
             _AdminOptions_set_opaque = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_opaque").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
-            _AdminOptions_set_require_stable = (Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_require_stable").CreateDelegate(typeof(Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>));
+            _AdminOptions_set_require_stable_offsets = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_require_stable_offsets").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _AdminOptions_set_match_consumer_group_states = (Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_match_consumer_group_states").CreateDelegate(typeof(Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>));
 
             _NewTopic_new = (Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_new").CreateDelegate(typeof(Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>));
             _NewTopic_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -372,13 +377,33 @@ namespace Confluent.Kafka.Impl
             _ListConsumerGroupOffsets_result_groups = (_ListConsumerGroupOffsets_result_groups_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroupOffsets_result_groups").CreateDelegate(typeof(_ListConsumerGroupOffsets_result_groups_delegate));
             _ListConsumerGroupOffsets = (_ListConsumerGroupOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroupOffsets").CreateDelegate(typeof(_ListConsumerGroupOffsets_delegate));
 
-            _list_consumer_groups = (_list_consumer_groups_delegate)methods.Single(m => m.Name == "rd_kafka_list_consumer_groups").CreateDelegate(typeof(_list_consumer_groups_delegate));
-            _list_consumer_groups_options_new = (_list_consumer_groups_options_new_delegate)methods.Single(m => m.Name == "rd_kafka_list_consumer_groups_options_new").CreateDelegate(typeof(_list_consumer_groups_options_new_delegate));
-            _list_consumer_groups_options_destroy = (_list_consumer_groups_options_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_list_consumer_groups_options_destroy").CreateDelegate(typeof(_list_consumer_groups_options_destroy_delegate));
+            _ListConsumerGroups = (_ListConsumerGroups_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroups").CreateDelegate(typeof (_ListConsumerGroups_delegate));
+            _ConsumerGroupListing_group_id = (_ConsumerGroupListing_group_id_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupListing_group_id").CreateDelegate(typeof (_ConsumerGroupListing_group_id_delegate));
+            _ConsumerGroupListing_is_simple_consumer_group = (_ConsumerGroupListing_is_simple_consumer_group_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupListing_is_simple_consumer_group").CreateDelegate(typeof (_ConsumerGroupListing_is_simple_consumer_group_delegate));
+            _ConsumerGroupListing_state = (_ConsumerGroupListing_state_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupListing_state").CreateDelegate(typeof (_ConsumerGroupListing_state_delegate));
+            _ListConsumerGroups_result_valid = (_ListConsumerGroups_result_valid_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroups_result_valid").CreateDelegate(typeof (_ListConsumerGroups_result_valid_delegate));
+            _ListConsumerGroups_result_errors = (_ListConsumerGroups_result_errors_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroups_result_errors").CreateDelegate(typeof (_ListConsumerGroups_result_errors_delegate));
 
-            _describe_consumer_groups = (_describe_consumer_groups_delegate)methods.Single(m => m.Name == "rd_kafka_describe_consumer_groups").CreateDelegate(typeof(_describe_consumer_groups_delegate));
-            _describe_consumer_groups_options_new = (_describe_consumer_groups_options_new_delegate)methods.Single(m => m.Name == "rd_kafka_describe_consumer_groups_options_new").CreateDelegate(typeof(_describe_consumer_groups_options_new_delegate));
-            _describe_consumer_groups_options_destroy = (_describe_consumer_groups_options_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_describe_consumer_groups_options_destroy").CreateDelegate(typeof(_describe_consumer_groups_options_destroy_delegate));
+            _DescribeConsumerGroups = (_DescribeConsumerGroups_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeConsumerGroups").CreateDelegate(typeof (_DescribeConsumerGroups_delegate));
+            _DescribeConsumerGroups_result_groups = (_DescribeConsumerGroups_result_groups_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeConsumerGroups_result_groups").CreateDelegate(typeof (_DescribeConsumerGroups_result_groups_delegate));
+            _ConsumerGroupDescription_group_id = (_ConsumerGroupDescription_group_id_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_group_id").CreateDelegate(typeof (_ConsumerGroupDescription_group_id_delegate));
+            _ConsumerGroupDescription_error = (_ConsumerGroupDescription_error_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_error").CreateDelegate(typeof (_ConsumerGroupDescription_error_delegate));
+            _ConsumerGroupDescription_is_simple_consumer_group = (_ConsumerGroupDescription_is_simple_consumer_group_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_is_simple_consumer_group").CreateDelegate(typeof (_ConsumerGroupDescription_is_simple_consumer_group_delegate));
+            _ConsumerGroupDescription_partition_assignor = (_ConsumerGroupDescription_partition_assignor_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_partition_assignor").CreateDelegate(typeof (_ConsumerGroupDescription_partition_assignor_delegate));
+            _ConsumerGroupDescription_state = (_ConsumerGroupDescription_state_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_state").CreateDelegate(typeof (_ConsumerGroupDescription_state_delegate));
+            _ConsumerGroupDescription_coordinator = (_ConsumerGroupDescription_coordinator_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_coordinator").CreateDelegate(typeof (_ConsumerGroupDescription_coordinator_delegate));
+            _ConsumerGroupDescription_member_count = (_ConsumerGroupDescription_member_count_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_member_count").CreateDelegate(typeof (_ConsumerGroupDescription_member_count_delegate));
+            _ConsumerGroupDescription_member = (_ConsumerGroupDescription_member_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_member").CreateDelegate(typeof (_ConsumerGroupDescription_member_delegate));
+            _MemberDescription_client_id = (_MemberDescription_client_id_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_client_id").CreateDelegate(typeof (_MemberDescription_client_id_delegate));
+            _MemberDescription_group_instance_id = (_MemberDescription_group_instance_id_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_group_instance_id").CreateDelegate(typeof (_MemberDescription_group_instance_id_delegate));
+            _MemberDescription_consumer_id = (_MemberDescription_consumer_id_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_consumer_id").CreateDelegate(typeof (_MemberDescription_consumer_id_delegate));
+            _MemberDescription_host = (_MemberDescription_host_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_host").CreateDelegate(typeof (_MemberDescription_host_delegate));
+            _MemberDescription_assignment = (_MemberDescription_assignment_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_assignment").CreateDelegate(typeof (_MemberDescription_assignment_delegate));
+            _MemberAssignment_partitions = (_MemberAssignment_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_MemberAssignment_partitions").CreateDelegate(typeof (_MemberAssignment_partitions_delegate));
+            _Node_id = (_Node_id_delegate)methods.Single(m => m.Name == "rd_kafka_Node_id").CreateDelegate(typeof (_Node_id_delegate));
+            _Node_host = (_Node_host_delegate)methods.Single(m => m.Name == "rd_kafka_Node_host").CreateDelegate(typeof (_Node_host_delegate));
+            _Node_port = (_Node_port_delegate)methods.Single(m => m.Name == "rd_kafka_Node_port").CreateDelegate(typeof (_Node_port_delegate));
+
 
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1173,12 +1198,14 @@ namespace Confluent.Kafka.Impl
             IntPtr options,
             IntPtr opaque) => _AdminOptions_set_opaque(options, opaque);
 
-        private static Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode> _AdminOptions_set_require_stable;
-        internal static ErrorCode AdminOptions_set_require_stable(
+        private static Func<IntPtr, IntPtr, IntPtr> _AdminOptions_set_require_stable_offsets;
+        internal static IntPtr AdminOptions_set_require_stable_offsets(
             IntPtr options,
-            IntPtr true_or_false,
-            StringBuilder errstr,
-            UIntPtr errstr_size) => _AdminOptions_set_require_stable(options, true_or_false, errstr, errstr_size);
+            IntPtr true_or_false) => _AdminOptions_set_require_stable_offsets(options, true_or_false);
+
+        private static Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr> _AdminOptions_set_match_consumer_group_states;
+        internal static IntPtr AdminOptions_set_match_consumer_group_states(IntPtr options, ConsumerGroupState[] states, UIntPtr statesCnt)
+            => _AdminOptions_set_match_consumer_group_states(options, states, statesCnt);
 
         private static Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr> _NewTopic_new;
         internal static IntPtr NewTopic_new(
@@ -1661,7 +1688,8 @@ namespace Confluent.Kafka.Impl
         internal static void ListConsumerGroupOffsets_destroy(IntPtr groupPartitions)
             => _ListConsumerGroupOffsets_destroy(groupPartitions);
 
-        private delegate void _ListConsumerGroupOffsets_delegate(IntPtr handle, IntPtr[] listGroupsPartitions, UIntPtr listGroupsPartitionsSize, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private delegate void _ListConsumerGroupOffsets_delegate(
+            IntPtr handle, IntPtr[] listGroupsPartitions, UIntPtr listGroupsPartitionsSize, IntPtr optionsPtr, IntPtr resultQueuePtr);
         private static _ListConsumerGroupOffsets_delegate _ListConsumerGroupOffsets;
         internal static void ListConsumerGroupOffsets(
             IntPtr handle,
@@ -1677,40 +1705,130 @@ namespace Confluent.Kafka.Impl
             out UIntPtr groupsTopicPartitionsCount
         ) => _ListConsumerGroupOffsets_result_groups(resultResponse, out groupsTopicPartitionsCount);
 
-        private delegate ErrorCode _list_consumer_groups_delegate(IntPtr rk, out IntPtr grplistp, IntPtr options);
-        private static _list_consumer_groups_delegate _list_consumer_groups;
-        internal static ErrorCode list_consumer_groups(
-            IntPtr rk,
-            out IntPtr grplistp,
-            IntPtr options) => _list_consumer_groups(rk, out grplistp, options);
+         private delegate void  _ListConsumerGroups_delegate(IntPtr handle, IntPtr optionsPtr, IntPtr resultQueuePtr);
+         private static _ListConsumerGroups_delegate _ListConsumerGroups;
+         internal static void  ListConsumerGroups(IntPtr handle, IntPtr optionsPtr, IntPtr resultQueuePtr)
+            => _ListConsumerGroups(handle, optionsPtr, resultQueuePtr);
 
-        private delegate IntPtr _list_consumer_groups_options_new_delegate(int requestTimeout, ConsumerGroupState[] states, UIntPtr statesCnt);
-        private static _list_consumer_groups_options_new_delegate _list_consumer_groups_options_new;
-        internal static IntPtr list_consumer_groups_options_new(
-            int requestTimeout, ConsumerGroupState[] states, UIntPtr statesCnt) => _list_consumer_groups_options_new(requestTimeout, states, statesCnt);
+         private delegate IntPtr  _ConsumerGroupListing_group_id_delegate(IntPtr grplist);
+         private static _ConsumerGroupListing_group_id_delegate _ConsumerGroupListing_group_id;
+         internal static IntPtr  ConsumerGroupListing_group_id(IntPtr grplist)
+            => _ConsumerGroupListing_group_id(grplist);
 
-        private delegate void _list_consumer_groups_options_destroy_delegate(IntPtr options);
-        private static _list_consumer_groups_options_destroy_delegate _list_consumer_groups_options_destroy;
-        internal static void list_consumer_groups_options_destroy(IntPtr options) => _list_consumer_groups_options_destroy(options);
+         private delegate IntPtr  _ConsumerGroupListing_is_simple_consumer_group_delegate(IntPtr grplist);
+         private static _ConsumerGroupListing_is_simple_consumer_group_delegate _ConsumerGroupListing_is_simple_consumer_group;
+         internal static IntPtr  ConsumerGroupListing_is_simple_consumer_group(IntPtr grplist)
+            => _ConsumerGroupListing_is_simple_consumer_group(grplist);
 
-        private delegate ErrorCode _describe_consumer_groups_delegate(
-            IntPtr rk, string[] groups, UIntPtr group_cnt, out IntPtr grplistp, IntPtr options);
-        private static _describe_consumer_groups_delegate _describe_consumer_groups;
-        internal static ErrorCode describe_consumer_groups(
-            IntPtr rk,
-            string[] groups,
-            UIntPtr group_cnt,
-            out IntPtr grplistp,
-            IntPtr options)
-                => _describe_consumer_groups(rk, groups, group_cnt, out grplistp, options);
+         private delegate ConsumerGroupState  _ConsumerGroupListing_state_delegate(IntPtr grplist);
+         private static _ConsumerGroupListing_state_delegate _ConsumerGroupListing_state;
+         internal static ConsumerGroupState  ConsumerGroupListing_state(IntPtr grplist)
+            => _ConsumerGroupListing_state(grplist);
 
-        private delegate IntPtr _describe_consumer_groups_options_new_delegate(int requestTimeout);
-        private static _describe_consumer_groups_options_new_delegate _describe_consumer_groups_options_new;
-        internal static IntPtr describe_consumer_groups_options_new(int requestTimeout) => _describe_consumer_groups_options_new(requestTimeout);
+         private delegate IntPtr  _ListConsumerGroups_result_valid_delegate(IntPtr result, out UIntPtr cntp);
+         private static _ListConsumerGroups_result_valid_delegate _ListConsumerGroups_result_valid;
+         internal static IntPtr  ListConsumerGroups_result_valid(IntPtr result, out UIntPtr cntp)
+            => _ListConsumerGroups_result_valid(result, out cntp);
 
-        private delegate void _describe_consumer_groups_options_destroy_delegate(IntPtr options);
-        private static _describe_consumer_groups_options_destroy_delegate _describe_consumer_groups_options_destroy;
-        internal static void describe_consumer_groups_options_destroy(IntPtr options) => _describe_consumer_groups_options_destroy(options);
+         private delegate IntPtr  _ListConsumerGroups_result_errors_delegate(IntPtr result, out UIntPtr cntp);
+         private static _ListConsumerGroups_result_errors_delegate _ListConsumerGroups_result_errors;
+         internal static IntPtr  ListConsumerGroups_result_errors(IntPtr result, out UIntPtr cntp)
+            => _ListConsumerGroups_result_errors(result, out cntp);
+
+         private delegate void  _DescribeConsumerGroups_delegate(
+            IntPtr handle, [MarshalAs(UnmanagedType.LPArray)] string[] groups, UIntPtr groupsCnt, IntPtr optionsPtr, IntPtr resultQueuePtr);
+         private static _DescribeConsumerGroups_delegate _DescribeConsumerGroups;
+         internal static void  DescribeConsumerGroups(
+            IntPtr handle, [MarshalAs(UnmanagedType.LPArray)] string[] groups, UIntPtr groupsCnt, IntPtr optionsPtr, IntPtr resultQueuePtr)
+            => _DescribeConsumerGroups(handle, groups, groupsCnt, optionsPtr, resultQueuePtr);
+
+         private delegate IntPtr  _DescribeConsumerGroups_result_groups_delegate(IntPtr result, out UIntPtr cntp);
+         private static _DescribeConsumerGroups_result_groups_delegate _DescribeConsumerGroups_result_groups;
+         internal static IntPtr  DescribeConsumerGroups_result_groups(IntPtr result, out UIntPtr cntp)
+            => _DescribeConsumerGroups_result_groups(result, out cntp);
+
+         private delegate IntPtr  _ConsumerGroupDescription_group_id_delegate(IntPtr grpdesc);
+         private static _ConsumerGroupDescription_group_id_delegate _ConsumerGroupDescription_group_id;
+         internal static IntPtr  ConsumerGroupDescription_group_id(IntPtr grpdesc)
+            => _ConsumerGroupDescription_group_id(grpdesc);
+
+         private delegate IntPtr  _ConsumerGroupDescription_error_delegate(IntPtr grpdesc);
+         private static _ConsumerGroupDescription_error_delegate _ConsumerGroupDescription_error;
+         internal static IntPtr  ConsumerGroupDescription_error(IntPtr grpdesc)
+            => _ConsumerGroupDescription_error(grpdesc);
+
+         private delegate int  _ConsumerGroupDescription_is_simple_consumer_group_delegate(IntPtr grpdesc);
+         private static _ConsumerGroupDescription_is_simple_consumer_group_delegate _ConsumerGroupDescription_is_simple_consumer_group;
+         internal static int  ConsumerGroupDescription_is_simple_consumer_group(IntPtr grpdesc)
+            => _ConsumerGroupDescription_is_simple_consumer_group(grpdesc);
+
+         private delegate IntPtr  _ConsumerGroupDescription_partition_assignor_delegate(IntPtr grpdesc);
+         private static _ConsumerGroupDescription_partition_assignor_delegate _ConsumerGroupDescription_partition_assignor;
+         internal static IntPtr  ConsumerGroupDescription_partition_assignor(IntPtr grpdesc)
+            => _ConsumerGroupDescription_partition_assignor(grpdesc);
+
+         private delegate ConsumerGroupState  _ConsumerGroupDescription_state_delegate(IntPtr grpdesc);
+         private static _ConsumerGroupDescription_state_delegate _ConsumerGroupDescription_state;
+         internal static ConsumerGroupState  ConsumerGroupDescription_state(IntPtr grpdesc) {
+            return _ConsumerGroupDescription_state(grpdesc);
+         }
+
+         private delegate IntPtr  _ConsumerGroupDescription_coordinator_delegate(IntPtr grpdesc);
+         private static _ConsumerGroupDescription_coordinator_delegate _ConsumerGroupDescription_coordinator;
+         internal static IntPtr  ConsumerGroupDescription_coordinator(IntPtr grpdesc)
+            => _ConsumerGroupDescription_coordinator(grpdesc);
+
+         private delegate IntPtr  _ConsumerGroupDescription_member_count_delegate(IntPtr grpdesc);
+         private static _ConsumerGroupDescription_member_count_delegate _ConsumerGroupDescription_member_count;
+         internal static IntPtr  ConsumerGroupDescription_member_count(IntPtr grpdesc)
+            => _ConsumerGroupDescription_member_count(grpdesc);
+
+         private delegate IntPtr  _ConsumerGroupDescription_member_delegate(IntPtr grpdesc, IntPtr idx);
+         private static _ConsumerGroupDescription_member_delegate _ConsumerGroupDescription_member;
+         internal static IntPtr  ConsumerGroupDescription_member(IntPtr grpdesc, IntPtr idx)
+            => _ConsumerGroupDescription_member(grpdesc, idx);
+
+         private delegate IntPtr  _MemberDescription_client_id_delegate(IntPtr member);
+         private static _MemberDescription_client_id_delegate _MemberDescription_client_id;
+         internal static IntPtr  MemberDescription_client_id(IntPtr member)
+            => _MemberDescription_client_id(member);
+
+         private delegate IntPtr  _MemberDescription_group_instance_id_delegate(IntPtr member);
+         private static _MemberDescription_group_instance_id_delegate _MemberDescription_group_instance_id;
+         internal static IntPtr  MemberDescription_group_instance_id(IntPtr member)
+            => _MemberDescription_group_instance_id(member);
+
+         private delegate IntPtr  _MemberDescription_consumer_id_delegate(IntPtr member);
+         private static _MemberDescription_consumer_id_delegate _MemberDescription_consumer_id;
+         internal static IntPtr  MemberDescription_consumer_id(IntPtr member)
+            => _MemberDescription_consumer_id(member);
+
+         private delegate IntPtr  _MemberDescription_host_delegate(IntPtr member);
+         private static _MemberDescription_host_delegate _MemberDescription_host;
+         internal static IntPtr  MemberDescription_host(IntPtr member)
+            => _MemberDescription_host(member);
+
+         private delegate IntPtr  _MemberDescription_assignment_delegate(IntPtr member);
+         private static _MemberDescription_assignment_delegate _MemberDescription_assignment;
+         internal static IntPtr  MemberDescription_assignment(IntPtr member)
+            => _MemberDescription_assignment(member);
+
+         private delegate IntPtr  _MemberAssignment_partitions_delegate(IntPtr assignment);
+         private static _MemberAssignment_partitions_delegate _MemberAssignment_partitions;
+         internal static IntPtr  MemberAssignment_topic_partitions(IntPtr assignment)
+            => _MemberAssignment_partitions(assignment);
+
+        private delegate IntPtr _Node_id_delegate(IntPtr node);
+        private static _Node_id_delegate _Node_id;
+        internal static IntPtr Node_id(IntPtr node) => _Node_id(node);
+
+        private delegate IntPtr _Node_host_delegate(IntPtr node);
+        private static _Node_host_delegate _Node_host;
+        internal static IntPtr Node_host(IntPtr node) => _Node_host(node);
+
+        private delegate IntPtr _Node_port_delegate(IntPtr node);
+        private static _Node_port_delegate _Node_port;
+        internal static IntPtr Node_port(IntPtr node) => _Node_port(node);
 
         private static Func<IntPtr, ErrorCode> _topic_result_error;
         internal static ErrorCode topic_result_error(IntPtr topicres) => _topic_result_error(topicres);

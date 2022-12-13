@@ -14,38 +14,35 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Collections.Generic;
-
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The per-group result for a list consumer group offsets request.
+    ///     Represents a single consumer group in the result of a list consumer
+    ///     groups operation.
     /// </summary>
-    public class ListConsumerGroupOffsetsResult
+    public class ConsumerGroupListing
     {
         /// <summary>
         ///     The groupID.
         /// </summary>
-        public string Group { get; set; }
+        public string GroupId { get; set; }
 
         /// <summary>
-        ///     List of topic TopicPartitionOffsetError containing the read offsets,
-        ///     and errors if any.
+        ///     The state of the consumer group.
         /// </summary>
-        public List<TopicPartitionOffsetError> Partitions { get; set; }
+        public ConsumerGroupState State { get; set; }
 
         /// <summary>
-        ///     Error, if any, on a group-level.
+        ///     Whether the consumer group is simple or not.
         /// </summary>
-        public Error Error { get; set; }
+        public bool IsSimpleConsumerGroup { get; set; }
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
-        public override string ToString() {
-            var errString = Error.IsError ? Error.ToString() : "";
-            return $"{Group} [ {String.Join(", ", Partitions)} ] {errString}";
+        public override string ToString()
+        {
+            return $"{GroupId}, State = {State}, IsSimpleConsumerGroup = {IsSimpleConsumerGroup}";
         }
     }
 }

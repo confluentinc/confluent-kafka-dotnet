@@ -20,31 +20,33 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Xunit;
-
+using Confluent.Kafka.Admin;
 
 namespace Confluent.Kafka.IntegrationTests
 {
     public partial class Tests
     {
-        // A convenience method to check the resultant GroupInfos obtained on describing a group.
-        private void checkGroupInfo(
-            GroupInfo gi, ConsumerGroupState stateCode, string protocol, string groupID, Dictionary<string, List<TopicPartition>> clientIdToToppars) 
+        // A convenience method to check the resultant ConsumerGroupDescription obtained on describing a group.
+        private void checkConsumerGroupDescription(
+            ConsumerGroupDescription desc, ConsumerGroupState state,
+            string protocol, string groupID,
+            Dictionary<string, List<TopicPartition>> clientIdToToppars)
         {
-            Assert.Equal(groupID, gi.Group);
-            Assert.Equal(ErrorCode.NoError, gi.Error.Code);
-            Assert.Equal(stateCode, gi.StateCode);
-            Assert.Equal(protocol, gi.Protocol);
-            // We can't check exactly the Broker information, but we add a check for the zero-value of the Host.
-            Assert.NotEqual("", gi.Broker.Host);
-            Assert.Equal(clientIdToToppars.Count(), gi.Members.Count());
-            // We will run all our tests on non-simple, consumer groups only.
-            Assert.Equal("consumer", gi.ProtocolType);
-            Assert.Equal(false, gi.IsSimpleConsumerGroup);
+            Assert.Equal(groupID, desc.GroupId);
+            Assert.Equal(ErrorCode.NoError, desc.Error.Code);
+            Assert.Equal(state, desc.State);
+            Assert.Equal(protocol, desc.PartitionAssignor);
+            // We can't check exactly the Broker information, but we add a
+            // check for the zero-value of the Host.
+            Assert.NotEqual("", desc.Coordinator.Host);
+            Assert.Equal(clientIdToToppars.Count(), desc.Members.Count());
+            // We will run all our tests on non-simple consumer groups only.
+            Assert.False(desc.IsSimpleConsumerGroup);
 
-            foreach (var member in gi.Members)
+            foreach (var member in desc.Members)
             {
                 Assert.True(clientIdToToppars.ContainsKey(member.ClientId));
-                Assert.True(clientIdToToppars[member.ClientId].SequenceEqual(member.MemberAssignmentTopicPartitions));
+                Assert.True(clientIdToToppars[member.ClientId].SequenceEqual(member.Assignment.TopicPartitions));
             }
         }
 
@@ -72,9 +74,9 @@ namespace Confluent.Kafka.IntegrationTests
                 var describeOptionsWithTimeout = new Admin.DescribeConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
 
                 // We should not have any group initially.
-                var groups = adminClient.ListConsumerGroups();
-                Assert.Empty(groups.Where(group => group.Group == groupID));
-                Assert.Empty(groups.Where(group => group.Group == nonExistentGroupID));
+                var groups = adminClient.ListConsumerGroupsAsync().Result;
+                Assert.Empty(groups.Valid.Where(group => group.GroupId == groupID));
+                Assert.Empty(groups.Valid.Where(group => group.GroupId == nonExistentGroupID));
 
                 // Ensure that the partitioned topic we are using has exactly two partitions.
                 Assert.Equal(2, partitionedTopicNumPartitions);
@@ -94,21 +96,24 @@ namespace Confluent.Kafka.IntegrationTests
                 // Wait for rebalance.
                 consumer1.Consume(TimeSpan.FromSeconds(10));
 
-                groups = adminClient.ListConsumerGroups(listOptionsWithTimeout);
-                Assert.Single(groups.Where(group => group.Group == groupID));
-                Assert.Empty(groups.Where(group => group.Group == nonExistentGroupID));
-                var group = groups.Find(group => group.Group == groupID);
-                Assert.Equal(ConsumerGroupState.Stable, group.StateCode);
-                Assert.Equal(false, group.IsSimpleConsumerGroup);
+                groups = adminClient.ListConsumerGroupsAsync(listOptionsWithTimeout).Result;
+                Assert.Single(groups.Valid.Where(group => group.GroupId == groupID));
+                Assert.Empty(groups.Valid.Where(group => group.GroupId == nonExistentGroupID));
+                var group = groups.Valid.Find(group => group.GroupId == groupID);
+                Assert.Equal(ConsumerGroupState.Stable, group.State);
+                Assert.False(group.IsSimpleConsumerGroup);
 
-                groups = adminClient.DescribeConsumerGroups(new List<String>() { groupID }, describeOptionsWithTimeout);
-                group = groups.Find(group => group.Group == groupID);
+                var groupDescs = adminClient.DescribeConsumerGroupsAsync(
+                    new List<String>() { groupID },
+                    describeOptionsWithTimeout).Result;
+                var groupDesc = groupDescs.Find(group => group.GroupId == groupID);
                 var clientIdToToppars = new Dictionary<string, List<TopicPartition>>();
                 clientIdToToppars[clientID1] = new List<TopicPartition>() {
                     new TopicPartition(partitionedTopic, 0),
                     new TopicPartition(partitionedTopic, 1),
                 };
-                checkGroupInfo(group, ConsumerGroupState.Stable, "range", groupID, clientIdToToppars);
+                checkConsumerGroupDescription(
+                    groupDesc, ConsumerGroupState.Stable, "range", groupID, clientIdToToppars);
 
                 // 2. One consumer group with two clients.
                 consumerConfig.ClientId = clientID2;
@@ -120,16 +125,19 @@ namespace Confluent.Kafka.IntegrationTests
                 // a loop?
                 consumer2.Consume(TimeSpan.FromSeconds(10));
 
-                groups = adminClient.DescribeConsumerGroups(new List<String>() { groupID }, describeOptionsWithTimeout);
-                Assert.Single(groups.Where(group => group.Group == groupID));
-                group = groups.Find(group => group.Group == groupID);
+                groupDescs = adminClient.DescribeConsumerGroupsAsync(
+                    new List<String>() { groupID },
+                     describeOptionsWithTimeout).Result;
+                Assert.Single(groupDescs.Where(group => group.GroupId == groupID));
+                groupDesc = groupDescs.Find(group => group.GroupId == groupID);
                 clientIdToToppars[clientID1] = new List<TopicPartition>() {
                     new TopicPartition(partitionedTopic, 0)
                 };
                 clientIdToToppars[clientID2] = new List<TopicPartition>() {
                     new TopicPartition(partitionedTopic, 1)
                 };
-                checkGroupInfo(group, ConsumerGroupState.Stable, "range", groupID, clientIdToToppars);
+                checkConsumerGroupDescription(
+                    groupDesc, ConsumerGroupState.Stable, "range", groupID, clientIdToToppars);
 
                 // 3. Empty consumer group.
                 consumer1.Close();
@@ -140,16 +148,19 @@ namespace Confluent.Kafka.IntegrationTests
                 // TODO(milind) do we need a wait here for rebalancing again?
                 // Check the 'States' option by listing Stable consumer groups, which shouldn't
                 // include `groupID`.
-                groups = adminClient.ListConsumerGroups(new Admin.ListConsumerGroupsOptions() 
-                { States = new List<ConsumerGroupState>() { ConsumerGroupState.Stable },
-                  RequestTimeout = TimeSpan.FromSeconds(30) });
-                Assert.Empty(groups.Where(group => group.Group == groupID));
+                groups = adminClient.ListConsumerGroupsAsync(new Admin.ListConsumerGroupsOptions()
+                { MatchStates = new List<ConsumerGroupState>() { ConsumerGroupState.Stable },
+                  RequestTimeout = TimeSpan.FromSeconds(30) }).Result;
+                Assert.Empty(groups.Valid.Where(group => group.GroupId == groupID));
 
-                groups = adminClient.DescribeConsumerGroups(new List<String>() { groupID }, describeOptionsWithTimeout);
-                Assert.Single(groups.Where(group => group.Group == groupID));
-                group = groups.Find(group => group.Group == groupID);
+                groupDescs = adminClient.DescribeConsumerGroupsAsync(
+                    new List<String>() { groupID },
+                    describeOptionsWithTimeout).Result;
+                Assert.Single(groupDescs.Where(group => group.GroupId == groupID));
+                groupDesc = groupDescs.Find(group => group.GroupId == groupID);
                 clientIdToToppars = new Dictionary<string, List<TopicPartition>>();
-                checkGroupInfo(group, ConsumerGroupState.Empty, "", groupID, clientIdToToppars);
+                checkConsumerGroupDescription(
+                    groupDesc, ConsumerGroupState.Empty, "", groupID, clientIdToToppars);
             }
 
             Assert.Equal(0, Library.HandleCount);

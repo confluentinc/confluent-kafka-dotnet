@@ -63,7 +63,6 @@ namespace Confluent.Kafka.IntegrationTests
             // Create an AdminClient here - to test alter while the consumer is still active.
             var adminClient = new AdminClientBuilder(new AdminClientConfig {
                 BootstrapServers = bootstrapServers,
-                Debug = "all",
             }).Build();
 
             // 2. Consume
@@ -98,7 +97,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Check that we are not be able to alter the offsets while the consumer is still active.
                 var errorOccured = false;
-                try 
+                try
                 {
                     var tpoListInvalid = new List<TopicPartitionOffset>();
                     tpoListInvalid.Add(new TopicPartitionOffset(singlePartitionTopic, 0, 2));
@@ -124,7 +123,7 @@ namespace Confluent.Kafka.IntegrationTests
                 new GroupTopicPartitions[] {
                     new GroupTopicPartitions(groupID, tpList),
                 },
-                new ListConsumerGroupOffsetsOptions() { RequireStable = false }
+                new ListConsumerGroupOffsetsOptions() { RequireStableOffsets = false }
             ).Result;
 
             Assert.Single(lcgoResults);
@@ -159,7 +158,7 @@ namespace Confluent.Kafka.IntegrationTests
                 new GroupTopicPartitions[] {
                     new GroupTopicPartitions(groupID, tpList),
                 },
-                new ListConsumerGroupOffsetsOptions() { RequireStable = false }
+                new ListConsumerGroupOffsetsOptions() { RequireStableOffsets = false }
             ).Result;
 
             Assert.Single(lcgoResults);

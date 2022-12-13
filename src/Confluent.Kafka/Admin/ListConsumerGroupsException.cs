@@ -14,41 +14,30 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
     ///     Represents an error that occured during a list consumer group operation.
     /// </summary>
-    public class ListConsumerGroupException : KafkaException
+    public class ListConsumerGroupsException : KafkaException
     {
         /// <summary>
-        ///     Initialize a new instance of ListConsumerGroupException.
+        ///     Initialize a new instance of ListConsumerGroupsException.
         /// </summary>
         /// <param name="results">
-        ///     The result corresponding to all groups in the request 
-        ///     (whether or not they were in error). At least one of these
-        ///     results will be in error.
+        ///     The result corresponding to all groups in the request
         /// </param>
-        public ListConsumerGroupException(List<GroupInfo> results)
+        public ListConsumerGroupsException(ListConsumerGroupsResult results)
             : base(new Error(ErrorCode.Local_Partial,
-                "An error listing consumer groups: [" +
-                String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Group)) +
-                "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) +
-                "]."))
+                   "error listing consumer groups"))
         {
             this.Results = results;
         }
 
         /// <summary>
-        ///     The result corresponding to all groups in the request,
-        ///     (whether or not they were in error). At least one of these
-        ///     results will be in error.
+        ///     The result corresponding to all groups and including all errors.
+        ///     Results.Errors will be non-empty and should be checked.
         /// </summary>
-        public List<GroupInfo> Results { get; }
+        public ListConsumerGroupsResult Results { get; }
     }
 }

@@ -31,18 +31,21 @@ namespace Confluent.Kafka.Admin
 
         /// <summary>
         ///     List of topic TopicPartitionOffsetError containing the written offsets,
-        ///     and errors if any.
+        ///     and per-partition errors if any.
         /// </summary>
         public List<TopicPartitionOffsetError> Partitions { get; set; }
 
-        internal Error Error { get; set; }
+        /// <summary>
+        ///     Error, if any, on the group level.
+        /// </summary>
+        public Error Error { get; set; }
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
             var errString = Error.IsError ? Error.ToString() : "";
-            return $"{Group} [ {String.Join(", ", Partitions)} ] ${errString}";
+            return $"{Group} [ {String.Join(", ", Partitions)} ] {errString}";
         }
     }
 }

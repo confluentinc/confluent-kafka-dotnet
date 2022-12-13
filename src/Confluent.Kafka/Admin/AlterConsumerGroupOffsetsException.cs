@@ -27,7 +27,7 @@ namespace Confluent.Kafka.Admin
         ///     Initializes a new instance of AlterConsumerGroupOffsetsException.
         /// </summary>
         /// <param name="results">
-        ///     The result corresponding to all groups/partitions in the request 
+        ///     The result corresponding to all groups/partitions in the request
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
@@ -39,7 +39,7 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     The result corresponding to all groups/partitions in the request 
+        ///     The result corresponding to all groups/partitions in the request
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>

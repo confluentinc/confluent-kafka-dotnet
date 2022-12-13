@@ -14,32 +14,36 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Collections.Generic;
-
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the "AdminClient.ListConsumerGroupsAsync" method.
+    ///     MemberDescription represents the description of a consumer group member
     /// </summary>
-    public class ListConsumerGroupsOptions
+    public class MemberDescription
     {
         /// <summary>
-        ///     The overall request timeout, including broker lookup, request
-        ///     transmission, operation time on broker, and response. If set
-        ///     to null, the default request timeout for the AdminClient will
-        ///     be used.
-        ///
-        ///     Default: null
+        ///     Client id.
         /// </summary>
-        public TimeSpan? RequestTimeout { get; set; }
+        public string ClientId { get; set; }
 
         /// <summary>
-        ///      An enumerable with the states to query, null to query for all
-        ///      the states.
-        ///
-        ///     Default: null
+        ///     Group instance id.
         /// </summary>
-        public IEnumerable<ConsumerGroupState> MatchStates { get; set; } = null;
+        public string GroupInstanceId { get; set; }
+
+        /// <summary>
+        ///     Consumer id.
+        /// </summary>
+        public string ConsumerId { get; set; }
+
+        /// <summary>
+        ///     Group member host.
+        /// </summary>
+        public string Host { get; set; }
+
+        /// <summary>
+        ///     Member assignment.
+        /// </summary>
+        public MemberAssignment Assignment { get; set; }
     }
 }

@@ -14,38 +14,34 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Collections.Generic;
-
-namespace Confluent.Kafka.Admin
+namespace Confluent.Kafka
 {
     /// <summary>
-    ///     The per-group result for a list consumer group offsets request.
+    ///     Node represents a Kafka broker.
     /// </summary>
-    public class ListConsumerGroupOffsetsResult
+    public class Node
     {
         /// <summary>
-        ///     The groupID.
+        ///     Id represents the Node Id.
         /// </summary>
-        public string Group { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
-        ///     List of topic TopicPartitionOffsetError containing the read offsets,
-        ///     and errors if any.
+        ///     Host represents the host of the broker.
         /// </summary>
-        public List<TopicPartitionOffsetError> Partitions { get; set; }
+        public string Host { get; set; }
 
         /// <summary>
-        ///     Error, if any, on a group-level.
+        ///     Port represents the port of the broker.
         /// </summary>
-        public Error Error { get; set; }
+        public int Port { get; set; }
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
-        public override string ToString() {
-            var errString = Error.IsError ? Error.ToString() : "";
-            return $"{Group} [ {String.Join(", ", Partitions)} ] {errString}";
+        public override string ToString()
+        {
+            return $"Id = {Id}, {Host}:{Port}";
         }
     }
 }
