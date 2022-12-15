@@ -117,6 +117,11 @@ namespace Confluent.Kafka.IntegrationTests
 
 
             // Null key
+            producerConfig = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers,
+                StickyPartitioningLingerMs = 0 // disable sticky partitioning and run the default partitioner for null keys.
+            };
 
             using (var topic = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
             using (var producer = new ProducerBuilder<Null, string>(producerConfig)
