@@ -149,11 +149,14 @@ namespace Confluent.Kafka.Examples.JsonSerialization
                 while ((text = Console.ReadLine()) != "q")
                 {
                     User user = new User { Name = text, FavoriteColor = "blue", FavoriteNumber = i++ };
-                    await producer
-                        .ProduceAsync(topicName, new Message<string, User> { Value = user })
-                        .ContinueWith(task => task.IsFaulted
-                            ? $"error producing message: {task.Exception.Message}"
-                            : $"produced to: {task.Result.TopicPartitionOffset}");
+                    try 
+                    {
+                        await producer.ProduceAsync(topicName, new Message<string, User> { Value = user });
+                    }
+                    catch (Exception e) 
+                    {
+                        Console.WriteLine($"error producing message: {e.Message}");
+                    }
                 }
             }
 

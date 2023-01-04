@@ -1,3 +1,37 @@
+# 2.0.0 
+
+## Enhancements
+
+- Upgraded `NJsonSchema` to v10.6.3
+- Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
+  when `UseLatestVersion` is set to true.
+- Added DeleteConsumerGroupOffset to AdminClient.
+
+## Fixes
+
+- During a group rebalance, partitions are now always revoked as a side effect of a call to Consume, whether or not a partitions revoked handler has been specified. Previously, if no handler was specified, the timing of when the consumer lost ownership of partitions during a rebalance was arbitrarily, frequently resulting in an erroneous state exception when committing or storing offsets.
+- Fixed 100% CPU usage with `DependentAdminClientBuilder`. 
+
+
+# 1.9.4
+
+## Fixes
+
+- References librdkafka.redist 1.9.3-RC2 which resolves a transaction related issue. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.9.3-RC2) for more information.
+
+
+# 1.9.3 
+
+## Enhancements
+
+- Added `NormalizeSchemas` configuration property to the Avro, Json and Protobuf serdes.
+
+## Fixes
+
+- Schema Registry authentication now works with passwords that contain the ':' character ([luismedel](https://github.com/luismedel)). 
+- Added missing librdkafka internal and broker error codes to the `ErrorCode` enum.
+
+
 # 1.9.2
 
 ## Enhancements

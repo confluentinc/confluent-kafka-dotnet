@@ -60,7 +60,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     Assert.Throws<SchemaRegistryException>(() =>
                     {
-                        string guidTopic = new Guid().ToString();
+                        string guidTopic = Guid.NewGuid().ToString();
                         try
                         {
                             producer
