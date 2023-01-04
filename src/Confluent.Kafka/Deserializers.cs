@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers.Binary;
 using System.Text;
 
 
@@ -39,7 +40,7 @@ namespace Confluent.Kafka
                     return null;
                 }
 
-                #if NETCOREAPP2_1
+                #if NETCOREAPP2_1_OR_GREATER
                     return Encoding.UTF8.GetString(data);
                 #else
                     return Encoding.UTF8.GetString(data.ToArray());
@@ -95,16 +96,7 @@ namespace Confluent.Kafka
                     throw new ArgumentException($"Deserializer<Long> encountered data of length {data.Length}. Expecting data length to be 8.");
                 }
 
-                // network byte order -> big endian -> most significant byte in the smallest address.
-                long result = ((long)data[0]) << 56 |
-                    ((long)(data[1])) << 48 |
-                    ((long)(data[2])) << 40 |
-                    ((long)(data[3])) << 32 |
-                    ((long)(data[4])) << 24 |
-                    ((long)(data[5])) << 16 |
-                    ((long)(data[6])) << 8 |
-                    (data[7]);
-                return result;
+                return BinaryPrimitives.ReadInt64BigEndian(data);
             }
         }
 
@@ -127,12 +119,7 @@ namespace Confluent.Kafka
                     throw new ArgumentException($"Deserializer<Int32> encountered data of length {data.Length}. Expecting data length to be 4.");
                 }
 
-                // network byte order -> big endian -> most significant byte in the smallest address.
-                return
-                    (((int)data[0]) << 24) |
-                    (((int)data[1]) << 16) |
-                    (((int)data[2]) << 8) |
-                    (int)data[3];
+                return BinaryPrimitives.ReadInt32BigEndian(data); ;
             }
         }
 
@@ -171,7 +158,7 @@ namespace Confluent.Kafka
                 }
                 else
                 {
-                    #if NETCOREAPP2_1
+                    #if NETCOREAPP2_1_OR_GREATER
                         return BitConverter.ToSingle(data);
                     #else
                         return BitConverter.ToSingle(data.ToArray(), 0);
@@ -219,10 +206,10 @@ namespace Confluent.Kafka
                 }
                 else
                 {
-                    #if NETCOREAPP2_1
-                                    return BitConverter.ToDouble(data);
+                    #if NETCOREAPP2_1_OR_GREATER
+                        return BitConverter.ToDouble(data);
                     #else
-                                    return BitConverter.ToDouble(data.ToArray(), 0);
+                        return BitConverter.ToDouble(data.ToArray(), 0);
                     #endif
                 }
             }
