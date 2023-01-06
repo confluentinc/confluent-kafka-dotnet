@@ -1,0 +1,57 @@
+version: v1.0
+name: 'confluent-kafka-dotnet build and release artifact pipeline'
+agent:
+  machine:
+    type: s1-prod-ubuntu20-04-amd64-1
+global_job_config:
+  prologue:
+    commands:
+      - checkout
+
+blocks:
+  - name: 'Linux'
+    dependencies: []
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
+      env_vars:
+        - name: CONFIGURATION
+          value: Release
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - dotnet restore
+            - make build
+            - make test
+  - name: 'OSX x64'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-macos
+      env_vars:
+        - name: CONFIGURATION
+          value: Release
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - ulimit -n 1024
+            - dotnet restore
+            - make build
+            - make test
+  - name: 'Windows x64'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-windows
+      env_vars:
+        - name: CONFIGURATION
+          value: Release
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - dotnet restore
+            - make build
+            - make test
