@@ -3,6 +3,10 @@ name: 'confluent-kafka-dotnet build and release artifact pipeline'
 agent:
   machine:
     type: s1-prod-ubuntu20-04-amd64-1
+global_job_config:
+  prologue:
+    commands:
+      - checkout
 
 blocks:
   - name: 'Linux'
