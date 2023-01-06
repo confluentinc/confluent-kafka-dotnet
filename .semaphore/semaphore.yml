@@ -9,7 +9,7 @@ global_job_config:
       - checkout
 
 blocks:
-  - name: 'Linux'
+  - name: 'Linux x64'
     dependencies: []
     task:
       agent:
@@ -55,8 +55,22 @@ blocks:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
-            - $Env:Path
             - dotnet restore
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj
+  - name: 'Integration tests'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
+      env_vars:
+        - name: CONFIGURATION
+          value: Release
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - cd test/docker && docker-compose up -d && cd ../..
+            - cd test/Confluent.Kafka.IntegrationTests
+            - dotnet test
