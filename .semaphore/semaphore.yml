@@ -7,6 +7,11 @@ global_job_config:
   prologue:
     commands:
       - checkout
+  env_vars:
+    - name: CONFIGURATION
+      value: Release
+    - name: DOTNET_CLI_TELEMETRY_OPTOUT
+      value: 'true'
 
 blocks:
   - name: 'Linux x64'
@@ -15,9 +20,6 @@ blocks:
       agent:
         machine:
           type: s1-prod-ubuntu20-04-amd64-2
-      env_vars:
-        - name: CONFIGURATION
-          value: Release
       jobs:
         - name: 'Build and test'
           commands:
@@ -30,9 +32,6 @@ blocks:
       agent:
         machine:
           type: s1-prod-macos
-      env_vars:
-        - name: CONFIGURATION
-          value: Release
       jobs:
         - name: 'Build and test'
           commands:
@@ -46,9 +45,6 @@ blocks:
       agent:
         machine:
           type: s1-prod-windows
-      env_vars:
-        - name: CONFIGURATION
-          value: Release
       jobs:
         - name: 'Build and test'
           commands:
@@ -65,13 +61,23 @@ blocks:
       agent:
         machine:
           type: s1-prod-ubuntu20-04-amd64-2
-      env_vars:
-        - name: CONFIGURATION
-          value: Release
       jobs:
         - name: 'Build and test'
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
-            - sleep 5
-            - cd test/Confluent.Kafka.IntegrationTests
-            - dotnet test -l "console;verbosity=normal" 
+            - dotnet restore
+            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+  - name: 'Schema registry and serdes integration tests'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - cd test/docker && docker-compose up -d && cd ../..
+            - dotnet restore
+            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+
