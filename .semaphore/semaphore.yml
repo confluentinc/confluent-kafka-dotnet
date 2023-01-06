@@ -72,6 +72,21 @@ blocks:
         - name: 'Build and test'
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
-            - sleep 5
-            - cd test/Confluent.Kafka.IntegrationTests
-            - dotnet test -l "console;verbosity=normal" 
+            - dotnet restore
+            - dotnet test -c ${CONFIGURATION} --no-build -l "console;verbosity=normal" test/Confluent.Kafka.IntegrationTests/Confluent.Kafka.IntegrationTests.csproj 
+  - name: 'Schema registry and serdes integration tests'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
+      env_vars:
+        - name: CONFIGURATION
+          value: Release
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - cd test/docker && docker-compose up -d && cd ../..
+            - dotnet restore
+            - dotnet test -c ${CONFIGURATION} --no-build -l "console;verbosity=normal" test/Confluent.SchemaRegistry.IntegrationTests/Confluent.SchemaRegistry.IntegrationTests.csproj
+            - dotnet test -c ${CONFIGURATION} --no-build -l "console;verbosity=normal" test/Confluent.SchemaRegistry.Serdes.IntegrationTests/Confluent.SchemaRegistry.Serdes.IntegrationTests.csproj
