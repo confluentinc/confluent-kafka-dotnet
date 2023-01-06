@@ -1,0 +1,31 @@
+version: v1.0
+name: 'confluent-kafka-dotnet build and release artifact pipeline'
+agent:
+  machine:
+    type: s1-prod-ubuntu20-04-amd64-1
+global_job_config:
+  prologue:
+    commands:
+      - checkout
+
+blocks:
+  - name: 'Linux'
+    dependencies: []
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
+      env_vars:
+        - name: CONFIGURATION
+          value: Release
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+            - sudo dpkg -i packages-microsoft-prod.deb
+            - sudo apt-get update
+            - sudo apt-get install -y dotnet-sdk-6.0
+            - pwd
+            - ls -lrt
+            - make build
+            - make test
