@@ -21,10 +21,6 @@ blocks:
       jobs:
         - name: 'Build and test'
           commands:
-            - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-            - sudo dpkg -i packages-microsoft-prod.deb
-            - sudo apt-get update
-            - sudo apt-get install -y dotnet-sdk-6.0
             - dotnet restore
             - make build
             - make test
@@ -41,6 +37,24 @@ blocks:
         - name: 'Build and test'
           commands:
             - ulimit -n 1024
+            - dotnet restore
+            - make build
+            - make test
+  - name: 'Windows x64'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-windows
+      env_vars:
+        - name: CONFIGURATION
+          value: Release
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - setx /M PATH "%PATH%;C:\dotnet"
             - dotnet restore
             - make build
             - make test
