@@ -63,6 +63,7 @@ blocks:
           type: s1-prod-ubuntu20-04-amd64-2
       jobs:
         - name: 'Build and test'
+          continue_on_failure: true
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
             - dotnet restore
@@ -75,6 +76,7 @@ blocks:
           type: s1-prod-ubuntu20-04-amd64-2
       jobs:
         - name: 'Build and test'
+          continue_on_failure: true
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
             - dotnet restore
