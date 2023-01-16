@@ -121,15 +121,20 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer2.Subscribe(new string[] { partitionedTopic });
 
                 // Wait for rebalance.
-                // TODO(milind): is this time enough or do we need to keep checking Stable by describing the group in
-                // a loop?
-                consumer2.Consume(TimeSpan.FromSeconds(10));
+                var state = ConsumerGroupState.PreparingRebalance;
+                while (state != ConsumerGroupState.Stable)
+                {
+                    consumer1.Consume(TimeSpan.FromSeconds(1));
+                    consumer2.Consume(TimeSpan.FromSeconds(1));
 
-                groupDescs = adminClient.DescribeConsumerGroupsAsync(
-                    new List<String>() { groupID },
-                     describeOptionsWithTimeout).Result;
-                Assert.Single(groupDescs.Where(group => group.GroupId == groupID));
-                groupDesc = groupDescs.Find(group => group.GroupId == groupID);
+                    groupDescs = adminClient.DescribeConsumerGroupsAsync(
+                        new List<String>() { groupID },
+                        describeOptionsWithTimeout).Result;
+                    Assert.Single(groupDescs.Where(group => group.GroupId == groupID));
+                    groupDesc = groupDescs.Find(group => group.GroupId == groupID);
+                    state = groupDesc.State;
+                }
+
                 clientIdToToppars[clientID1] = new List<TopicPartition>() {
                     new TopicPartition(partitionedTopic, 0)
                 };
