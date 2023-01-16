@@ -79,12 +79,10 @@ namespace Confluent.Kafka.Impl
         internal string group;
         internal ErrorCode err;
         internal string state;
-        internal ConsumerGroupState state_code;
         internal string protocol_type;
         internal string protocol;
         internal IntPtr members;
         internal int member_cnt;
-        internal int is_simple_consumer_group;
     };
 
     [StructLayout(LayoutKind.Sequential)]

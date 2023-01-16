@@ -1404,7 +1404,6 @@ namespace Confluent.Kafka.Impl
         private void setOption_MatchConsumerGroupStates(IntPtr optionsPtr, ConsumerGroupState[] states)
         {
             var error = Librdkafka.AdminOptions_set_match_consumer_group_states(optionsPtr, states, (UIntPtr)states.Count());
-            Console.Error.WriteLine(string.Join(", ", states) + " | " + states.Count());
             if (error != IntPtr.Zero)
             {
                 throw new KafkaException(new Error(error, true));
@@ -2223,7 +2222,7 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            if (groups == null || groups.Count() == 0) {
+            if (groups.Count() == 0) {
                 throw new ArgumentException("at least one group should be provided to DescribeConsumerGroups");
             }
 
