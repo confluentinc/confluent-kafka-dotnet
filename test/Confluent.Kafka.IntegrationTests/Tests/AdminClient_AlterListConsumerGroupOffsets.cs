@@ -38,140 +38,143 @@ namespace Confluent.Kafka.IntegrationTests
             var numMessages = 5;
             var groupID = Guid.NewGuid().ToString();
 
-            // This test needs us to first produce and consume from a topic before we can list the offsets.
-            // 1. Create topic and produce
-            var producerConfig = new ProducerConfig
+            using(var topic = new TemporaryTopic(bootstrapServers, 1))
             {
-                BootstrapServers = bootstrapServers,
-                EnableIdempotence = true,
-                LingerMs = 1.5
-            };
-
-            using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
-            {
-                for (int i = 0; i < numMessages; i++)
+                // This test needs us to first produce and consume from a topic before we can list the offsets.
+                // 1. Create topic and produce
+                var producerConfig = new ProducerConfig
                 {
-                    producer.Produce(
-                        new TopicPartition(singlePartitionTopic, 0),
-                        new Message<string, string> { Key = "test key " + i, Value = "test val " + i });
+                    BootstrapServers = bootstrapServers,
+                    EnableIdempotence = true,
+                    LingerMs = 1.5
+                };
 
+                using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
+                {
+                    for (int i = 0; i < numMessages; i++)
+                    {
+                        producer.Produce(
+                            new TopicPartition(topic.Name, 0),
+                            new Message<string, string> { Key = "test key " + i, Value = "test val " + i });
+
+                    }
+                    producer.Flush(TimeSpan.FromSeconds(10));
                 }
-                producer.Flush(TimeSpan.FromSeconds(10));
+
+
+                // Create an AdminClient here - to test alter while the consumer is still active.
+                var adminClient = new AdminClientBuilder(new AdminClientConfig {
+                    BootstrapServers = bootstrapServers,
+                }).Build();
+
+                // 2. Consume
+                var consumerConfig = new ConsumerConfig
+                {
+                    GroupId = groupID,
+                    BootstrapServers = bootstrapServers,
+                    SessionTimeoutMs = 6000,
+                    AutoOffsetReset = AutoOffsetReset.Earliest,
+                    EnableAutoCommit = false,
+                    EnableAutoOffsetStore = false,
+                    EnablePartitionEof = true,
+                };
+
+                using (var consumer =
+                    new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                {
+                    consumer.Subscribe(topic.Name);
+
+                    int msgCnt = 0;
+                    while (true)
+                    {
+                        var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                        if (record == null) { continue; }
+                        if (record.IsPartitionEOF) { break; }
+                        msgCnt += 1;
+                        consumer.StoreOffset(record);
+                    }
+
+                    Assert.Equal(numMessages, msgCnt);
+                    consumer.Commit();
+
+                    // Check that we are not be able to alter the offsets while the consumer is still active.
+                    var errorOccured = false;
+                    try
+                    {
+                        var tpoListInvalid = new List<TopicPartitionOffset>();
+                        tpoListInvalid.Add(new TopicPartitionOffset(topic.Name, 0, 2));
+                        var _ = adminClient.AlterConsumerGroupOffsetsAsync(
+                            new GroupTopicPartitionOffsets[] {
+                                new GroupTopicPartitionOffsets(groupID, tpoListInvalid),
+                        }).Result;
+                    }
+                    catch (Exception e)
+                    {
+                        errorOccured = true;
+                        Assert.IsType<AlterConsumerGroupOffsetsException>(e.InnerException);
+                    }
+                    Assert.True(errorOccured);
+
+                    consumer.Close();
+                }
+
+                // 3. List, Alter and then again List Consumer Group Offsets
+                var tpList = new List<TopicPartition>();
+                tpList.Add(new TopicPartition(topic.Name, 0));
+                var lcgoResults = adminClient.ListConsumerGroupOffsetsAsync(
+                    new GroupTopicPartitions[] {
+                        new GroupTopicPartitions(groupID, tpList),
+                    },
+                    new ListConsumerGroupOffsetsOptions() { RequireStableOffsets = false }
+                ).Result;
+
+                Assert.Single(lcgoResults);
+
+                var groupResultListing = lcgoResults[0];
+                Assert.NotNull(groupResultListing);
+                Assert.Single(groupResultListing.Partitions);
+                Assert.Equal(topic.Name, groupResultListing.Partitions[0].Topic);
+                Assert.Equal(0, groupResultListing.Partitions[0].Partition.Value);
+                Assert.Equal(5, groupResultListing.Partitions[0].Offset);
+                Assert.False(groupResultListing.Partitions[0].Error.IsError);
+
+                var tpoList = new List<TopicPartitionOffset>();
+                tpoList.Add(new TopicPartitionOffset(topic.Name, 0, 2));
+                var acgoResults = adminClient.AlterConsumerGroupOffsetsAsync(
+                    new GroupTopicPartitionOffsets[] {
+                        new GroupTopicPartitionOffsets(groupID, tpoList),
+                }).Result;
+
+                Assert.Single(acgoResults);
+                var groupResultAlter = acgoResults[0];
+                Assert.NotNull(groupResultAlter);
+                Assert.Single(groupResultAlter.Partitions);
+                Assert.Equal(topic.Name, groupResultAlter.Partitions[0].Topic);
+                Assert.Equal(0, groupResultAlter.Partitions[0].Partition.Value);
+                Assert.Equal(2, groupResultAlter.Partitions[0].Offset);
+                Assert.False(groupResultAlter.Partitions[0].Error.IsError);
+
+                tpList = new List<TopicPartition>();
+                tpList.Add(new TopicPartition(topic.Name, 0));
+                lcgoResults = adminClient.ListConsumerGroupOffsetsAsync(
+                    new GroupTopicPartitions[] {
+                        new GroupTopicPartitions(groupID, tpList),
+                    },
+                    new ListConsumerGroupOffsetsOptions() { RequireStableOffsets = false }
+                ).Result;
+
+                Assert.Single(lcgoResults);
+
+                groupResultListing = lcgoResults[0];
+                Assert.NotNull(groupResultListing);
+                Assert.Single(groupResultListing.Partitions);
+                Assert.Equal(topic.Name, groupResultListing.Partitions[0].Topic);
+                Assert.Equal(0, groupResultListing.Partitions[0].Partition.Value);
+                Assert.Equal(2, groupResultListing.Partitions[0].Offset);
+                Assert.False(groupResultListing.Partitions[0].Error.IsError);
+
+                adminClient.Dispose();
             }
-
-
-            // Create an AdminClient here - to test alter while the consumer is still active.
-            var adminClient = new AdminClientBuilder(new AdminClientConfig {
-                BootstrapServers = bootstrapServers,
-            }).Build();
-
-            // 2. Consume
-            var consumerConfig = new ConsumerConfig
-            {
-                GroupId = groupID,
-                BootstrapServers = bootstrapServers,
-                SessionTimeoutMs = 6000,
-                AutoOffsetReset = AutoOffsetReset.Earliest,
-                EnableAutoCommit = false,
-                EnableAutoOffsetStore = false,
-                EnablePartitionEof = true,
-            };
-
-            using (var consumer =
-                new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            {
-                consumer.Subscribe(singlePartitionTopic);
-
-                int msgCnt = 0;
-                while (true)
-                {
-                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                    if (record == null) { continue; }
-                    if (record.IsPartitionEOF) { break; }
-                    msgCnt += 1;
-                    consumer.StoreOffset(record);
-                }
-
-                Assert.Equal(numMessages, msgCnt);
-                consumer.Commit();
-
-                // Check that we are not be able to alter the offsets while the consumer is still active.
-                var errorOccured = false;
-                try
-                {
-                    var tpoListInvalid = new List<TopicPartitionOffset>();
-                    tpoListInvalid.Add(new TopicPartitionOffset(singlePartitionTopic, 0, 2));
-                    var _ = adminClient.AlterConsumerGroupOffsetsAsync(
-                        new GroupTopicPartitionOffsets[] {
-                            new GroupTopicPartitionOffsets(groupID, tpoListInvalid),
-                    }).Result;
-                }
-                catch (Exception e)
-                {
-                    errorOccured = true;
-                    Assert.IsType<AlterConsumerGroupOffsetsException>(e.InnerException);
-                }
-                Assert.True(errorOccured);
-
-                consumer.Close();
-            }
-
-            // 3. List, Alter and then again List Consumer Group Offsets
-            var tpList = new List<TopicPartition>();
-            tpList.Add(new TopicPartition(singlePartitionTopic, 0));
-            var lcgoResults = adminClient.ListConsumerGroupOffsetsAsync(
-                new GroupTopicPartitions[] {
-                    new GroupTopicPartitions(groupID, tpList),
-                },
-                new ListConsumerGroupOffsetsOptions() { RequireStableOffsets = false }
-            ).Result;
-
-            Assert.Single(lcgoResults);
-
-            var groupResultListing = lcgoResults[0];
-            Assert.NotNull(groupResultListing);
-            Assert.Single(groupResultListing.Partitions);
-            Assert.Equal(singlePartitionTopic, groupResultListing.Partitions[0].Topic);
-            Assert.Equal(0, groupResultListing.Partitions[0].Partition.Value);
-            Assert.Equal(5, groupResultListing.Partitions[0].Offset);
-            Assert.False(groupResultListing.Partitions[0].Error.IsError);
-
-            var tpoList = new List<TopicPartitionOffset>();
-            tpoList.Add(new TopicPartitionOffset(singlePartitionTopic, 0, 2));
-            var acgoResults = adminClient.AlterConsumerGroupOffsetsAsync(
-                new GroupTopicPartitionOffsets[] {
-                    new GroupTopicPartitionOffsets(groupID, tpoList),
-            }).Result;
-
-            Assert.Single(acgoResults);
-            var groupResultAlter = acgoResults[0];
-            Assert.NotNull(groupResultAlter);
-            Assert.Single(groupResultAlter.Partitions);
-            Assert.Equal(singlePartitionTopic, groupResultAlter.Partitions[0].Topic);
-            Assert.Equal(0, groupResultAlter.Partitions[0].Partition.Value);
-            Assert.Equal(2, groupResultAlter.Partitions[0].Offset);
-            Assert.False(groupResultAlter.Partitions[0].Error.IsError);
-
-            tpList = new List<TopicPartition>();
-            tpList.Add(new TopicPartition(singlePartitionTopic, 0));
-            lcgoResults = adminClient.ListConsumerGroupOffsetsAsync(
-                new GroupTopicPartitions[] {
-                    new GroupTopicPartitions(groupID, tpList),
-                },
-                new ListConsumerGroupOffsetsOptions() { RequireStableOffsets = false }
-            ).Result;
-
-            Assert.Single(lcgoResults);
-
-            groupResultListing = lcgoResults[0];
-            Assert.NotNull(groupResultListing);
-            Assert.Single(groupResultListing.Partitions);
-            Assert.Equal(singlePartitionTopic, groupResultListing.Partitions[0].Topic);
-            Assert.Equal(0, groupResultListing.Partitions[0].Partition.Value);
-            Assert.Equal(2, groupResultListing.Partitions[0].Offset);
-            Assert.False(groupResultListing.Partitions[0].Error.IsError);
-
-            adminClient.Dispose();
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   AdminClient_AlterListConsumerGroupOffsets");
