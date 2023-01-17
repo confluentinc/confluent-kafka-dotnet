@@ -257,6 +257,16 @@ namespace Confluent.Kafka.Impl
             return (int)Librdkafka.brokers_add(handle, brokers);
         }
 
+        internal void SetSaslCredentials(string username, string password)
+        {
+            ThrowIfHandleClosed();
+            IntPtr err = Librdkafka.sasl_set_credentials(handle, username, password);
+            if (err != IntPtr.Zero)
+            {
+                throw new KafkaException(new Error(err, true));
+            }
+        }
+
         internal int Poll(IntPtr millisecondsTimeout)
         {
             ThrowIfHandleClosed();
