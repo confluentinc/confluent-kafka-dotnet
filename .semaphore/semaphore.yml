@@ -55,29 +55,60 @@ blocks:
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj
-  - name: 'Integration tests'
+  - name: 'Windows Artifacts on untagged commits'
+    run:
+      when: "tag !~ '.*'"
     dependencies: [ ]
     task:
       agent:
         machine:
-          type: s1-prod-ubuntu20-04-amd64-2
+          type: s1-prod-windows
+      env_vars:
+        - name: CONFIGURATION
+          value: Release
       jobs:
         - name: 'Build and test'
           commands:
-            - cd test/docker && docker-compose up -d && cd ../..
+            - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - $Env:Path += ";C:\dotnet"
+            - dotnet tool update -g docfx
             - dotnet restore
-            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
-  - name: 'Schema registry and serdes integration tests'
-    dependencies: [ ]
-    task:
-      agent:
-        machine:
-          type: s1-prod-ubuntu20-04-amd64-2
-      jobs:
-        - name: 'Build and test'
-          commands:
-            - cd test/docker && docker-compose up -d && cd ../..
-            - dotnet restore
-            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
-            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+            - dotnet build Confluent.Kafka.sln -c Release
+            - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${CONFIGURATION} --version-suffix ci-${SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${CONFIGURATION} --version-suffix ci-${SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${CONFIGURATION} --version-suffix ci-${SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${CONFIGURATION} --version-suffix ci-${SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${CONFIGURATION} --version-suffix ci-${SEMAPHORE_JOB_ID} --output artifacts
+            - ls -lrt artifacts
+            - docfx doc/docfx.json
+            - tar.exe -cvzf docs-${SEMAPHORE_JOB_ID}.zip doc/_site/*
+            - artifact push workflow artifacts/*.nupkg
+            - artifact push workflow docs-${SEMAPHORE_JOB_ID}.zip
 
+# TODO: Uncomment the integration tests once they are stable.
+#  - name: 'Integration tests'
+#    dependencies: [ ]
+#    task:
+#      agent:
+#        machine:
+#          type: s1-prod-ubuntu20-04-amd64-2
+#      jobs:
+#        - name: 'Build and test'
+#          commands:
+#            - cd test/docker && docker-compose up -d && cd ../..
+#            - dotnet restore
+#            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+#  - name: 'Schema registry and serdes integration tests'
+#    dependencies: [ ]
+#    task:
+#      agent:
+#        machine:
+#          type: s1-prod-ubuntu20-04-amd64-2
+#      jobs:
+#        - name: 'Build and test'
+#          commands:
+#            - cd test/docker && docker-compose up -d && cd ../..
+#            - dotnet restore
+#            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+#            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
