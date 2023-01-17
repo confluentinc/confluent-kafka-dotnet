@@ -449,6 +449,11 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 [MarshalAs(UnmanagedType.LPStr)] string brokerlist);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_sasl_set_credentials(IntPtr rk,
+                [MarshalAs(UnmanagedType.LPStr)] string username,
+                [MarshalAs(UnmanagedType.LPStr)] string password);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int rd_kafka_outq_len(IntPtr rk);
 
 
