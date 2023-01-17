@@ -6,6 +6,8 @@
 - Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
   when `UseLatestVersion` is set to true.
 - Added DeleteConsumerGroupOffset to AdminClient.
+- Added SetSaslCredentials. This new method (on the Producer, Consumer, and AdminClient) allows modifying the stored
+  SASL PLAIN/SCRAM credentials that will be used for subsequent (new) connections to a broker.
 
 ## Fixes
 
