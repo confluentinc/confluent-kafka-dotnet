@@ -12,7 +12,7 @@
    Allow listing consumer groups per state.
 - [KIP-396](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=97551484)
    Partially implemented: support for AlterConsumerGroupOffsets.
-- As result of the above KIPs, added (#1898)
+- As result of the above KIPs, added (#1981)
    - `ListConsumerGroups` Admin operation. Supports listing by state.
    - `DescribeConsumerGroups` Admin operation. Supports multiple groups.
    - `ListConsumerGroupOffsets` Admin operation. Currently, only supports
