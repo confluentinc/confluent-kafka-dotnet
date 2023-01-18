@@ -36,16 +36,10 @@ namespace Confluent.Kafka.Admin
         public List<TopicPartitionOffsetError> Partitions { get; set; }
 
         /// <summary>
-        ///     Error, if any, on a group-level.
-        /// </summary>
-        public Error Error { get; set; }
-
-        /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-            var errString = Error.IsError ? Error.ToString() : "";
-            return $"{Group} [ {String.Join(", ", Partitions)} ] {errString}";
+            return $"{Group} [ {String.Join(", ", Partitions)} ]";
         }
     }
 }

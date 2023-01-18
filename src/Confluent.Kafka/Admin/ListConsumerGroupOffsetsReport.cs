@@ -20,9 +20,10 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The per-group result for an alter consumer group offsets request.
+    ///     The per-group result for a list consumer group offsets request, and
+    ///     an error.
     /// </summary>
-    public class AlterConsumerGroupOffsetsResult
+    public class ListConsumerGroupOffsetsReport
     {
         /// <summary>
         ///     The groupID.
@@ -30,16 +31,22 @@ namespace Confluent.Kafka.Admin
         public string Group { get; set; }
 
         /// <summary>
-        ///     List of topic TopicPartitionOffsetError containing the written offsets,
-        ///     and per-partition errors if any.
+        ///     List of topic TopicPartitionOffsetError containing the read offsets,
+        ///     and errors if any.
         /// </summary>
         public List<TopicPartitionOffsetError> Partitions { get; set; }
+
+        /// <summary>
+        ///     Error, if any, on a group-level.
+        /// </summary>
+        public Error Error { get; set; }
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-            return $"{Group} [ {String.Join(", ", Partitions)} ]";
+            var errString = Error.IsError ? Error.ToString() : "";
+            return $"{Group} [ {String.Join(", ", Partitions)} ] {errString}";
         }
     }
 }

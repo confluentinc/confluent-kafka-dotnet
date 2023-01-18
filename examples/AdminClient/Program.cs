@@ -322,7 +322,7 @@ namespace Confluent.Kafka.Examples
                 }
             }
 
-            var input = new List<GroupTopicPartitionOffsets>() { new GroupTopicPartitionOffsets(group, tpoes) };
+            var input = new List<ConsumerGroupTopicPartitionOffsets>() { new ConsumerGroupTopicPartitionOffsets(group, tpoes) };
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
@@ -370,7 +370,7 @@ namespace Confluent.Kafka.Examples
                 }
             }
 
-            var input = new List<GroupTopicPartitions>() { new GroupTopicPartitions(group, tpes) };
+            var input = new List<ConsumerGroupTopicPartitions>() { new ConsumerGroupTopicPartitions(group, tpes) };
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
@@ -449,8 +449,8 @@ namespace Confluent.Kafka.Examples
             {
                 try
                 {
-                    var groups = await adminClient.DescribeConsumerGroupsAsync(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout });
-                    foreach (var group in groups)
+                    var descResult = await adminClient.DescribeConsumerGroupsAsync(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout });
+                    foreach (var group in descResult.ConsumerGroupDescriptions)
                     {
                         Console.WriteLine($"  Group: {group.GroupId} {group.Error}");
                         Console.WriteLine($"  Broker: {group.Coordinator}");

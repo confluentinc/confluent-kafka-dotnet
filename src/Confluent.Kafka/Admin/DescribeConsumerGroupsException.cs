@@ -24,21 +24,21 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Represents an error that occured during a describe consumer group operation.
     /// </summary>
-    public class DescribeConsumerGroupException : KafkaException
+    public class DescribeConsumerGroupsException : KafkaException
     {
         /// <summary>
-        ///     Initialize a new instance of DescribeConsumerGroupException.
+        ///     Initialize a new instance of DescribeConsumerGroupsException.
         /// </summary>
         /// <param name="results">
         ///     The result corresponding to all groups in the request
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
-        public DescribeConsumerGroupException(List<ConsumerGroupDescription> results)
+        public DescribeConsumerGroupsException(DescribeConsumerGroupsReport results)
             : base(new Error(ErrorCode.Local_Partial,
                 "An error occurred describing consumer groups: [" +
-                String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.GroupId)) +
-                "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) +
+                String.Join(", ", results.ConsumerGroupDescriptions.Where(r => r.Error.IsError).Select(r => r.GroupId)) +
+                "]: [" + String.Join(", ", results.ConsumerGroupDescriptions.Where(r => r.Error.IsError).Select(r => r.Error)) +
                 "]."))
         {
             this.Results = results;
@@ -49,6 +49,6 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<ConsumerGroupDescription> Results { get; }
+        public DescribeConsumerGroupsReport Results { get; }
     }
 }

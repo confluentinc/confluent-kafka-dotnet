@@ -13,33 +13,40 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
-
-using System;
 using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The per-group result for an alter consumer group offsets request.
+    ///     Represents the result of a list consumer group operation with an error.
     /// </summary>
-    public class AlterConsumerGroupOffsetsResult
+    public class ListConsumerGroupsReport
     {
         /// <summary>
-        ///     The groupID.
+        ///    List of valid consumer group listings.
         /// </summary>
-        public string Group { get; set; }
+        public List<ConsumerGroupListing> Valid { get; set; }
 
         /// <summary>
-        ///     List of topic TopicPartitionOffsetError containing the written offsets,
-        ///     and per-partition errors if any.
+        ///   List of non-client level errors encountered while listing groups.
         /// </summary>
-        public List<TopicPartitionOffsetError> Partitions { get; set; }
+        public List<Error> Errors { get; set; }
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-            return $"{Group} [ {String.Join(", ", Partitions)} ]";
+            string res = "Groups:\n";
+            foreach (ConsumerGroupListing cgl in Valid) {
+                res += "\t" + cgl.ToString() + "\n";
+            }
+            if (Errors.Count != 0) {
+                res += "Errors:\n";
+                foreach (Error err in Errors) {
+                    res += "\t" + err.ToString() + "\n";
+                }
+            }
+            return res;
         }
     }
 }

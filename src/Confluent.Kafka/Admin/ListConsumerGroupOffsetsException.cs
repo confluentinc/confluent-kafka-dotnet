@@ -31,7 +31,7 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
-        public ListConsumerGroupOffsetsException(List<ListConsumerGroupOffsetsResult> results)
+        public ListConsumerGroupOffsetsException(List<ListConsumerGroupOffsetsReport> results)
             : base(new Error(ErrorCode.Local_Partial,
                 "An error occurred listing consumer group offsets, check individual result elements"))
         {
@@ -43,6 +43,6 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<ListConsumerGroupOffsetsResult> Results { get; }
+        public List<ListConsumerGroupOffsetsReport> Results { get; }
     }
 }

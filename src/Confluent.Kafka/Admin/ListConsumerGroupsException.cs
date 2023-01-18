@@ -24,20 +24,20 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     Initialize a new instance of ListConsumerGroupsException.
         /// </summary>
-        /// <param name="results">
+        /// <param name="report">
         ///     The result corresponding to all groups in the request
         /// </param>
-        public ListConsumerGroupsException(ListConsumerGroupsResult results)
+        public ListConsumerGroupsException(ListConsumerGroupsReport report)
             : base(new Error(ErrorCode.Local_Partial,
                    "error listing consumer groups"))
         {
-            this.Results = results;
+            this.Results = report;
         }
 
         /// <summary>
         ///     The result corresponding to all groups and including all errors.
         ///     Results.Errors will be non-empty and should be checked.
         /// </summary>
-        public ListConsumerGroupsResult Results { get; }
+        public ListConsumerGroupsReport Results { get; }
     }
 }

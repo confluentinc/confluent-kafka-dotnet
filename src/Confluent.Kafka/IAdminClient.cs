@@ -351,7 +351,7 @@ namespace Confluent.Kafka
         /// Alters consumer group offsets for a number of topic partitions.
         /// </summary>
         /// <param name="groupPartitions">
-        ///    A IEnumerable of GroupTopicPartitionOffsets, each denoting the group and the
+        ///    A IEnumerable of ConsumerGroupTopicPartitionOffsets, each denoting the group and the
         ///    TopicPartitionOffsets associated with that group to alter the offsets for.
         ///    The Count of the IEnumerable must exactly be 1.
         /// </param>
@@ -372,13 +372,13 @@ namespace Confluent.Kafka
         /// <returns>
         ///     A Task returning a List of <see cref="Confluent.Kafka.Admin.AlterConsumerGroupOffsetsResult"/>.
         /// </returns>
-        Task<List<AlterConsumerGroupOffsetsResult>> AlterConsumerGroupOffsetsAsync(IEnumerable<GroupTopicPartitionOffsets> groupPartitions, AlterConsumerGroupOffsetsOptions options = null);
+        Task<List<AlterConsumerGroupOffsetsResult>> AlterConsumerGroupOffsetsAsync(IEnumerable<ConsumerGroupTopicPartitionOffsets> groupPartitions, AlterConsumerGroupOffsetsOptions options = null);
 
         /// <summary>
         ///    Lists consumer group offsets for a number of topic partitions.
         /// </summary>
         /// <param name="groupPartitions">
-        ///    A IEnumerable of GroupTopicPartitions, each denoting the group and the
+        ///    A IEnumerable of ConsumerGroupTopicPartitions, each denoting the group and the
         ///    TopicPartitions associated with that group to fetch the offsets for.
         ///    The Count of the IEnumerable must exactly be 1.
         /// </param>
@@ -399,7 +399,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     A Task returning a List of <see cref="Confluent.Kafka.Admin.ListConsumerGroupOffsetsResult"/>.
         /// </returns>
-        Task<List<ListConsumerGroupOffsetsResult>> ListConsumerGroupOffsetsAsync(IEnumerable<GroupTopicPartitions> groupPartitions, ListConsumerGroupOffsetsOptions options = null);
+        Task<List<ListConsumerGroupOffsetsResult>> ListConsumerGroupOffsetsAsync(IEnumerable<ConsumerGroupTopicPartitions> groupPartitions, ListConsumerGroupOffsetsOptions options = null);
 
         /// <summary>
         ///    Lists consumer groups in the cluster.
@@ -437,17 +437,17 @@ namespace Confluent.Kafka
         /// <exception cref="KafkaException">
         ///     Thrown if there is any client-level error.
         /// </exception>
-        /// <exception cref="DescribeConsumerGroupException">
+        /// <exception cref="DescribeConsumerGroupsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
         ///     constituent results that are not in error) is
-        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeConsumerGroupException.Results" />
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeConsumerGroupsException.Results" />
         ///     property of the exception.
         /// </exception>
         /// <returns>
         ///     A List of <see cref="Confluent.Kafka.Admin.ConsumerGroupDescription"/>.
         /// </returns>
-        Task<List<ConsumerGroupDescription>> DescribeConsumerGroupsAsync(
+        Task<DescribeConsumerGroupsResult> DescribeConsumerGroupsAsync(
             IEnumerable<string> groups, DescribeConsumerGroupsOptions options = null);
     }
 

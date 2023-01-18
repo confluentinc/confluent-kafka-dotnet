@@ -2050,7 +2050,7 @@ namespace Confluent.Kafka.Impl
         }
 
         internal void AlterConsumerGroupOffsets(
-            IEnumerable<GroupTopicPartitionOffsets> groupsPartitions,
+            IEnumerable<ConsumerGroupTopicPartitionOffsets> groupsPartitions,
             AlterConsumerGroupOffsetsOptions options,
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
@@ -2059,7 +2059,7 @@ namespace Confluent.Kafka.Impl
 
 	        // For now, we only support one group at a time given as a single element of groupsPartitions.
 	        // Code has been written so that only this if-guard needs to be removed when we add support for
-	        // multiple GroupTopicPartitionOffsets.
+	        // multiple ConsumerGroupTopicPartitionOffsets.
             if (groupsPartitions.Count() != 1) 
             {
                 throw new ArgumentException("Can only alter offsets for one group at a time");
@@ -2117,7 +2117,7 @@ namespace Confluent.Kafka.Impl
         }
 
         internal void ListConsumerGroupOffsets(
-            IEnumerable<GroupTopicPartitions> groupsPartitions,
+            IEnumerable<ConsumerGroupTopicPartitions> groupsPartitions,
             ListConsumerGroupOffsetsOptions options,
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
@@ -2126,7 +2126,7 @@ namespace Confluent.Kafka.Impl
 
 	        // For now, we only support one group at a time given as a single element of groupsPartitions.
 	        // Code has been written so that only this if-guard needs to be removed when we add support for
-	        // multiple GroupTopicPartitions.
+	        // multiple ConsumerGroupTopicPartitions.
             if (groupsPartitions.Count() != 1) 
             {
                 throw new ArgumentException("Can only list offsets for one group at a time");

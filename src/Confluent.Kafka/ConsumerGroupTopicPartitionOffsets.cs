@@ -21,10 +21,10 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Represents a Kafka tuple (consumer group, list of TopicPartitionOffsets).
     /// </summary>
-    public class GroupTopicPartitionOffsets
+    public class ConsumerGroupTopicPartitionOffsets
     {
         /// <summary>
-        ///     Initializes a new GroupTopicPartitionOffsets instance.
+        ///     Initializes a new ConsumerGroupTopicPartitionOffsets instance.
         /// </summary>
         /// <param name="group">
         ///     Kafka consumer group ID.
@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         /// <param name="topicPartitionOffsets">
         ///     A list of Kafka (topic, partition) tuples.
         /// </param>
-        public GroupTopicPartitionOffsets(string group, List<TopicPartitionOffset> topicPartitionOffsets) {
+        public ConsumerGroupTopicPartitionOffsets(string group, List<TopicPartitionOffset> topicPartitionOffsets) {
             this.TopicPartitionOffsets = topicPartitionOffsets;
             this.Group = group;
         }
@@ -48,10 +48,10 @@ namespace Confluent.Kafka
         public string Group { get; }
 
         /// <summary>
-        ///     Returns a string representation of the GroupTopicPartitionOffsets object.
+        ///     Returns a string representation of the ConsumerGroupTopicPartitionOffsets object.
         /// </summary>
         /// <returns>
-        ///     A string that represents the GroupTopicPartitionOffsets object.
+        ///     A string that represents the ConsumerGroupTopicPartitionOffsets object.
         /// </returns>
         public override string ToString()
             => $"{Group} [{TopicPartitionOffsets}]";

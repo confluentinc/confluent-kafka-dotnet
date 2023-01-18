@@ -28,23 +28,12 @@ namespace Confluent.Kafka.Admin
         public List<ConsumerGroupListing> Valid { get; set; }
 
         /// <summary>
-        ///   List of non-client level errors encountered while listing groups.
-        /// </summary>
-        public List<Error> Errors { get; set; }
-
-        /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
             string res = "Groups:\n";
             foreach (ConsumerGroupListing cgl in Valid) {
                 res += "\t" + cgl.ToString() + "\n";
-            }
-            if (Errors.Count != 0) {
-                res += "Errors:\n";
-                foreach (Error err in Errors) {
-                    res += "\t" + err.ToString() + "\n";
-                }
             }
             return res;
         }
