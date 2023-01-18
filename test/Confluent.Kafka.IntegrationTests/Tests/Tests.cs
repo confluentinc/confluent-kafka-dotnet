@@ -29,6 +29,8 @@ namespace Confluent.Kafka.IntegrationTests
     {
         private string bootstrapServers;
 
+        public const int partitionedTopicNumPartitions = 2;
+
         public GlobalFixture()
         {
             var assemblyPath = typeof(Tests).GetTypeInfo().Assembly.Location;
@@ -45,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 adminClient.CreateTopicsAsync(new List<TopicSpecification> {
                     new TopicSpecification { Name = SinglePartitionTopic, NumPartitions = 1, ReplicationFactor = 1 },
-                    new TopicSpecification { Name = PartitionedTopic, NumPartitions = 2, ReplicationFactor = 1 }
+                    new TopicSpecification { Name = PartitionedTopic, NumPartitions = partitionedTopicNumPartitions, ReplicationFactor = 1 }
                 }).Wait();
             }
         }
@@ -77,6 +79,8 @@ namespace Confluent.Kafka.IntegrationTests
     {
         private string singlePartitionTopic;
         private string partitionedTopic;
+
+        public const int partitionedTopicNumPartitions = GlobalFixture.partitionedTopicNumPartitions;
 
         private static List<object[]> kafkaParameters;
         private static List<object[]> oAuthBearerKafkaParameters;
