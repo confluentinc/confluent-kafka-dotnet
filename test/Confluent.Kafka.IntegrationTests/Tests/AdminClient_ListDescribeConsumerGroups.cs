@@ -103,7 +103,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(ConsumerGroupState.Stable, group.State);
                 Assert.False(group.IsSimpleConsumerGroup);
 
-                Console.Error.WriteLine("Here 0");
                 var descResult = adminClient.DescribeConsumerGroupsAsync(
                     new List<String>() { groupID },
                     describeOptionsWithTimeout).Result;
@@ -116,7 +115,6 @@ namespace Confluent.Kafka.IntegrationTests
                 checkConsumerGroupDescription(
                     groupDesc, ConsumerGroupState.Stable, "range", groupID, clientIdToToppars);
 
-                Console.Error.WriteLine("Here 1");
                 // 2. One consumer group with two clients.
                 consumerConfig.ClientId = clientID2;
                 var consumer2 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build();
@@ -153,7 +151,6 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer2.Dispose();
 
 
-                // TODO(milind) do we need a wait here for rebalancing again?
                 // Check the 'States' option by listing Stable consumer groups, which shouldn't
                 // include `groupID`.
                 groups = adminClient.ListConsumerGroupsAsync(new Admin.ListConsumerGroupsOptions()
