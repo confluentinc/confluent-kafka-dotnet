@@ -241,15 +241,15 @@ namespace Confluent.Kafka
         /// <param name="options">
         ///     The options to use when creating the ACL bindings.
         /// </param>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         ///     Thrown if <paramref name="aclBindings"/> param is null
         ///     or a <see cref="Confluent.Kafka.Admin.AclBinding.Entry"/> is null or
         ///     a <see cref="Confluent.Kafka.Admin.AclBinding.Pattern"/> is null.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown if the <paramref name="aclBindings"/> param is empty.
         /// </exception>
-        /// <exception cref="CreateAclsException">
+        /// <exception cref="Confluent.Kafka.Admin.CreateAclsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
         ///     constituent results that are not in error) is
@@ -277,12 +277,12 @@ namespace Confluent.Kafka
         /// <param name="options">
         ///     The options to use when describing ACL bindings.
         /// </param>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         ///     Thrown if <paramref name="aclBindingFilter"/> param is null
         ///     or any of <see cref="Confluent.Kafka.Admin.AclBindingFilter.EntryFilter"/> and
         ///     <see cref="Confluent.Kafka.Admin.AclBindingFilter.PatternFilter"/> is null.
         /// </exception>
-        /// <exception cref="DescribeAclsException">
+        /// <exception cref="Confluent.Kafka.Admin.DescribeAclsException">
         ///     Thrown if the corresponding result is in
         ///     error. The entire result is
         ///     available via the <see cref="Confluent.Kafka.Admin.DescribeAclsException.Result" />
@@ -308,15 +308,15 @@ namespace Confluent.Kafka
         /// <param name="options">
         ///     The options to use when describing ACL bindings.
         /// </param>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         ///     Thrown if <paramref name="aclBindingFilters"/> param is null
         ///     or any of <see cref="Confluent.Kafka.Admin.AclBindingFilter.EntryFilter"/> and
         ///     <see cref="Confluent.Kafka.Admin.AclBindingFilter.PatternFilter"/> is null.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown if the <paramref name="aclBindingFilters"/> param is empty.
         /// </exception>
-        /// <exception cref="DeleteAclsException">
+        /// <exception cref="Confluent.Kafka.Admin.DeleteAclsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
         ///     constituent results that are not in error) is
@@ -358,11 +358,11 @@ namespace Confluent.Kafka
         /// <param name="options">
         ///     The options to use when altering consumer group offsets.
         /// </param>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown if the <paramref name="groupPartitions"/> has a count not equal
         ///     to 1, or if any of the topic names are null.
         /// </exception>
-        /// <exception cref="AlterConsumerGroupOffsetsException">
+        /// <exception cref="Confluent.Kafka.Admin.AlterConsumerGroupOffsetsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
         ///     constituent results that are not in error) is
@@ -385,11 +385,11 @@ namespace Confluent.Kafka
         /// <param name="options">
         ///     The options to use when listing consumer group offsets.
         /// </param>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown if the <paramref name="groupPartitions"/> has a count not equal
         ///     to 1, or if any of the topic names are null.
         /// </exception>
-        /// <exception cref="ListConsumerGroupOffsetsException">
+        /// <exception cref="Confluent.Kafka.Admin.ListConsumerGroupOffsetsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
         ///     constituent results that are not in error) is
@@ -410,7 +410,7 @@ namespace Confluent.Kafka
         /// <exception cref="KafkaException">
         ///     Thrown if there is any client-level error.
         /// </exception>
-        /// <exception cref="ListConsumerGroupsException">
+        /// <exception cref="Confluent.Kafka.Admin.ListConsumerGroupsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
         ///     constituent results that are not in error) is
@@ -434,10 +434,10 @@ namespace Confluent.Kafka
         /// <param name="options">
         ///     The options to use while describing consumer groups.
         /// </param>
-        /// <exception cref="KafkaException">
+        /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if there is any client-level error.
         /// </exception>
-        /// <exception cref="DescribeConsumerGroupsException">
+        /// <exception cref="Confluent.Kafka.Admin.DescribeConsumerGroupsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
         ///     constituent results that are not in error) is
