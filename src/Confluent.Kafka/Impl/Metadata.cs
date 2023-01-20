@@ -69,6 +69,7 @@ namespace Confluent.Kafka.Impl
         internal IntPtr member_metadata_size;
         internal IntPtr member_assignment;
         internal IntPtr member_assignment_size;
+        internal IntPtr member_assignment_toppars;
     };
 
     [StructLayout(LayoutKind.Sequential)]
