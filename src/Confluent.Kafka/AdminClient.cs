@@ -756,7 +756,7 @@ namespace Confluent.Kafka
                                         if (errorCode != ErrorCode.NoError)
                                         {
                                             Task.Run(() =>
-                                                    ((TaskCompletionSource<List<ListConsumerGroupOffsetsReport>>)adminClientResult).TrySetException(
+                                                    ((TaskCompletionSource<List<ListConsumerGroupOffsetsResult>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
@@ -764,7 +764,7 @@ namespace Confluent.Kafka
                                         if (results.Any(r => r.Error.IsError) || results.Any(r => r.Partitions.Any(p => p.Error.IsError)))
                                         {
                                              Task.Run(() =>
-                                                    ((TaskCompletionSource<List<ListConsumerGroupOffsetsReport>>)adminClientResult).TrySetException(
+                                                    ((TaskCompletionSource<List<ListConsumerGroupOffsetsResult>>)adminClientResult).TrySetException(
                                                         new ListConsumerGroupOffsetsException(results)));
                                         }
                                         else

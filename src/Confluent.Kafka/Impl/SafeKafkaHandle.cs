@@ -1255,7 +1255,7 @@ namespace Confluent.Kafka.Impl
                     Librdkafka.topic_partition_list_destroy(list);
                     throw new ArgumentException("Cannot create offsets list because one or more topics is null.");
                 }
-                IntPtr ptr = Librdkafka.topic_partition_list_add(list, p.Topic, p.Partition);
+                Librdkafka.topic_partition_list_add(list, p.Topic, p.Partition);
             }
 
             return list;

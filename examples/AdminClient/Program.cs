@@ -306,7 +306,7 @@ namespace Confluent.Kafka.Examples
 
             var group = commandArgs[0];
             var tpoes = new List<TopicPartitionOffset>();
-            for (int i = 1; i + 2 < commandArgs.Count(); i += 3) {
+            for (int i = 1; i + 2 < commandArgs.Length; i += 3) {
                 try
                 {
                     var topic = commandArgs[i];
@@ -316,7 +316,7 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine($"An error occurred while parsing arguments: {e.ToString()}");
+                    Console.Error.WriteLine($"An error occurred while parsing arguments: {e}");
                     Environment.ExitCode = 1;
                     return;
                 }
@@ -337,7 +337,15 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (AlterConsumerGroupOffsetsException e)
                 {
-                    Console.WriteLine($"An error occurred altering offsets: {(e.Results.Count() == 1 ? e.Results[0] : null)}");
+                    Console.WriteLine($"An error occurred altering offsets: {(e.Results.Any() ? e.Results[0] : null)}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine("An error occurred altering consumer group offsets." +
+                        $" Code: {e.Error.Code}" +
+                        $", Reason: {e.Error.Reason}");
                     Environment.ExitCode = 1;
                     return;
                 }
@@ -346,16 +354,16 @@ namespace Confluent.Kafka.Examples
 
         static async Task ListConsumerGroupOffsetsAsync(string bootstrapServers, string[] commandArgs)
         {
-            if (commandArgs.Length < 3)
+            if (commandArgs.Length < 1)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-group-offsets <group_id> <topic1> <partition1> ... <topicN> <partitionN>");
+                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-group-offsets <group_id> [<topic1> <partition1> ... <topicN> <partitionN>]");
                 Environment.ExitCode = 1;
                 return;
             }
 
             var group = commandArgs[0];
             var tpes = new List<TopicPartition>();
-            for (int i = 1; i + 1 < commandArgs.Count(); i += 2) {
+            for (int i = 1; i + 1 < commandArgs.Length; i += 2) {
                 try
                 {
                     var topic = commandArgs[i];
@@ -364,10 +372,15 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine($"An error occurred while parsing arguments: {e.ToString()}");
+                    Console.Error.WriteLine($"An error occurred while parsing arguments: {e}");
                     Environment.ExitCode = 1;
                     return;
                 }
+            }
+            if(!tpes.Any())
+            {
+                // In case the list is empty, request offsets for all the partitions.
+                tpes = null;
             }
 
             var input = new List<ConsumerGroupTopicPartitions>() { new ConsumerGroupTopicPartitions(group, tpes) };
@@ -384,7 +397,15 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (ListConsumerGroupOffsetsException e)
                 {
-                    Console.WriteLine($"An error occurred listing offsets: {(e.Results.Count() == 1 ? e.Results[0] : null)}");
+                    Console.WriteLine($"An error occurred listing offsets: {(e.Results.Any() ? e.Results[0] : null)}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine("An error occurred listing consumer group offsets." +
+                        $" Code: {e.Error.Code}" +
+                        $", Reason: {e.Error.Reason}");
                     Environment.ExitCode = 1;
                     return;
                 }
@@ -426,7 +447,9 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (KafkaException e)
                 {
-                    Console.WriteLine($"An error occured listing consumer groups: {e}");
+                    Console.WriteLine("An error occurred listing consumer groups." +
+                        $" Code: {e.Error.Code}" +
+                        $", Reason: {e.Error.Reason}");
                     Environment.ExitCode = 1;
                     return;
                 }
@@ -473,7 +496,7 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (KafkaException e)
                 {
-                    Console.WriteLine($"An error occured describing consumer groups: {e}");
+                    Console.WriteLine($"An error occurred describing consumer groups: {e}");
                     Environment.ExitCode = 1;
                 }
             }
@@ -486,8 +509,9 @@ namespace Confluent.Kafka.Examples
                 Console.WriteLine(
                     "usage: .. <bootstrapServers> " + String.Join("|", new string[] {
                         "list-groups", "metadata", "library-version", "create-topic", "create-acls",
-                        "describe-acls", "delete-acls", "alter-consumer-group-offsets", "list-consumer-group-offsets",
-                        "list-consumer-groups", "describe-consumer-groups"
+                        "describe-acls", "delete-acls",
+                        "list-consumer-groups", "describe-consumer-groups",
+                        "list-consumer-group-offsets", "alter-consumer-group-offsets"
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
