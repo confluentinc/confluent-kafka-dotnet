@@ -64,15 +64,18 @@ namespace Confluent.Kafka.IntegrationTests
                 // discovered and corresponding rebalance.
                 using var topic3 = new TemporaryTopic(prefix, bootstrapServers, 1);
                 Thread.Sleep(topicMetadataRefreshPeriodMs + rebalanceWaitMs);
+                consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Equal(3, consumer.Assignment.Count);
 
                 // Repeat a couple more times... 
                 using var topic4 = new TemporaryTopic(prefix, bootstrapServers, 1);
                 Thread.Sleep(topicMetadataRefreshPeriodMs + rebalanceWaitMs);
+                consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Equal(4, consumer.Assignment.Count);
 
                 using var topic5 = new TemporaryTopic(prefix, bootstrapServers, 1);
                 Thread.Sleep(topicMetadataRefreshPeriodMs + rebalanceWaitMs);
+                consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Equal(5, consumer.Assignment.Count);
 
                 consumer.Close();
