@@ -2090,6 +2090,11 @@ namespace Confluent.Kafka.Impl
 
                     groupsPartitionsPtrs[idx] = Librdkafka.AlterConsumerGroupOffsets_new(groupPartitions.Group, list);
                     idx++;
+
+                    if (list != IntPtr.Zero)
+                    {
+                        Librdkafka.topic_partition_list_destroy(list);
+                    }
                 }
 
 
@@ -2158,6 +2163,11 @@ namespace Confluent.Kafka.Impl
 
                     groupsPartitionPtrs[idx] = Librdkafka.ListConsumerGroupOffsets_new(groupPartitions.Group, list);
                     idx++;
+
+                    if (list != IntPtr.Zero)
+                    {
+                        Librdkafka.topic_partition_list_destroy(list);
+                    }
                 }
 
 
