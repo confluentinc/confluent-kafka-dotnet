@@ -50,14 +50,14 @@ namespace Confluent.Kafka
         ///     report corresponding to the produce request,
         ///     or an exception if an error occured.
         /// </returns>
-        /// <exception cref="ProduceException{TKey,TValue}">
+        /// <exception cref="Confluent.Kafka.ProduceException{TKey,TValue}">
         ///     Thrown in response to any produce request
         ///     that was unsuccessful for any reason
         ///     (excluding user application logic errors).
         ///     The Error property of the exception provides
         ///     more detailed information.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
         Task<DeliveryResult<TKey, TValue>> ProduceAsync(
@@ -93,7 +93,7 @@ namespace Confluent.Kafka
         ///     The Error property of the exception provides
         ///     more detailed information.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
         Task<DeliveryResult<TKey, TValue>> ProduceAsync(
@@ -119,7 +119,7 @@ namespace Confluent.Kafka
         ///     with a delivery report corresponding to the
         ///     produce request (if enabled).
         /// </param>
-        /// <exception cref="ProduceException{TKey,TValue}">
+        /// <exception cref="Confluent.Kafka.ProduceException{TKey,TValue}">
         ///     Thrown in response to any error that is known
         ///     immediately (excluding user application logic
         ///     errors), for example ErrorCode.Local_QueueFull.
@@ -129,10 +129,10 @@ namespace Confluent.Kafka
         ///     the exception / delivery report provides more
         ///     detailed information.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
-        /// <exception cref="InvalidOperationException">
+        /// <exception cref="System.InvalidOperationException">
         ///     Thrown in response to error conditions that
         ///     reflect an error in the application logic of
         ///     the calling application.
@@ -169,10 +169,10 @@ namespace Confluent.Kafka
         ///     exception / delivery report provides more detailed
         ///     information.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
-        /// <exception cref="InvalidOperationException">
+        /// <exception cref="System.InvalidOperationException">
         ///     Thrown in response to error conditions that reflect
         ///     an error in the application logic of the calling
         ///     application.
@@ -526,18 +526,18 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown if group metadata is invalid.
         /// </exception>
-        /// <exception cref="KafkaTxnRequiresAbortException">
+        /// <exception cref="Confluent.Kafka.KafkaTxnRequiresAbortException">
         ///     Thrown if the application must call AbortTransaction and
         ///     start a new transaction with BeginTransaction if it
         ///     wishes to proceed with transactions.
         /// </exception>
-        /// <exception cref="KafkaRetriableException">
+        /// <exception cref="Confluent.Kafka.KafkaRetriableException">
         ///     Thrown if an error occured, and the operation may be retried.
         /// </exception>
-        /// <exception cref="KafkaException">
+        /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown on all other errors.
         /// </exception>
         void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, TimeSpan timeout);
