@@ -2,7 +2,7 @@
 
 ## Enhancements
 
-- Upgraded `NJsonSchema` to v10.6.3
+- Upgraded `NJsonSchema` to v10.8.0
 - Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
   when `UseLatestVersion` is set to true.
 - Added DeleteConsumerGroupOffset to AdminClient.

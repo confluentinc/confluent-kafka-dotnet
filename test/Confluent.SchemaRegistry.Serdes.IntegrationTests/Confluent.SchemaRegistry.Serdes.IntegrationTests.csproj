@@ -4,7 +4,7 @@
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <TestProjectType>UnitTest</TestProjectType>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.IntegrationTests</AssemblyName>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,9 +28,9 @@
   <ItemGroup>
     <PackageReference Include="Apache.Avro" Version="1.11.0" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.3.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
-    <PackageReference Include="xunit" Version="2.3.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
+    <PackageReference Include="xunit" Version="2.3.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.2" />
   </ItemGroup>
 
   <ItemGroup>

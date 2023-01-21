@@ -24,7 +24,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void RegisterIncompatibleSchema(Config config)
+        public static async void RegisterIncompatibleSchema(Config config)
         {
             var topicName = Guid.NewGuid().ToString();
 
@@ -45,9 +45,9 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
 
-            Assert.Throws<AggregateException>(() => sr.RegisterSchemaAsync(subject, testSchema2).Result);
-
-            Assert.True(sr.GetAllSubjectsAsync().Result.Contains(subject));
+            await Assert.ThrowsAsync<AggregateException>(async () => await sr.RegisterSchemaAsync(subject, testSchema2));
+            var allSubjects = await sr.GetAllSubjectsAsync();
+            Assert.Contains(subject, allSubjects);
         }
     }
 }
