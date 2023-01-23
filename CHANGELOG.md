@@ -2,11 +2,11 @@
 
 ## Upgrade considerations
 
-OpenSSL 3.0.x upgrade in librdkafka requires a major version bump, as some legacy ciphers need to be explicitly configured to continue working, but it is highly recommended NOT to use them. The rest of the API remains backward compatible. See librdkafka release notes below.
+OpenSSL 3.0.x upgrade in librdkafka requires a major version bump, as some legacy ciphers need to be explicitly configured to continue working, but it is highly recommended NOT to use them. The rest of the API remains backward compatible.
 
 ## Enhancements
 
-- References librdkafka.redist 2.0.2. Refer to the [librdkafka v2.0.0 release notes](https://github.com/edenhill/librdkafka/releases/tag/v2.0.0) for more information.
+- References librdkafka.redist 2.0.2. Refer to the [librdkafka v2.0.0 release notes](https://github.com/edenhill/librdkafka/releases/tag/v2.0.0) and later ones for more information.
 - Upgraded `NJsonSchema` to v10.6.3
 - Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
   when `UseLatestVersion` is set to true.
