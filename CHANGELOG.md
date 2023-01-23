@@ -6,6 +6,19 @@
 - Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
   when `UseLatestVersion` is set to true.
 - Added DeleteConsumerGroupOffset to AdminClient.
+- [KIP-222](https://cwiki.apache.org/confluence/display/KAFKA/KIP-222+-+Add+Consumer+Group+operations+to+Admin+API)
+   Finish remaining implementation: Add Consumer Group operations to Admin API (`DeleteGroups` is already present).
+- [KIP-518](https://cwiki.apache.org/confluence/display/KAFKA/KIP-518%3A+Allow+listing+consumer+groups+per+state)
+   Allow listing consumer groups per state.
+- [KIP-396](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=97551484)
+   Partially implemented: support for AlterConsumerGroupOffsets.
+- As result of the above KIPs, added (#1981)
+   - `ListConsumerGroups` Admin operation. Supports listing by state.
+   - `DescribeConsumerGroups` Admin operation. Supports multiple groups.
+   - `ListConsumerGroupOffsets` Admin operation. Currently, only supports
+      1 group with multiple partitions. Supports the `requireStable` option.
+   - `AlterConsumerGroupOffsets` Admin operation. Currently, only supports
+      1 group with multiple offsets.
 
 ## Fixes
 

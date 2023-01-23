@@ -295,11 +295,225 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static async Task AlterConsumerGroupOffsetsAsync(string bootstrapServers, string[] commandArgs)
+        {
+            if (commandArgs.Length < 4)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> alter-consumer-group-offsets <group_id> <topic1> <partition1> <offset1> ... <topicN> <partitionN> <offsetN>");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            var group = commandArgs[0];
+            var tpoes = new List<TopicPartitionOffset>();
+            for (int i = 1; i + 2 < commandArgs.Length; i += 3) {
+                try
+                {
+                    var topic = commandArgs[i];
+                    var partition = Int32.Parse(commandArgs[i + 1]);
+                    var offset = Int64.Parse(commandArgs[i + 2]);
+                    tpoes.Add(new TopicPartitionOffset(topic, partition, offset));
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine($"An error occurred while parsing arguments: {e}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+            }
+
+            var input = new List<ConsumerGroupTopicPartitionOffsets>() { new ConsumerGroupTopicPartitionOffsets(group, tpoes) };
+
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var results = await adminClient.AlterConsumerGroupOffsetsAsync(input);
+                    Console.WriteLine("Successfully altered offsets:");
+                    foreach(var groupResult in results) {
+                        Console.WriteLine(groupResult);
+                    }
+
+                }
+                catch (AlterConsumerGroupOffsetsException e)
+                {
+                    Console.WriteLine($"An error occurred altering offsets: {(e.Results.Any() ? e.Results[0] : null)}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine("An error occurred altering consumer group offsets." +
+                        $" Code: {e.Error.Code}" +
+                        $", Reason: {e.Error.Reason}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+            }
+        }
+
+        static async Task ListConsumerGroupOffsetsAsync(string bootstrapServers, string[] commandArgs)
+        {
+            if (commandArgs.Length < 1)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-group-offsets <group_id> [<topic1> <partition1> ... <topicN> <partitionN>]");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            var group = commandArgs[0];
+            var tpes = new List<TopicPartition>();
+            for (int i = 1; i + 1 < commandArgs.Length; i += 2) {
+                try
+                {
+                    var topic = commandArgs[i];
+                    var partition = Int32.Parse(commandArgs[i + 1]);
+                    tpes.Add(new TopicPartition(topic, partition));
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine($"An error occurred while parsing arguments: {e}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+            }
+            if(!tpes.Any())
+            {
+                // In case the list is empty, request offsets for all the partitions.
+                tpes = null;
+            }
+
+            var input = new List<ConsumerGroupTopicPartitions>() { new ConsumerGroupTopicPartitions(group, tpes) };
+
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var result = await adminClient.ListConsumerGroupOffsetsAsync(input);
+                    Console.WriteLine("Successfully listed offsets:");
+                    foreach(var groupResult in result) {
+                        Console.WriteLine(groupResult);
+                    }
+                }
+                catch (ListConsumerGroupOffsetsException e)
+                {
+                    Console.WriteLine($"An error occurred listing offsets: {(e.Results.Any() ? e.Results[0] : null)}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine("An error occurred listing consumer group offsets." +
+                        $" Code: {e.Error.Code}" +
+                        $", Reason: {e.Error.Reason}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+            }
+        }
+
+        static async Task ListConsumerGroupsAsync(string bootstrapServers, string[] commandArgs) {
+            var timeout = TimeSpan.FromSeconds(30);
+            var statesList = new List<ConsumerGroupState>();
+            try
+            {
+                if (commandArgs.Length > 0)
+                {
+                    timeout = TimeSpan.FromSeconds(Int32.Parse(commandArgs[0]));
+                }
+                if (commandArgs.Length > 1)
+                {
+                    for (int i = 1; i < commandArgs.Length; i++) {
+                        statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
+                    }
+                }
+            }
+            catch (SystemException)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [<timeout_seconds> <match_state_1> <match_state_2> ... <match_state_N>]");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var result = await adminClient.ListConsumerGroupsAsync(new ListConsumerGroupsOptions() { 
+                        RequestTimeout = timeout,
+                        MatchStates = statesList,
+                    });
+                    Console.WriteLine(result);
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine("An error occurred listing consumer groups." +
+                        $" Code: {e.Error.Code}" +
+                        $", Reason: {e.Error.Reason}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+
+            }
+        }
+
+
+        static async Task DescribeConsumerGroupsAsync(string bootstrapServers, string[] commandArgs) {
+            if (commandArgs.Length < 1)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> describe-consumer-groups <group1> [<group2 ... <groupN>]");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            var groupNames = commandArgs.ToList();
+            var timeout = TimeSpan.FromSeconds(30);
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var descResult = await adminClient.DescribeConsumerGroupsAsync(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout });
+                    foreach (var group in descResult.ConsumerGroupDescriptions)
+                    {
+                        Console.WriteLine($"  Group: {group.GroupId} {group.Error}");
+                        Console.WriteLine($"  Broker: {group.Coordinator}");
+                        Console.WriteLine($"  IsSimpleConsumerGroup: {group.IsSimpleConsumerGroup}");
+                        Console.WriteLine($"  PartitionAssignor: {group.PartitionAssignor}");
+                        Console.WriteLine($"  State: {group.State}");
+                        Console.WriteLine($"  Members:");
+                        foreach (var m in group.Members)
+                        {
+                            Console.WriteLine($"    {m.ClientId} {m.ConsumerId} {m.Host}");
+                            Console.WriteLine($"    Assignment:");
+                            var topicPartitions = "";
+                            if (m.Assignment.TopicPartitions != null)
+                            {
+                                topicPartitions = String.Join(", ", m.Assignment.TopicPartitions.Select(tp => tp.ToString()));
+                            }
+                            Console.WriteLine($"      TopicPartitions: [{topicPartitions}]");
+                        }
+                    }
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred describing consumer groups: {e}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
+
         public static async Task Main(string[] args)
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> <list-groups|metadata|library-version|create-topic|create-acls|describe-acls|delete-acls> ..");
+                Console.WriteLine(
+                    "usage: .. <bootstrapServers> " + String.Join("|", new string[] {
+                        "list-groups", "metadata", "library-version", "create-topic", "create-acls",
+                        "describe-acls", "delete-acls",
+                        "list-consumer-groups", "describe-consumer-groups",
+                        "list-consumer-group-offsets", "alter-consumer-group-offsets"
+                    }) +
+                    " ..");
                 Environment.ExitCode = 1;
                 return;
             }
@@ -330,6 +544,18 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "delete-acls":
                     await DeleteAclsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "alter-consumer-group-offsets":
+                    await AlterConsumerGroupOffsetsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "list-consumer-group-offsets":
+                    await ListConsumerGroupOffsetsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "list-consumer-groups":
+                    await ListConsumerGroupsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "describe-consumer-groups":
+                    await DescribeConsumerGroupsAsync(bootstrapServers, commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");
