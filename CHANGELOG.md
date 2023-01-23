@@ -31,6 +31,16 @@ OpenSSL 3.0.x upgrade in librdkafka requires a major version bump, as some legac
 - Fixed 100% CPU usage with `DependentAdminClientBuilder`.
 
 
+# 2.0.1
+
+There was no 2.0.1 release of the .NET Client.
+
+
+# 2.0.0
+
+There was no 2.0.0 release of the .NET Client.
+
+
 # 1.9.3 
 
 ## Enhancements
