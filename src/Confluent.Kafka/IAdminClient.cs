@@ -348,7 +348,7 @@ namespace Confluent.Kafka
         Task<DeleteConsumerGroupOffsetsResult> DeleteConsumerGroupOffsetsAsync(String group, IEnumerable<TopicPartition> partitions, DeleteConsumerGroupOffsetsOptions options = null);
 
         /// <summary>
-        /// Alters consumer group offsets for a number of topic partitions.
+        ///     Alters consumer group offsets for a number of topic partitions.
         /// </summary>
         /// <param name="groupPartitions">
         ///    A IEnumerable of ConsumerGroupTopicPartitionOffsets, each denoting the group and the
