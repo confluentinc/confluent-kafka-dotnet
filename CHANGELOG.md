@@ -1,7 +1,12 @@
-# 2.0.0 
+# 2.0.2
+
+## Upgrade considerations
+
+OpenSSL 3.0.x upgrade in librdkafka requires a major version bump, as some legacy ciphers need to be explicitly configured to continue working, but it is highly recommended NOT to use them. The rest of the API remains backward compatible.
 
 ## Enhancements
 
+- References librdkafka.redist 2.0.2. Refer to the [librdkafka v2.0.0 release notes](https://github.com/edenhill/librdkafka/releases/tag/v2.0.0) and later ones for more information.
 - Upgraded `NJsonSchema` to v10.6.3
 - Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
   when `UseLatestVersion` is set to true.
@@ -23,14 +28,10 @@
 ## Fixes
 
 - During a group rebalance, partitions are now always revoked as a side effect of a call to Consume, whether or not a partitions revoked handler has been specified. Previously, if no handler was specified, the timing of when the consumer lost ownership of partitions during a rebalance was arbitrarily, frequently resulting in an erroneous state exception when committing or storing offsets.
-- Fixed 100% CPU usage with `DependentAdminClientBuilder`. 
+- Fixed 100% CPU usage with `DependentAdminClientBuilder`.
 
 
-# 1.9.4
-
-## Fixes
-
-- References librdkafka.redist 1.9.3-RC2 which resolves a transaction related issue. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.9.3-RC2) for more information.
+**Note: There were no 2.0.0 and 2.0.1 releases.**
 
 
 # 1.9.3 
