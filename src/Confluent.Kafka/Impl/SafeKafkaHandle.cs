@@ -1174,6 +1174,27 @@ namespace Confluent.Kafka.Impl
         }
 
         /// <summary>
+        ///     Creates and returns a List{TopicPartition} from a C rd_kafka_topic_partition_list_t *.
+        /// </summary>
+        internal static List<TopicPartition> GetTopicPartitionList(IntPtr listPtr)
+        {
+            if (listPtr == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("FATAL: Cannot marshal from a NULL ptr.");
+            }
+
+            var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
+            return Enumerable.Range(0, list.cnt)
+                .Select(i => Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(
+                    list.elems + i * Util.Marshal.SizeOf<rd_kafka_topic_partition>()))
+                .Select(ktp => new TopicPartition(
+                        ktp.topic,
+                        ktp.partition
+                    ))
+                .ToList();
+        }
+
+        /// <summary>
         ///     Creates and returns a C rd_kafka_topic_partition_list_t * populated by offsets.
         /// </summary>
         /// <returns>
@@ -1207,6 +1228,38 @@ namespace Confluent.Kafka.Impl
             return list;
         }
 
+        /// <summary>
+        ///     Creates and returns a C rd_kafka_topic_partition_list_t *.
+        /// </summary>
+        /// <returns>
+        ///     If offsets is null a null IntPtr will be returned, else a IntPtr
+        ///     which must destroyed with LibRdKafka.topic_partition_list_destroy()
+        /// </returns>
+        internal static IntPtr GetCTopicPartitionList(IEnumerable<TopicPartition> partitions)
+        {
+            if (partitions == null)
+            {
+                return IntPtr.Zero;
+            }
+
+            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr)partitions.Count());
+            if (list == IntPtr.Zero)
+            {
+                throw new Exception("Failed to create topic partition list");
+            }
+
+            foreach (var p in partitions)
+            {
+                if (p.Topic == null)
+                {
+                    Librdkafka.topic_partition_list_destroy(list);
+                    throw new ArgumentException("Cannot create offsets list because one or more topics is null.");
+                }
+                Librdkafka.topic_partition_list_add(list, p.Topic, p.Partition);
+            }
+
+            return list;
+        }
 
         static byte[] CopyBytes(IntPtr ptr, IntPtr len)
         {
@@ -1334,6 +1387,26 @@ namespace Confluent.Kafka.Impl
                 {
                     throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
                 }
+            }
+        }
+
+        private void setOption_RequireStableOffsets(IntPtr optionsPtr, bool requireStable)
+        {
+            var rError = Librdkafka.AdminOptions_set_require_stable_offsets(optionsPtr, (IntPtr)(int)(requireStable ? 1 : 0));
+            var error = new Error(rError, true);
+            if (error.Code != ErrorCode.NoError)
+            {
+                throw new KafkaException(error);
+            }
+
+        }
+
+        private void setOption_MatchConsumerGroupStates(IntPtr optionsPtr, ConsumerGroupState[] states)
+        {
+            var error = Librdkafka.AdminOptions_set_match_consumer_group_states(optionsPtr, states, (UIntPtr)states.Count());
+            if (error != IntPtr.Zero)
+            {
+                throw new KafkaException(new Error(error, true));
             }
         }
 
@@ -1973,6 +2046,216 @@ namespace Confluent.Kafka.Impl
                     }
                 }
                 Librdkafka.AdminOptions_destroy(optionsPtr);
+            }
+        }
+
+        internal void AlterConsumerGroupOffsets(
+            IEnumerable<ConsumerGroupTopicPartitionOffsets> groupsPartitions,
+            AlterConsumerGroupOffsetsOptions options,
+            IntPtr resultQueuePtr,
+            IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+	        // For now, we only support one group at a time given as a single element of groupsPartitions.
+	        // Code has been written so that only this if-guard needs to be removed when we add support for
+	        // multiple ConsumerGroupTopicPartitionOffsets.
+            if (groupsPartitions.Count() != 1) 
+            {
+                throw new ArgumentException("Can only alter offsets for one group at a time");
+            }
+
+            IntPtr optionsPtr = IntPtr.Zero;
+            IntPtr[] groupsPartitionsPtrs = new IntPtr[groupsPartitions.Count()];
+
+            try
+            {
+                // Set admin options if any
+                options = options ?? new AlterConsumerGroupOffsetsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.AlterConsumerGroupOffsets);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                // Create the objects required by librdkafka to call the method.
+                var idx = 0;
+                foreach (var groupPartitions in groupsPartitions)
+                {
+                    if (groupPartitions == null)
+                    {
+                        throw new ArgumentException("Cannot alter consumer group offsets for null group");
+                    }
+
+                    // Create C list of topic partitions.
+                    var list = SafeKafkaHandle.GetCTopicPartitionList(groupPartitions.TopicPartitionOffsets);
+
+                    groupsPartitionsPtrs[idx] = Librdkafka.AlterConsumerGroupOffsets_new(groupPartitions.Group, list);
+                    idx++;
+
+                    if (list != IntPtr.Zero)
+                    {
+                        Librdkafka.topic_partition_list_destroy(list);
+                    }
+                }
+
+
+                Librdkafka.AlterConsumerGroupOffsets(handle, groupsPartitionsPtrs, (UIntPtr)(uint)groupsPartitionsPtrs.Count(), optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                // Clean up the options if created.
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+
+                // Clean up the groupPartitionPtr objects if created.
+                // Note that the function takes care of cleaning up the topic partition list inside the object.
+                foreach (var groupPartitionPtr in groupsPartitionsPtrs)
+                {
+                    if (groupPartitionPtr != IntPtr.Zero)
+                    {
+                        Librdkafka.AlterConsumerGroupOffsets_destroy(groupPartitionPtr);
+                    }
+                }
+            }
+
+        }
+
+        internal void ListConsumerGroupOffsets(
+            IEnumerable<ConsumerGroupTopicPartitions> groupsPartitions,
+            ListConsumerGroupOffsetsOptions options,
+            IntPtr resultQueuePtr,
+            IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+	        // For now, we only support one group at a time given as a single element of groupsPartitions.
+	        // Code has been written so that only this if-guard needs to be removed when we add support for
+	        // multiple ConsumerGroupTopicPartitions.
+            if (groupsPartitions.Count() != 1) 
+            {
+                throw new ArgumentException("Can only list offsets for one group at a time");
+            }
+
+            IntPtr optionsPtr = IntPtr.Zero;
+            IntPtr[] groupsPartitionPtrs = new IntPtr[groupsPartitions.Count()];
+
+            try
+            {
+                // Set admin options if any
+                options = options ?? new ListConsumerGroupOffsetsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.ListConsumerGroupOffsets);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_RequireStableOffsets(optionsPtr, options.RequireStableOffsets);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                // Create the objects required by librdkafka to call the method.
+                var idx = 0;
+                foreach (var groupPartitions in groupsPartitions)
+                {
+                    if (groupPartitions == null)
+                    {
+                        throw new ArgumentException("Cannot list consumer group offsets for null group");
+                    }
+
+                    // Create C list of topic partitions.
+                    var list = SafeKafkaHandle.GetCTopicPartitionList(groupPartitions.TopicPartitions);
+
+                    groupsPartitionPtrs[idx] = Librdkafka.ListConsumerGroupOffsets_new(groupPartitions.Group, list);
+                    idx++;
+
+                    if (list != IntPtr.Zero)
+                    {
+                        Librdkafka.topic_partition_list_destroy(list);
+                    }
+                }
+
+
+                Librdkafka.ListConsumerGroupOffsets(handle, groupsPartitionPtrs, (UIntPtr)(uint)groupsPartitionPtrs.Count(), optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                // Clean up the options if created.
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+
+                // Clean up the groupsPartitionPtr objects if created.
+                // Note that the function takes care of cleaning up the topic partition list inside the object.
+                foreach (var groupsPartitionPtr in groupsPartitionPtrs)
+                {
+                    if (groupsPartitionPtr != IntPtr.Zero)
+                    {
+                        Librdkafka.ListConsumerGroupOffsets_destroy(groupsPartitionPtr);
+                    }
+                }
+            }
+
+        }
+
+        internal void ListConsumerGroups(
+            ListConsumerGroupsOptions options,
+            IntPtr resultQueuePtr,
+            IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            IntPtr optionsPtr = IntPtr.Zero;
+            try
+            {
+                // Set Admin Options if any.
+                options = options ?? new ListConsumerGroupsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.ListConsumerGroups);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                if (options.MatchStates != null)
+                {
+                    setOption_MatchConsumerGroupStates(optionsPtr, options.MatchStates.ToArray());
+                }
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                // Call ListConsumerGroups (async).
+                Librdkafka.ListConsumerGroups(handle, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+
+            }
+        }
+
+
+        internal void DescribeConsumerGroups(IEnumerable<string> groups, DescribeConsumerGroupsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            if (groups.Count() == 0) {
+                throw new ArgumentException("at least one group should be provided to DescribeConsumerGroups");
+            }
+
+            var optionsPtr = IntPtr.Zero;
+            try
+            {
+                // Set Admin Options if any.
+                options = options ?? new DescribeConsumerGroupsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeConsumerGroups);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                // Call DescribeConsumerGroups (async).
+                Librdkafka.DescribeConsumerGroups(
+                    handle, groups.ToArray(), (UIntPtr)(groups.Count()),
+                    optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
             }
         }
 
