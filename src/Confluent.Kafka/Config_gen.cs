@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.9.2 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.0.2 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -639,6 +639,14 @@ namespace Confluent.Kafka
         public string BrokerVersionFallback { get { return Get("broker.version.fallback"); } set { this.SetObject("broker.version.fallback", value); } }
 
         /// <summary>
+        ///     Allow automatic topic creation on the broker when subscribing to or assigning non-existent topics. The broker must also be configured with `auto.create.topics.enable=true` for this configuration to take effect. Note: the default value (true) for the producer is different from the default value (false) for the consumer. Further, the consumer default value is different from the Java consumer (true), and this property is not supported by the Java producer. Requires broker version >= 0.11.0.0, for older broker versions only the broker configuration applies.
+        ///
+        ///     default: false
+        ///     importance: low
+        /// </summary>
+        public bool? AllowAutoCreateTopics { get { return GetBool("allow.auto.create.topics"); } set { this.SetObject("allow.auto.create.topics", value); } }
+
+        /// <summary>
         ///     Protocol used to communicate with brokers.
         ///
         ///     default: plaintext
@@ -759,7 +767,15 @@ namespace Confluent.Kafka
         public string SslKeystorePassword { get { return Get("ssl.keystore.password"); } set { this.SetObject("ssl.keystore.password", value); } }
 
         /// <summary>
-        ///     Path to OpenSSL engine library. OpenSSL >= 1.1.0 required.
+        ///     Comma-separated list of OpenSSL 3.0.x implementation providers. E.g., "default,legacy".
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslProviders { get { return Get("ssl.providers"); } set { this.SetObject("ssl.providers", value); } }
+
+        /// <summary>
+        ///     **DEPRECATED** Path to OpenSSL engine library. OpenSSL >= 1.1.x required. DEPRECATED: OpenSSL engine support is deprecated and should be replaced by OpenSSL 3 providers.
         ///
         ///     default: ''
         ///     importance: low
@@ -785,7 +801,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Endpoint identification algorithm to validate broker hostname using broker certificate. https - Server (broker) hostname verification as specified in RFC2818. none - No endpoint verification. OpenSSL >= 1.0.2 required.
         ///
-        ///     default: none
+        ///     default: https
         ///     importance: low
         /// </summary>
         public SslEndpointIdentificationAlgorithm? SslEndpointIdentificationAlgorithm { get { return (SslEndpointIdentificationAlgorithm?)GetEnum(typeof(SslEndpointIdentificationAlgorithm), "ssl.endpoint.identification.algorithm"); } set { this.SetObject("ssl.endpoint.identification.algorithm", value); } }
@@ -1109,7 +1125,7 @@ namespace Confluent.Kafka
         public bool? EnableGaplessGuarantee { get { return GetBool("enable.gapless.guarantee"); } set { this.SetObject("enable.gapless.guarantee", value); } }
 
         /// <summary>
-        ///     Maximum number of messages allowed on the producer queue. This queue is shared by all topics and partitions.
+        ///     Maximum number of messages allowed on the producer queue. This queue is shared by all topics and partitions. A value of 0 disables this limit.
         ///
         ///     default: 100000
         ///     importance: high
@@ -1419,14 +1435,6 @@ namespace Confluent.Kafka
         ///     importance: medium
         /// </summary>
         public bool? CheckCrcs { get { return GetBool("check.crcs"); } set { this.SetObject("check.crcs", value); } }
-
-        /// <summary>
-        ///     Allow automatic topic creation on the broker when subscribing to or assigning non-existent topics. The broker must also be configured with `auto.create.topics.enable=true` for this configuraiton to take effect. Note: The default value (false) is different from the Java consumer (true). Requires broker version >= 0.11.0.0, for older broker versions only the broker configuration applies.
-        ///
-        ///     default: false
-        ///     importance: low
-        /// </summary>
-        public bool? AllowAutoCreateTopics { get { return GetBool("allow.auto.create.topics"); } set { this.SetObject("allow.auto.create.topics", value); } }
 
     }
 

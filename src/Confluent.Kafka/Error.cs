@@ -117,8 +117,8 @@ namespace Confluent.Kafka
         /// <param name="isFatal">
         ///     Whether or not the error is fatal.
         /// </param>
-        /// <exception cref="ArgumentException">
-        ///     
+        /// <exception cref="System.ArgumentException">
+        ///
         /// </exception>
         public Error(ErrorCode code, string reason, bool isFatal)
         {
