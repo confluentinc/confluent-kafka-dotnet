@@ -36,38 +36,37 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
-            {
-                producer.SetSaslCredentials("username", "password");
-
-                var errsEncountered = false;
-                try
-                {
-                    producer.SetSaslCredentials(null, null);
-                }
-                catch (KafkaException ke)
-                {
-                    Assert.StartsWith("Username and password are required", ke.Message);
-                    errsEncountered = true;
-                }
-                Assert.True(errsEncountered);
-            }
+                CheckSetSaslCredentials(producer);
 
             var consumerConfig = new ConsumerConfig {
                 BootstrapServers = bootstrapServers,
                 GroupId = Guid.NewGuid().ToString() };
             using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
-            {
-                consumer.SetSaslCredentials("username", "password");
-                consumer.Close();
-            }
+                CheckSetSaslCredentials(consumer);
 
             var adminClientConfig = new AdminClientConfig { BootstrapServers = bootstrapServers };
             using (var adminClient = new AdminClientBuilder(adminClientConfig).Build())
-            {
-                adminClient.SetSaslCredentials("username", "password");
-            }
+                CheckSetSaslCredentials(adminClient);
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end SetSaslCredentials");
+        }
+
+        private static void CheckSetSaslCredentials(IClient client)
+        {
+            client.SetSaslCredentials("username", "password");
+            client.SetSaslCredentials("override", "override");
+            var errsEncountered = false;
+            try
+            {
+                client.SetSaslCredentials(null, null);
+            }
+            catch (KafkaException ke)
+            {
+                Assert.StartsWith("Username and password are required", ke.Message);
+                errsEncountered = true;
+            }
+            Assert.True(errsEncountered);
         }
     }
 }
