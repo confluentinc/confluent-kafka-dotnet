@@ -22,6 +22,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.Kafka.Diagnostics;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 
@@ -806,6 +807,8 @@ namespace Confluent.Kafka
                     };
                 }
 
+                var activity = Diagnostic.Consumer.StartActivity<TKey, TValue>(topic, msg.partition);
+
                 long timestampUnix = 0;
                 IntPtr timestampType = (IntPtr)TimestampType.NotAvailable;
                 if (enableTimestampMarshaling)
@@ -842,6 +845,9 @@ namespace Confluent.Kafka
 
                 if (msg.err != ErrorCode.NoError)
                 {
+#if NET6_0_OR_GREATER
+                    activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, Util.Marshal.PtrToStringUTF8(Librdkafka.message_errstr(msgPtr)));
+#endif
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
                         {
@@ -873,6 +879,9 @@ namespace Confluent.Kafka
                 }
                 catch (Exception ex)
                 {
+#if NET6_0_OR_GREATER
+                    activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
+#endif
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
                         {
@@ -905,6 +914,9 @@ namespace Confluent.Kafka
                 }
                 catch (Exception ex)
                 {
+#if NET6_0_OR_GREATER
+                    activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
+#endif
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
                         {
@@ -921,6 +933,8 @@ namespace Confluent.Kafka
                         new Error(ErrorCode.Local_ValueDeserialization),
                         ex);
                 }
+
+                activity?.Stop();
 
                 return new ConsumeResult<TKey, TValue> 
                 {

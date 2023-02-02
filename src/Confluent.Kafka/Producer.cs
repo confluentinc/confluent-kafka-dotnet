@@ -22,7 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
-
+using Confluent.Kafka.Diagnostics;
 
 namespace Confluent.Kafka
 {
@@ -788,6 +788,8 @@ namespace Confluent.Kafka
                     ex);
             }
 
+            var activity = Diagnostic.Producer.StartActivity(topicPartition, message);
+
             try
             {
                 if (enableDeliveryReports)
@@ -832,6 +834,9 @@ namespace Confluent.Kafka
             }
             catch (KafkaException ex)
             {
+#if NET6_0_OR_GREATER
+                activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
+#endif
                 throw new ProduceException<TKey, TValue>(
                     ex.Error,
                     new DeliveryResult<TKey, TValue>
@@ -839,6 +844,10 @@ namespace Confluent.Kafka
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                     });
+            }
+            finally
+            {
+                activity?.Stop();
             }
         }
 
@@ -911,6 +920,8 @@ namespace Confluent.Kafka
                     ex);
             }
 
+            var activity = Diagnostic.Producer.StartActivity(topicPartition, message);
+
             try
             {
                 ProduceImpl(
@@ -929,6 +940,9 @@ namespace Confluent.Kafka
             }
             catch (KafkaException ex)
             {
+#if NET6_0_OR_GREATER
+                activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
+#endif
                 throw new ProduceException<TKey, TValue>(
                     ex.Error,
                     new DeliveryReport<TKey, TValue>
@@ -936,6 +950,10 @@ namespace Confluent.Kafka
                             Message = message,
                             TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                         });
+            }
+            finally
+            {
+                activity?.Stop();
             }
         }
 
