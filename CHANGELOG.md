@@ -1,4 +1,4 @@
-# vNext
+# 2.1.0
 
 - Added SetSaslCredentials. This new method (on the Producer, Consumer, and AdminClient) allows modifying the stored
   SASL PLAIN/SCRAM credentials that will be used for subsequent (new) connections to a broker (#1980).
