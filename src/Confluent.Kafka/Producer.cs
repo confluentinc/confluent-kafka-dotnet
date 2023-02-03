@@ -480,6 +480,10 @@ namespace Confluent.Kafka
         public int AddBrokers(string brokers)
             => KafkaHandle.AddBrokers(brokers);
 
+        /// <inheritdoc/>
+        public void SetSaslCredentials(string username, string password)
+            => KafkaHandle.SetSaslCredentials(username, password);
+
 
         /// <inheritdoc/>
         public Handle Handle 

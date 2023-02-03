@@ -76,5 +76,24 @@ namespace Confluent.Kafka
         ///     a second time.
         /// </returns>
         int AddBrokers(string brokers);
+
+        /// <summary>
+        ///     SetSaslCredentials sets the SASL credentials used for this
+        ///     client.
+        ///     The new credentials will overwrite the old ones (which were set
+        ///     when creating client or by a previous call to
+        ///     SetSaslCredentials). The new credentials will be used the next
+        ///     time the client needs to authenticate to a broker.
+        ///     This method will not disconnect existing broker connections that
+        ///     were established with the old credentials.
+        ///     This method applies only to the SASL PLAIN and SCRAM mechanisms.
+        /// </summary>
+        /// <param name="username">
+        ///     The username to set.
+        /// </param>
+        /// <param name="password">
+        ///     The password to set.
+        /// </param>
+        void SetSaslCredentials(string username, string password);
     }
 }
