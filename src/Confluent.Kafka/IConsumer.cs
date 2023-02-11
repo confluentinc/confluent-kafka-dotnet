@@ -71,14 +71,14 @@ namespace Confluent.Kafka
         ///     as a side-effect of calling this method
         ///     (on the same thread).
         /// </remarks>
-        /// <exception cref="ConsumeException">
+        /// <exception cref="Confluent.Kafka.ConsumeException">
         ///     Thrown
         ///     when a call to this method is unsuccessful
         ///     for any reason (except cancellation by
         ///     user). Inspect the Error property of the
         ///     exception for detailed information.
         /// </exception>
-        /// <exception cref="OperationCanceledException">
+        /// <exception cref="System.OperationCanceledException">
         ///     Thrown on cancellation.
         /// </exception>
         ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken));

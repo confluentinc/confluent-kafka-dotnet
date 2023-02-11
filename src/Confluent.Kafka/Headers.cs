@@ -72,7 +72,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The value of the latest element in the collection with the specified key.
         /// </returns>
-        /// <exception cref="KeyNotFoundException">
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">
         ///     The key <paramref name="key" /> was not present in the collection.
         /// </exception>
         public byte[] GetLastBytes(string key)

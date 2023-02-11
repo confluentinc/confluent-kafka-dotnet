@@ -13,7 +13,8 @@ namespace Confluent.Kafka.IntegrationTests
         private readonly IAsyncSerializer<TKey> asyncKeySerializer;
         private readonly IAsyncSerializer<TValue> asyncValueSerializer;
 
-        public TestProducerAdapter(IProducer producer,
+        public TestProducerAdapter(
+            IProducer producer,
             ISerializer<TKey> keySerializer = null,
             ISerializer<TValue> valueSerializer = null,
             IAsyncSerializer<TKey> asyncKeySerializer = null,
@@ -34,6 +35,9 @@ namespace Confluent.Kafka.IntegrationTests
 
         public int AddBrokers(string brokers) => producer.AddBrokers(brokers);
 
+        public void SetSaslCredentials(string username, string password)
+            => producer.SetSaslCredentials(username, password);
+
         public void InitTransactions(TimeSpan timeout) => producer.InitTransactions(timeout);
 
         public void BeginTransaction() => producer.BeginTransaction();
@@ -46,8 +50,10 @@ namespace Confluent.Kafka.IntegrationTests
 
         public void AbortTransaction() => producer.AbortTransaction();
 
-        public void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets,
-            IConsumerGroupMetadata groupMetadata, TimeSpan timeout)
+        public void SendOffsetsToTransaction(
+            IEnumerable<TopicPartitionOffset> offsets,
+            IConsumerGroupMetadata groupMetadata,
+            TimeSpan timeout)
             => producer.SendOffsetsToTransaction(offsets, groupMetadata, timeout);
 
         public int Poll(TimeSpan timeout) => producer.Poll(timeout);
@@ -56,7 +62,9 @@ namespace Confluent.Kafka.IntegrationTests
 
         public void Flush(CancellationToken cancellationToken = default) => producer.Flush(cancellationToken);
 
-        public async Task<DeliveryResult<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message,
+        public async Task<DeliveryResult<TKey, TValue>> ProduceAsync(
+            string topic,
+            Message<TKey, TValue> message,
             CancellationToken cancellationToken = default)
         {
             message.Headers = message.Headers ?? new Headers();
@@ -64,7 +72,8 @@ namespace Confluent.Kafka.IntegrationTests
             var result = await producer.ProduceAsync(
                 topic,
                 GetKeyBytes(message.Key, new SerializationContext(MessageComponentType.Key, topic, message.Headers)),
-                GetValueBytes(message.Value, new SerializationContext(MessageComponentType.Value, topic, message.Headers)),
+                GetValueBytes(message.Value,
+                    new SerializationContext(MessageComponentType.Value, topic, message.Headers)),
                 message.Headers,
                 message.Timestamp,
                 cancellationToken);
@@ -83,15 +92,18 @@ namespace Confluent.Kafka.IntegrationTests
             };
         }
 
-        public async Task<DeliveryResult<TKey, TValue>> ProduceAsync(TopicPartition topicPartition,
+        public async Task<DeliveryResult<TKey, TValue>> ProduceAsync(
+            TopicPartition topicPartition,
             Message<TKey, TValue> message,
             CancellationToken cancellationToken = default)
         {
             message.Headers = message.Headers ?? new Headers();
             var result = await producer.ProduceAsync(
                 topicPartition,
-                GetKeyBytes(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, message.Headers)),
-                GetValueBytes(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, message.Headers)),
+                GetKeyBytes(message.Key,
+                    new SerializationContext(MessageComponentType.Key, topicPartition.Topic, message.Headers)),
+                GetValueBytes(message.Value,
+                    new SerializationContext(MessageComponentType.Value, topicPartition.Topic, message.Headers)),
                 message.Headers,
                 message.Timestamp,
                 cancellationToken);
@@ -110,14 +122,17 @@ namespace Confluent.Kafka.IntegrationTests
             };
         }
 
-        public void Produce(string topic, Message<TKey, TValue> message,
+        public void Produce(
+            string topic,
+            Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
             message.Headers = message.Headers ?? new Headers();
             producer.Produce(
                 topic,
                 GetKeyBytes(message.Key, new SerializationContext(MessageComponentType.Key, topic, message.Headers)),
-                GetValueBytes(message.Value, new SerializationContext(MessageComponentType.Value, topic, message.Headers)),
+                GetValueBytes(message.Value,
+                    new SerializationContext(MessageComponentType.Value, topic, message.Headers)),
                 message.Headers,
                 message.Timestamp,
                 deliveryHandler != null
@@ -136,15 +151,19 @@ namespace Confluent.Kafka.IntegrationTests
                     : default(Action<DeliveryReport>));
         }
 
-        public void Produce(TopicPartition topicPartition, Message<TKey, TValue> message,
+        public void Produce(
+            TopicPartition topicPartition,
+            Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
             message.Headers = message.Headers ?? new Headers();
 
             producer.Produce(
                 topicPartition,
-                GetKeyBytes(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, message.Headers)),
-                GetValueBytes(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, message.Headers)),
+                GetKeyBytes(message.Key,
+                    new SerializationContext(MessageComponentType.Key, topicPartition.Topic, message.Headers)),
+                GetValueBytes(message.Value,
+                    new SerializationContext(MessageComponentType.Value, topicPartition.Topic, message.Headers)),
                 message.Headers,
                 message.Timestamp,
                 deliveryHandler != null
@@ -163,7 +182,7 @@ namespace Confluent.Kafka.IntegrationTests
                     : default(Action<DeliveryReport>));
         }
 
-        
+
         private ReadOnlySpan<byte> GetKeyBytes(TKey key, SerializationContext context)
         {
             if (keySerializer != null)
@@ -194,10 +213,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             switch (value)
             {
-                case byte[] v: return Serializers.ByteArray.Serialize(v, SerializationContext.Empty); 
+                case byte[] v: return Serializers.ByteArray.Serialize(v, SerializationContext.Empty);
                 case string v: return Serializers.Utf8.Serialize(v, SerializationContext.Empty);
-                case int v: return Serializers.Int32.Serialize(v, SerializationContext.Empty); 
-                case long v: return Serializers.Int64.Serialize(v, SerializationContext.Empty); 
+                case int v: return Serializers.Int32.Serialize(v, SerializationContext.Empty);
+                case long v: return Serializers.Int64.Serialize(v, SerializationContext.Empty);
                 case double v: return Serializers.Double.Serialize(v, SerializationContext.Empty);
             }
 

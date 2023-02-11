@@ -61,14 +61,14 @@ namespace Confluent.Kafka
         ///     report corresponding to the produce request,
         ///     or an exception if an error occurred.
         /// </returns>
-        /// <exception cref="ProduceException">
+        /// <exception cref="Confluent.Kafka.ProduceException">
         ///     Thrown in response to any produce request
         ///     that was unsuccessful for any reason
         ///     (excluding user application logic errors).
         ///     The Error property of the exception provides
         ///     more detailed information.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
         Task<DeliveryResult> ProduceAsync(
@@ -120,7 +120,7 @@ namespace Confluent.Kafka
         ///     The Error property of the exception provides
         ///     more detailed information.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
         Task<DeliveryResult> ProduceAsync(
@@ -162,7 +162,7 @@ namespace Confluent.Kafka
         ///     with a delivery report corresponding to the
         ///     produce request (if enabled).
         /// </param>
-        /// <exception cref="ProduceException">
+        /// <exception cref="Confluent.Kafka.ProduceException">
         ///     Thrown in response to any error that is known
         ///     immediately (excluding user application logic
         ///     errors), for example ErrorCode.Local_QueueFull.
@@ -172,10 +172,10 @@ namespace Confluent.Kafka
         ///     the exception / delivery report provides more
         ///     detailed information.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
-        /// <exception cref="InvalidOperationException">
+        /// <exception cref="System.InvalidOperationException">
         ///     Thrown in response to error conditions that
         ///     reflect an error in the application logic of
         ///     the calling application.
@@ -228,10 +228,10 @@ namespace Confluent.Kafka
         ///     exception / delivery report provides more detailed
         ///     information.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
-        /// <exception cref="InvalidOperationException">
+        /// <exception cref="System.InvalidOperationException">
         ///     Thrown in response to error conditions that reflect
         ///     an error in the application logic of the calling
         ///     application.
