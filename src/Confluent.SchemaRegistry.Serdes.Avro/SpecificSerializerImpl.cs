@@ -123,7 +123,9 @@ namespace Confluent.SchemaRegistry.Serdes
             SerializerSchemaData serializerSchemaData = new SerializerSchemaData();
             if (typeof(ISpecificRecord).IsAssignableFrom(writerType))
             {
-                serializerSchemaData.WriterSchema = (global::Avro.Schema) writerType.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                var field = (global::Avro.Schema) writerType.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static);
+                if (field is null) throw new Exception("Expected a _SCHEMA public static field on the ISpecificRecord");
+                serializerSchemaData.WriterSchema = field.GetValue(null);
             }
             else if (writerType.Equals(typeof(int)))
             {
