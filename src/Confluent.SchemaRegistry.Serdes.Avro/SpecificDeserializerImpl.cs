@@ -53,7 +53,13 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
             {
-                ReaderSchema = (global::Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                var schemaField = typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static);
+                if (schemaField is null)
+                {
+                    throw new ArgumentException($"ISpecificRecord implementation '{typeof(T).FullName}' must have public static field with name '_SCHEMA'.");
+                }
+
+                ReaderSchema = (global::Avro.Schema)schemaField.GetValue(null);
             }
             else if (typeof(T).Equals(typeof(int)))
             {
