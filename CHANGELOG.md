@@ -14,8 +14,9 @@ OpenSSL 3.0.x upgrade in librdkafka requires a major version bump, as some legac
 
 ## Enhancements
 
+=======
 - References librdkafka.redist 2.0.2. Refer to the [librdkafka v2.0.0 release notes](https://github.com/edenhill/librdkafka/releases/tag/v2.0.0) and later ones for more information.
-- Upgraded `NJsonSchema` to v10.6.3
+- Upgraded `NJsonSchema` to v10.8.0
 - Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
   when `UseLatestVersion` is set to true.
 - Added DeleteConsumerGroupOffset to AdminClient.

@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -23,7 +24,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void GetSchemaBySubjectAndVersion(Config config)
+        public static async Task GetSchemaBySubjectAndVersion(Config config)
         {
             var topicName = Guid.NewGuid().ToString();
 
@@ -35,13 +36,13 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
             var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
-            var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
+            var id = await sr.RegisterSchemaAsync(subject, testSchema1);
 
-            var latestSchema = sr.GetLatestSchemaAsync(subject).Result;
-            var schema = sr.GetRegisteredSchemaAsync(subject, latestSchema.Version).Result;
+            var latestSchema = await sr.GetLatestSchemaAsync(subject);
+            var schema = await sr.GetRegisteredSchemaAsync(subject, latestSchema.Version);
 
-            Assert.Equal(schema.SchemaString, testSchema1);
-            Assert.Equal(schema.SchemaType, SchemaType.Avro);
+            Assert.Equal(testSchema1, schema.SchemaString);
+            Assert.Equal(SchemaType.Avro, schema.SchemaType);
             Assert.Empty(schema.References);
         }
     }

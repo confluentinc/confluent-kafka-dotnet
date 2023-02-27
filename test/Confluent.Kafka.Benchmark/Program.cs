@@ -20,14 +20,13 @@ using System.Linq;
 using System.Threading;
 using Mono.Options;
 using Confluent.Kafka.Admin;
-
+using System.Threading.Tasks;
 
 namespace Confluent.Kafka.Benchmark
 {
     public class Program
     {
-
-        private static void CreateTopic(string bootstrapServers, string username, string password, string topicName, int partitionCount, short replicationFactor)
+        private static async Task CreateTopicAsync(string bootstrapServers, string username, string password, string topicName, int partitionCount, short replicationFactor)
         {
             var config = new AdminClientConfig
             {
@@ -42,7 +41,7 @@ namespace Confluent.Kafka.Benchmark
             {
                 try
                 {
-                    adminClient.DeleteTopicsAsync(new List<string> { topicName }).Wait();
+                    await adminClient.DeleteTopicsAsync(new List<string> { topicName });
                 }
                 catch (AggregateException ae)
                 {
@@ -54,11 +53,11 @@ namespace Confluent.Kafka.Benchmark
                 }
 
                 // Give the cluster a chance to remove the topic. If this isn't long enough (unlikely), there will be an error and the user can just re-run.
-                Thread.Sleep(2000);
+                await Task.Delay(TimeSpan.FromSeconds(2));
 
                 try
                 {
-                    adminClient.CreateTopicsAsync(new List<TopicSpecification> { new TopicSpecification { Name = topicName, NumPartitions = partitionCount, ReplicationFactor = replicationFactor } }).Wait();
+                    await adminClient.CreateTopicsAsync(new List<TopicSpecification> { new TopicSpecification { Name = topicName, NumPartitions = partitionCount, ReplicationFactor = replicationFactor } });
                 }
                 catch (AggregateException e)
                 {
@@ -68,7 +67,7 @@ namespace Confluent.Kafka.Benchmark
         }
 
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             bool showHelp = false;
             string mode = null;
@@ -114,7 +113,7 @@ namespace Confluent.Kafka.Benchmark
 
             if (partitionCount != null)
             {
-                CreateTopic(bootstrapServers, username, password, topicName, partitionCount.Value, replicationFactor);
+                await CreateTopicAsync(bootstrapServers, username, password, topicName, partitionCount.Value, replicationFactor);
             }
 
             if (mode == "throughput")

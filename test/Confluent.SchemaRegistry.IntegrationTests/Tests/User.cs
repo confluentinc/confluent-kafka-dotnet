@@ -6,13 +6,12 @@
 #region Designer generated code
 
 using pb = global::Google.Protobuf;
-using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
-using scg = global::System.Collections.Generic;
-namespace Confluent.Kafka.Examples.Protobuf {
+namespace Confluent.Kafka.Examples.Protobuf
+{
 
-  /// <summary>Holder for reflection information generated from user.proto</summary>
-  public static partial class UserReflection {
+    /// <summary>Holder for reflection information generated from user.proto</summary>
+    public static partial class UserReflection {
 
     #region Descriptor
     /// <summary>File descriptor for user.proto</summary>

@@ -15,7 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -24,7 +24,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void GetAllSubjects(Config config)
+        public static async Task GetAllSubjects(Config config)
         {
             var topicName = Guid.NewGuid().ToString();
 
@@ -35,22 +35,22 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
-            var subjectsBefore = sr.GetAllSubjectsAsync().Result;
+            var subjectsBefore = await sr.GetAllSubjectsAsync();
 
             var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
-            var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
+            var id = await sr.RegisterSchemaAsync(subject, testSchema1);
 
-            var subjectsAfter = sr.GetAllSubjectsAsync().Result;
+            var subjectsAfter = await sr.GetAllSubjectsAsync();
 
             Assert.Equal(1, subjectsAfter.Count - subjectsBefore.Count);
 
-            sr.RegisterSchemaAsync(subject, testSchema1).Wait();
+            await sr.RegisterSchemaAsync(subject, testSchema1);
 
-            var subjectsAfter2 = sr.GetAllSubjectsAsync().Result;
+            var subjectsAfter2 = await sr.GetAllSubjectsAsync();
 
             Assert.Equal(subjectsAfter.Count, subjectsAfter2.Count);
 
-            Assert.True(subjectsAfter2.Contains(subject));
+            Assert.Contains(subject, subjectsAfter2);
         }
     }
 }

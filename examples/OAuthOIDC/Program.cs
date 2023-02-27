@@ -77,7 +77,7 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
 
             try
             {
-                createTopic(commonConfig, topicName);
+                await CreateTopicAsync(commonConfig, topicName);
             }
             catch (CreateTopicsException e)
             {
@@ -142,13 +142,10 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
             }
         }
 
-        private static void createTopic(ClientConfig config, String topicName)
+        private static async Task CreateTopicAsync(ClientConfig config, String topicName)
         {
-            using (var adminClient = new AdminClientBuilder(config).Build())
-            {
-                adminClient.CreateTopicsAsync(new TopicSpecification[] {
-                            new TopicSpecification { Name = topicName, ReplicationFactor = 3, NumPartitions = 1 } }).Wait(); ;
-            }
+            using var adminClient = new AdminClientBuilder(config).Build();
+            await adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName, ReplicationFactor = 3, NumPartitions = 1 } });
         }
     }
 

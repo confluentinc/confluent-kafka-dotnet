@@ -47,7 +47,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             var versions = sr.GetSubjectVersionsAsync(subject).Result;
 
-            Assert.Equal(versions.Count, 2);
+            Assert.Equal(2, versions.Count);
         }
     }
 }
