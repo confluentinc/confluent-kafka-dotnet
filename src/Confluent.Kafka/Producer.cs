@@ -339,6 +339,110 @@ namespace Confluent.Kafka
             }
         }
 
+        private async Task ProduceImplAsync(
+            TopicPartition topicPartition,
+            Message<TKey, TValue> message,
+            IDeliveryHandler deliveryHandler)
+        {
+            if (message.Timestamp.Type != TimestampType.CreateTime)
+            {
+                if (message.Timestamp != Timestamp.Default)
+                {
+                    throw new ArgumentException("Timestamp must be either Timestamp.Default, or Timestamp.CreateTime.");
+                }
+            }
+
+            Headers headers = message.Headers ?? new Headers();
+
+            byte[] keyBytes;
+            try
+            {
+                keyBytes = (keySerializer != null)
+                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, message.Headers))
+                    : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, message.Headers)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new ProduceException<TKey, TValue>(
+                    new Error(ErrorCode.Local_KeySerialization),
+                    new DeliveryResult<TKey, TValue>
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
+                    },
+                    ex);
+            }
+
+            byte[] valBytes;
+            try
+            {
+                valBytes = (valueSerializer != null)
+                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, message.Headers))
+                    : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, message.Headers)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new ProduceException<TKey, TValue>(
+                    new Error(ErrorCode.Local_ValueSerialization),
+                    new DeliveryResult<TKey, TValue>
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
+                    },
+                    ex);
+            }
+
+            ErrorCode err;
+            if (this.enableDeliveryReports && deliveryHandler != null)
+            {
+                // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
+
+                // Note: There is a level of indirection between the GCHandle and
+                // physical memory address. GCHandle.ToIntPtr doesn't get the
+                // physical address, it gets an id that refers to the object via
+                // a handle-table.
+                var gch = GCHandle.Alloc(deliveryHandler);
+                var ptr = GCHandle.ToIntPtr(gch);
+
+                err = KafkaHandle.Produce(
+                    topicPartition.Topic,
+                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                    topicPartition.Partition.Value,
+                    message.Timestamp.UnixTimestampMs,
+                    headers,
+                    ptr);
+
+                if (err != ErrorCode.NoError)
+                {
+                    // note: freed in the delivery handler callback otherwise.
+                    gch.Free();
+                }
+            }
+            else
+            {
+                err = KafkaHandle.Produce(
+                    topicPartition.Topic,
+                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                    topicPartition.Partition.Value,
+                    message.Timestamp.UnixTimestampMs,
+                    headers,
+                    IntPtr.Zero);
+            }
+
+            if (err != ErrorCode.NoError)
+            {
+                throw new ProduceException<TKey, TValue>(
+                    KafkaHandle.CreatePossiblyFatalError(err, null),
+                    new DeliveryResult<TKey, TValue>
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
+                    });
+            }
+        }
+
 
         /// <inheritdoc/>
         public int Poll(TimeSpan timeout)
@@ -748,97 +852,34 @@ namespace Confluent.Kafka
             Message<TKey, TValue> message,
             CancellationToken cancellationToken)
         {
-            Headers headers = message.Headers ?? new Headers();
+            if (enableDeliveryReports)
+            {
+                var handler = new TypedTaskDeliveryHandlerShim(
+                    topicPartition.Topic,
+                    enableDeliveryReportKey ? message.Key : default(TKey),
+                    enableDeliveryReportValue ? message.Value : default(TValue));
 
-            byte[] keyBytes;
-            try
-            {
-                keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))
-                    : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers)).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    new Error(ErrorCode.Local_KeySerialization),
-                    new DeliveryResult<TKey, TValue>
-                    {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
-                    },
-                    ex);
-            }
-
-            byte[] valBytes;
-            try
-            {
-                valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))
-                    : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers)).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    new Error(ErrorCode.Local_ValueSerialization),
-                    new DeliveryResult<TKey, TValue>
-                    {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
-                    },
-                    ex);
-            }
-
-            try
-            {
-                if (enableDeliveryReports)
+                if (cancellationToken.CanBeCanceled)
                 {
-                    var handler = new TypedTaskDeliveryHandlerShim(
-                        topicPartition.Topic,
-                        enableDeliveryReportKey ? message.Key : default(TKey),
-                        enableDeliveryReportValue ? message.Value : default(TValue));
-
-                    if (cancellationToken.CanBeCanceled)
-                    {
-                        handler.CancellationTokenRegistration
-                            = cancellationToken.Register(() => handler.TrySetCanceled());
-                    }
-
-                    ProduceImpl(
-                        topicPartition.Topic,
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
-                        message.Timestamp, topicPartition.Partition, headers,
-                        handler);
-
-                    return await handler.Task.ConfigureAwait(false);
+                    handler.CancellationTokenRegistration
+                        = cancellationToken.Register(() => handler.TrySetCanceled());
                 }
-                else
-                {
-                    ProduceImpl(
-                        topicPartition.Topic, 
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                        message.Timestamp, topicPartition.Partition, headers, 
-                        null);
 
-                    var result = new DeliveryResult<TKey, TValue>
-                    {
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
-                        Message = message
-                    };
+                await ProduceImplAsync(topicPartition, message, handler).ConfigureAwait(false);
 
-                    return result;
-                }
+                return await handler.Task.ConfigureAwait(false);
             }
-            catch (KafkaException ex)
+            else
             {
-                throw new ProduceException<TKey, TValue>(
-                    ex.Error,
-                    new DeliveryResult<TKey, TValue>
-                    {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
-                    });
+                await ProduceImplAsync(topicPartition, message, null).ConfigureAwait(false);
+
+                var result = new DeliveryResult<TKey, TValue>
+                {
+                    TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
+                    Message = message
+                };
+
+                return result;
             }
         }
 
