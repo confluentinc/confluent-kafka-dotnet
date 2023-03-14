@@ -16,6 +16,9 @@ global_job_config:
 blocks:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7d7d98a (Final build - (1))
   - name: 'Linux x64'
     dependencies: [ ]
     task:
@@ -113,10 +116,13 @@ blocks:
             - artifact push workflow artifacts
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 0d10166 (Initial build try)
 =======
 >>>>>>> 70283a3 (ignoring flaky tests)
+=======
+>>>>>>> 7d7d98a (Final build - (1))
   - name: 'Integration tests'
     dependencies: [ ]
     task:
@@ -125,6 +131,7 @@ blocks:
           type: s1-prod-ubuntu20-04-amd64-2
       jobs:
         - name: 'Build and test'
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
           commands:
@@ -152,6 +159,13 @@ blocks:
   #           - dotnet restore
   #           - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
 >>>>>>> 8c53865 (faster response cycle)
+=======
+          commands:
+            - cd test/docker && docker-compose up -d && cd ../..
+            - export onSemaphore='set'
+            - dotnet restore
+            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+>>>>>>> 7d7d98a (Final build - (1))
   - name: 'Schema registry and serdes integration tests'
     dependencies: [ ]
     task:
