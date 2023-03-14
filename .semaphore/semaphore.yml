@@ -109,30 +109,28 @@ blocks:
             - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
             - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
             - artifact push workflow artifacts
-
-# TODO: Uncomment the integration tests once they are stable.
-#  - name: 'Integration tests'
-#    dependencies: [ ]
-#    task:
-#      agent:
-#        machine:
-#          type: s1-prod-ubuntu20-04-amd64-2
-#      jobs:
-#        - name: 'Build and test'
-#          commands:
-#            - cd test/docker && docker-compose up -d && cd ../..
-#            - dotnet restore
-#            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
-#  - name: 'Schema registry and serdes integration tests'
-#    dependencies: [ ]
-#    task:
-#      agent:
-#        machine:
-#          type: s1-prod-ubuntu20-04-amd64-2
-#      jobs:
-#        - name: 'Build and test'
-#          commands:
-#            - cd test/docker && docker-compose up -d && cd ../..
-#            - dotnet restore
-#            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
-#            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+  - name: 'Integration tests'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
+      jobs:
+        - name: 'Build and test'
+            commands:
+              - cd test/docker && docker-compose up -d && cd ../..
+              - dotnet restore
+              - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+  - name: 'Schema registry and serdes integration tests'
+      dependencies: [ ]
+      task:
+        agent:
+          machine:
+            type: s1-prod-ubuntu20-04-amd64-2
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - cd test/docker && docker-compose up -d && cd ../..
+            - dotnet restore
+            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
