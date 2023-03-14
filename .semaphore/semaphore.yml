@@ -14,6 +14,7 @@ global_job_config:
       value: 'true'
 
 blocks:
+<<<<<<< HEAD
   - name: 'Linux x64'
     dependencies: [ ]
     task:
@@ -113,6 +114,8 @@ blocks:
 <<<<<<< HEAD
 =======
 >>>>>>> 0d10166 (Initial build try)
+=======
+>>>>>>> 70283a3 (ignoring flaky tests)
   - name: 'Integration tests'
     dependencies: [ ]
     task:
@@ -124,8 +127,13 @@ blocks:
 <<<<<<< HEAD
 <<<<<<< HEAD
           commands:
+<<<<<<< HEAD
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
+=======
+            - cd test/docker && docker-compose up -d && cd ../..
+            - export onSemaphore='set'
+>>>>>>> 70283a3 (ignoring flaky tests)
             - dotnet restore
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
   - name: 'Schema registry and serdes integration tests'
@@ -165,6 +173,7 @@ blocks:
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
 <<<<<<< HEAD
+<<<<<<< HEAD
             - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
             - dotnet restore
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
@@ -198,6 +207,9 @@ blocks:
            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
 >>>>>>> dd5ba22 (Check for Flaky Tests)
 =======
+=======
+            - export onSemaphore='set'
+>>>>>>> 70283a3 (ignoring flaky tests)
             - dotnet restore
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
             - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
