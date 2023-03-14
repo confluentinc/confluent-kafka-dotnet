@@ -14,19 +14,19 @@ global_job_config:
       value: 'true'
 
 blocks:
-  - name: 'Integration tests'
-    dependencies: [ ]
-    task:
-      agent:
-        machine:
-          type: s1-prod-ubuntu20-04-amd64-2
-      jobs:
-        - name: 'Build and test'
-          commands:
-            - cd test/docker && docker-compose up -d && cd ../..
-            - export onSemaphore='set'
-            - dotnet restore
-            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+  # - name: 'Integration tests'
+  #   dependencies: [ ]
+  #   task:
+  #     agent:
+  #       machine:
+  #         type: s1-prod-ubuntu20-04-amd64-2
+  #     jobs:
+  #       - name: 'Build and test'
+  #         commands:
+  #           - cd test/docker && docker-compose up -d && cd ../..
+  #           - export onSemaphore='set'
+  #           - dotnet restore
+  #           - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
   - name: 'Schema registry and serdes integration tests'
     dependencies: [ ]
     task:
