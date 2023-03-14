@@ -122,11 +122,11 @@ blocks:
             - dotnet restore
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
   - name: 'Schema registry and serdes integration tests'
-      dependencies: [ ]
-      task:
-        agent:
-          machine:
-            type: s1-prod-ubuntu20-04-amd64-2
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
       jobs:
         - name: 'Build and test'
           commands:
