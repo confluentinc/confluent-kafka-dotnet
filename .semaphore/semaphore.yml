@@ -110,6 +110,9 @@ blocks:
             - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
             - artifact push workflow artifacts
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0d10166 (Initial build try)
   - name: 'Integration tests'
     dependencies: [ ]
     task:
@@ -118,6 +121,7 @@ blocks:
           type: s1-prod-ubuntu20-04-amd64-2
       jobs:
         - name: 'Build and test'
+<<<<<<< HEAD
           commands:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
@@ -129,10 +133,23 @@ blocks:
       agent:
         machine:
           type: s1-prod-ubuntu20-04-amd64-2
+=======
+            commands:
+              - cd test/docker && docker-compose up -d && cd ../..
+              - dotnet restore
+              - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+  - name: 'Schema registry and serdes integration tests'
+      dependencies: [ ]
+      task:
+        agent:
+          machine:
+            type: s1-prod-ubuntu20-04-amd64-2
+>>>>>>> 0d10166 (Initial build try)
       jobs:
         - name: 'Build and test'
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
+<<<<<<< HEAD
             - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
             - dotnet restore
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
@@ -165,3 +182,8 @@ blocks:
            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
 >>>>>>> dd5ba22 (Check for Flaky Tests)
+=======
+            - dotnet restore
+            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+>>>>>>> 0d10166 (Initial build try)
