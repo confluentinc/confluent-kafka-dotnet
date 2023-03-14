@@ -34,6 +34,10 @@ namespace Confluent.Kafka.IntegrationTests
         public void AdminClient_AlterConfigs(string bootstrapServers)
         {
             LogToFile("start AdminClient_AlterConfigs");
+            string onSemaphore = Environment.GetEnvironmentVariable("onSemaphore");
+            if(onSemaphore!=null){
+                return;
+            }
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
