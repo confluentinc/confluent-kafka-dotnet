@@ -122,6 +122,7 @@ blocks:
       jobs:
         - name: 'Build and test'
 <<<<<<< HEAD
+<<<<<<< HEAD
           commands:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
@@ -138,6 +139,12 @@ blocks:
               - cd test/docker && docker-compose up -d && cd ../..
               - dotnet restore
               - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+=======
+          commands:
+            - cd test/docker && docker-compose up -d && cd ../..
+            - dotnet restore
+            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+>>>>>>> dac6f59 (Initial build try-(2))
   - name: 'Schema registry and serdes integration tests'
       dependencies: [ ]
       task:
