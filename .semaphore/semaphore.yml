@@ -15,6 +15,7 @@ global_job_config:
 
 blocks:
 <<<<<<< HEAD
+<<<<<<< HEAD
   - name: 'Linux x64'
     dependencies: [ ]
     task:
@@ -136,6 +137,21 @@ blocks:
 >>>>>>> 70283a3 (ignoring flaky tests)
             - dotnet restore
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+=======
+  # - name: 'Integration tests'
+  #   dependencies: [ ]
+  #   task:
+  #     agent:
+  #       machine:
+  #         type: s1-prod-ubuntu20-04-amd64-2
+  #     jobs:
+  #       - name: 'Build and test'
+  #         commands:
+  #           - cd test/docker && docker-compose up -d && cd ../..
+  #           - export onSemaphore='set'
+  #           - dotnet restore
+  #           - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+>>>>>>> 8c53865 (faster response cycle)
   - name: 'Schema registry and serdes integration tests'
     dependencies: [ ]
     task:
