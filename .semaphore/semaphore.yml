@@ -146,12 +146,20 @@ blocks:
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
 >>>>>>> dac6f59 (Initial build try-(2))
   - name: 'Schema registry and serdes integration tests'
+<<<<<<< HEAD
       dependencies: [ ]
       task:
         agent:
           machine:
             type: s1-prod-ubuntu20-04-amd64-2
 >>>>>>> 0d10166 (Initial build try)
+=======
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
+>>>>>>> 6aabbdf (Initial build try-(3))
       jobs:
         - name: 'Build and test'
           commands:
