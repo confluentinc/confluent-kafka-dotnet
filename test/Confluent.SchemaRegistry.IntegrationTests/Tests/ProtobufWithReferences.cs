@@ -35,8 +35,11 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             bool skipFlakyTests = semaphoreSkipFlakyTests();
             if (skipFlakyTests)
             {
+<<<<<<< HEAD
                 LogToFile("Skipping SchemaRegistry_ProtobufWithReference Test on Semaphore due to its flaky nature");
 >>>>>>> cd388a0 (PR comment Addressal)
+=======
+>>>>>>> 11eca88 (Removed LogToFile for protobufwithreference)
                 return;
             }
 >>>>>>> 70283a3 (ignoring flaky tests)

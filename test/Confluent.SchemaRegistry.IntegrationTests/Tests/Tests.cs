@@ -27,6 +27,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     {
         private static List<object[]> schemaRegistryParameters;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         private object logLockObj = new object();
         private void LogToFile(string msg)
@@ -46,6 +47,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             => LogToFile($"end   {callerMemberName}");
 
 >>>>>>> 24c74c2 (added logtofile for protobuf_with_reference)
+=======
+>>>>>>> 11eca88 (Removed LogToFile for protobufwithreference)
         static Tests()
         {
             // Quick fix for https://github.com/Microsoft/vstest/issues/918
