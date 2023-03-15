@@ -26,6 +26,22 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         private static List<object[]> schemaRegistryParameters;
+        private object logLockObj = new object();
+        private void LogToFile(string msg)
+        {
+            lock (logLockObj)
+            {
+                // Uncomment to enable logging to a file. Useful for debugging,
+                // for example, which test caused librdkafka to segfault.
+                // File.AppendAllLines("/tmp/test.txt", new [] { msg });
+            }
+        }
+
+        private void LogToFileStartTest([CallerMemberName] string callerMemberName = null)
+            => LogToFile($"start {callerMemberName}");
+
+        private void LogToFileEndTest([CallerMemberName] string callerMemberName = null)
+            => LogToFile($"end   {callerMemberName}");
 
         static Tests()
         {
