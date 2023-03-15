@@ -119,7 +119,7 @@ blocks:
         - name: 'Build and test'
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
-            - export onSemaphore='set'
+            - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
             - dotnet restore
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
   - name: 'Schema registry and serdes integration tests'
@@ -132,7 +132,7 @@ blocks:
         - name: 'Build and test'
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
-            - export onSemaphore='set'
+            - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
             - dotnet restore
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
             - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
