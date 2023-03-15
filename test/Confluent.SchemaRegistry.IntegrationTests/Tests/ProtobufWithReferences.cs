@@ -26,10 +26,17 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         public static void ProtobufWithReferences(Config config)
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
             // FIXME : The Tests always Fails !!
 =======
             string onSemaphore = Environment.GetEnvironmentVariable("onSemaphore");
             if(onSemaphore!=null){
+=======
+            bool skipFlakyTests = semaphoreSkipFlakyTests();
+            if (skipFlakyTests)
+            {
+                LogToFile("Skipping SchemaRegistry_ProtobufWithReference Test on Semaphore due to its flaky nature");
+>>>>>>> cd388a0 (PR comment Addressal)
                 return;
             }
 >>>>>>> 70283a3 (ignoring flaky tests)

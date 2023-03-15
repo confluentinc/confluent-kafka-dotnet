@@ -162,7 +162,7 @@ blocks:
 =======
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
-            - export onSemaphore='set'
+            - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
             - dotnet restore
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
 >>>>>>> 7d7d98a (Final build - (1))
@@ -204,6 +204,7 @@ blocks:
             - cd test/docker && docker-compose up -d && cd ../..
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
             - dotnet restore
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
@@ -240,6 +241,9 @@ blocks:
 =======
             - export onSemaphore='set'
 >>>>>>> 70283a3 (ignoring flaky tests)
+=======
+            - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
+>>>>>>> cd388a0 (PR comment Addressal)
             - dotnet restore
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
             - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
