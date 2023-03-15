@@ -28,7 +28,6 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             bool skipFlakyTests = semaphoreSkipFlakyTests();
             if (skipFlakyTests)
             {
-                LogToFile("Skipping SchemaRegistry_ProtobufWithReference Test on Semaphore due to its flaky nature");
                 return;
             }
             var srInitial = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
