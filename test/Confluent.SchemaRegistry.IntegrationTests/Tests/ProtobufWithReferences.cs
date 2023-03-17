@@ -27,11 +27,15 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             // FIXME : The Tests always Fails !!
 =======
             string onSemaphore = Environment.GetEnvironmentVariable("onSemaphore");
             if(onSemaphore!=null){
 =======
+=======
+            // FIXME : The Tests always Fails !!
+>>>>>>> 8e92bdd (FIXME Comment for ProtobufWithReference and removed SchemaRegistry.IntegrationTests for now from semaphore)
             bool skipFlakyTests = semaphoreSkipFlakyTests();
             if (skipFlakyTests)
             {

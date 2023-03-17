@@ -209,6 +209,7 @@ blocks:
             - dotnet restore
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
             # - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+<<<<<<< HEAD
 =======
 
  - name: 'Integration tests'
@@ -248,3 +249,5 @@ blocks:
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
             - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
 >>>>>>> 0d10166 (Initial build try)
+=======
+>>>>>>> 8e92bdd (FIXME Comment for ProtobufWithReference and removed SchemaRegistry.IntegrationTests for now from semaphore)
