@@ -25,6 +25,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
         public static void ProtobufWithReferences(Config config)
         {
+            // FIXME : The Tests always Fails !!
             bool skipFlakyTests = semaphoreSkipFlakyTests();
             if (skipFlakyTests)
             {
