@@ -1099,6 +1099,10 @@ namespace Confluent.Kafka
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
 
+        /// <inheritdoc/>
+        public void SetSaslCredentials(string username, string password)
+            => kafkaHandle.SetSaslCredentials(username, password);
+
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.Name" />
         /// </summary>

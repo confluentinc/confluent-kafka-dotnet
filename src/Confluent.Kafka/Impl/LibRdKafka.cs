@@ -255,6 +255,7 @@ namespace Confluent.Kafka.Impl
             _list_groups = (ListGroups)methods.Single(m => m.Name == "rd_kafka_list_groups").CreateDelegate(typeof(ListGroups));
             _group_list_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_group_list_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _brokers_add = (Func<IntPtr, string, IntPtr>)methods.Single(m => m.Name == "rd_kafka_brokers_add").CreateDelegate(typeof(Func<IntPtr, string, IntPtr>));
+            _sasl_set_credentials = (_sasl_set_credentials_delegate)methods.Single(m => m.Name == "rd_kafka_sasl_set_credentials").CreateDelegate(typeof(_sasl_set_credentials_delegate));
             _outq_len = (Func<IntPtr, int>)methods.Single(m => m.Name == "rd_kafka_outq_len").CreateDelegate(typeof(Func<IntPtr, int>));
             _queue_new = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_queue_new").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _queue_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_queue_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -1142,6 +1143,11 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, string, IntPtr> _brokers_add;
         internal static IntPtr brokers_add(IntPtr rk, string brokerlist)
             => _brokers_add(rk, brokerlist);
+
+        private delegate IntPtr _sasl_set_credentials_delegate(IntPtr rk, string username, string password);
+        private static _sasl_set_credentials_delegate _sasl_set_credentials;
+        internal static IntPtr sasl_set_credentials(IntPtr rk, string username, string password)
+            => _sasl_set_credentials(rk, username, password);
 
         private static Func<IntPtr, int> _outq_len;
         internal static int outq_len(IntPtr rk) => _outq_len(rk);
