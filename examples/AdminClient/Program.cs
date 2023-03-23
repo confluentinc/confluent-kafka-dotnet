@@ -461,18 +461,28 @@ namespace Confluent.Kafka.Examples
         static async Task DescribeConsumerGroupsAsync(string bootstrapServers, string[] commandArgs) {
             if (commandArgs.Length < 1)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> describe-consumer-groups <group1> [<group2 ... <groupN>]");
+                Console.WriteLine("usage: .. <bootstrapServers> describe-consumer-groups <include_authorized_operations> <group1> [<group2 ... <groupN>]");
                 Environment.ExitCode = 1;
                 return;
             }
-
-            var groupNames = commandArgs.ToList();
+            
+            var includeAuthorizedOperations = (commandArgs[0] == "1");
+            var groupNames = commandArgs.Skip(1).ToList();
+            Console.WriteLine($"IncludeAuthOps: {includeAuthorizedOperations}");
             var timeout = TimeSpan.FromSeconds(30);
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            var config = new AdminClientConfig
+            {
+                BootstrapServers = bootstrapServers,
+                SaslUsername = "broker",
+                SaslPassword = "broker",
+                SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                SaslMechanism = SaslMechanism.ScramSha256
+            };
+            using (var adminClient = new AdminClientBuilder(config).Build())
             {
                 try
                 {
-                    var descResult = await adminClient.DescribeConsumerGroupsAsync(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout });
+                    var descResult = await adminClient.DescribeConsumerGroupsAsync(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout , IncludeAuthorizedOperations = true});
                     foreach (var group in descResult.ConsumerGroupDescriptions)
                     {
                         Console.WriteLine($"  Group: {group.GroupId} {group.Error}");
@@ -491,6 +501,10 @@ namespace Confluent.Kafka.Examples
                                 topicPartitions = String.Join(", ", m.Assignment.TopicPartitions.Select(tp => tp.ToString()));
                             }
                             Console.WriteLine($"      TopicPartitions: [{topicPartitions}]");
+                        }
+
+                        foreach (var op in group.AuthorizedOperations){
+                            Console.WriteLine();
                         }
                     }
                 }

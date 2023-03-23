@@ -33,5 +33,12 @@ namespace Confluent.Kafka.Admin
         ///     Default: null
         /// </summary>
         public TimeSpan? RequestTimeout { get; set; }
+
+        /// <summary>
+        ///     Decides if the broker should return authorized operations.
+        ///
+        ///     Default: false
+        /// </summary>
+        public bool IncludeAuthorizedOperations { get; set; } = false;
     }
 }
