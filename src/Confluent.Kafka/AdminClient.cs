@@ -343,6 +343,13 @@ namespace Confluent.Kafka
                     members.Add(member);
                 }
 
+                var authorizedOperationsCount = (int)Librdkafka.ConsumerGroupDescription_authorized_operations_count(groupPtr);
+                var authorizedOperations = new List<AclOperation>();
+
+                for(int opidx = 0; opidx < authorizedOperationsCount; opidx++){
+                    authorizedOperations.Add((AclOperation) Librdkafka.ConsumerGroupDescription_authorized_operation(groupPtr, (IntPtr) opidx));
+                }
+
                 var desc = new ConsumerGroupDescription() {
                     GroupId =
                         PtrToStringUTF8(Librdkafka.ConsumerGroupDescription_group_id(groupPtr)),

@@ -1411,6 +1411,17 @@ namespace Confluent.Kafka.Impl
 
         }
 
+        private void setOption_IncludeAuthorizedOperations(IntPtr optionsPtr, bool includeAuthorizedOperations)
+        {
+            var rError = Librdkafka.AdminOptions_set_include_authorized_operations(optionsPtr, (IntPtr)(int)(includeAuthorizedOperations ? 1 : 0));
+            var error = new Error(rError, true);
+            if (error.Code != ErrorCode.NoError)
+            {
+                throw new KafkaException(error);
+            }
+
+        }
+
         private void setOption_MatchConsumerGroupStates(IntPtr optionsPtr, ConsumerGroupState[] states)
         {
             var error = Librdkafka.AdminOptions_set_match_consumer_group_states(optionsPtr, states, (UIntPtr)states.Count());
@@ -2253,6 +2264,7 @@ namespace Confluent.Kafka.Impl
                 options = options ?? new DescribeConsumerGroupsOptions();
                 optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeConsumerGroups);
                 setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_IncludeAuthorizedOperations(optionsPtr, options.IncludeAuthorizedOperations);
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
                 // Call DescribeConsumerGroups (async).
