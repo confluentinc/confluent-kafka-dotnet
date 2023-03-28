@@ -1123,6 +1123,33 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_TopicDescription_partiton_id(IntPtr topicdesc, IntPtr idx);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DescribeCluster(
+                IntPtr handle,
+                IntPtr optionsPtr,
+                IntPtr resultQueuePtr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_DescribeCluster_result_description(IntPtr clusterdesc);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ClusterDescription_node_cnt(IntPtr clusterdesc);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ClusterDescription_cluster_id(IntPtr clusterdesc);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ClusterDescription_controller_id(IntPtr clusterdesc);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ClusterDescription_cluster_acl_operations_cnt(IntPtr clusterdesc);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ClusterDescription_authorized_operation_idx(IntPtr clusterdesc, IntPtr idx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ClusterDescription_node_idx(IntPtr clusterdesc, IntPtr idx);
+
         //
         // Queues
         //

@@ -165,7 +165,6 @@ namespace Confluent.Kafka.Impl
         static bool SetDelegates(Type nativeMethodsClass)
         {
             var methods = nativeMethodsClass.GetRuntimeMethods().ToArray();
-            Console.WriteLine($"{methods}");
 
             _version = (Func<IntPtr>)methods.Single(m => m.Name == "rd_kafka_version").CreateDelegate(typeof(Func<IntPtr>));
             _version_str = (Func<IntPtr>)methods.Single(m => m.Name == "rd_kafka_version_str").CreateDelegate(typeof(Func<IntPtr>));
@@ -419,6 +418,26 @@ namespace Confluent.Kafka.Impl
             _DescribeTopics_result_topics = (_DescribeTopics_result_topics_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeTopics_result_topics").CreateDelegate(typeof (_DescribeTopics_result_topics_delegate));
             _TopicDescription_error = (_TopicDescription_error_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_error").CreateDelegate(typeof (_TopicDescription_error_delegate));
             _TopicDescription_topic_name = (_TopicDescription_topic_name_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_topic_name").CreateDelegate(typeof (_TopicDescription_topic_name_delegate));
+            _TopicDescription_topic_authorized_operations_cnt = (_TopicDescription_topic_authorized_operations_cnt_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_topic_authorized_operations_cnt").CreateDelegate(typeof (_TopicDescription_topic_authorized_operations_cnt_delegate));
+            _TopicDescription_authorized_operation_idx = (_TopicDescription_authorized_operation_idx_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_authorized_operation_idx").CreateDelegate(typeof (_TopicDescription_authorized_operation_idx_delegate));
+            _TopicDescription_partition_error = (_TopicDescription_partition_error_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_partition_error").CreateDelegate(typeof (_TopicDescription_partition_error_delegate));
+            _TopicDescription_topic_partition_cnt = (_TopicDescription_topic_partition_cnt_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_topic_partition_cnt").CreateDelegate(typeof (_TopicDescription_topic_partition_cnt_delegate));
+            _TopicDescription_partiton_replica_idx = (_TopicDescription_partiton_replica_idx_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_partiton_replica_idx").CreateDelegate(typeof (_TopicDescription_partiton_replica_idx_delegate));
+            _TopicDescription_partiton_isrs_idx = (_TopicDescription_partiton_isrs_idx_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_partiton_isrs_idx").CreateDelegate(typeof (_TopicDescription_partiton_isrs_idx_delegate));
+            _TopicDescription_partiton_replica_cnt = (_TopicDescription_partiton_replica_cnt_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_partiton_replica_cnt").CreateDelegate(typeof (_TopicDescription_partiton_replica_cnt_delegate));
+            _TopicDescription_partiton_isr_cnt = (_TopicDescription_partiton_isr_cnt_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_partiton_isr_cnt").CreateDelegate(typeof (_TopicDescription_partiton_isr_cnt_delegate));
+            _TopicDescription_partiton_leader = (_TopicDescription_partiton_leader_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_partiton_leader").CreateDelegate(typeof (_TopicDescription_partiton_leader_delegate));
+            _TopicDescription_partiton_id = (_TopicDescription_partiton_id_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_partiton_id").CreateDelegate(typeof (_TopicDescription_partiton_id_delegate));
+
+            _DescribeCluster = (_DescribeCluster_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster").CreateDelegate(typeof (_DescribeCluster_delegate));
+            _DescribeCluster_result_description = (_DescribeCluster_result_description_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster_result_description").CreateDelegate(typeof (_DescribeCluster_result_description_delegate));
+            _ClusterDescription_node_cnt = (_ClusterDescription_node_cnt_delegate)methods.Single(m => m.Name == "rd_kafka_ClusterDescription_node_cnt").CreateDelegate(typeof (_ClusterDescription_node_cnt_delegate));
+            _ClusterDescription_cluster_id = (_ClusterDescription_cluster_id_delegate)methods.Single(m => m.Name == "rd_kafka_ClusterDescription_cluster_id").CreateDelegate(typeof (_ClusterDescription_cluster_id_delegate));
+            _ClusterDescription_controller_id = (_ClusterDescription_controller_id_delegate)methods.Single(m => m.Name == "rd_kafka_ClusterDescription_controller_id").CreateDelegate(typeof (_ClusterDescription_controller_id_delegate));
+            _ClusterDescription_cluster_acl_operations_cnt = (_ClusterDescription_cluster_acl_operations_cnt_delegate)methods.Single(m => m.Name == "rd_kafka_ClusterDescription_cluster_acl_operations_cnt").CreateDelegate(typeof (_ClusterDescription_cluster_acl_operations_cnt_delegate));
+            _ClusterDescription_authorized_operation_idx = (_ClusterDescription_authorized_operation_idx_delegate)methods.Single(m => m.Name == "rd_kafka_ClusterDescription_authorized_operation_idx").CreateDelegate(typeof (_ClusterDescription_authorized_operation_idx_delegate));
+            _ClusterDescription_node_idx = (_ClusterDescription_node_idx_delegate)methods.Single(m => m.Name == "rd_kafka_ClusterDescription_node_idx").CreateDelegate(typeof (_ClusterDescription_node_idx_delegate));
+
 
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1915,7 +1934,97 @@ namespace Confluent.Kafka.Impl
          internal static IntPtr  TopicDescription_topic_name(IntPtr topicdesc)
             => _TopicDescription_topic_name(topicdesc);
 
+         private delegate IntPtr  _TopicDescription_topic_authorized_operations_cnt_delegate(IntPtr topicdesc);
+         private static _TopicDescription_topic_authorized_operations_cnt_delegate _TopicDescription_topic_authorized_operations_cnt;
+         internal static IntPtr  TopicDescription_topic_authorized_operations_cnt(IntPtr topicdesc)
+            => _TopicDescription_topic_authorized_operations_cnt(topicdesc);
         
+         private delegate IntPtr  _TopicDescription_authorized_operation_idx_delegate(IntPtr topicdesc, IntPtr idx);
+         private static _TopicDescription_authorized_operation_idx_delegate _TopicDescription_authorized_operation_idx;
+         internal static IntPtr  TopicDescription_authorized_operation_idx(IntPtr topicdesc, IntPtr idx)
+            => _TopicDescription_authorized_operation_idx(topicdesc, idx);
+
+         private delegate IntPtr  _TopicDescription_partition_error_delegate(IntPtr topicdesc, IntPtr idx);
+         private static _TopicDescription_partition_error_delegate _TopicDescription_partition_error;
+         internal static IntPtr  TopicDescription_partition_error(IntPtr topicdesc, IntPtr idx)
+            => _TopicDescription_partition_error(topicdesc, idx);
+
+         private delegate IntPtr  _TopicDescription_topic_partition_cnt_delegate(IntPtr topicdesc);
+         private static _TopicDescription_topic_partition_cnt_delegate _TopicDescription_topic_partition_cnt;
+         internal static IntPtr  TopicDescription_topic_partition_cnt(IntPtr topicdesc)
+            => _TopicDescription_topic_partition_cnt(topicdesc);
+
+         private delegate IntPtr  _TopicDescription_partiton_replica_idx_delegate(IntPtr topicdesc, IntPtr pidx, IntPtr ridx);
+         private static _TopicDescription_partiton_replica_idx_delegate _TopicDescription_partiton_replica_idx;
+         internal static IntPtr  TopicDescription_partiton_replica_idx(IntPtr topicdesc, IntPtr pidx, IntPtr ridx)
+            => _TopicDescription_partiton_replica_idx(topicdesc, pidx, ridx);
+        
+         private delegate IntPtr  _TopicDescription_partiton_isrs_idx_delegate(IntPtr topicdesc, IntPtr pidx, IntPtr isridx);
+         private static _TopicDescription_partiton_isrs_idx_delegate _TopicDescription_partiton_isrs_idx;
+         internal static IntPtr  TopicDescription_partiton_isrs_idx(IntPtr topicdesc, IntPtr pidx, IntPtr isridx)
+            => _TopicDescription_partiton_isrs_idx(topicdesc, pidx, isridx);
+
+         private delegate IntPtr  _TopicDescription_partiton_replica_cnt_delegate(IntPtr topicdesc, IntPtr idx);
+         private static _TopicDescription_partiton_replica_cnt_delegate _TopicDescription_partiton_replica_cnt;
+         internal static IntPtr  TopicDescription_partiton_replica_cnt(IntPtr topicdesc, IntPtr idx)
+            => _TopicDescription_partiton_replica_cnt(topicdesc, idx);
+        
+         private delegate IntPtr  _TopicDescription_partiton_isr_cnt_delegate(IntPtr topicdesc, IntPtr idx);
+         private static _TopicDescription_partiton_isr_cnt_delegate _TopicDescription_partiton_isr_cnt;
+         internal static IntPtr  TopicDescription_partiton_isr_cnt(IntPtr topicdesc, IntPtr idx)
+            => _TopicDescription_partiton_isr_cnt(topicdesc, idx);
+
+         private delegate IntPtr  _TopicDescription_partiton_leader_delegate(IntPtr topicdesc, IntPtr idx);
+         private static _TopicDescription_partiton_leader_delegate _TopicDescription_partiton_leader;
+         internal static IntPtr  TopicDescription_partiton_leader(IntPtr topicdesc, IntPtr idx)
+            => _TopicDescription_partiton_leader(topicdesc, idx);
+
+         private delegate IntPtr  _TopicDescription_partiton_id_delegate(IntPtr topicdesc, IntPtr idx);
+         private static _TopicDescription_partiton_id_delegate _TopicDescription_partiton_id;
+         internal static IntPtr  TopicDescription_partiton_id(IntPtr topicdesc, IntPtr idx)
+            => _TopicDescription_partiton_id(topicdesc, idx);
+
+         private delegate void  _DescribeCluster_delegate(
+            IntPtr handle, IntPtr optionsPtr, IntPtr resultQueuePtr);
+         private static _DescribeCluster_delegate _DescribeCluster;
+         internal static void  DescribeCluster(
+            IntPtr handle, IntPtr optionsPtr, IntPtr resultQueuePtr)
+            => _DescribeCluster(handle, optionsPtr, resultQueuePtr);
+
+         private delegate IntPtr  _DescribeCluster_result_description_delegate(IntPtr clusterdesc);
+         private static _DescribeCluster_result_description_delegate _DescribeCluster_result_description;
+         internal static IntPtr  DescribeCluster_result_description(IntPtr clusterdesc)
+            => _DescribeCluster_result_description(clusterdesc);
+
+         private delegate IntPtr  _ClusterDescription_node_cnt_delegate(IntPtr clusterdesc);
+         private static _ClusterDescription_node_cnt_delegate _ClusterDescription_node_cnt;
+         internal static IntPtr  ClusterDescription_node_cnt(IntPtr clusterdesc)
+            => _ClusterDescription_node_cnt(clusterdesc);
+        
+         private delegate IntPtr  _ClusterDescription_cluster_id_delegate(IntPtr clusterdesc);
+         private static _ClusterDescription_cluster_id_delegate _ClusterDescription_cluster_id;
+         internal static IntPtr  ClusterDescription_cluster_id(IntPtr clusterdesc)
+            => _ClusterDescription_cluster_id(clusterdesc);
+
+         private delegate IntPtr  _ClusterDescription_controller_id_delegate(IntPtr clusterdesc);
+         private static _ClusterDescription_controller_id_delegate _ClusterDescription_controller_id;
+         internal static IntPtr  ClusterDescription_controller_id(IntPtr clusterdesc)
+            => _ClusterDescription_controller_id(clusterdesc);
+
+         private delegate IntPtr  _ClusterDescription_cluster_acl_operations_cnt_delegate(IntPtr clusterdesc);
+         private static _ClusterDescription_cluster_acl_operations_cnt_delegate _ClusterDescription_cluster_acl_operations_cnt;
+         internal static IntPtr  ClusterDescription_cluster_acl_operations_cnt(IntPtr clusterdesc)
+            => _ClusterDescription_cluster_acl_operations_cnt(clusterdesc);
+
+         private delegate IntPtr  _ClusterDescription_authorized_operation_idx_delegate(IntPtr clusterdesc, IntPtr idx);
+         private static _ClusterDescription_authorized_operation_idx_delegate _ClusterDescription_authorized_operation_idx;
+         internal static IntPtr  ClusterDescription_authorized_operation_idx(IntPtr clusterdesc, IntPtr idx)
+            => _ClusterDescription_authorized_operation_idx(clusterdesc, idx);
+
+         private delegate IntPtr  _ClusterDescription_node_idx_delegate(IntPtr clusterdesc, IntPtr idx);
+         private static _ClusterDescription_node_idx_delegate _ClusterDescription_node_idx;
+         internal static IntPtr  ClusterDescription_node_idx(IntPtr clusterdesc, IntPtr idx)
+            => _ClusterDescription_node_idx(clusterdesc, idx);
         //
         // Queues
         //
