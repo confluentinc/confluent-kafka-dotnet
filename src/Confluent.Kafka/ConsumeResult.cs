@@ -42,6 +42,11 @@ namespace Confluent.Kafka
         public Offset Offset { get; set; }
 
         /// <summary>
+        ///     The offset leader epoch (optional).
+        /// </summary>
+        public int? LeaderEpoch { get; set; }
+
+        /// <summary>
         ///     The TopicPartition associated with the message.
         /// </summary>
         public TopicPartition TopicPartition
@@ -54,13 +59,15 @@ namespace Confluent.Kafka
         {
             get
             {
-                return new TopicPartitionOffset(Topic, Partition, Offset);
+                return new TopicPartitionOffset(Topic, Partition, Offset,
+                    LeaderEpoch);
             }
             set
             {
                 Topic = value.Topic;
                 Partition = value.Partition;
                 Offset = value.Offset;
+                LeaderEpoch = value.LeaderEpoch;
             }
         }
 

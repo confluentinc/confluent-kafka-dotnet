@@ -556,6 +556,24 @@ namespace Confluent.Kafka
         ///     Thrown if the request failed.
         /// </exception>
         Offset Position(TopicPartition partition);
+        
+
+        /// <summary>
+        ///     Gets the current position (offset) for the
+        ///     specified topic / partition.
+        ///
+        ///     The offset field of each requested partition
+        ///     will be set to the offset of the last consumed
+        ///     message + 1, or Offset.Unset in case there was
+        ///     no previous message consumed by this consumer.
+        ///     
+        ///     The returned TopicPartitionOffset contains the leader epoch
+        ///     too.
+        /// </summary>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if the request failed.
+        /// </exception>
+        TopicPartitionOffset PositionTopicPartitionOffset(TopicPartition partition);
 
 
         /// <summary>
