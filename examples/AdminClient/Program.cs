@@ -646,7 +646,8 @@ namespace Confluent.Kafka.Examples
                         "list-groups", "metadata", "library-version", "create-topic", "create-acls",
                         "describe-acls", "delete-acls",
                         "list-consumer-groups", "describe-consumer-groups",
-                        "list-consumer-group-offsets", "alter-consumer-group-offsets", "describe-topics"
+                        "list-consumer-group-offsets", "alter-consumer-group-offsets", "describe-topics",
+                        "describe-cluster"
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
