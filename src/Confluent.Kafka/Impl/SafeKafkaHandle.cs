@@ -1411,6 +1411,39 @@ namespace Confluent.Kafka.Impl
 
         }
 
+        private void setOption_IncludeAuthorizedOperations(IntPtr optionsPtr, bool includeAuthorizedOperations)
+        {
+            var rError = Librdkafka.AdminOptions_set_include_authorized_operations(optionsPtr, (IntPtr)(int)(includeAuthorizedOperations ? 1 : 0));
+            var error = new Error(rError, true);
+            if (error.Code != ErrorCode.NoError)
+            {
+                throw new KafkaException(error);
+            }
+
+        }
+
+        private void setOption_IncludeTopicAuthorizedOperations(IntPtr optionsPtr, bool includeTopicAuthorizedOperations)
+        {
+            var rError = Librdkafka.AdminOptions_set_include_topic_authorized_operations(optionsPtr, (IntPtr)(int)(includeTopicAuthorizedOperations ? 1 : 0));
+            var error = new Error(rError, true);
+            if (error.Code != ErrorCode.NoError)
+            {
+                throw new KafkaException(error);
+            }
+
+        }
+
+        private void setOption_IncludeClusterAuthorizedOperations(IntPtr optionsPtr, bool includeClusterAuthorizedOperations)
+        {
+            var rError = Librdkafka.AdminOptions_set_include_cluster_authorized_operations(optionsPtr, (IntPtr)(int)(includeClusterAuthorizedOperations ? 1 : 0));
+            var error = new Error(rError, true);
+            if (error.Code != ErrorCode.NoError)
+            {
+                throw new KafkaException(error);
+            }
+
+        }
+
         private void setOption_MatchConsumerGroupStates(IntPtr optionsPtr, ConsumerGroupState[] states)
         {
             var error = Librdkafka.AdminOptions_set_match_consumer_group_states(optionsPtr, states, (UIntPtr)states.Count());
@@ -2253,12 +2286,71 @@ namespace Confluent.Kafka.Impl
                 options = options ?? new DescribeConsumerGroupsOptions();
                 optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeConsumerGroups);
                 setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_IncludeAuthorizedOperations(optionsPtr, options.IncludeAuthorizedOperations);
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
                 // Call DescribeConsumerGroups (async).
                 Librdkafka.DescribeConsumerGroups(
                     handle, groups.ToArray(), (UIntPtr)(groups.Count()),
                     optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+            }
+        }
+
+        internal void DescribeTopics(IEnumerable<string> topics, DescribeTopicsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            if (topics.Count() == 0) {
+                throw new ArgumentException("at least one topic should be provided to DescribeTopics");
+            }
+
+            var optionsPtr = IntPtr.Zero;
+            try
+            {
+                // Set Admin Options if any.
+                options = options ?? new DescribeTopicsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeTopics);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_IncludeTopicAuthorizedOperations(optionsPtr, options.IncludeTopicAuthorizedOperations);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                // Call DescribeTopics (async).
+                Librdkafka.DescribeTopics(
+                    handle, topics.ToArray(), (UIntPtr)(topics.Count()),
+                    optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+            }
+        }
+
+        internal void DescribeCluster(DescribeClusterOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            var optionsPtr = IntPtr.Zero;
+            try
+            {
+                // Set Admin Options if any.
+                options = options ?? new DescribeClusterOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeCluster);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_IncludeClusterAuthorizedOperations(optionsPtr, options.IncludeClusterAuthorizedOperations);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                // Call DescribeCluster (async).
+                Librdkafka.DescribeCluster(handle, optionsPtr, resultQueuePtr);
             }
             finally
             {
