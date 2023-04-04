@@ -1,10 +1,16 @@
 # 2.1.0
 
+## Enhancements
+
+- References librdkafka.redist 2.1.0. Refer to the [librdkafka v2.1.0 release notes](https://github.com/edenhill/librdkafka/releases/tag/v2.1.0) and later ones for more information.
 - Added SetSaslCredentials. This new method (on the Producer, Consumer, and AdminClient) allows modifying the stored
   SASL PLAIN/SCRAM credentials that will be used for subsequent (new) connections to a broker (#1980).
-- Fixed `OverflowException` thrown intermittently when using the `ListGroup` method (#2003).
 - Changed the way the `_SCHEMA` filed is accessed internally from reflecting the static field to accessing it from the instance ([AlexeyRaga](https://github.com/AlexeyRaga)).
 
+
+## Fixes
+
+- Fixed `OverflowException` thrown intermittently when using the `ListGroup` method (#2003).
 
 # 2.0.2
 
