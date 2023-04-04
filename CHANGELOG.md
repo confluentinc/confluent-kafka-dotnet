@@ -6,6 +6,8 @@
 - Added SetSaslCredentials. This new method (on the Producer, Consumer, and AdminClient) allows modifying the stored
   SASL PLAIN/SCRAM credentials that will be used for subsequent (new) connections to a broker (#1980).
 - Changed the way the `_SCHEMA` filed is accessed internally from reflecting the static field to accessing it from the instance ([AlexeyRaga](https://github.com/AlexeyRaga)).
+- [KIP-320](https://cwiki.apache.org/confluence/display/KAFKA/KIP-320%3A+Allow+fetchers+to+detect+and+handle+log+truncation): add offset leader epoch fields to the TopicPartitionOffset,
+  TopicPartitionOffsetError and ConsumeResult classes (#2027).
 
 
 ## Fixes

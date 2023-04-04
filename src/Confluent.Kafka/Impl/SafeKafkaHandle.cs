@@ -973,29 +973,58 @@ namespace Confluent.Kafka.Impl
             return result.Select(r => r.TopicPartitionOffset).ToList();
         }
 
-        internal void Seek(string topic, Partition partition, Offset offset, int millisecondsTimeout)
+        internal void Seek(string topic, Partition partition, Offset offset, int millisecondsTimeout,
+                           int? leaderEpoch = null)
         {
             ThrowIfHandleClosed();
-
-            SafeTopicHandle rkt = newTopic(topic, IntPtr.Zero);
-
-            bool success = false;
-            rkt.DangerousAddRef(ref success);
-
-            if (!success)
-            {
-                throw new Exception("Seek failed (DangerousAddRef failed)");
-            }
-
+          
             ErrorCode result;
-            try
+            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) 1);
+            if (list == IntPtr.Zero)
             {
-                result = Librdkafka.seek(rkt.DangerousGetHandle(), partition, offset, (IntPtr)millisecondsTimeout);
+                throw new Exception("Failed to create seek partition list");
             }
-            finally
+
+            IntPtr listPartition =
+                Librdkafka.topic_partition_list_add(list, topic, partition);
+
+            Marshal.WriteInt64(
+                listPartition,
+                (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                offset);
+            
+            if (leaderEpoch != null)
             {
-                rkt.DangerousRelease();
+                Librdkafka.topic_partition_set_leader_epoch(listPartition,
+                                                            leaderEpoch.Value);
             }
+
+            IntPtr resultError = Librdkafka.seek_partitions(
+                handle,
+                list, (IntPtr)millisecondsTimeout);
+            
+            if (resultError != IntPtr.Zero)
+            {
+                result = Librdkafka.error_code(resultError);
+            }
+            else
+            {
+                result = ErrorCode.NoError;
+            }
+            
+            if (result == ErrorCode.NoError)
+            {
+                var topicPartitionErrors = GetTopicPartitionErrorList(list);
+                foreach (var tp in topicPartitionErrors)
+                {
+                    if (tp.Error != ErrorCode.NoError)
+                    {
+                        result = tp.Error;
+                    }
+                }
+            }
+            
+            Librdkafka.topic_partition_list_destroy(list);
 
             if (result != ErrorCode.NoError)
             {
@@ -1171,16 +1200,20 @@ namespace Confluent.Kafka.Impl
             }
 
             var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
-            return Enumerable.Range(0, list.cnt)
-                .Select(i => Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(
-                    list.elems + i * Util.Marshal.SizeOf<rd_kafka_topic_partition>()))
-                .Select(ktp => new TopicPartitionOffsetError(
-                        ktp.topic,
-                        ktp.partition,
-                        ktp.offset,
-                        ktp.err
-                    ))
-                .ToList();
+            var returnList = new List<TopicPartitionOffsetError>(list.cnt);
+            for (var i = 0; i < list.cnt; i++)
+            {
+                var ptr = list.elems + i * Util.Marshal.SizeOf<rd_kafka_topic_partition>();
+                var ktp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(ptr);
+                returnList.Add(new TopicPartitionOffsetError(
+                    ktp.topic,
+                    ktp.partition,
+                    ktp.offset,
+                    ktp.err,
+                    Librdkafka.topic_partition_get_leader_epoch(ptr)
+                ));
+            }
+            return returnList;
         }
 
         /// <summary>
@@ -1233,6 +1266,12 @@ namespace Confluent.Kafka.Impl
                 }
                 IntPtr ptr = Librdkafka.topic_partition_list_add(list, p.Topic, p.Partition);
                 Marshal.WriteInt64(ptr, (int)Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"), p.Offset);
+                
+                if (p.LeaderEpoch != null)
+                {
+                    Librdkafka.topic_partition_set_leader_epoch(ptr,
+                                                                p.LeaderEpoch.Value);
+                }
             }
 
             return list;
