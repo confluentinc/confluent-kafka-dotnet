@@ -329,7 +329,11 @@ namespace Confluent.Kafka
         ///     No offset to automatically reset to
         /// </summary>
         Local_AutoOffsetReset = -140,
-
+        
+        /// <summary>
+        ///     Partition log truncation detected
+        /// </summary> 
+        Local_LogTruncation = -139,
 
         /// <summary>
         ///     Unknown broker error
