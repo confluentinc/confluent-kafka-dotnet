@@ -37,23 +37,23 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured key serializer.
         /// </summary>
-        public ISerializer<TKey> KeySerializer { get; set; }
+        public ISegmentSerializer<TKey> KeySerializer { get; set; }
 
         /// <summary>
         ///     The configured value serializer.
         /// </summary>
-        public ISerializer<TValue> ValueSerializer { get; set; }
-
+        public ISegmentSerializer<TValue> ValueSerializer { get; set; }
+        
+      
         /// <summary>
         ///     The configured async key serializer.
         /// </summary>
-        public IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
+        public IAsyncSegmentSerializer<TKey> AsyncKeySerializer { get; set; }
 
         /// <summary>
         ///     The configured async value serializer.
         /// </summary>
-        public IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
-
+        public IAsyncSegmentSerializer<TValue> AsyncValueSerializer { get; set; }
 
         /// <summary>
         ///     An underlying librdkafka client handle that the Producer will use to 
@@ -70,7 +70,7 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetKeySerializer(ISerializer<TKey> serializer)
         {
-            this.KeySerializer = serializer;
+            this.KeySerializer = new WrappedSyncSegmentSerializer<TKey>(serializer);
             return this;
         }
 
@@ -79,7 +79,7 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetValueSerializer(ISerializer<TValue> serializer)
         {
-            this.ValueSerializer = serializer;
+            this.ValueSerializer = new WrappedSyncSegmentSerializer<TValue>(serializer);
             return this;
         }
 
@@ -88,7 +88,7 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetKeySerializer(IAsyncSerializer<TKey> serializer)
         {
-            this.AsyncKeySerializer = serializer;
+            this.AsyncKeySerializer = new WrappedAsyncSyncSegmentSerializer<TKey>(serializer);
             return this;
         }
 
@@ -97,7 +97,43 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
+            this.AsyncValueSerializer = new WrappedAsyncSyncSegmentSerializer<TValue>(serializer);
+            return this;
+        }
+        
+        /// <summary>
+        ///     The async serializer to use to serialize keys. This uses the array segment API
+        /// </summary>
+        public DependentProducerBuilder<TKey, TValue> SetKeySerializer(IAsyncSegmentSerializer<TKey> serializer)
+        {
+            this.AsyncKeySerializer = serializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     The async serializer to use to serialize values. This uses the array segment API
+        /// </summary>
+        public DependentProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSegmentSerializer<TValue> serializer)
+        {
             this.AsyncValueSerializer = serializer;
+            return this;
+        }
+        
+        /// <summary>
+        ///     The async serializer to use to serialize keys. This uses the array segment API
+        /// </summary>
+        public DependentProducerBuilder<TKey, TValue> SetKeySerializer(ISegmentSerializer<TKey> serializer)
+        {
+            this.KeySerializer = serializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     The async serializer to use to serialize values. This uses the array segment API
+        /// </summary>
+        public DependentProducerBuilder<TKey, TValue> SetValueSerializer(ISegmentSerializer<TValue> serializer)
+        {
+            this.ValueSerializer = serializer;
             return this;
         }
 

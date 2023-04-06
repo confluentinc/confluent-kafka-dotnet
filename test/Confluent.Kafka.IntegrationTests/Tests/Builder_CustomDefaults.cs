@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     if (KeySerializer == null && AsyncKeySerializer == null)
                     {
-                        this.KeySerializer = (ISerializer<K>)(new Utf32Serializer());
+                        this.KeySerializer = new WrappedSyncSegmentSerializer<K>((ISerializer<K>)new Utf32Serializer());
                     }
                 }
 
@@ -57,7 +57,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     if (ValueSerializer == null && AsyncValueSerializer == null)
                     {
-                        this.ValueSerializer = (ISerializer<V>)(new Utf32Serializer());
+                        this.ValueSerializer = new WrappedSyncSegmentSerializer<V>((ISerializer<V>)new Utf32Serializer());
                     }
                 }
                 

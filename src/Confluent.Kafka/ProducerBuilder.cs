@@ -97,22 +97,22 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured key serializer.
         /// </summary>
-        internal protected ISerializer<TKey> KeySerializer { get; set; }
+        internal protected ISegmentSerializer<TKey> KeySerializer { get; set; }
 
         /// <summary>
         ///     The configured value serializer.
         /// </summary>
-        internal protected ISerializer<TValue> ValueSerializer { get; set; }
+        internal protected ISegmentSerializer<TValue> ValueSerializer { get; set; }
 
         /// <summary>
         ///     The configured async key serializer.
         /// </summary>
-        internal protected IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
+        internal protected IAsyncSegmentSerializer<TKey> AsyncKeySerializer { get; set; }
 
         /// <summary>
         ///     The configured async value serializer.
         /// </summary>
-        internal protected IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
+        internal protected IAsyncSegmentSerializer<TValue> AsyncValueSerializer { get; set; }
 
         internal Producer<TKey,TValue>.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
         {
@@ -306,7 +306,7 @@ namespace Confluent.Kafka
             {
                 throw new InvalidOperationException("Key serializer may not be specified more than once.");
             }
-            this.KeySerializer = serializer;
+            this.KeySerializer = new WrappedSyncSegmentSerializer<TKey>(serializer);
             return this;
         }
 
@@ -325,7 +325,7 @@ namespace Confluent.Kafka
             {
                 throw new InvalidOperationException("Value serializer may not be specified more than once.");
             }
-            this.ValueSerializer = serializer;
+            this.ValueSerializer = new WrappedSyncSegmentSerializer<TValue>(serializer);
             return this;
         }
 
@@ -344,7 +344,7 @@ namespace Confluent.Kafka
             {
                 throw new InvalidOperationException("Key serializer may not be specified more than once.");
             }
-            this.AsyncKeySerializer = serializer;
+            this.AsyncKeySerializer = new WrappedAsyncSyncSegmentSerializer<TKey>(serializer);
             return this;
         }
 
@@ -358,6 +358,82 @@ namespace Confluent.Kafka
         ///     Produce or ProduceAsync.
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
+        {
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
+            {
+                throw new InvalidOperationException("Value serializer may not be specified more than once.");
+            }
+            this.AsyncValueSerializer = new WrappedAsyncSyncSegmentSerializer<TValue>(serializer);
+            return this;
+        }
+        
+        /// <summary>
+        ///     The serializer to use to serialize keys.
+        /// </summary>
+        /// <remarks>
+        ///     If your key serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_KeySerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetKeySerializer(ISegmentSerializer<TKey> serializer)
+        {
+            if (this.KeySerializer != null || this.AsyncKeySerializer != null)
+            {
+                throw new InvalidOperationException("Key serializer may not be specified more than once.");
+            }
+            this.KeySerializer = serializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     The serializer to use to serialize values.
+        /// </summary>
+        /// <remarks>
+        ///     If your value serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_ValueSerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetValueSerializer(ISegmentSerializer<TValue> serializer)
+        {
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
+            {
+                throw new InvalidOperationException("Value serializer may not be specified more than once.");
+            }
+            this.ValueSerializer = serializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     The serializer to use to serialize keys.
+        /// </summary>
+        /// <remarks>
+        ///     If your key serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_KeySerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetKeySerializer(IAsyncSegmentSerializer<TKey> serializer)
+        {
+            if (this.KeySerializer != null || this.AsyncKeySerializer != null)
+            {
+                throw new InvalidOperationException("Key serializer may not be specified more than once.");
+            }
+            this.AsyncKeySerializer = serializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     The serializer to use to serialize values.
+        /// </summary>
+        /// <remarks>
+        ///     If your value serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_ValueSerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSegmentSerializer<TValue> serializer)
         {
             if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
             {
