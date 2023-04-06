@@ -794,6 +794,13 @@ namespace Confluent.Kafka
             try
             {
                 var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
+                int? msgLeaderEpoch = null;
+                Offset msgOffset = msg.offset;
+
+                if (msg.rkt != IntPtr.Zero && (msgOffset != Offset.Unset))
+                {
+                    msgLeaderEpoch = Librdkafka.message_leader_epoch(msgPtr);
+                }
 
                 string topic = null;
                 if (this.enableTopicNameMarshaling)
@@ -810,7 +817,7 @@ namespace Confluent.Kafka
                     {
                         TopicPartitionOffset = new TopicPartitionOffset(topic,
                             msg.partition, msg.offset,
-                            Librdkafka.message_leader_epoch(msgPtr)),
+                            msgLeaderEpoch),
                         Message = null,
                         IsPartitionEOF = true
                     };
@@ -857,7 +864,7 @@ namespace Confluent.Kafka
                         {
                             TopicPartitionOffset = new TopicPartitionOffset(topic,
                                 msg.partition, msg.offset,
-                                Librdkafka.message_leader_epoch(msgPtr)),
+                                msgLeaderEpoch),
                             Message = new Message<byte[], byte[]>
                             {
                                 Timestamp = timestamp,
@@ -890,7 +897,7 @@ namespace Confluent.Kafka
                         {
                             TopicPartitionOffset = new TopicPartitionOffset(topic,
                                 msg.partition, msg.offset,
-                                Librdkafka.message_leader_epoch(msgPtr)),
+                                msgLeaderEpoch),
                             Message = new Message<byte[], byte[]>
                             {
                                 Timestamp = timestamp,
@@ -924,7 +931,7 @@ namespace Confluent.Kafka
                         {
                             TopicPartitionOffset = new TopicPartitionOffset(topic,
                                 msg.partition, msg.offset,
-                                Librdkafka.message_leader_epoch(msgPtr)),
+                                msgLeaderEpoch),
                             Message = new Message<byte[], byte[]>
                             {
                                 Timestamp = timestamp,
@@ -942,7 +949,7 @@ namespace Confluent.Kafka
                 {
                     TopicPartitionOffset = new TopicPartitionOffset(topic,
                         msg.partition, msg.offset,
-                        Librdkafka.message_leader_epoch(msgPtr)),
+                        msgLeaderEpoch),
                     Message = new Message<TKey, TValue>
                     {
                         Timestamp = timestamp,
