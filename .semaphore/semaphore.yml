@@ -122,7 +122,7 @@ blocks:
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
             - dotnet restore
-            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+            - cd test/Confluent.Kafka.IntegrationTests && dotnet test --filter "FullyQualifiedName=Confluent.Kafka.IntegrationTests.Tests.Consumer_Poll_MessageError" && dotnet test -l "console;verbosity=normal" && cd ../..
   - name: 'Schema registry and serdes integration tests'
     dependencies: [ ]
     task:
