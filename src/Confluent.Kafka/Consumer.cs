@@ -24,7 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
-
+using Confluent.Kafka.Internal.Diagnostic;
 
 namespace Confluent.Kafka
 {
@@ -622,9 +622,12 @@ namespace Confluent.Kafka
             }
         }
 
-
+        private long driverId;
         internal Consumer(ConsumerBuilder<TKey, TValue> builder)
         {
+            driverId = Interlocked.Increment(ref ConfluentKafkaTrace.DriverCounter);
+            ConfluentKafkaTrace.TraceEvent(ConfluentKafkaTraceEvent.InitByConsumerBuilder, driverId, builder.Config);
+
             var baseConfig = builder.ConstructBaseConfig(this);
 
             this.statisticsHandler = baseConfig.statisticsHandler;
@@ -783,6 +786,7 @@ namespace Confluent.Kafka
                 return null;
             }
 
+            ConsumeResult<TKey, TValue> result = null;
             try
             {
                 var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
@@ -796,14 +800,17 @@ namespace Confluent.Kafka
                     }
                 }
 
+                ConfluentKafkaTrace.TraceEvent(ConfluentKafkaTraceEvent.Consume_Start, driverId, topic);
+
                 if (msg.err == ErrorCode.Local_PartitionEOF)
                 {
-                    return new ConsumeResult<TKey, TValue>
+                    result = new ConsumeResult<TKey, TValue>
                     {
                         TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                         Message = null,
                         IsPartitionEOF = true
                     };
+                    return result;
                 }
 
                 long timestampUnix = 0;
@@ -922,7 +929,7 @@ namespace Confluent.Kafka
                         ex);
                 }
 
-                return new ConsumeResult<TKey, TValue> 
+                result = new ConsumeResult<TKey, TValue> 
                 {
                     TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                     Message = new Message<TKey, TValue>
@@ -934,9 +941,19 @@ namespace Confluent.Kafka
                     },
                     IsPartitionEOF = false
                 };
+                return result;
+            }
+            catch(Exception ex)
+            {
+                ConfluentKafkaTrace.TraceEvent(ConfluentKafkaTraceEvent.Error, driverId, ex);
+                throw;
             }
             finally
             {
+                if(result != null)
+                {
+                    ConfluentKafkaTrace.TraceEvent(ConfluentKafkaTraceEvent.Consume_End, driverId, result.TopicPartitionOffset, result.Message.Key, result.IsPartitionEOF);
+                }
                 Librdkafka.message_destroy(msgPtr);
             }
         }
