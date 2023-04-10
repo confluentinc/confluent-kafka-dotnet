@@ -120,6 +120,10 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 /* rd_kafka_message_t * */ IntPtr rkmessage);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int rd_kafka_message_leader_epoch(
+                /* rd_kafka_message_t * */ IntPtr rkmessage);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_message_destroy(
                 /* rd_kafka_message_t * */ IntPtr rkmessage);
 
@@ -243,6 +247,14 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool rd_kafka_topic_partition_available(
                 IntPtr rkt, int partition);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int rd_kafka_topic_partition_get_leader_epoch(
+                IntPtr rkt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_topic_partition_set_leader_epoch(
+                IntPtr rkt, int leader_epoch);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_init_transactions(
@@ -404,6 +416,10 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_seek(
                 IntPtr rkt, int partition, long offset, IntPtr timeout_ms);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_seek_partitions(
+                IntPtr rkt, IntPtr partitions, IntPtr timeout_ms);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_committed(
