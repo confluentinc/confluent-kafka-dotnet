@@ -20,9 +20,9 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the "AdminClient.DescribeConsumerGroupsOptions" method.
+    ///     Options for the "AdminClient.DescribeTopicsOptions" method.
     /// </summary>
-    public class DescribeConsumerGroupsOptions
+    public class DescribeTopicsOptions
     {
         /// <summary>
         ///     The overall request timeout, including broker lookup, request
@@ -35,10 +35,10 @@ namespace Confluent.Kafka.Admin
         public TimeSpan? RequestTimeout { get; set; }
 
         /// <summary>
-        ///     Decides if the broker should return authorized operations.
+        ///     Decides if the broker should return topic authorized operations.
         ///
         ///     Default: false
         /// </summary>
-        public bool IncludeAuthorizedOperations { get; set; } = false;
+        public bool IncludeTopicAuthorizedOperations { get; set; } = false;
     }
 }
