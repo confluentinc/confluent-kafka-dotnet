@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Net;
 using System.Threading;
 using System.Security.Cryptography.X509Certificates;
 using Confluent.Kafka;
@@ -131,7 +132,10 @@ namespace Confluent.SchemaRegistry
         /// <param name="authenticationHeaderValueProvider">
         ///     The authentication header value provider
         /// </param>
-        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider)
+        /// <param name="proxy">
+        ///     The proxy server to use for connections
+        /// </param>
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, IWebProxy proxy = null)
         {
             if (config == null)
             {
@@ -248,7 +252,7 @@ namespace Confluent.SchemaRegistry
             try { sslVerify = sslVerificationMaybe.Value == null ? DefaultEnableSslCertificateVerification : bool.Parse(sslVerificationMaybe.Value); }
             catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify, proxy);
         }
 
         /// <summary>
@@ -263,6 +267,20 @@ namespace Confluent.SchemaRegistry
 
         }
 
+        /// <summary>
+        ///     Initialize a new instance of the SchemaRegistryClient class.
+        /// </summary>
+        /// <param name="config">
+        ///     Configuration properties.
+        /// </param>
+        /// <param name="proxy">
+        ///     The proxy server to use for connections
+        /// </param>
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config, IWebProxy proxy)
+            : this(config, null, proxy)
+        {
+
+        }
 
 
         /// <remarks>
