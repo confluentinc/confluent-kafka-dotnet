@@ -1112,6 +1112,7 @@ namespace Confluent.Kafka.Impl
             IntPtr msg_opaque)
         {
             IntPtr topicStrPtr = Marshal.StringToHGlobalAnsi(topic);
+            
             try
             {
                 rd_kafka_vu* vus = stackalloc rd_kafka_vu[] {
@@ -1124,14 +1125,29 @@ namespace Confluent.Kafka.Impl
                     new rd_kafka_vu() {vt = rd_kafka_vtype.Headers,   data  = new vu_data() {headers = headers}},
                     new rd_kafka_vu() {vt = rd_kafka_vtype.Opaque,    data  = new vu_data() {opaque = msg_opaque}},
                 };
-                return new Error(_produceva(rk,
-                    vus,
-                    new IntPtr(8))).Code;
+
+                IntPtr result = _produceva(rk, vus, new IntPtr(8));
+                return GetErrorCodeAndDestroy(result);
             }
             finally
             {
                 Marshal.FreeHGlobal(topicStrPtr);
             }
+        }
+
+        /// <summary>
+        ///  Mimicks what ctor in <see cref="Error"/> will do
+        /// </summary>
+        private static ErrorCode GetErrorCodeAndDestroy(IntPtr ptr)
+        {
+            if (ptr == IntPtr.Zero)
+            {
+                return ErrorCode.NoError;
+            }
+
+            var code = error_code(ptr);
+            error_destroy(ptr);
+            return code;
         }
 
         private delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);

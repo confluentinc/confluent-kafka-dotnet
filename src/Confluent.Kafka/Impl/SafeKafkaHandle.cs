@@ -310,20 +310,21 @@ namespace Confluent.Kafka.Impl
             return topicHandle;
         }
 
-        private IntPtr marshalHeaders(IEnumerable<IHeader> headers)
+        private IntPtr marshalHeaders(IReadOnlyList<IHeader> headers)
         {
             var headersPtr = IntPtr.Zero;
 
-            if (headers != null && headers.Any())
+            if (headers != null && headers.Count > 0)
             {
-                headersPtr = Librdkafka.headers_new((IntPtr) headers.Count());
+                headersPtr = Librdkafka.headers_new((IntPtr)headers.Count);
                 if (headersPtr == IntPtr.Zero)
                 {
                     throw new Exception("Failed to create headers list.");
                 }
-
-                foreach (var header in headers)
+                for (int x = 0; x < headers.Count; x++)
                 {
+                    var header = headers[x];
+
                     if (header.Key == null)
                     {
                         throw new ArgumentNullException("Message header keys must not be null.");
@@ -361,7 +362,7 @@ namespace Confluent.Kafka.Impl
             byte[] key, int keyOffset, int keyLength,
             int partition,
             long timestamp,
-            IEnumerable<IHeader> headers,
+            IReadOnlyList<IHeader> headers,
             IntPtr opaque)
         {
             var pValue = IntPtr.Zero;

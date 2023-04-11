@@ -1,3 +1,10 @@
+# vNext
+
+## Enhancements
+
+- Less heap allocations when calling Produce ([bjornbouetsmith](https://github.com/bjornbouetsmith), #2020)
+
+
 # 2.1.0
 
 ## Enhancements
@@ -8,7 +15,6 @@
 - Changed the way the `_SCHEMA` filed is accessed internally from reflecting the static field to accessing it from the instance ([AlexeyRaga](https://github.com/AlexeyRaga)).
 - [KIP-320](https://cwiki.apache.org/confluence/display/KAFKA/KIP-320%3A+Allow+fetchers+to+detect+and+handle+log+truncation): add offset leader epoch fields to the TopicPartitionOffset,
   TopicPartitionOffsetError and ConsumeResult classes (#2027).
-
 
 ## Fixes
 
