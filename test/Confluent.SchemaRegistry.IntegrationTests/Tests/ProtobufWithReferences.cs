@@ -29,6 +29,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 <<<<<<< HEAD
 <<<<<<< HEAD
             // FIXME : The Tests always Fails !!
+<<<<<<< HEAD
 =======
             string onSemaphore = Environment.GetEnvironmentVariable("onSemaphore");
             if(onSemaphore!=null){
@@ -47,6 +48,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 return;
             }
 >>>>>>> 70283a3 (ignoring flaky tests)
+=======
+>>>>>>> 2d4c33a (ProtobufWithReference skipFlaky removed)
             var srInitial = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
             var testSchemaBase64 = Confluent.Kafka.Examples.Protobuf.Person.Descriptor.File.SerializedData.ToBase64();
