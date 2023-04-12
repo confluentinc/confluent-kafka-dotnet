@@ -25,7 +25,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///     Some simple tests for all variants of Commit (and also Committed and Position)
+        ///    Some simple tests for all variants of Commit (and also Committed and Position)
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_Commit_Committed_Position(string bootstrapServers)
