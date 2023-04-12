@@ -26,11 +26,6 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         public static void ProtobufWithReferences(Config config)
         {
             // FIXME : The Tests always Fails !!
-            bool skipFlakyTests = semaphoreSkipFlakyTests();
-            if (skipFlakyTests)
-            {
-                return;
-            }
             var srInitial = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
             var testSchemaBase64 = Confluent.Kafka.Examples.Protobuf.Person.Descriptor.File.SerializedData.ToBase64();
