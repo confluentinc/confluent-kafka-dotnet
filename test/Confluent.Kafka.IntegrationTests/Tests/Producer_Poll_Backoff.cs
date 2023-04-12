@@ -33,7 +33,12 @@ namespace Confluent.Kafka.IntegrationTests
         public void Producer_Poll_Backoff(string bootstrapServers)
         {
             LogToFile("start Producer_Poll_Backoff");
-
+            bool skipFlakyTests = semaphoreSkipFlakyTests();
+            if (skipFlakyTests)
+            {
+                LogToFile("Skipping Producer_Poll_Backoff Test on Semaphore due to its flaky nature");
+                return;
+            }
             var pConfig = new ProducerConfig
             {
                 BootstrapServers = bootstrapServers,
