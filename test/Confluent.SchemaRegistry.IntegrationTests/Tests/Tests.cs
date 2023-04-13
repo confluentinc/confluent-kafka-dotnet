@@ -26,7 +26,6 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         private static List<object[]> schemaRegistryParameters;
-
         static Tests()
         {
             // Quick fix for https://github.com/Microsoft/vstest/issues/918
@@ -57,6 +56,14 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 schemaRegistryParameters = new List<object[]> { new object[] { config } };
             }
             return schemaRegistryParameters;
+        }
+        public static bool semaphoreSkipFlakyTests(){
+            string onSemaphore = Environment.GetEnvironmentVariable("SEMAPHORE_SKIP_FLAKY_TETSTS");
+            if (onSemaphore != null)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }
