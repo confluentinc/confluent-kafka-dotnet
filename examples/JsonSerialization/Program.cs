@@ -78,10 +78,6 @@ namespace Confluent.Kafka.Examples.JsonSerialization
             var producerConfig = new ProducerConfig
             {
                 BootstrapServers = bootstrapServers,
-                SaslUsername = "broker",
-                SaslPassword = "broker",
-                SecurityProtocol = SecurityProtocol.SaslPlaintext,
-                SaslMechanism = SaslMechanism.ScramSha256
             };
 
             var schemaRegistryConfig = new SchemaRegistryConfig
@@ -96,10 +92,6 @@ namespace Confluent.Kafka.Examples.JsonSerialization
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
-                SaslUsername = "broker",
-                SaslPassword = "broker",
-                SecurityProtocol = SecurityProtocol.SaslPlaintext,
-                SaslMechanism = SaslMechanism.ScramSha256,
                 GroupId = "json-example-consumer-group"
             };
 
