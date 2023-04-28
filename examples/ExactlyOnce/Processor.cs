@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Linq;
 
 
@@ -46,11 +47,6 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         ///     Message to produce.
         /// </summary>
         public Message<K, V> Message { get; set; }
-
-        /// <summary>
-        ///     Delivery handler for this message.
-        /// </summary>
-        public Action<DeliveryReport<K, V>> DeliveryHandler { get; set; } = null;
     }
 
     /// <summary>
@@ -60,17 +56,29 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
     /// </summary>
     public sealed class Processor<KC, VC, KP, VP> : IDisposable
     {
-        private static readonly ILogger logger = Utils.LoggerFactory.CreateLogger<Processor<KC, VC, KP, VP>>();
+        private static readonly ILogger Logger = Utils.LoggerFactory.CreateLogger<Processor<KC, VC, KP, VP>>();
 
-        private IProducer<KP, VP> producer { get; set; }
+        private IProducer<KP, VP> Producer { get; set; }
+        
+        private IConsumer<KC, VC> Consumer { get; set; }
 
-        private List<ConsumeResult<KC, VC>> inputBatch = new();
+        private readonly List<ConsumeResult<KC, VC>> InputBatch = new();
 
-        private List<ProduceMessage<KP, VP>> outputBatch = new();
+        private readonly List<ProduceMessage<KP, VP>> OutputBatch = new();
+        
+        private readonly List<DeliveryResult<KP, VP>> DeliveryReportsBatch = new();
 
-        private bool recreateProducer = true;
+        private bool RecreateProducer = true;
+        
+        private static readonly int PhaseNotStarted = 0;
+        private static readonly int PhaseInitTransaction = 1;
+        private static readonly int PhaseAccumulateBatch = 2;
+        private static readonly int PhaseCommit = 3;
+        private static readonly int PhaseFatalError = 4;
+        
+        private int CurrentPhase = PhaseNotStarted;
 
-        private DateTime? lastEndTransactionTime = null;
+        private DateTime? LastEndTransactionTime = null;
 
         private readonly ICollection<ProduceMessage<KP, VP>> EmptyList =
             new List<ProduceMessage<KP, VP>>(0).AsReadOnly();
@@ -207,7 +215,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 (
                     inputBatch.Count >= CommitMaxMessages ||
                     outputBatch.Count >= CommitMaxMessages ||
-                    DateTime.UtcNow > lastEndTransactionTime + CommitPeriod
+                    DateTime.UtcNow > LastEndTransactionTime + CommitPeriod
                 );
         }
 
@@ -222,7 +230,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             var txnRequiresAbort = e is KafkaTxnRequiresAbortException;
             var isRetriable = e is KafkaRetriableException;
             var isFatal = e.Error.IsFatal;
-            logger.LogError("{Operation} Kafka Exception caught: '{Message}', IsFatal: {isFatal}, TxnRequiresAbort: {TxnRequiresAbort}, IsRetriable: {IsRetriable}",
+            Logger.LogError("{Operation} Kafka Exception caught: '{Message}', IsFatal: {isFatal}, TxnRequiresAbort: {TxnRequiresAbort}, IsRetriable: {IsRetriable}",
                             operation, e.Message, isFatal, txnRequiresAbort, isRetriable);
             if (isFatal || txnRequiresAbort || !isRetriable)
             {
@@ -250,6 +258,23 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 }
             }
         }
+        
+        private ICollection<DeliveryResult<KP, VP>> ProduceBatch(ICollection<ProduceMessage<KP, VP>> batch)
+        {
+            Logger.LogInformation("Producing {Count} messages.", batch.Count);
+            ICollection<DeliveryResult<KP, VP>> drs = new List<DeliveryResult<KP, VP>>();
+            foreach (var message in batch)
+            {
+                DeliveryResult<KP, VP> dr = null;
+                Retry("Produce", () => 
+                    {
+                        dr = Producer.ProduceAsync(message.Topic, message.Message).GetAwaiter().GetResult();
+                    }, ThrowIfNotRetriable);
+                drs.Add(dr);
+            }
+            Logger.LogInformation("Producing messages completed");
+            return drs;
+        }
 
         /// <summary>
         ///     Commits transaction's produced and consumed messages.
@@ -257,23 +282,23 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         ///     recreates the producer if a fatal exception is thrown or
         ///     retries each operation that is throwing a retriable exception.
         /// </summary>
-        private void CommitKafkaTransaction(ICollection<ConsumeResult<KC, VC>> inputBatch,
-                                            ICollection<ProduceMessage<KP, VP>> outputBatch,
-                                            IConsumer<KC, VC> consumer)
+        private void CommitKafkaTransaction(ICollection<ConsumeResult<KC, VC>> inputBatch)
         {
-
+            // Start commit phase
+            CurrentPhase = PhaseCommit;
+            
             if (ProducerConfig == null)
             {
-                if (consumer != null)
+                if (Consumer != null)
                 {
                     try
                     {
                         foreach (var message in inputBatch)
                         {
-                            Retry("ConsumerStoreOffset", () => consumer.StoreOffset(message),
+                            Retry("ConsumerStoreOffset", () => Consumer.StoreOffset(message),
                                 ThrowIfNotRetriable);
                         }
-                        Retry("ConsumerCommit", () => consumer.Commit(),
+                        Retry("ConsumerCommit", () => Consumer.Commit(),
                                 ThrowIfNotRetriable);
                     }
                     catch (KafkaException e)
@@ -284,112 +309,34 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 return;
             }
 
-            while (!CancellationTokenSource.IsCancellationRequested)
+            if (Consumer != null)
             {
-                try
+                Retry("SendOffsetsToTransaction", () =>
                 {
-                    if (recreateProducer)
-                    {
-                        logger.LogInformation("(Re)creating producer");
-                        if (producer != null) producer.Dispose();
-                        producer = new ProducerBuilder<KP, VP>(ProducerConfig).Build();
-                        producer.InitTransactions(LocalTransactionOperationTimeout);
-                        recreateProducer = false;
-                    }
-
-                    logger.LogInformation("Calling BeginTransaction.");
-                    producer.BeginTransaction();
-
-                    logger.LogInformation("Producing {Count} messages.", outputBatch.Count);
-                    foreach (var message in outputBatch)
-                    {
-                        Retry("Produce", () => producer.Produce(message.Topic,
-                                                                message.Message,
-                                                                message.DeliveryHandler), ThrowIfNotRetriable);
-                    }
-
-                    logger.LogInformation("Producing message completed");
-
-                    if (consumer != null)
-                    {
-                        Retry("SendOffsetsToTransaction", () =>
-                        {
-                            logger.LogInformation("Calling SendOffsetsToTransaction");
-                            producer.SendOffsetsToTransaction(
-                                consumer.Assignment.Select(a => new TopicPartitionOffset(a, consumer.Position(a))),
-                                consumer.ConsumerGroupMetadata,
-                                LocalTransactionOperationTimeout);
-                        }, ThrowIfNotRetriable);
-                        logger.LogInformation("SendOffsetsToTransaction completed");
-                    }
-
-                    Retry("CommitTransaction", () =>
-                    {
-                        logger.LogInformation("calling CommitTransaction");
-                        producer.CommitTransaction();
-                    }, ThrowIfNotRetriable);
-
-                    logger.LogInformation("CommitTransaction completed");
-                    break;
-                }
-                catch (KafkaException e)
-                {
-                    logger.LogError("Kafka Exception caught, aborting transaction, trying again in {TotalSeconds} seconds: '{Message}'",
-                                    RetryInterval.TotalSeconds,
-                                    e.Message);
-                    var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
-                    if (e.Error.IsFatal)
-                    {
-                        if (!RecreateProducerOnFatalErrors)
-                            throw new ProcessorFatalError();
-                        recreateProducer = true;
-                    }
-                    else if (TxnRequiresAbort)
-                    {
-                        Retry("AbortTransaction", () =>
-                        {
-                            logger.LogInformation("calling AbortTransaction");
-                            producer.AbortTransaction(LocalTransactionOperationTimeout);
-                        }, (operation, eInner, retryInterval) =>
-                        {
-                            var TxnRequiresAbortErrorInner = eInner is KafkaTxnRequiresAbortException;
-                            var IsRetriableInner = eInner is KafkaRetriableException;
-                            var IsFatalInner = eInner.Error.IsFatal;
-                            logger.LogError("AbortTransaction Kafka Exception caught, trying again in {TotalSeconds} seconds: '{Message}', IsFatal: {IsFatal}, TxnRequiresAbort: {TxnRequiresAbortError}, IsRetriable: {IsRetriable}",
-                                            RetryInterval.TotalSeconds, eInner.Message,
-                                            IsFatalInner, TxnRequiresAbortErrorInner,
-                                            IsRetriableInner);
-                            Thread.Sleep(RetryInterval);
-                            if (!TxnRequiresAbortErrorInner && !IsRetriableInner)
-                            {
-                                if (IsFatalInner)
-                                {
-                                    if (!RecreateProducerOnFatalErrors)
-                                        throw new ProcessorFatalError();
-                                    recreateProducer = true;
-                                }
-                                // Propagate abort to consumer and application
-                                throw e;
-                            }
-                        });
-                        // Propagate abort to consumer and application
-                        throw;
-                    }
-                    Thread.Sleep(RetryInterval);
-                }
-                catch
-                {
-                    logger.LogError("Caught a different type of exception, this shouldn't happen'");
-                    throw;
-                }
+                    Logger.LogInformation("Calling SendOffsetsToTransaction");
+                    Producer.SendOffsetsToTransaction(
+                        Consumer.Assignment.Select(a =>
+                            new TopicPartitionOffset(a, Consumer.Position(a))),
+                        Consumer.ConsumerGroupMetadata,
+                        LocalTransactionOperationTimeout);
+                }, ThrowIfNotRetriable);
+                Logger.LogInformation("SendOffsetsToTransaction completed");
             }
+
+            Retry("CommitTransaction", () =>
+            {
+                Logger.LogInformation("calling CommitTransaction");
+                Producer.CommitTransaction();
+            }, ThrowIfNotRetriable);
+
+            Logger.LogInformation("CommitTransaction completed");
         }
 
         /// <summary>
         ///     Seeks assigned partitions to last committed offset,
         ///     or to the earliest offset if no offset was committed yet.
         /// </summary>
-        private void RewindConsumer(IConsumer<KC, VC> consumer, TimeSpan timeout)
+        private static void RewindConsumer(IConsumer<KC, VC> consumer, TimeSpan timeout)
         {
             foreach (var committedOffset in consumer.Committed(consumer.Assignment, timeout))
             {
@@ -401,22 +348,50 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
         private void ResetTransaction()
         {
-            lastEndTransactionTime = DateTime.UtcNow;
-            inputBatch.Clear();
-            outputBatch.Clear();
+            LastEndTransactionTime = DateTime.UtcNow;
+            InputBatch.Clear();
+            OutputBatch.Clear();
+            DeliveryReportsBatch.Clear();
+            CurrentPhase = PhaseInitTransaction;
         }
 
         /// <summary>
         ///     Sends and commits accumulated messages, if any.
         ///     This method should commit any application transaction too.
         /// </summary>
-        private void CommitMaybe(IConsumer<KC, VC> consumer)
+        private void CommitMaybe()
         {
-            if (inputBatch.Any() || outputBatch.Any())
+            if (InputBatch.Any() || OutputBatch.Any())
             {
-                CommitKafkaTransaction(inputBatch, outputBatch, consumer);
-                EndTransaction(inputBatch, outputBatch, true);
-                ResetTransaction();
+                DoCommit();
+            }
+        }
+        
+        private void DoCommit()
+        {
+            CommitKafkaTransaction(InputBatch);
+            CompleteTransaction(true);
+        }
+        
+        private void OnPartitionsAssigned(IConsumer<KC, VC> consumer, List<TopicPartition> partitions)
+        {
+            Logger.LogDebug("Assigned {Partitions}", partitions);
+        }
+
+        private void OnPartitionsLost(IConsumer<KC, VC> _, List<TopicPartitionOffset> _2)
+        {
+            // When partitions are lost, don't act.
+            Logger.LogWarning("Partitions lost.");
+        }
+        
+        private void OnPartitionsRevoked(IConsumer<KC, VC> _, List<TopicPartitionOffset> _2)
+        {
+            // When partitions are being revoked, commit transaction's remaining partitions
+            // before revoke is completed.
+            Logger.LogInformation("Partitions revoked.");
+            if (!CancellationTokenSource.IsCancellationRequested)
+            {
+                CommitMaybe();
             }
         }
 
@@ -429,116 +404,205 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 ConsumerConfig.IsolationLevel = IsolationLevel.ReadCommitted;
 
                 return new ConsumerBuilder<KC, VC>(ConsumerConfig)
-                    .SetPartitionsAssignedHandler((consumer, partitions) =>
-                    {
-                        logger.LogDebug("Assigned {Partitions}", partitions);
-                    })
-                    .SetPartitionsLostHandler((consumer, partitions) =>
-                    {
-                        // When partitions are lost, don't act.
-                        logger.LogWarning("Partitions lost.");
-                    })
-                    .SetPartitionsRevokedHandler((consumer, partitions) =>
-                    {
-                        // When partitions are being revoked, commit transaction's remaining partitions
-                        // before revoke is completed.
-                        logger.LogInformation("Partitions revoked.");
-                        if (!CancellationTokenSource.IsCancellationRequested)
-                        {
-                            CommitMaybe(consumer);
-                        }
-                    })
+                    .SetPartitionsAssignedHandler(OnPartitionsAssigned)
+                    .SetPartitionsLostHandler(OnPartitionsLost)
+                    .SetPartitionsRevokedHandler(OnPartitionsRevoked)
                     .Build();
             }
             return null;
+        }
+        
+        private void ConsumerRewind()
+        {
+            if (Consumer != null)
+            {
+                Retry("Rewind",
+                    () => RewindConsumer(Consumer, LocalTransactionOperationTimeout),
+                    (operation, e, retryInterval) =>
+                    {
+                        Thread.Sleep(RetryInterval);
+                    });
+            }
+        }
+        
+        private void CompleteTransaction(bool commit)
+        {
+            if (!commit)
+            {
+                ConsumerRewind();
+            }
+            try
+            {
+                EndTransaction(InputBatch, OutputBatch, commit);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("EndTransaction exception: {Message}",
+                    e.Message);
+            }
+            ResetTransaction();
+        }
+        
+        private void RestartKafkaTransaction()
+        {
+            if (CurrentPhase == PhaseInitTransaction ||
+                CurrentPhase == PhaseCommit)
+            {
+                if (RecreateProducer)
+                {
+                    Logger.LogInformation("(Re)creating producer");
+                    Producer?.Dispose();
+                    Producer = new ProducerBuilder<KP, VP>(ProducerConfig).Build();
+                    Producer.InitTransactions(LocalTransactionOperationTimeout);
+                    RecreateProducer = false;
+                }
+                
+                Logger.LogInformation("Calling BeginTransaction.");
+                Retry("BeginTransaction", () => Producer.BeginTransaction(),
+                    ThrowIfNotRetriable);
+                    
+                if (CurrentPhase == PhaseInitTransaction)
+                {
+                    CurrentPhase = PhaseAccumulateBatch;
+                }
+            }
+        }
+        
+        private void AbortKafkaTransaction()
+        {
+            Retry("AbortTransaction", () =>
+                {
+                    Logger.LogInformation("calling AbortTransaction");
+                    Producer.AbortTransaction(LocalTransactionOperationTimeout);
+                }, (operation, eInner, retryInterval) =>
+                {
+                    var TxnRequiresAbortErrorInner = eInner is KafkaTxnRequiresAbortException;
+                    var IsRetriableInner = eInner is KafkaRetriableException;
+                    var IsFatalInner = eInner.Error.IsFatal;
+                    Logger.LogError("AbortTransaction Kafka Exception caught, trying again in {TotalMilliseconds} seconds: '{Message}', IsFatal: {IsFatal}, TxnRequiresAbort: {TxnRequiresAbortError}, IsRetriable: {IsRetriable}",
+                                    RetryInterval.TotalMilliseconds, eInner.Message,
+                                    IsFatalInner, TxnRequiresAbortErrorInner,
+                                    IsRetriableInner);
+                    if (!TxnRequiresAbortErrorInner && !IsRetriableInner)
+                    {
+                        if (IsFatalInner)
+                        {
+                            FatalError();
+                        }
+                        // Propagate abort to consumer and application
+                        CompleteTransaction(false);
+                    }
+                    Thread.Sleep(RetryInterval);
+                });
+        }
+
+        private void FatalError()
+        {
+            if (!RecreateProducerOnFatalErrors)
+            {
+                // Propagate abort to consumer and application
+                CompleteTransaction(false);
+                CurrentPhase = PhaseFatalError;
+                throw new ProcessorFatalError();
+            }
+            RecreateProducer = true;
+        }
+        
+        private int CASCurrentPhase(int from, int to)
+        {
+            return Interlocked.CompareExchange(ref CurrentPhase, to, from);
         }
 
         /// <summary>
         ///     Runs the processor loop, calling process methods.
         /// </summary>
-        public void RunLoop()
+        private void RunLoop()
         {
-            using var consumer = CreateConsumerMaybe();
+            if (CASCurrentPhase(PhaseNotStarted, PhaseInitTransaction) != PhaseNotStarted)
+            {
+                return;
+            }
+            
+            Consumer = CreateConsumerMaybe();
             try
             {
                 ResetTransaction();
-                if (consumer != null) Subscribe(consumer);
+                if (Consumer != null) Subscribe(Consumer);
                 while (!CancellationTokenSource.IsCancellationRequested)
                 {
                     try
                     {
-                        ConsumeResult<KC, VC> consumeResult = null;
-                        if (consumer != null)
+                        RestartKafkaTransaction();
+                        
+                        if (CurrentPhase == PhaseCommit)
                         {
-                            consumeResult = consumer.Consume(ConsumeTimeout);
-                            if (consumeResult != null)
-                            {
-                                inputBatch.Add(consumeResult);
-                            }
+                            DeliveryReportsBatch.AddRange(
+                                ProduceBatch(OutputBatch));
+                            DoCommit();
                         }
-                        var messages = Process(consumeResult);
-                        outputBatch.AddRange(messages);
-                        var commitNeeded = IsCommitNeeded(inputBatch, outputBatch);
-                        if (commitNeeded)
+                        else
                         {
-                            CommitMaybe(consumer);
+                            ConsumeResult<KC, VC> consumeResult = null;
+                            if (Consumer != null)
+                            {
+                                consumeResult = Consumer.Consume(ConsumeTimeout);
+                                if (consumeResult != null)
+                                {
+                                    InputBatch.Add(consumeResult);
+                                }
+                            }
+                            var messages = Process(consumeResult);
+                            OutputBatch.AddRange(messages);
+                            DeliveryReportsBatch.AddRange(
+                                ProduceBatch(messages));
+
+                            var commitNeeded = IsCommitNeeded(InputBatch, OutputBatch);
+                            if (commitNeeded)
+                            {
+                                CommitMaybe();
+                            }
                         }
                     }
                     catch (KafkaException e)
                     {
-                        var txnRequiresAbort = e is KafkaTxnRequiresAbortException;
-                        logger.LogError("Consumer KafkaException exception: {Message}, TxnRequiresAbort: {TxnRequiresAbort}",
-                                        e.Message, txnRequiresAbort);
-                        if (txnRequiresAbort)
+                        Logger.LogError("Kafka Exception caught, aborting transaction, trying again in {TotalMilliseconds} ms: '{Message}'",
+                            RetryInterval.TotalMilliseconds,
+                            e.Message);
+                        var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
+                        if (e.Error.IsFatal)
                         {
-                            if (consumer != null)
-                            {
-                                Retry("Rewind",
-                                    () => RewindConsumer(consumer, LocalTransactionOperationTimeout),
-                                    (operation, e, retryInterval) =>
-                                    {
-                                        Thread.Sleep(RetryInterval);
-                                    });
-                            }
-                            EndTransaction(inputBatch, outputBatch, false);
-                            ResetTransaction();
-                            Thread.Sleep(RetryInterval);
+                            FatalError();
                         }
-                        else
+                        else if (TxnRequiresAbort)
                         {
-                            // This shouldn't happen
-                            throw;
+                            AbortKafkaTransaction();
                         }
+                        // Propagate abort to consumer and application
+                        CompleteTransaction(false);
+                        Thread.Sleep(RetryInterval);
                     }
                     catch (Exception e)
                     {
-                        if (e is ProcessorFatalError) throw;
-
-                        logger.LogError("Process exception: {Message}",
+                        Logger.LogError("Process exception: {Message}",
                                         e.Message);
-                        // Customer exception requires rewind and abort.
-                        if (consumer != null)
-                        {
-                            Retry("Rewind",
-                                () => RewindConsumer(consumer, LocalTransactionOperationTimeout),
-                                (operation, e, retryInterval) =>
-                                {
-                                    Thread.Sleep(RetryInterval);
-                                });
-                        }
-                        EndTransaction(inputBatch, outputBatch, false);
-                        ResetTransaction();
+                        // Propagate abort to consumer and application
+                        CompleteTransaction(false);
                         Thread.Sleep(RetryInterval);
                     }
                 }
             }
             finally
             {
-                if (consumer != null)
-                {
-                    consumer.Close();
-                }
+                Consumer?.Close();
             }
+        }
+        
+        async public Task Start()
+        {
+            await Task.Run(() =>
+            {
+                RunLoop();
+            });
         }
 
         /// <summary>
@@ -546,7 +610,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         public void Dispose()
         {
-            if (producer != null) producer.Dispose();
+            Producer?.Dispose();
         }
     }
 }

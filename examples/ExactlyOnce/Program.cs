@@ -152,7 +152,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                         ProducerConfig = config.Producer,
                         CancellationTokenSource = cts
                     };
-            await Task.Run(() => { processor.RunLoop(); });
+            await processor.Start();
             logger.LogInformation("Process finished");
         }
 
@@ -259,10 +259,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     };
             try
             {
-                await Task.Run(() =>
-                {
-                    transactionalProcessor.RunLoop();
-                });
+                await transactionalProcessor.Start();
             }
             catch (Exception e)
             {
@@ -375,10 +372,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     };
             try
             {
-                await Task.Run(() =>
-                {
-                    transactionalProcessor.RunLoop();
-                });
+                await transactionalProcessor.Start();
             }
             catch (Exception e)
             {
