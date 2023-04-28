@@ -138,23 +138,23 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// <summary>
         ///     Delegate for Subscribe.
         /// </summary>
-        public delegate void SubscribeDelegate(IConsumer<KC, VC> consumer);
+        public delegate Task SubscribeDelegate(IConsumer<KC, VC> consumer);
 
         /// <summary>
         ///     Delegate for Process.
         /// </summary>
-        public delegate ICollection<ProduceMessage<KP, VP>> ProcessDelegate(ConsumeResult<KC, VC> consumeResult);
+        public delegate Task<ICollection<ProduceMessage<KP, VP>>> ProcessDelegate(ConsumeResult<KC, VC> consumeResult);
 
         /// <summary>
         ///     Delegate for IsCommitNeeded.
         /// </summary>
-        public delegate bool IsCommitNeededDelegate(ICollection<ConsumeResult<KC, VC>> inputBatch,
+        public delegate Task<bool> IsCommitNeededDelegate(ICollection<ConsumeResult<KC, VC>> inputBatch,
                                                     ICollection<ProduceMessage<KP, VP>> outputBatch);
 
         /// <summary>
         ///     Delegate for EndTransaction.
         /// </summary>
-        public delegate void EndTransactionDelegate(ICollection<ConsumeResult<KC, VC>> inputBatch,
+        public delegate Task EndTransactionDelegate(ICollection<ConsumeResult<KC, VC>> inputBatch,
                                                     ICollection<ProduceMessage<KP, VP>> outputBatch,
                                                     bool committed);
 
@@ -198,34 +198,37 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             EndTransaction = new EndTransactionDelegate(DefaultEndTransaction);
         }
 
-        private void DefaultSubscribe(IConsumer<KC, VC> consumer)
+        private Task DefaultSubscribe(IConsumer<KC, VC> consumer)
         {
             consumer.Subscribe(InputTopics);
+            return Task.CompletedTask;
         }
 
-        private ICollection<ProduceMessage<KP, VP>> DefaultProcess(ConsumeResult<KC, VC> consumeResult)
+        private Task<ICollection<ProduceMessage<KP, VP>>> DefaultProcess(ConsumeResult<KC, VC> consumeResult)
         {
-            return EmptyList;
+            return Task.FromResult(EmptyList);
         }
 
-        private bool DefaultIsCommitNeeded(ICollection<ConsumeResult<KC, VC>> inputBatch,
+        private Task<bool> DefaultIsCommitNeeded(ICollection<ConsumeResult<KC, VC>> inputBatch,
                                            ICollection<ProduceMessage<KP, VP>> outputBatch)
         {
-            return (inputBatch.Any() || outputBatch.Any()) &&
+            bool isCommitNeeded = (inputBatch.Any() || outputBatch.Any()) &&
                 (
                     inputBatch.Count >= CommitMaxMessages ||
                     outputBatch.Count >= CommitMaxMessages ||
                     DateTime.UtcNow > LastEndTransactionTime + CommitPeriod
                 );
+            return Task.FromResult(isCommitNeeded);
         }
 
-        private void DefaultEndTransaction(ICollection<ConsumeResult<KC, VC>> inputBatch,
+        private Task DefaultEndTransaction(ICollection<ConsumeResult<KC, VC>> inputBatch,
                                            ICollection<ProduceMessage<KP, VP>> outputBatch,
                                            bool committed)
         {
+            return Task.CompletedTask;
         }
 
-        private static void ThrowIfNotRetriable(string operation, KafkaException e, TimeSpan retryInterval)
+        private static async Task ThrowIfNotRetriable(string operation, KafkaException e, TimeSpan retryInterval)
         {
             var txnRequiresAbort = e is KafkaTxnRequiresAbortException;
             var isRetriable = e is KafkaRetriableException;
@@ -236,42 +239,49 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             {
                 throw e;
             }
-            Thread.Sleep(retryInterval);
+            await Task.Delay(retryInterval);
         }
 
         /// <summary>
         ///     Retry executing <paramref name="action"/> until it succeeds,
         ///     call <paramref name="onKafkaException"/> if a <see cref="Confluent.Kafka.KafkaException" /> occurs.
         /// </summary>
-        private void Retry(string operation, Action action, Action<string, KafkaException, TimeSpan> onKafkaException = null)
+        private async Task Retry(string operation, Func<Task> action, Func<string, KafkaException, TimeSpan, Task> onKafkaException = null)
         {
             while (!CancellationTokenSource.IsCancellationRequested)
             {
                 try
                 {
-                    action();
+                    await action();
                     break;
                 }
                 catch (KafkaException e)
                 {
-                    onKafkaException?.Invoke(operation, e, RetryInterval);
+                    await onKafkaException?.Invoke(operation, e, RetryInterval);
                 }
             }
         }
         
-        private ICollection<DeliveryResult<KP, VP>> ProduceBatch(ICollection<ProduceMessage<KP, VP>> batch)
+        private async Task<DeliveryResult<KP, VP>> ProduceMessage(ProduceMessage<KP, VP> message)
+        {
+            DeliveryResult<KP, VP> dr = null;
+            await Retry("Produce", async () => 
+                {
+                    dr = await Producer.ProduceAsync(message.Topic, message.Message);
+                }, ThrowIfNotRetriable);
+            return dr;
+        }
+        
+        private async Task<ICollection<DeliveryResult<KP, VP>>> ProduceBatch(ICollection<ProduceMessage<KP, VP>> batch)
         {
             Logger.LogInformation("Producing {Count} messages.", batch.Count);
             ICollection<DeliveryResult<KP, VP>> drs = new List<DeliveryResult<KP, VP>>();
+            
             foreach (var message in batch)
             {
-                DeliveryResult<KP, VP> dr = null;
-                Retry("Produce", () => 
-                    {
-                        dr = Producer.ProduceAsync(message.Topic, message.Message).GetAwaiter().GetResult();
-                    }, ThrowIfNotRetriable);
-                drs.Add(dr);
+                drs.Add(await ProduceMessage(message));
             }
+
             Logger.LogInformation("Producing messages completed");
             return drs;
         }
@@ -282,7 +292,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         ///     recreates the producer if a fatal exception is thrown or
         ///     retries each operation that is throwing a retriable exception.
         /// </summary>
-        private void CommitKafkaTransaction(ICollection<ConsumeResult<KC, VC>> inputBatch)
+        private async Task CommitKafkaTransaction(ICollection<ConsumeResult<KC, VC>> inputBatch)
         {
             // Start commit phase
             CurrentPhase = PhaseCommit;
@@ -295,10 +305,20 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     {
                         foreach (var message in inputBatch)
                         {
-                            Retry("ConsumerStoreOffset", () => Consumer.StoreOffset(message),
+                            await Retry("ConsumerStoreOffset",
+                                () => 
+                                {
+                                    Consumer.StoreOffset(message);
+                                    return Task.CompletedTask;
+                                },
                                 ThrowIfNotRetriable);
                         }
-                        Retry("ConsumerCommit", () => Consumer.Commit(),
+                        await Retry("ConsumerCommit",
+                                () =>
+                                {
+                                    Consumer.Commit();
+                                    return Task.CompletedTask;
+                                },
                                 ThrowIfNotRetriable);
                     }
                     catch (KafkaException e)
@@ -311,7 +331,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
             if (Consumer != null)
             {
-                Retry("SendOffsetsToTransaction", () =>
+                await Retry("SendOffsetsToTransaction", () =>
                 {
                     Logger.LogInformation("Calling SendOffsetsToTransaction");
                     Producer.SendOffsetsToTransaction(
@@ -319,14 +339,16 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                             new TopicPartitionOffset(a, Consumer.Position(a))),
                         Consumer.ConsumerGroupMetadata,
                         LocalTransactionOperationTimeout);
+                    return Task.CompletedTask;
                 }, ThrowIfNotRetriable);
                 Logger.LogInformation("SendOffsetsToTransaction completed");
             }
 
-            Retry("CommitTransaction", () =>
+            await Retry("CommitTransaction", () =>
             {
                 Logger.LogInformation("calling CommitTransaction");
                 Producer.CommitTransaction();
+                return Task.CompletedTask;
             }, ThrowIfNotRetriable);
 
             Logger.LogInformation("CommitTransaction completed");
@@ -359,18 +381,18 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         ///     Sends and commits accumulated messages, if any.
         ///     This method should commit any application transaction too.
         /// </summary>
-        private void CommitMaybe()
+        private async Task CommitMaybe()
         {
             if (InputBatch.Any() || OutputBatch.Any())
             {
-                DoCommit();
+                await DoCommit();
             }
         }
         
-        private void DoCommit()
+        private async Task DoCommit()
         {
-            CommitKafkaTransaction(InputBatch);
-            CompleteTransaction(true);
+            await CommitKafkaTransaction(InputBatch);
+            await CompleteTransaction(true);
         }
         
         private void OnPartitionsAssigned(IConsumer<KC, VC> consumer, List<TopicPartition> partitions)
@@ -391,7 +413,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             Logger.LogInformation("Partitions revoked.");
             if (!CancellationTokenSource.IsCancellationRequested)
             {
-                CommitMaybe();
+                CommitMaybe().GetAwaiter().GetResult();
             }
         }
 
@@ -412,28 +434,29 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             return null;
         }
         
-        private void ConsumerRewind()
+        private async Task ConsumerRewind()
         {
             if (Consumer != null)
             {
-                Retry("Rewind",
-                    () => RewindConsumer(Consumer, LocalTransactionOperationTimeout),
-                    (operation, e, retryInterval) =>
+                await Retry("Rewind",
+                    () =>
                     {
-                        Thread.Sleep(RetryInterval);
-                    });
+                        RewindConsumer(Consumer, LocalTransactionOperationTimeout);
+                        return Task.CompletedTask;
+                    },
+                    (operation, e, retryInterval) => Task.Delay(RetryInterval));
             }
         }
         
-        private void CompleteTransaction(bool commit)
+        private async Task CompleteTransaction(bool commit)
         {
             if (!commit)
             {
-                ConsumerRewind();
+                await ConsumerRewind();
             }
             try
             {
-                EndTransaction(InputBatch, OutputBatch, commit);
+                await EndTransaction(InputBatch, OutputBatch, commit);
             }
             catch (Exception e)
             {
@@ -443,7 +466,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             ResetTransaction();
         }
         
-        private void RestartKafkaTransaction()
+        private async Task RestartKafkaTransaction()
         {
             if (CurrentPhase == PhaseInitTransaction ||
                 CurrentPhase == PhaseCommit)
@@ -458,8 +481,13 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 }
                 
                 Logger.LogInformation("Calling BeginTransaction.");
-                Retry("BeginTransaction", () => Producer.BeginTransaction(),
-                    ThrowIfNotRetriable);
+                await Retry("BeginTransaction",
+                      () =>
+                      {
+                        Producer.BeginTransaction();
+                        return Task.CompletedTask;
+                      },
+                      ThrowIfNotRetriable);
                     
                 if (CurrentPhase == PhaseInitTransaction)
                 {
@@ -468,13 +496,14 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             }
         }
         
-        private void AbortKafkaTransaction()
+        private async Task AbortKafkaTransaction()
         {
-            Retry("AbortTransaction", () =>
+            await Retry("AbortTransaction", () =>
                 {
                     Logger.LogInformation("calling AbortTransaction");
                     Producer.AbortTransaction(LocalTransactionOperationTimeout);
-                }, (operation, eInner, retryInterval) =>
+                    return Task.CompletedTask;
+                }, async (operation, eInner, retryInterval) =>
                 {
                     var TxnRequiresAbortErrorInner = eInner is KafkaTxnRequiresAbortException;
                     var IsRetriableInner = eInner is KafkaRetriableException;
@@ -487,21 +516,21 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     {
                         if (IsFatalInner)
                         {
-                            FatalError();
+                            await FatalError();
                         }
                         // Propagate abort to consumer and application
-                        CompleteTransaction(false);
+                        await CompleteTransaction(false);
                     }
-                    Thread.Sleep(RetryInterval);
+                    await Task.Delay(RetryInterval);
                 });
         }
 
-        private void FatalError()
+        private async Task FatalError()
         {
             if (!RecreateProducerOnFatalErrors)
             {
                 // Propagate abort to consumer and application
-                CompleteTransaction(false);
+                await CompleteTransaction(false);
                 CurrentPhase = PhaseFatalError;
                 throw new ProcessorFatalError();
             }
@@ -516,29 +545,29 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// <summary>
         ///     Runs the processor loop, calling process methods.
         /// </summary>
-        private void RunLoop()
+        public async Task Start()
         {
             if (CASCurrentPhase(PhaseNotStarted, PhaseInitTransaction) != PhaseNotStarted)
             {
-                return;
+                throw new InvalidOperationException("processor already started");
             }
             
             Consumer = CreateConsumerMaybe();
             try
             {
                 ResetTransaction();
-                if (Consumer != null) Subscribe(Consumer);
+                if (Consumer != null) await Subscribe(Consumer);
                 while (!CancellationTokenSource.IsCancellationRequested)
                 {
                     try
                     {
-                        RestartKafkaTransaction();
+                        await RestartKafkaTransaction();
                         
                         if (CurrentPhase == PhaseCommit)
                         {
                             DeliveryReportsBatch.AddRange(
-                                ProduceBatch(OutputBatch));
-                            DoCommit();
+                                await ProduceBatch(OutputBatch));
+                            await DoCommit();
                         }
                         else
                         {
@@ -551,15 +580,15 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                                     InputBatch.Add(consumeResult);
                                 }
                             }
-                            var messages = Process(consumeResult);
+                            var messages = await Process(consumeResult);
                             OutputBatch.AddRange(messages);
                             DeliveryReportsBatch.AddRange(
-                                ProduceBatch(messages));
+                                await ProduceBatch(messages));
 
-                            var commitNeeded = IsCommitNeeded(InputBatch, OutputBatch);
+                            var commitNeeded = await IsCommitNeeded(InputBatch, OutputBatch);
                             if (commitNeeded)
                             {
-                                CommitMaybe();
+                                await CommitMaybe();
                             }
                         }
                     }
@@ -571,23 +600,23 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                         var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
                         if (e.Error.IsFatal)
                         {
-                            FatalError();
+                            await FatalError();
                         }
                         else if (TxnRequiresAbort)
                         {
-                            AbortKafkaTransaction();
+                            await AbortKafkaTransaction();
                         }
                         // Propagate abort to consumer and application
-                        CompleteTransaction(false);
-                        Thread.Sleep(RetryInterval);
+                        await CompleteTransaction(false);
+                        await Task.Delay(RetryInterval);
                     }
                     catch (Exception e)
                     {
                         Logger.LogError("Process exception: {Message}",
                                         e.Message);
                         // Propagate abort to consumer and application
-                        CompleteTransaction(false);
-                        Thread.Sleep(RetryInterval);
+                        await CompleteTransaction(false);
+                        await Task.Delay(RetryInterval);
                     }
                 }
             }
@@ -595,14 +624,6 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             {
                 Consumer?.Close();
             }
-        }
-        
-        async public Task Start()
-        {
-            await Task.Run(() =>
-            {
-                RunLoop();
-            });
         }
 
         /// <summary>
