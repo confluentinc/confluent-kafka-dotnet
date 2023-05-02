@@ -20,6 +20,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
+using System.Reflection.Emit;
 using Confluent.Kafka;
 using NJsonSchema;
 using NJsonSchema.Generation;
@@ -59,6 +61,19 @@ namespace Confluent.SchemaRegistry.Serdes
         private ISchemaRegistryClient schemaRegistryClient;
         private Dictionary<string, Schema> dict_schema_name_to_schema = new Dictionary<string, Schema>();
         private Dictionary<string, JsonSchema> dict_schema_name_to_JsonSchema = new Dictionary<string, JsonSchema>();
+        private static int curRefNo = 0;
+        private static Type GetTypeForSchema()
+        {
+            string className = "S" + curRefNo.ToString();
+            curRefNo++;
+            string nameSpace = "Confluent.SchemaRegistry.Serdes";
+            AssemblyName assemblyName = new AssemblyName(nameSpace);
+            System.Reflection.Emit.AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
+            ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(nameSpace);
+            TypeBuilder typeBuilder = moduleBuilder.DefineType(nameSpace + "." + className, TypeAttributes.Public);
+            Type dynamicType = typeBuilder.CreateTypeInfo().AsType();
+            return dynamicType;
+        }
         private void create_schema_dict_util(Schema root)
         {
             string root_str = root.SchemaString;
@@ -87,6 +102,13 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 JsonSchemaResolver schemaResolver =
                     new JsonSchemaResolver(x, new JsonSchemaGeneratorSettings());
+                foreach (var reference in refers)
+                {
+                    JsonSchema jschema =
+                        dict_schema_name_to_JsonSchema[reference.Name];
+                    Type type = GetTypeForSchema();
+                    schemaResolver.AddSchema(type, false, jschema);
+                }
                 JsonReferenceResolver referenceResolver =
                     new JsonReferenceResolver(schemaResolver);
                 foreach (var reference in refers)

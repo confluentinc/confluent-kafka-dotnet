@@ -121,8 +121,6 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                 AutoRegisterSchemas = false,
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
-            var jsonSerializer = new JsonSerializer<Object>(sr, latestSchema2);
-            var jsonDeserializer = new JsonSerializer<Object>(sr, latestSchema2);
             
             CancellationTokenSource cts = new CancellationTokenSource();
 
