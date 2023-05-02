@@ -35,8 +35,13 @@ namespace Confluent.Kafka
         /// <param name="error">
         ///     A Kafka error.
         /// </param>
-        public TopicPartitionOffsetError(TopicPartition tp, Offset offset, Error error)
-            : this(tp.Topic, tp.Partition, offset, error) {}
+        /// <param name="leaderEpoch">
+        ///     The offset leader epoch (optional).
+        /// </param>
+        public TopicPartitionOffsetError(TopicPartition tp, Offset offset,
+                                         Error error,
+                                         int? leaderEpoch = null)
+            : this(tp.Topic, tp.Partition, offset, error, leaderEpoch) {}
 
         /// <summary>
         ///     Initializes a new TopicPartitionOffsetError instance.
@@ -48,7 +53,8 @@ namespace Confluent.Kafka
         ///     A Kafka error.
         /// </param>
         public TopicPartitionOffsetError(TopicPartitionOffset tpo, Error error)
-            : this(tpo.Topic, tpo.Partition, tpo.Offset, error) {}
+            : this(tpo.Topic, tpo.Partition, tpo.Offset, error,
+                   tpo.LeaderEpoch) {}
 
         /// <summary>
         ///     Initializes a new TopicPartitionOffsetError instance.
@@ -65,12 +71,17 @@ namespace Confluent.Kafka
         /// <param name="error">
         ///     A Kafka error.
         /// </param>
-        public TopicPartitionOffsetError(string topic, Partition partition, Offset offset, Error error)
+        /// <param name="leaderEpoch">
+        ///     The offset leader epoch (optional).
+        /// </param>
+        public TopicPartitionOffsetError(string topic, Partition partition, Offset offset,
+                                         Error error, int? leaderEpoch = null)
         {
             Topic = topic;
             Partition = partition;
             Offset = offset;
             Error = error;
+            LeaderEpoch = leaderEpoch;
         }
 
         /// <summary>
@@ -87,6 +98,11 @@ namespace Confluent.Kafka
         ///     Gets the Kafka partition offset value.
         /// </summary>
         public Offset Offset { get; }
+        
+        /// <summary>
+        ///     Gets the offset leader epoch (optional).
+        /// </summary>
+        public int? LeaderEpoch { get; }
 
         /// <summary>
         ///     Gets the Kafka error.
@@ -103,7 +119,7 @@ namespace Confluent.Kafka
         ///     Gets the TopicPartitionOffset component of this TopicPartitionOffsetError instance.
         /// </summary>>
         public TopicPartitionOffset TopicPartitionOffset
-            => new TopicPartitionOffset(Topic, Partition, Offset);
+            => new TopicPartitionOffset(Topic, Partition, Offset, LeaderEpoch);
 
         /// <summary>
         ///     Tests whether this TopicPartitionOffsetError instance is equal to the specified object.
