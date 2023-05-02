@@ -163,7 +163,7 @@ namespace Confluent.Kafka
             var lcResult = result.ToString().ToLowerInvariant();
             if (EnumNameToConfigValueSubstitutes.Values.Count(v => v == lcResult) > 0)
             {
-                return Enum.Parse(type, EnumNameToConfigValueSubstitutes.First(v => v.Value == result).Key, ignoreCase: true);
+                return Enum.Parse(type, EnumNameToConfigValueSubstitutes.First(v => v.Value == lcResult).Key, ignoreCase: true);
             }
             return Enum.Parse(type, result, ignoreCase: true);
         }
