@@ -77,7 +77,7 @@ namespace Confluent.Kafka.Examples.JsonSerialization
 
             var producerConfig = new ProducerConfig
             {
-                BootstrapServers = bootstrapServers,
+                BootstrapServers = bootstrapServers
             };
 
             var schemaRegistryConfig = new SchemaRegistryConfig
