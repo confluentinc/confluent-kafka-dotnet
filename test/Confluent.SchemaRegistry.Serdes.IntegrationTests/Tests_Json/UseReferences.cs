@@ -18,10 +18,8 @@ using Xunit;
 using System;
 using System.Collections.Generic;
 using Confluent.Kafka;
-using NJsonSchema;
-using Newtonsoft.Json;
+using Confluent.Kafka.SyncOverAsync;
 using Newtonsoft.Json.Linq;
-using NJsonSchema.Generation;
 
 namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 {
@@ -103,9 +101,17 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         public static void UseReferences(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+
+            var consumerConfig = new ConsumerConfig
+            {
+                BootstrapServers = bootstrapServers,
+                GroupId = Guid.NewGuid().ToString(),
+                AutoOffsetReset = AutoOffsetReset.Earliest
+            };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
             var sr = new CachedSchemaRegistryClient(schemaRegistryConfig);
 
+            // Register the reference schemas
             var subject3 = "Customer";
             var id3 = sr.RegisterSchemaAsync(subject3, new Schema(S3, Confluent.SchemaRegistry.SchemaType.Json)).Result;
             var s3 = sr.GetLatestSchemaAsync(subject3).Result;
@@ -115,35 +121,68 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             var id1 = sr.RegisterSchemaAsync(subject1, new Schema(S1, refs1, Confluent.SchemaRegistry.SchemaType.Json)).Result;
             var s1 = sr.GetLatestSchemaAsync(subject1).Result;
 
+            // Register the top level schema
             var subject2 = "Order";
             var refs2 = new List<SchemaReference> { new SchemaReference("http://example.com/order_details.schema.json", subject1, s1.Version) };
             var id2 = sr.RegisterSchemaAsync(subject2, new Schema(S2, refs2, Confluent.SchemaRegistry.SchemaType.Json)).Result;
             var s2 = sr.GetLatestSchemaAsync(subject2).Result;
 
-            var jsonSerializer = new JsonSerializer<Object>(sr, s2.Schema);
-            // using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            // using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig)) 
-            // {
-            //     using (var producer =
-            //         new ProducerBuilder<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco>(producerConfig)
-            //             .SetValueSerializer(new JsonSerializer<Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco>(schemaRegistry))
-            //             .Build())
-            //     {
-            //         var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco { IntField = 1 };
-            //         producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco> { Key = "test1", Value = c }).Wait();
-            //     }
+            // Create serialiser and deserialiser along with the Order schema
+            using (var topic = new TemporaryTopic(bootstrapServers, 1))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            {
+                using (var producer =
+                    new ProducerBuilder<string, Object>(producerConfig)
+                        .SetValueSerializer(new JsonSerializer<Object>(schemaRegistry, s2.Schema))
+                        .Build())
+                {
+                    var order = new
+                    {
+                        order_details = new
+                        {
+                            id = 123,
+                            customer = new
+                            {
+                                name = "Schema Registry",
+                                id = 456,
+                                email = "schema@example.com"
+                            },
+                            payment_id = "abc123"
+                        },
+                        order_date = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                    };
+                    producer.ProduceAsync(topic.Name, new Message<string, Object> { Key = "test1", Value = order }).Wait();
 
-            //     using (var producer = 
-            //         new ProducerBuilder<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(producerConfig)
-            //             .SetValueSerializer(new JsonSerializer<Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(
-            //                 schemaRegistry, new JsonSerializerConfig { UseLatestVersion = true, AutoRegisterSchemas = false, LatestCompatibilityStrict = true }))
-            //             .Build())
-            //     {
-            //         var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco { StringField = "Test" };
-            //         Assert.Throws<AggregateException>(
-            //             () => producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco> { Key = "test1", Value = c }).Wait());
-            //     }
-            // }
+                    using (var consumer =
+                    new ConsumerBuilder<string, JObject>(consumerConfig)
+                        .SetValueDeserializer(new JsonDeserializer<JObject>(sr, s2.Schema).AsSyncOverAsync())
+                        .Build())
+                    {
+                        consumer.Subscribe(topic.Name);
+                        var cr = consumer.Consume();
+                        var jObject = cr.Message.Value;
+                        // No validation error, the message consumed is same as produced
+                        Assert.Equal<int>(123, jObject["order_details"]["id"].Value<int>());
+                    }
+                }
+
+                using (var producer =
+                    new ProducerBuilder<string, Object>(producerConfig)
+                        .SetValueSerializer(new JsonSerializer<Object>(
+                            schemaRegistry, s2.Schema, new JsonSerializerConfig
+                            {
+                                UseLatestVersion = true,
+                                AutoRegisterSchemas = false,
+                                LatestCompatibilityStrict = true
+                            }))
+                        .Build())
+                {
+                    var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco { StringField = "Test" };
+                    // Validation failure when passing TestClasses2.TestPoco
+                    Assert.Throws<AggregateException>(
+                        () => producer.ProduceAsync(topic.Name, new Message<string, Object> { Key = "test1", Value = c }).Wait());
+                }
+            }
         }
     }
 }

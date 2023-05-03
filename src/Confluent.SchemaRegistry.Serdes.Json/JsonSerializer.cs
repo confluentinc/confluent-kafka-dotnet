@@ -29,7 +29,6 @@ using System.Reflection.Emit;
 using NJsonSchema;
 using NJsonSchema.Generation;
 using NJsonSchema.Validation;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Confluent.Kafka;
 
@@ -90,7 +89,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private static int curRefNo = 0;
         private static Type GetTypeForSchema()
         {
-            string className = "S" + curRefNo.ToString();
+            string className = "RefSchema" + curRefNo.ToString();
             curRefNo++;
             string nameSpace = "Confluent.SchemaRegistry.Serdes";
             AssemblyName assemblyName = new AssemblyName(nameSpace);
