@@ -38,16 +38,10 @@ using NJsonSchema.Generation;
 /// </summary>
 namespace Confluent.Kafka.Examples.JsonWithReferences
 {
-    /// <summary>
-    ///     A POCO class corresponding to the JSON data written
-    ///     to Kafka, where the schema is defined with external
-    ///     references to other schemas
-    /// </summary>
     /// <remarks>
     ///     Internally, the JSON serializer uses Newtonsoft.Json for
     ///     serialization and NJsonSchema for schema creation and
-    ///     validation. You can use any property annotations recognised
-    ///     by these libraries.
+    ///     validation.
     ///
     ///     Note: Off-the-shelf libraries do not yet exist to enable
     ///     integration of System.Text.Json and JSON Schema, so this
@@ -76,20 +70,12 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
-                SaslUsername = "broker",
-                SaslPassword = "broker",
-                SecurityProtocol = SecurityProtocol.SaslPlaintext,
-                SaslMechanism = SaslMechanism.ScramSha256,
                 GroupId = "json-example-consumer-group"
             };
 
             var producerConfig = new ProducerConfig
             {
-                BootstrapServers = bootstrapServers,
-                SaslUsername = "broker",
-                SaslPassword = "broker",
-                SecurityProtocol = SecurityProtocol.SaslPlaintext,
-                SaslMechanism = SaslMechanism.ScramSha256
+                BootstrapServers = bootstrapServers
             };
 
             var schemaRegistryConfig = new SchemaRegistryConfig
