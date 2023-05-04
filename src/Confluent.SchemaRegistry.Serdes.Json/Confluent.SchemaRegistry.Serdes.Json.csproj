@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="NJsonSchema" Version="10.6.3" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
   </ItemGroup>
 
   <ItemGroup>
