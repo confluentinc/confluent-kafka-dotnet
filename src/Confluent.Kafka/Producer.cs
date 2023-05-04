@@ -283,7 +283,7 @@ namespace Confluent.Kafka
             byte[] key, int keyOffset, int keyLength,
             Timestamp timestamp,
             Partition partition,
-            IEnumerable<IHeader> headers,
+            IReadOnlyList<IHeader> headers,
             IDeliveryHandler deliveryHandler)
         {
             if (timestamp.Type != TimestampType.CreateTime)
@@ -807,7 +807,7 @@ namespace Confluent.Kafka
                         topicPartition.Topic,
                         valBytes, 0, valBytes == null ? 0 : valBytes.Length,
                         keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
-                        message.Timestamp, topicPartition.Partition, headers,
+                        message.Timestamp, topicPartition.Partition, headers.BackingList,
                         handler);
 
                     return await handler.Task.ConfigureAwait(false);
@@ -818,7 +818,7 @@ namespace Confluent.Kafka
                         topicPartition.Topic, 
                         valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
                         keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                        message.Timestamp, topicPartition.Partition, headers, 
+                        message.Timestamp, topicPartition.Partition, headers.BackingList, 
                         null);
 
                     var result = new DeliveryResult<TKey, TValue>
@@ -918,7 +918,7 @@ namespace Confluent.Kafka
                     valBytes, 0, valBytes == null ? 0 : valBytes.Length,
                     keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
                     message.Timestamp, topicPartition.Partition,
-                    headers,
+                    headers.BackingList,
                     deliveryHandler == null
                         ? null
                         : new TypedDeliveryHandlerShim_Action(

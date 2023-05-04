@@ -263,7 +263,7 @@ namespace Confluent.Kafka
                     {
                         try
                         {
-                            assignmentWithPositions.Add(new TopicPartitionOffset(tp, Position(tp)));
+                            assignmentWithPositions.Add(PositionTopicPartitionOffset(tp));
                         }
                         catch
                         {
@@ -437,7 +437,8 @@ namespace Confluent.Kafka
 
         /// <inheritdoc/>
         public void StoreOffset(ConsumeResult<TKey, TValue> result)
-            => StoreOffset(new TopicPartitionOffset(result.TopicPartition, result.Offset + 1));
+            => StoreOffset(new TopicPartitionOffset(result.TopicPartition,
+                    result.Offset + 1, result.LeaderEpoch));
 
 
         /// <inheritdoc/>
@@ -474,7 +475,8 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Attempt was made to commit offset corresponding to an empty consume result");
             }
 
-            Commit(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) });
+            Commit(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1,
+                                result.LeaderEpoch) });
         }
 
 
@@ -508,9 +510,15 @@ namespace Confluent.Kafka
         /// <inheritdoc/>
         public Offset Position(TopicPartition partition)
         {
+            return PositionTopicPartitionOffset(partition).Offset;
+        }
+        
+        /// <inheritdoc/>
+        public TopicPartitionOffset PositionTopicPartitionOffset(TopicPartition partition)
+        {
             try
             {
-                return kafkaHandle.Position(new List<TopicPartition> { partition }).First().Offset;
+                return kafkaHandle.Position(new List<TopicPartition> { partition }).First();
             }
             catch (TopicPartitionOffsetException e)
             {
@@ -786,6 +794,13 @@ namespace Confluent.Kafka
             try
             {
                 var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
+                int? msgLeaderEpoch = null;
+                Offset msgOffset = msg.offset;
+
+                if (msg.rkt != IntPtr.Zero && (msgOffset != Offset.Unset))
+                {
+                    msgLeaderEpoch = Librdkafka.message_leader_epoch(msgPtr);
+                }
 
                 string topic = null;
                 if (this.enableTopicNameMarshaling)
@@ -800,7 +815,9 @@ namespace Confluent.Kafka
                 {
                     return new ConsumeResult<TKey, TValue>
                     {
-                        TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
+                        TopicPartitionOffset = new TopicPartitionOffset(topic,
+                            msg.partition, msg.offset,
+                            msgLeaderEpoch),
                         Message = null,
                         IsPartitionEOF = true
                     };
@@ -845,7 +862,9 @@ namespace Confluent.Kafka
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
                         {
-                            TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
+                            TopicPartitionOffset = new TopicPartitionOffset(topic,
+                                msg.partition, msg.offset,
+                                msgLeaderEpoch),
                             Message = new Message<byte[], byte[]>
                             {
                                 Timestamp = timestamp,
@@ -876,7 +895,9 @@ namespace Confluent.Kafka
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
                         {
-                            TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
+                            TopicPartitionOffset = new TopicPartitionOffset(topic,
+                                msg.partition, msg.offset,
+                                msgLeaderEpoch),
                             Message = new Message<byte[], byte[]>
                             {
                                 Timestamp = timestamp,
@@ -908,7 +929,9 @@ namespace Confluent.Kafka
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
                         {
-                            TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
+                            TopicPartitionOffset = new TopicPartitionOffset(topic,
+                                msg.partition, msg.offset,
+                                msgLeaderEpoch),
                             Message = new Message<byte[], byte[]>
                             {
                                 Timestamp = timestamp,
@@ -924,7 +947,9 @@ namespace Confluent.Kafka
 
                 return new ConsumeResult<TKey, TValue> 
                 {
-                    TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
+                    TopicPartitionOffset = new TopicPartitionOffset(topic,
+                        msg.partition, msg.offset,
+                        msgLeaderEpoch),
                     Message = new Message<TKey, TValue>
                     {
                         Timestamp = timestamp,
