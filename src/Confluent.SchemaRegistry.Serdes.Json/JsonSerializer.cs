@@ -93,7 +93,7 @@ namespace Confluent.SchemaRegistry.Serdes
             curRefNo++;
             string nameSpace = "Confluent.SchemaRegistry.Serdes";
             AssemblyName assemblyName = new AssemblyName(nameSpace);
-            System.Reflection.Emit.AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
+            AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
             ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(nameSpace);
             TypeBuilder typeBuilder = moduleBuilder.DefineType(nameSpace + "." + className, TypeAttributes.Public);
             Type dynamicType = typeBuilder.CreateTypeInfo().AsType();
@@ -104,7 +104,8 @@ namespace Confluent.SchemaRegistry.Serdes
             string root_str = root.SchemaString;
             JObject schema = JObject.Parse(root_str);
             string schemaId = (string)schema["$id"];
-            this.dict_schema_name_to_schema.Add(schemaId, root);
+            if (!dict_schema_name_to_schema.ContainsKey(schemaId))
+                this.dict_schema_name_to_schema.Add(schemaId, root);
 
             foreach (var reference in root.References)
             {
@@ -118,8 +119,9 @@ namespace Confluent.SchemaRegistry.Serdes
             List<SchemaReference> refers = root.References;
             foreach (var x in refers)
             {
-                dict_schema_name_to_JsonSchema.Add(
-                    x.Name, getSchemaUtil(dict_schema_name_to_schema[x.Name]));
+                if (!dict_schema_name_to_JsonSchema.ContainsKey(x.Name))
+                    dict_schema_name_to_JsonSchema.Add(
+                        x.Name, getSchemaUtil(dict_schema_name_to_schema[x.Name]));
             }
 
             Func<JsonSchema, JsonReferenceResolver> factory;
