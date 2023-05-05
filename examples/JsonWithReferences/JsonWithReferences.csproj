@@ -11,9 +11,6 @@
   <ItemGroup>
     <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" Version="2.1.1-RC1" /> -->
     <ProjectReference Include="../../src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="../../src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj" />
   </ItemGroup>
 
