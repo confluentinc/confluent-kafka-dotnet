@@ -103,6 +103,7 @@ public class ParallelProcess
                         }
 
                         commitingQueue.Enqueue(consumeResult);
+                        blocks[consumeResult.Partition.Value % blocksCount].Post((consumeResult, commitingQueue));
                     }
                     catch (ConsumeException e)
                     {

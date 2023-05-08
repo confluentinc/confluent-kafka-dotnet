@@ -30,12 +30,13 @@ public class CommitingQueue
         var valueTuple = partionMessages[consumeResult.Offset.Value];
         partionMessages[consumeResult.Offset.Value] = (valueTuple.Message, true);
 
-        while (partionMessages.First().Value.Committed)
+        while (partionMessages.FirstOrDefault().Value != default && partionMessages.FirstOrDefault().Value.Committed)
         {
             var first = partionMessages.First();
             consumer.StoreOffset(first.Value.Message);
             partionMessages.Remove(first.Key);
         }
+
         parallelLock.Set();
     }
 }
