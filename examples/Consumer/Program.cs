@@ -16,11 +16,13 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka.Admin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-
+using System.Threading.Tasks;
+using Testcontainers.Kafka;
 
 /// <summary>
 ///     Demonstrates use of the Consumer client.
@@ -137,6 +139,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 {
                     Console.WriteLine("Closing consumer.");
                     consumer.Close();
+                    Console.WriteLine("Closed consumer.");
                 }
             }
         }
@@ -190,6 +193,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 {
                     Console.WriteLine("Closing consumer.");
                     consumer.Close();
+                    Console.WriteLine("Closed consumer.");
                 }
             }
         }
@@ -197,37 +201,76 @@ namespace Confluent.Kafka.Examples.ConsumerExample
         private static void PrintUsage()
             => Console.WriteLine("Usage: .. <subscribe|manual> <broker,broker,..> <topic> [topic..]");
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            if (args.Length < 3)
+            if (args.Length < 2)
             {
                 PrintUsage();
                 return;
             }
 
             var mode = args[0];
-            var brokerList = args[1];
+            var consumerCount = int.Parse(args[1]);
             var topics = args.Skip(2).ToList();
 
             Console.WriteLine($"Started consumer, Ctrl-C to stop consuming");
 
             CancellationTokenSource cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (_, e) => {
+            Console.CancelKeyPress += (_, e) =>
+            {
                 e.Cancel = true; // prevent the process from terminating.
                 cts.Cancel();
             };
 
-            switch (mode)
+            var kafkaContainer = new KafkaBuilder()
+                .WithImage("confluentinc/cp-kafka:6.1.9")
+                .WithExposedPort(9092)
+                .WithCleanUp(true)
+                .WithAutoRemove(true)
+                .Build();
+
+            cts.CancelAfter(5000);
+
+            try
             {
-                case "subscribe":
-                    Run_Consume(brokerList, topics, cts.Token);
-                    break;
-                case "manual":
-                    Run_ManualAssign(brokerList, topics, cts.Token);
-                    break;
-                default:
-                    PrintUsage();
-                    break;
+                await kafkaContainer.StartAsync();
+                var mappedPublicKafkaPort = kafkaContainer.GetMappedPublicPort(9092);
+                var brokerList = $"localhost:{mappedPublicKafkaPort}";
+                using var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = brokerList }).Build();
+                foreach (var topic in topics)
+                {
+                    await adminClient.CreateTopicsAsync(new[] { new TopicSpecification { Name = topic } });
+                }
+
+
+                var tasks = Enumerable.Range(0, consumerCount).Select(_ => Task.Factory
+                       .StartNew(
+                           () =>
+                           {
+                               switch (mode)
+                               {
+                                   case "subscribe":
+                                       Run_Consume(brokerList, topics, cts.Token);
+                                       break;
+                                   case "manual":
+                                       Run_ManualAssign(brokerList, topics, cts.Token);
+                                       break;
+                                   default:
+                                       PrintUsage();
+                                       break;
+                               }
+                           },
+                           cts.Token,
+                           creationOptions: TaskCreationOptions.LongRunning,
+                           scheduler: TaskScheduler.Default));
+
+                Task.WhenAll(tasks).Wait();
+
+            }
+            finally
+            {
+                await kafkaContainer.DisposeAsync();
+                Console.WriteLine("Disposing Kafka container");
             }
         }
     }
