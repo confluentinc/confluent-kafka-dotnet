@@ -60,6 +60,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private ISchemaRegistryClient schemaRegistryClient;
         private Dictionary<string, Schema> dict_schema_name_to_schema = new Dictionary<string, Schema>();
         private Dictionary<string, JsonSchema> dict_schema_name_to_JsonSchema = new Dictionary<string, JsonSchema>();
+        private Func<string, T> Convertor = null;
         private static int curRefNo = 0;
         private static Type GetTypeForSchema()
         {
@@ -147,10 +148,16 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, IEnumerable<KeyValuePair<string, string>> config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        /// <param name="Convertor">
+        ///     Function to be used to convert the serialized
+        ///     string to an object of class T.
+        /// </param>
+        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, IEnumerable<KeyValuePair<string, string>> config = null,
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, Func<string, T> Convertor = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
+            this.Convertor = Convertor;
 
             create_schema_dict_util(schema);
             JsonSchema jsonSchema = getSchemaUtil(schema);
@@ -228,7 +235,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 using (var sr = new System.IO.StreamReader(stream, Encoding.UTF8))
                 {
                     string serializedString = sr.ReadToEnd();
-
+                    
                     if (this.schema != null)
                     {
                         JsonSchemaValidator validator = new JsonSchemaValidator();
@@ -239,7 +246,10 @@ namespace Confluent.SchemaRegistry.Serdes
                             throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
                         }
                     }
-
+                    if(this.Convertor != null){
+                        T obj = this.Convertor(serializedString);
+                        return Task.FromResult(obj);
+                    }
                     return Task.FromResult(Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings));
                 }
             }

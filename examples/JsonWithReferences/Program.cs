@@ -14,42 +14,101 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using System;
-using System.Linq;
 using System.IO;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
-using NJsonSchema;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NJsonSchema.Generation;
 
 
 /// <summary>
-///     An example of working with JSON data, Apache Kafka and 
+///     An example of working with JSON schemas with external,
+///     references and Json data, Apache Kafka and 
 ///     Confluent Schema Registry (v5.5 or later required for
 ///     JSON schema support).
 /// </summary>
 namespace Confluent.Kafka.Examples.JsonWithReferences
 {
+
+    // public class Product
+    // {
+    //     public int ProductId { get; set; }
+    //     public string ProductName { get; set; }
+    //     public GeographicalLocation WarehouseLocation { get; set; }
+    // }
+
+    /// <remarks>
+    ///     The deserializer allows multiple ways to consume data.
+    /// 
+    ///     If the consumer is aware of the entire schema details,
+    ///     they can create a class corresponding to it and use the
+    ///     deserializer in these ways:
+    ///     - without passing a schema, the deserializer will convert
+    ///       the serialized string to the object of this class.
+    ///     - pass a schema and allow validating against it.
+    ///
+    ///     If the user is aware of some parts of the schema, they can
+    ///     create and pass a function that converts the json string to
+    ///     an object of the class corresponding to the parts of schema
+    ///     the user is aware of (comment this class and uncomment the
+    ///     Product class above, pass Func<string, Product> Convertor)
+    ///     to constructor of deserializer.
+    ///
+    ///     Note: The user can also pass JObject to the 
+    ///     ConsumerBuilder<string, JObject> and JsonDeserializer<JObject>
+    ///     in order to get JObject instead in consumer.
+    /// </remarks>
+    public class Product
+    {
+        public int ProductId { get; set; }
+        public string ProductName { get; set; }
+        public decimal Price { get; set; }
+        public List<string> Tags { get; set; }
+        public Dimensions Dimensions { get; set; }
+        public GeographicalLocation WarehouseLocation { get; set; }
+    }
+
+    public class Dimensions
+    {
+        public decimal Length { get; set; }
+        public decimal Width { get; set; }
+        public decimal Height { get; set; }
+    }
+
+    public class GeographicalLocation
+    {
+        public decimal Latitude { get; set; }
+        public decimal Longitude { get; set; }
+    }
+
     /// <remarks>
     ///     Internally, the JSON serializer uses Newtonsoft.Json for
     ///     serialization and NJsonSchema for schema creation and
     ///     validation.
-    ///
-    ///     Note: Off-the-shelf libraries do not yet exist to enable
-    ///     integration of System.Text.Json and JSON Schema, so this
-    ///     is not yet supported by the Confluent serializers.
     /// </remarks>
-
     class Program
     {
+        public static Func<string, Product> Convertor = (json) =>{
+            JObject obj = JObject.Parse(json);
+            int productId = (int) obj["productId"];
+            string productName = (string) obj["productName"];
+            decimal latitude = (decimal) obj["warehouseLocation"]["latitude"];
+            decimal longitude = (decimal) obj["warehouseLocation"]["longitude"];
+            GeographicalLocation geographicalLocation = new GeographicalLocation{
+                Latitude = latitude,
+                Longitude = longitude
+            };
+            Product product = new Product{
+                ProductId = productId,
+                ProductName = productName,
+                WarehouseLocation = geographicalLocation
+            };
+            return product;
+        };
         // from: https://json-schema.org/learn/getting-started-step-by-step.html
         private static string S1;
         private static string S2;
@@ -107,15 +166,17 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                 AutoRegisterSchemas = false,
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
-            
+
             CancellationTokenSource cts = new CancellationTokenSource();
 
             var consumeTask = Task.Run(() =>
             {
                 using (var consumer =
-                    new ConsumerBuilder<string, JObject>(consumerConfig)
+                    new ConsumerBuilder<string, Product>(consumerConfig)
                         .SetKeyDeserializer(Deserializers.Utf8)
-                        .SetValueDeserializer(new JsonDeserializer<JObject>(sr, latestSchema2_unreg).AsSyncOverAsync())
+                        // uncomment this and comment the line below to pass Convertor to deserializer
+                        // .SetValueDeserializer(new JsonDeserializer<Product>(sr, latestSchema2_unreg, Convertor: Convertor).AsSyncOverAsync())
+                        .SetValueDeserializer(new JsonDeserializer<Product>(sr, latestSchema2_unreg).AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -128,13 +189,11 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                             try
                             {
                                 var cr = consumer.Consume(cts.Token);
-                                var jObject = cr.Message.Value;
-                                var productName = jObject?["productName"]?.ToString() ?? "";
-                                var productId = jObject["productId"].Value<int>();
-                                var latitude = jObject["warehouseLocation"]["latitude"].Value<int>();
-                                var longitude = jObject["warehouseLocation"]["longitude"].Value<int>();
-                                System.Console.WriteLine($"CONSUMER: Product name: {productName} product id: {productId} "+
-                                    $"with latitude: {latitude} and longitude: {longitude}");
+                                var product = cr.Message.Value;
+
+                                System.Console.WriteLine("CONSUMER: product name " + product.ProductName +
+                                    " Product id " + product.ProductId.ToString() + " latitude " +
+                                    product.WarehouseLocation.Latitude.ToString());
                             }
                             catch (ConsumeException e)
                             {
@@ -152,8 +211,10 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, Object>(producerConfig)
-                    .SetValueSerializer(new JsonSerializer<Object>(schemaRegistry, latestSchema2_unreg, jsonSerializerConfig))
-                    .Build()){
+                    .SetValueSerializer(new NonGenericJsonSerializer(schemaRegistry, latestSchema2_unreg, jsonSerializerConfig))
+                    // .SetValueSerializer(new JsonSerializer<Object>(schemaRegistry, latestSchema2_unreg, jsonSerializerConfig))
+                    .Build())
+            {
                 Console.WriteLine($"PRODUCER: {producer.Name} producing on {topicName}. Enter product name, q to exit.");
 
                 long i = 1;

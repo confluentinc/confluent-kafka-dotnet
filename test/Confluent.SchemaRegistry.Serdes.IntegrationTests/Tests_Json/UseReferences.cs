@@ -25,6 +25,14 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 {
     public static partial class Tests
     {
+        public static Func<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco> Convertor = (json) =>
+        {
+            JObject obj = JObject.Parse(json);
+            Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco classObj = new TestClasses1.TestPoco{
+                IntField = (int) obj["order_details"]["id"]
+            };
+            return classObj;
+        };
         private static string S1 = @"
 {
 ""$schema"": ""http://json-schema.org/draft-07/schema#"",
@@ -133,7 +141,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             {
                 using (var producer =
                     new ProducerBuilder<string, Object>(producerConfig)
-                        .SetValueSerializer(new JsonSerializer<Object>(schemaRegistry, s2.Schema))
+                        .SetValueSerializer(new NonGenericJsonSerializer(schemaRegistry, s2.Schema))
                         .Build())
                 {
                     var order = new
@@ -154,21 +162,22 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     producer.ProduceAsync(topic.Name, new Message<string, Object> { Key = "test1", Value = order }).Wait();
 
                     using (var consumer =
-                    new ConsumerBuilder<string, JObject>(consumerConfig)
-                        .SetValueDeserializer(new JsonDeserializer<JObject>(sr, s2.Schema).AsSyncOverAsync())
+                    new ConsumerBuilder<string, TestClasses1.TestPoco>(consumerConfig)
+                        .SetValueDeserializer(new JsonDeserializer<TestClasses1.TestPoco>(sr, s2.Schema, Convertor: Convertor).AsSyncOverAsync())
                         .Build())
                     {
                         consumer.Subscribe(topic.Name);
                         var cr = consumer.Consume();
-                        var jObject = cr.Message.Value;
-                        // No validation error, the message consumed is same as produced
-                        Assert.Equal<int>(123, jObject["order_details"]["id"].Value<int>());
+                        var classObj = cr.Message.Value;
+                        // No validation error, the message consumed is same as produced, and the object of TestClasses1.TestPoco class has been
+                        // made properly.
+                        Assert.Equal<int>(123, classObj.IntField);
                     }
                 }
 
                 using (var producer =
                     new ProducerBuilder<string, Object>(producerConfig)
-                        .SetValueSerializer(new JsonSerializer<Object>(
+                        .SetValueSerializer(new NonGenericJsonSerializer(
                             schemaRegistry, s2.Schema, new JsonSerializerConfig
                             {
                                 UseLatestVersion = true,
