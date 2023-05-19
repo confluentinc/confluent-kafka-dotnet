@@ -62,6 +62,26 @@ namespace Confluent.SchemaRegistry.Serdes
         private Dictionary<string, JsonSchema> dict_schema_name_to_JsonSchema = new Dictionary<string, JsonSchema>();
         private Func<string, T> Convertor = null;
         private static int curRefNo = 0;
+        private static bool IsIntegerEnumSchemaUtil(JObject schema)
+        {
+            JToken typeToken = schema["type"];
+            JToken enumToken = schema["enum"];
+            if (typeToken != null && enumToken != null && typeToken.Type == JTokenType.String && typeToken.Value<string>() == "integer")
+            {
+                if (enumToken.Type == JTokenType.Array)
+                {
+                    foreach (JToken enumValue in enumToken)
+                    {
+                        if (enumValue.Type != JTokenType.Integer)
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
         private static Type GetTypeForSchema()
         {
             string className = "RefSchema" + curRefNo.ToString();
@@ -109,7 +129,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     JsonSchema jschema =
                         dict_schema_name_to_JsonSchema[reference.Name];
                     Type type = GetTypeForSchema();
-                    schemaResolver.AddSchema(type, false, jschema);
+                    JObject schemaObject = JObject.Parse(jschema.ToJson());
+                    var isIntEnum = IsIntegerEnumSchemaUtil(schemaObject);
+                    schemaResolver.AddSchema(type, isIntEnum, jschema);
                 }
                 JsonReferenceResolver referenceResolver =
                     new JsonReferenceResolver(schemaResolver);
