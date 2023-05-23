@@ -65,10 +65,10 @@ namespace Confluent.SchemaRegistry.Serdes
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-        
+
         private HashSet<string> subjectsRegistered = new HashSet<string>();
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
-        private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
+        private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
 
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
@@ -126,6 +126,60 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+        /// <summary>
+        ///     Initialize a new instance of the JsonSerializer class.
+        /// </summary>
+        /// <param name="schemaRegistryClient">
+        ///     Confluent Schema Registry client instance.
+        /// </param>
+        /// <param name="schema">
+        ///     Schema to use for validation, used when external
+        ///     schema references are present in the schema. 
+        ///     Populate the References list of the schema for
+        ///     the same.
+        /// </param>
+        /// <param name="config">
+        ///     Serializer configuration.
+        /// </param>
+        /// <param name="jsonSchemaGeneratorSettings">
+        ///     JSON schema generator settings.
+        /// </param>
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        {
+            this.schemaRegistryClient = schemaRegistryClient;
+            this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
+            foreach (var reference in schema.References)
+            {
+                ReferenceList.Add(reference);
+            }
+
+            JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(schemaRegistryClient, schema);
+            JsonSchema jsonSchema = utils.getResolvedSchema();
+            this.schema = jsonSchema;
+
+            this.schemaText = schema.SchemaString;
+            this.schemaFullname = jsonSchema.Title;
+
+            if (config == null) { return; }
+
+            var nonJsonConfig = config.Where(item => !item.Key.StartsWith("json."));
+            if (nonJsonConfig.Count() > 0)
+            {
+                throw new ArgumentException($"JsonSerializer: unknown configuration parameter {nonJsonConfig.First().Key}");
+            }
+
+            if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
+            if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
+            if (config.NormalizeSchemas != null) { this.normalizeSchemas = config.NormalizeSchemas.Value; }
+            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
+            if (config.LatestCompatibilityStrict != null) { this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
+            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+
+            if (this.useLatestVersion && this.autoRegisterSchema)
+            {
+                throw new ArgumentException($"JsonSerializer: cannot enable both use.latest.version and auto.register.schemas");
+            }
+        }
 
         /// <summary>
         ///     Serialize an instance of type <typeparamref name="T"/> to a UTF8 encoded JSON 
@@ -173,19 +227,19 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (!subjectsRegistered.Contains(subject))
                     {
-                        if (autoRegisterSchema) 
+                        if (autoRegisterSchema)
                         {
                             schemaId = await schemaRegistryClient.RegisterSchemaAsync(subject,
-                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
+                                        new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
-                        } 
+                        }
                         else if (useLatestVersion)
                         {
                             var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
                                 .ConfigureAwait(continueOnCapturedContext: false);
-                            if (latestCompatibilityStrict) 
+                            if (latestCompatibilityStrict)
                             {
-                                var isCompatible = await schemaRegistryClient.IsCompatibleAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                                var isCompatible = await schemaRegistryClient.IsCompatibleAsync(subject, new Schema(this.schemaText, ReferenceList, SchemaType.Json))
                                     .ConfigureAwait(continueOnCapturedContext: false);
                                 if (!isCompatible)
                                 {
@@ -197,7 +251,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         else
                         {
                             schemaId = await schemaRegistryClient.GetSchemaIdAsync(subject,
-                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
+                                        new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
                         }
                         subjectsRegistered.Add(subject);
@@ -207,7 +261,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     serializeMutex.Release();
                 }
-                
+
                 using (var stream = new MemoryStream(initialBufferSize))
                 using (var writer = new BinaryWriter(stream))
                 {
