@@ -56,6 +56,45 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 var schema = sr.GetLatestSchemaAsync(subject).Result;
                 Assert.Equal(schema.Id, id);
             }
+            
+            // 1.2. using SSL PEM files with encrypted key.
+            conf = new SchemaRegistryConfig
+            {
+                Url = config.ServerWithSsl,
+                SslKeyLocation = config.KeyEncryptedLocation,
+                SslKeyPassword = config.KeyPassword,
+                SslCertificateLocation = config.CertificateLocation,
+                SslCaLocation = config.CaLocation,
+                EnableSslCertificateVerification = bool.Parse(config.EnableSslCertificateVerification),
+            };
+            
+            using (var sr = new CachedSchemaRegistryClient(conf))
+            {
+                var topicName = Guid.NewGuid().ToString();
+                var subject = SubjectNameStrategy.Topic.ToDelegate()(new SerializationContext(MessageComponentType.Value, topicName), null);
+                var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
+                var schema = sr.GetLatestSchemaAsync(subject).Result;
+                Assert.Equal(schema.Id, id);
+            }
+
+            // 1.3. using SSL PEM files with unencrypted key.
+            conf = new SchemaRegistryConfig
+            {
+                Url = config.ServerWithSsl,
+                SslKeyLocation = config.KeyUnencryptedLocation,
+                SslCertificateLocation = config.CertificateLocation,
+                SslCaLocation = config.CaLocation,
+                EnableSslCertificateVerification = bool.Parse(config.EnableSslCertificateVerification),
+            };
+            
+            using (var sr = new CachedSchemaRegistryClient(conf))
+            {
+                var topicName = Guid.NewGuid().ToString();
+                var subject = SubjectNameStrategy.Topic.ToDelegate()(new SerializationContext(MessageComponentType.Value, topicName), null);
+                var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
+                var schema = sr.GetLatestSchemaAsync(subject).Result;
+                Assert.Equal(schema.Id, id);
+            }
 
             // try to connect with invalid SSL config. shouldn't work.
             Assert.Throws<HttpRequestException>(() =>

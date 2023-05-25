@@ -81,28 +81,46 @@ namespace Confluent.SchemaRegistry
             [Obsolete("Subject name strategies should now be configured using the serializer's configuration. In the future, this configuration property will be removed from SchemaRegistryConfig")]
             public const string SchemaRegistryValueSubjectNameStrategy = "schema.registry.value.subject.name.strategy";
 
-            /// <summary>
-            ///     File path to CA certificate(s) for verifying the Schema Registry's key. System CA certs will be used if not specified.
-            /// </summary>
-            public const string SslCaLocation = "schema.registry.ssl.ca.location";
+            /// <summary>
+            ///     File path to CA certificate(s) for verifying the Schema Registry's key. System CA certs will be used if not specified.
+            /// </summary>
+            public const string SslCaLocation = "schema.registry.ssl.ca.location";
 
-            /// <summary>
-            ///     SSL keystore (PKCS#12) location.
-            /// </summary>
-            public const string SslKeystoreLocation = "schema.registry.ssl.keystore.location";
+            /// <summary>
+            ///     SSL keystore (PKCS#12) location.
+            /// </summary>
+            public const string SslKeystoreLocation = "schema.registry.ssl.keystore.location";
 
-            /// <summary>
-            ///     SSL keystore (PKCS#12) password.
-            /// </summary>
-            public const string SslKeystorePassword = "schema.registry.ssl.keystore.password";
+            /// <summary>
+            ///     SSL keystore (PKCS#12) password.
+            /// </summary>
+            public const string SslKeystorePassword = "schema.registry.ssl.keystore.password";
 
-            /// <summary>
-            ///     Enable SSL verification. Disabling SSL verification is insecure and should only be done for reasons
+            #if NET5_0_OR_GREATER
+            /// <summary>
+            ///     Path to client's private key (PEM) used for authentication.
+            /// </summary>
+            public const string SslKeyLocation = "schema.registry.ssl.key.location";
+
+            /// <summary>
+            ///     Private key passphrase.
+            /// </summary>
+            public const string SslKeyPassword = "schema.registry.ssl.key.password";
+
+            /// <summary>
+            ///     Path to client's public certificate (PEM) used for authentication.
+            /// </summary>
+            public const string SslCertificateLocation = "schema.registry.ssl.certificate.location";
+
+            #endif
+
+            /// <summary>
+            ///     Enable SSL verification. Disabling SSL verification is insecure and should only be done for reasons
             ///     of convenience in test/dev environments.
             ///
             ///     default: true
-            /// </summary>
-            public const string EnableSslCertificateVerification = "schema.registry.enable.ssl.certificate.verification";
+            /// </summary>
+            public const string EnableSslCertificateVerification = "schema.registry.enable.ssl.certificate.verification";
         }
 
         /// <summary>
@@ -150,53 +168,91 @@ namespace Confluent.SchemaRegistry
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs, value.ToString()); }
         }
 
-        /// <summary>
-        ///     File or directory path to CA certificate(s) for verifying the schema registry's key.
-        ///
-        ///     default: ''
-        ///     importance: low
-        /// </summary>
-        public string SslCaLocation
-        {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SslCaLocation); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCaLocation, value.ToString()); }
-        }
+        /// <summary>
+        ///     File or directory path to CA certificate(s) for verifying the schema registry's key.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslCaLocation
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslCaLocation); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCaLocation, value.ToString()); }
+        }
 
-        /// <summary>
-        ///     Path to client's keystore (PKCS#12) used for authentication.
-        ///
-        ///     default: ''
-        ///     importance: low
-        /// </summary>
-        public string SslKeystoreLocation
-        {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation, value.ToString()); }
-        }
+        /// <summary>
+        ///     Path to client's keystore (PKCS#12) used for authentication.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslKeystoreLocation
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation, value.ToString()); }
+        }
 
-        /// <summary>
-        ///     Client's keystore (PKCS#12) password.
-        ///
-        ///     default: ''
-        ///     importance: low
-        /// </summary>
-        public string SslKeystorePassword
-        {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystorePassword); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystorePassword, value.ToString()); }
-        }
+        /// <summary>
+        ///     Client's keystore (PKCS#12) password.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslKeystorePassword
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystorePassword); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystorePassword, value.ToString()); }
+        }
 
-        /// <summary>
-        ///     Enable/Disable SSL server certificate verification. Only use in contained test/dev environments.
-        ///
-        ///     default: ''
-        ///     importance: low
-        /// </summary>
-        public bool? EnableSslCertificateVerification
-        {
-            get { return GetBool(SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification, value); }
-        }
+        #if NET5_0_OR_GREATER
+        /// <summary>
+        ///     Path to client's key (PEM) used for authentication.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslKeyLocation
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeyLocation); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeyLocation, value.ToString()); }
+        }
+
+        /// <summary>
+        ///     Client's key (PEM) password.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslKeyPassword
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeyPassword); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeyPassword, value.ToString()); }
+        }
+        
+        /// <summary>
+        ///     Path to client's public certificate (PEM) used for authentication.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslCertificateLocation
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslCertificateLocation); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCertificateLocation, value.ToString()); }
+        }
+        #endif
+        
+        /// <summary>
+        ///     Enable/Disable SSL server certificate verification. Only use in contained test/dev environments.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public bool? EnableSslCertificateVerification
+        {
+            get { return GetBool(SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification, value); }
+        }
 
         /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
@@ -279,8 +335,7 @@ namespace Confluent.SchemaRegistry
                 else { this.properties[PropertyNames.SchemaRegistryValueSubjectNameStrategy] = value.ToString(); }
             }
         }
-
-
+        
         /// <summary>
         ///     Set a configuration property using a string key / value pair.
         /// </summary>

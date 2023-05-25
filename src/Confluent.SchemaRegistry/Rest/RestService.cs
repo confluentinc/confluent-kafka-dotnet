@@ -23,7 +23,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Confluent.SchemaRegistry
 {
@@ -57,7 +57,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUrl, int timeoutMs, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
+        public RestService(string schemaRegistryUrl, int timeoutMs, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
         {
             this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
 
@@ -66,15 +66,15 @@ namespace Confluent.SchemaRegistry
                 .Select(SanitizeUri)// need http or https - use http if not present.
                 .Select(uri =>
                 {
-                    HttpClient client;
-                    if (certificates.Count > 0)
-                    {
-                        client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
-                    }
-                    else
-                    {
-                        client = new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
-                    }
+                    HttpClient client;
+                    if (certificates.Count > 0)
+                    {
+                        client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                    }
+                    else
+                    {
+                        client = new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                    }
                     return client;
                 })
                 .ToList();
@@ -86,9 +86,9 @@ namespace Confluent.SchemaRegistry
             return $"{sanitized.TrimEnd('/')}/";
         }
 
-        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates, bool enableSslCertificateVerification)
+        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates, bool enableSslCertificateVerification)
         {
-            var handler = new HttpClientHandler();
+            var handler = new HttpClientHandler();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 
             if (!enableSslCertificateVerification)
@@ -96,8 +96,8 @@ namespace Confluent.SchemaRegistry
                 handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => { return true; };
             }
 
-            certificates.ForEach(c => handler.ClientCertificates.Add(c));
-            return handler;
+            certificates.ForEach(c => handler.ClientCertificates.Add(c));
+            return handler;
         }
 
         private RegisteredSchema SanitizeRegisteredSchema(RegisteredSchema schema)
