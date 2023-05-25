@@ -241,6 +241,9 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SslKeyLocation &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslKeyPassword &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslCertificateLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeyPem &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCertificatePem &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCaPem &&
                     #endif
                     property.Key != SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification)
                 {
@@ -319,6 +322,29 @@ namespace Confluent.SchemaRegistry
                         keyPemLocation));
                 }
             }
+            
+            var certificatePem = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCertificatePem).Value ?? "";  
+            var keyPem = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeyPem).Value ?? "";  
+
+            if (!String.IsNullOrEmpty(certificatePem) && !String.IsNullOrEmpty(keyPem))
+            {
+                if (String.IsNullOrEmpty(keyPemPassword))
+                {
+                    certificates.Add(X509Certificate2.CreateFromPem(certificatePem, keyPem));
+                }
+                else
+                {
+                    certificates.Add(X509Certificate2.CreateFromEncryptedPem(certificatePemLocation, keyPemPassword,
+                        keyPem));
+                }
+            }
+
+            var caPem = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaPem).Value ?? "";
+            if (!String.IsNullOrEmpty(caPem))
+            {
+                certificates.Add(X509Certificate2.CreateFromPem(caPem));
+            }
+
             #endif
 
             var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";

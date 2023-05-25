@@ -57,6 +57,10 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 config.KeyPassword = json["key_password"].ToString();
                 config.CertificateLocation = json["certificate_location"].ToString();
                 config.EnableSslCertificateVerification = json["enable_ssl_certificate_verification"].ToString();
+                config.KeyEncryptedPem = File.ReadAllText(config.KeyEncryptedLocation);
+                config.KeyUnencryptedPem = File.ReadAllText(config.KeyUnencryptedLocation);
+                config.CertificatePem = File.ReadAllText(config.CertificateLocation);
+                config.CaPem = File.ReadAllText(config.CaLocation);
                 schemaRegistryParameters = new List<object[]> { new object[] { config } };
             }
             return schemaRegistryParameters;

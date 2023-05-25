@@ -103,6 +103,11 @@ namespace Confluent.SchemaRegistry
             public const string SslKeyLocation = "schema.registry.ssl.key.location";
 
             /// <summary>
+            ///     Client's private key string (PEM format) used for authentication.
+            /// </summary>
+            public const string SslKeyPem = "schema.registry.ssl.key.pem";
+
+            /// <summary>
             ///     Private key passphrase.
             /// </summary>
             public const string SslKeyPassword = "schema.registry.ssl.key.password";
@@ -111,6 +116,16 @@ namespace Confluent.SchemaRegistry
             ///     Path to client's public certificate (PEM) used for authentication.
             /// </summary>
             public const string SslCertificateLocation = "schema.registry.ssl.certificate.location";
+
+            /// <summary>
+            ///     Client's public certificate string (PEM format) used for authentication.
+            /// </summary>
+            public const string SslCertificatePem = "schema.registry.ssl.certificate.pem";
+
+            /// <summary>
+            ///     CA public certificate(s) string (PEM format) for verifying the Schema Registry's key.
+            /// </summary>
+            public const string SslCaPem = "schema.registry.ssl.ca.pem";
 
             #endif
 
@@ -240,6 +255,43 @@ namespace Confluent.SchemaRegistry
             get { return Get(SchemaRegistryConfig.PropertyNames.SslCertificateLocation); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SslCertificateLocation, value.ToString()); }
         }
+        
+        /// <summary>
+        ///     Client's private key string (PEM format) used for authentication.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslKeyPem
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeyPem); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeyPem, value.ToString()); }
+        }
+
+        /// <summary>
+        ///     Client's public certificate string (PEM format) used for authentication.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslCertificatePem
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslCertificatePem); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCertificatePem, value.ToString()); }
+        }
+
+        /// <summary>
+        ///     CA public certificate(s) string (PEM format) for verifying the Schema Registry's key.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslCaPem
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslCaPem); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCaPem, value.ToString()); }
+        }
+        
         #endif
         
         /// <summary>
