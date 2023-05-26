@@ -25,7 +25,7 @@ using System;
 using System.Threading;
 using System.Security.Cryptography.X509Certificates;
 using Confluent.Kafka;
-
+using System.IO;
 
 namespace Confluent.SchemaRegistry
 {
@@ -293,25 +293,49 @@ namespace Confluent.SchemaRegistry
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        private List<X509Certificate2> SetSslConfig(IEnumerable<KeyValuePair<string, string>> config)
-        {
-            var certificates = new List<X509Certificate2>();
+        private List<X509Certificate2> SetSslConfig(IEnumerable<KeyValuePair<string, string>> config)
+        {
+            var certificates = new List<X509Certificate2>();
 
-            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
-            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
-            if (!String.IsNullOrEmpty(certificateLocation))
-            {
-                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
-            }
+            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
+            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
+            if (!String.IsNullOrEmpty(certificateLocation))
+            {
+                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
+            }
 
-            var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value ?? "";
-            if (!String.IsNullOrEmpty(caLocation))
-            {
-                certificates.Add(new X509Certificate2(caLocation));
-            }
+            var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value ?? "";
+            if (!String.IsNullOrEmpty(caLocation))
+            {
+                var caCertificates = GetCaCertificates(caLocation);
+                certificates.AddRange(caCertificates);
+            }
 
-            return certificates;
-        }
+            return certificates;
+        }
+
+        private static List<X509Certificate2> GetCaCertificates(string caLocation)
+        {
+            var certificates = new List<X509Certificate2>();
+
+            FileAttributes attrs = File.GetAttributes(caLocation);
+
+            if (attrs.HasFlag(FileAttributes.Directory))
+            {
+                var files = Directory.GetFiles(caLocation);
+
+                foreach (var file in files)
+                {
+                    certificates.Add(new X509Certificate2(file));
+                }
+            }
+            else
+            {
+                certificates.Add(new X509Certificate2(caLocation));
+            }
+
+            return certificates;
+        }
 
         /// <inheritdoc/>
         public Task<int> GetSchemaIdAsync(string subject, string avroSchema, bool normalize = false)
