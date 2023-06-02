@@ -32,12 +32,23 @@ namespace Confluent.Kafka
         /// <param name="offset">
         ///     A Kafka offset value.
         /// </param>
+        public TopicPartitionOffset(TopicPartition tp, Offset offset)
+            : this(tp.Topic, tp.Partition, offset, null) { }
+        /// <summary>
+        ///     Initializes a new TopicPartitionOffset instance.
+        /// </summary>
+        /// <param name="tp">
+        ///     Kafka topic name and partition.
+        /// </param>
+        /// <param name="offset">
+        ///     A Kafka offset value.
+        /// </param>
         /// <param name="leaderEpoch">
         ///     The offset leader epoch (optional).
         /// </param>
         public TopicPartitionOffset(TopicPartition tp, Offset offset,
-                                    int? leaderEpoch = null)
-            : this(tp.Topic, tp.Partition, offset, leaderEpoch) {}
+                                    int? leaderEpoch)
+            : this(tp.Topic, tp.Partition, offset, leaderEpoch) { }
 
         /// <summary>
         ///     Initializes a new TopicPartitionOffset instance.
@@ -55,7 +66,26 @@ namespace Confluent.Kafka
         ///     The optional offset leader epoch.
         /// </param>
         public TopicPartitionOffset(string topic, Partition partition,
-                                    Offset offset, int? leaderEpoch = null)
+                                    Offset offset)
+            : this(topic, tp.Partition, offset, null) { }
+
+        /// <summary>
+        ///     Initializes a new TopicPartitionOffset instance.
+        /// </summary>
+        /// <param name="topic">
+        ///     A Kafka topic name.
+        /// </param>
+        /// <param name="partition">
+        ///     A Kafka partition.
+        /// </param>
+        /// <param name="offset">
+        ///     A Kafka offset value.
+        /// </param>
+        /// <param name="leaderEpoch">
+        ///     The optional offset leader epoch.
+        /// </param>
+        public TopicPartitionOffset(string topic, Partition partition,
+                                    Offset offset, int? leaderEpoch)
         {
             Topic = topic;
             Partition = partition;
