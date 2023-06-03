@@ -69,6 +69,8 @@ namespace Confluent.Kafka.Impl
             DescribeConsumerGroups = 13,
             ListConsumerGroupOffsets = 14,
             AlterConsumerGroupOffsets = 15,
+            DescribeUserScramCredentials = 16,
+            AlterUserScramCredentials = 17
         }
 
         public enum EventType : int
@@ -96,6 +98,8 @@ namespace Confluent.Kafka.Impl
             DescribeConsumerGroups_Result = 0x4000,
             ListConsumerGroupOffsets_Result = 0x8000,
             AlterConsumerGroupOffsets_Result = 0x10000,
+            DescribeUserScramCredentials_Result = 0x20000,
+            AlterUserScramCredentials_Result = 0x40000
         }
 
         // Minimum librdkafka version.
@@ -409,7 +413,7 @@ namespace Confluent.Kafka.Impl
             _Node_host = (_Node_host_delegate)methods.Single(m => m.Name == "rd_kafka_Node_host").CreateDelegate(typeof (_Node_host_delegate));
             _Node_port = (_Node_port_delegate)methods.Single(m => m.Name == "rd_kafka_Node_port").CreateDelegate(typeof (_Node_port_delegate));
 
-
+            // Insert Scram API
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_result_name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));

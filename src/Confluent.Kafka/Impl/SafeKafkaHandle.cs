@@ -2372,6 +2372,11 @@ namespace Confluent.Kafka.Impl
             var errorCode = Librdkafka.AlterUserScramCredentials(
                     handle, c_alterationsPtr, (UIntPtr)(alterations.Count()),
                     optionsPtr, resultQueuePtr);
+
+            for(idx=0;idx<alteration.Count();idx++)
+            {
+                Librdkafka.UserScramCredentialAlteration_destroy(c_alterationsPtr[idx]);
+            }
             if (optionsPtr != IntPtr.Zero)
             {
                     Librdkafka.AdminOptions_destroy(optionsPtr);
