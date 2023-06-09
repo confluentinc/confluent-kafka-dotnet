@@ -1,4 +1,4 @@
-// Copyright 2020 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -81,6 +81,28 @@ namespace Confluent.SchemaRegistry.Serdes
         private JsonSchema schema;
         private string schemaText;
         private string schemaFullname;
+        private void SetConfigUtil(JsonSerializerConfig config)
+        {
+            if (config == null) { return; }
+
+            var nonJsonConfig = config.Where(item => !item.Key.StartsWith("json."));
+            if (nonJsonConfig.Count() > 0)
+            {
+                throw new ArgumentException($"JsonSerializer: unknown configuration parameter {nonJsonConfig.First().Key}");
+            }
+
+            if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
+            if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
+            if (config.NormalizeSchemas != null) { this.normalizeSchemas = config.NormalizeSchemas.Value; }
+            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
+            if (config.LatestCompatibilityStrict != null) { this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
+            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+
+            if (this.useLatestVersion && this.autoRegisterSchema)
+            {
+                throw new ArgumentException($"JsonSerializer: cannot enable both use.latest.version and auto.register.schemas");
+            }
+        }
 
         /// <summary>
         ///     Initialize a new instance of the JsonSerializer class.
@@ -105,25 +127,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schemaFullname = schema.Title;
             this.schemaText = schema.ToJson();
 
-            if (config == null) { return; }
-
-            var nonJsonConfig = config.Where(item => !item.Key.StartsWith("json."));
-            if (nonJsonConfig.Count() > 0)
-            {
-                throw new ArgumentException($"JsonSerializer: unknown configuration parameter {nonJsonConfig.First().Key}");
-            }
-
-            if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
-            if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
-            if (config.NormalizeSchemas != null) { this.normalizeSchemas = config.NormalizeSchemas.Value; }
-            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
-            if (config.LatestCompatibilityStrict != null) { this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-
-            if (this.useLatestVersion && this.autoRegisterSchema)
-            {
-                throw new ArgumentException($"JsonSerializer: cannot enable both use.latest.version and auto.register.schemas");
-            }
+            SetConfigUtil(config);
         }
 
         /// <summary>
@@ -160,25 +164,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schemaText = schema.SchemaString;
             this.schemaFullname = jsonSchema.Title;
 
-            if (config == null) { return; }
-
-            var nonJsonConfig = config.Where(item => !item.Key.StartsWith("json."));
-            if (nonJsonConfig.Count() > 0)
-            {
-                throw new ArgumentException($"JsonSerializer: unknown configuration parameter {nonJsonConfig.First().Key}");
-            }
-
-            if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
-            if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
-            if (config.NormalizeSchemas != null) { this.normalizeSchemas = config.NormalizeSchemas.Value; }
-            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
-            if (config.LatestCompatibilityStrict != null) { this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-
-            if (this.useLatestVersion && this.autoRegisterSchema)
-            {
-                throw new ArgumentException($"JsonSerializer: cannot enable both use.latest.version and auto.register.schemas");
-            }
+            SetConfigUtil(config);
         }
 
         /// <summary>

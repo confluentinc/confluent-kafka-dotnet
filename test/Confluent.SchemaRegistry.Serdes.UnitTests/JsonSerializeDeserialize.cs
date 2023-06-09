@@ -1,4 +1,4 @@
-// Copyright 2020 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -255,8 +255,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 AutoRegisterSchemas = false,
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
-            var jsonSerializer = new NonGenericJsonSerializer(schemaRegistryClientJsonRef, unreg_schema1, jsonSerializerConfig);
-            var jsonDeserializer = new JsonDeserializer<BoolValue>(schemaRegistryClientJsonRef, unreg_schema1, Convertor: Convertor);
+            var jsonSerializer = new ReferenceSchemaBasedJsonSerializer(schemaRegistryClientJsonRef, unreg_schema1, jsonSerializerConfig);
+            var jsonDeserializer = new JsonDeserializer<BoolValue>(schemaRegistryClientJsonRef, unreg_schema1, convertor: Convertor);
             var v = new
             {
                 field1 = "Hello",

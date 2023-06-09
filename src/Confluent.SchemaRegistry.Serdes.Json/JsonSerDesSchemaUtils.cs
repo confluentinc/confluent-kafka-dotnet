@@ -1,3 +1,18 @@
+// Copyright 2023 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Refer to LICENSE for more information.
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -21,9 +36,8 @@ namespace Confluent.SchemaRegistry.Serdes
         private JsonSchema resolvedJsonSchema;
         private Schema root;
         private ISchemaRegistryClient schemaRegistryClient;
-        private Dictionary<string, Schema> dict_schema_name_to_schema = new Dictionary<string, Schema>();
-        private Dictionary<string, JsonSchema> dict_schema_name_to_JsonSchema = new Dictionary<string, JsonSchema>();
-        private static int curRefNo = 0;
+        private Dictionary<string, Schema> dictSchemaNameToSchema = new Dictionary<string, Schema>();
+        private Dictionary<string, JsonSchema> dictSchemaNameToJsonSchema = new Dictionary<string, JsonSchema>();
         private static bool IsIntegerEnumSchemaUtil(JObject schema)
         {
             JToken typeToken = schema["type"];
@@ -46,8 +60,7 @@ namespace Confluent.SchemaRegistry.Serdes
         }
         private static Type GetTypeForSchema()
         {
-            string className = "RefSchema" + curRefNo.ToString();
-            curRefNo++;
+            string className = Guid.NewGuid().ToString();
             string nameSpace = "Confluent.SchemaRegistry.Serdes";
             AssemblyName assemblyName = new AssemblyName(nameSpace);
             AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
@@ -56,18 +69,18 @@ namespace Confluent.SchemaRegistry.Serdes
             Type dynamicType = typeBuilder.CreateTypeInfo().AsType();
             return dynamicType;
         }
-        private void create_schema_dict_util(Schema root)
+        private void CreateSchemaDictUtil(Schema root)
         {
             string root_str = root.SchemaString;
             JObject schema = JObject.Parse(root_str);
             string schemaId = (string)schema["$id"];
-            if (!dict_schema_name_to_schema.ContainsKey(schemaId))
-                this.dict_schema_name_to_schema.Add(schemaId, root);
+            if (!dictSchemaNameToSchema.ContainsKey(schemaId))
+                this.dictSchemaNameToSchema.Add(schemaId, root);
 
             foreach (var reference in root.References)
             {
                 Schema ref_schema_res = this.schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version).Result;
-                create_schema_dict_util(ref_schema_res);
+                CreateSchemaDictUtil(ref_schema_res);
             }
         }
 
@@ -76,9 +89,9 @@ namespace Confluent.SchemaRegistry.Serdes
             List<SchemaReference> refers = root.References;
             foreach (var x in refers)
             {
-                if (!dict_schema_name_to_JsonSchema.ContainsKey(x.Name))
-                    dict_schema_name_to_JsonSchema.Add(
-                        x.Name, getSchemaUtil(dict_schema_name_to_schema[x.Name]));
+                if (!dictSchemaNameToJsonSchema.ContainsKey(x.Name))
+                    dictSchemaNameToJsonSchema.Add(
+                        x.Name, getSchemaUtil(dictSchemaNameToSchema[x.Name]));
             }
 
             Func<JsonSchema, JsonReferenceResolver> factory;
@@ -89,7 +102,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 foreach (var reference in refers)
                 {
                     JsonSchema jschema =
-                        dict_schema_name_to_JsonSchema[reference.Name];
+                        dictSchemaNameToJsonSchema[reference.Name];
                     Type type = GetTypeForSchema();
                     JObject schemaObject = JObject.Parse(jschema.ToJson());
                     var isIntEnum = IsIntegerEnumSchemaUtil(schemaObject);
@@ -100,7 +113,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 foreach (var reference in refers)
                 {
                     JsonSchema jschema =
-                        dict_schema_name_to_JsonSchema[reference.Name];
+                        dictSchemaNameToJsonSchema[reference.Name];
                     referenceResolver.AddDocumentReference(reference.Name, jschema);
                 }
                 return referenceResolver;
@@ -137,7 +150,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public JsonSerDesSchemaUtils(ISchemaRegistryClient schemaRegistryClient, Schema schema){
             this.schemaRegistryClient = schemaRegistryClient;
             this.root = schema;
-            create_schema_dict_util(root);
+            CreateSchemaDictUtil(root);
             this.resolvedJsonSchema = getSchemaUtil(root);
         }
     }

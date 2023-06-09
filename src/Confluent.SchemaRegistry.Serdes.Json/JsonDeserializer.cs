@@ -1,4 +1,4 @@
-// Copyright 2020 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,13 +20,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Reflection;
-using System.Reflection.Emit;
 using Confluent.Kafka;
 using NJsonSchema;
 using NJsonSchema.Generation;
 using NJsonSchema.Validation;
-using Newtonsoft.Json.Linq;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -58,7 +55,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private JsonSchema schema = null;
         private ISchemaRegistryClient schemaRegistryClient;
-        private Func<string, T> Convertor = null;
+        private Func<string, T> convertor = null;
         
         /// <summary>
         ///     Initialize a new JsonDeserializer instance.
@@ -80,16 +77,16 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        /// <param name="Convertor">
+        /// <param name="convertor">
         ///     Function to be used to convert the serialized
         ///     string to an object of class T.
         /// </param>
         public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, IEnumerable<KeyValuePair<string, string>> config = null,
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, Func<string, T> Convertor = null)
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, Func<string, T> convertor = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
-            this.Convertor = Convertor;
+            this.convertor = convertor;
 
             JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(schemaRegistryClient, schema);
             JsonSchema jsonSchema = utils.getResolvedSchema();
@@ -178,8 +175,8 @@ namespace Confluent.SchemaRegistry.Serdes
                             throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
                         }
                     }
-                    if(this.Convertor != null){
-                        T obj = this.Convertor(serializedString);
+                    if(this.convertor != null){
+                        T obj = this.convertor(serializedString);
                         return Task.FromResult(obj);
                     }
                     return Task.FromResult(Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings));

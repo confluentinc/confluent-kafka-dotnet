@@ -1,4 +1,4 @@
-﻿// Copyright 2020 Confluent Inc.
+﻿// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -142,21 +142,20 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                 Url = schemaRegistryUrl
             };
 
-            var srInitial = new CachedSchemaRegistryClient(schemaRegistryConfig);
             var sr = new CachedSchemaRegistryClient(schemaRegistryConfig);
 
             var subject1 = $"{topicName}-CoordinatesOnMap";
             var subject2 = $"{topicName}-Product";
 
             // Test there are no errors (exceptions) registering a schema that references another.
-            var id1 = srInitial.RegisterSchemaAsync(subject1, new Schema(S1, Confluent.SchemaRegistry.SchemaType.Json)).Result;
-            var s1 = srInitial.GetLatestSchemaAsync(subject1).Result;
+            var id1 = sr.RegisterSchemaAsync(subject1, new Schema(S1, Confluent.SchemaRegistry.SchemaType.Json)).Result;
+            var s1 = sr.GetLatestSchemaAsync(subject1).Result;
             var refs = new List<SchemaReference> { new SchemaReference("geographical-location.json", subject1, s1.Version) };
-            var id2 = srInitial.RegisterSchemaAsync(subject2, new Schema(S2, refs, Confluent.SchemaRegistry.SchemaType.Json)).Result;
+            var id2 = sr.RegisterSchemaAsync(subject2, new Schema(S2, refs, Confluent.SchemaRegistry.SchemaType.Json)).Result;
 
             // In fact, it seems references are not checked server side.
             var latestSchema2 = sr.GetLatestSchemaAsync(subject2).Result;
-            var latestSchema2_unreg = latestSchema2.Schema;
+            var latestSchema2Unreg = latestSchema2.Schema;
             var latestSchema1 = sr.GetLatestSchemaAsync(subject1).Result;
 
             var jsonSerializerConfig = new JsonSerializerConfig
@@ -175,8 +174,8 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                     new ConsumerBuilder<string, Product>(consumerConfig)
                         .SetKeyDeserializer(Deserializers.Utf8)
                         // uncomment this and comment the line below to pass Convertor to deserializer
-                        // .SetValueDeserializer(new JsonDeserializer<Product>(sr, latestSchema2_unreg, Convertor: Convertor).AsSyncOverAsync())
-                        .SetValueDeserializer(new JsonDeserializer<Product>(sr, latestSchema2_unreg).AsSyncOverAsync())
+                        // .SetValueDeserializer(new JsonDeserializer<Product>(sr, latestSchema2_unreg, convertor: Convertor).AsSyncOverAsync())
+                        .SetValueDeserializer(new JsonDeserializer<Product>(sr, latestSchema2Unreg).AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -211,8 +210,8 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, Object>(producerConfig)
-                    .SetValueSerializer(new NonGenericJsonSerializer(schemaRegistry, latestSchema2_unreg, jsonSerializerConfig))
-                    // .SetValueSerializer(new JsonSerializer<Object>(schemaRegistry, latestSchema2_unreg, jsonSerializerConfig))
+                    .SetValueSerializer(new ReferenceSchemaBasedJsonSerializer(schemaRegistry, latestSchema2Unreg, jsonSerializerConfig))
+                    // .SetValueSerializer(new JsonSerializer<Object>(schemaRegistry, latestSchema2Unreg, jsonSerializerConfig))
                     .Build())
             {
                 Console.WriteLine($"PRODUCER: {producer.Name} producing on {topicName}. Enter product name, q to exit.");

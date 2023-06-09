@@ -1,4 +1,4 @@
-// Copyright 2020 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             {
                 using (var producer =
                     new ProducerBuilder<string, Object>(producerConfig)
-                        .SetValueSerializer(new NonGenericJsonSerializer(schemaRegistry, s2.Schema))
+                        .SetValueSerializer(new ReferenceSchemaBasedJsonSerializer(schemaRegistry, s2.Schema))
                         .Build())
                 {
                     var order = new
@@ -163,7 +163,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                     using (var consumer =
                     new ConsumerBuilder<string, TestClasses1.TestPoco>(consumerConfig)
-                        .SetValueDeserializer(new JsonDeserializer<TestClasses1.TestPoco>(sr, s2.Schema, Convertor: Convertor).AsSyncOverAsync())
+                        .SetValueDeserializer(new JsonDeserializer<TestClasses1.TestPoco>(sr, s2.Schema, convertor: Convertor).AsSyncOverAsync())
                         .Build())
                     {
                         consumer.Subscribe(topic.Name);
@@ -177,7 +177,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 using (var producer =
                     new ProducerBuilder<string, Object>(producerConfig)
-                        .SetValueSerializer(new NonGenericJsonSerializer(
+                        .SetValueSerializer(new ReferenceSchemaBasedJsonSerializer(
                             schemaRegistry, s2.Schema, new JsonSerializerConfig
                             {
                                 UseLatestVersion = true,
