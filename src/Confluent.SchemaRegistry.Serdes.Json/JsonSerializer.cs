@@ -158,7 +158,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
 
             JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(schemaRegistryClient, schema);
-            JsonSchema jsonSchema = utils.getResolvedSchema();
+            JsonSchema jsonSchema = utils.GetResolvedSchema();
             this.schema = jsonSchema;
 
             this.schemaText = schema.SchemaString;

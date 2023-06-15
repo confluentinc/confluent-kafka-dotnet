@@ -121,18 +121,18 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
             // Register the reference schemas
             var subject3 = "Customer";
-            var id3 = sr.RegisterSchemaAsync(subject3, new Schema(S3, Confluent.SchemaRegistry.SchemaType.Json)).Result;
+            var id3 = sr.RegisterSchemaAsync(subject3, new(S3, Confluent.SchemaRegistry.SchemaType.Json)).Result;
             var s3 = sr.GetLatestSchemaAsync(subject3).Result;
 
             var subject1 = "OrderDetails";
-            var refs1 = new List<SchemaReference> { new SchemaReference("http://example.com/customer.schema.json", subject3, s3.Version) };
-            var id1 = sr.RegisterSchemaAsync(subject1, new Schema(S1, refs1, Confluent.SchemaRegistry.SchemaType.Json)).Result;
+            var refs1 = new List<SchemaReference> { new("http://example.com/customer.schema.json", subject3, s3.Version) };
+            var id1 = sr.RegisterSchemaAsync(subject1, new(S1, refs1, Confluent.SchemaRegistry.SchemaType.Json)).Result;
             var s1 = sr.GetLatestSchemaAsync(subject1).Result;
 
             // Register the top level schema
             var subject2 = "Order";
-            var refs2 = new List<SchemaReference> { new SchemaReference("http://example.com/order_details.schema.json", subject1, s1.Version) };
-            var id2 = sr.RegisterSchemaAsync(subject2, new Schema(S2, refs2, Confluent.SchemaRegistry.SchemaType.Json)).Result;
+            var refs2 = new List<SchemaReference> { new("http://example.com/order_details.schema.json", subject1, s1.Version) };
+            var id2 = sr.RegisterSchemaAsync(subject2, new(S2, refs2, Confluent.SchemaRegistry.SchemaType.Json)).Result;
             var s2 = sr.GetLatestSchemaAsync(subject2).Result;
 
             // Create serialiser and deserialiser along with the Order schema

@@ -26,7 +26,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///     JSON SerDes Schema Utils.
     /// </summary>
     /// <remarks>
-    ///     JsonSerDesSchemaUtils provides getResolvedSchema() function that
+    ///     JsonSerDesSchemaUtils provides GetResolvedSchema() function that
     ///     can be used to get the NJsonSchema.JsonSchema object corresponding to a
     ///     resolved parent schema with a list of reference schemas. Assuming that the
     ///     references have been registered in the schema registry already.
@@ -84,14 +84,14 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
-        private JsonSchema getSchemaUtil(Schema root)
+        private JsonSchema GetSchemaUtil(Schema root)
         {
             List<SchemaReference> refers = root.References;
             foreach (var x in refers)
             {
                 if (!dictSchemaNameToJsonSchema.ContainsKey(x.Name))
                     dictSchemaNameToJsonSchema.Add(
-                        x.Name, getSchemaUtil(dictSchemaNameToSchema[x.Name]));
+                        x.Name, GetSchemaUtil(dictSchemaNameToSchema[x.Name]));
             }
 
             Func<JsonSchema, JsonReferenceResolver> factory;
@@ -130,7 +130,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Get the resolved JsonSchema instance for the Schema provided to
         ///     the constructor.
         /// </summary>
-        public JsonSchema getResolvedSchema(){
+        public JsonSchema GetResolvedSchema(){
             return this.resolvedJsonSchema;
         }
 
@@ -151,7 +151,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schemaRegistryClient = schemaRegistryClient;
             this.root = schema;
             CreateSchemaDictUtil(root);
-            this.resolvedJsonSchema = getSchemaUtil(root);
+            this.resolvedJsonSchema = GetSchemaUtil(root);
         }
     }
 }

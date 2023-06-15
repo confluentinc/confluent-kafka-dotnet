@@ -89,7 +89,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.convertor = convertor;
 
             JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(schemaRegistryClient, schema);
-            JsonSchema jsonSchema = utils.getResolvedSchema();
+            JsonSchema jsonSchema = utils.GetResolvedSchema();
             this.schema = jsonSchema;
 
             if (config == null) { return; }
