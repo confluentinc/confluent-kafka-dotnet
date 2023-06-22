@@ -1517,6 +1517,59 @@ namespace Confluent.Kafka.Impl
             Librdkafka.AdminOptions_destroy(optionsPtr);
         }
 
+        internal void IncrementalAlterConfigs(
+            IDictionary<ConfigResource, List<ConfigEntry>> configs,
+            IncrementalAlterConfigsOptions options,
+            IntPtr resultQueuePtr,
+            IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            IntPtr[] configPtrs = new IntPtr[configs.Count()];
+            int configPtrsIdx = 0;
+            foreach (var config in configs)
+            {
+                var resource = config.Key;
+                var resourceConfig = config.Value;
+
+                if (string.IsNullOrEmpty(resource.Name))
+                {
+                    throw new ArgumentException("Resource must be specified.");
+                }
+
+                var resourcePtr = Librdkafka.ConfigResource_new(resource.Type, resource.Name);
+                foreach (var rc in resourceConfig)
+                {
+                    if (string.IsNullOrEmpty(rc.Name))
+                    {
+                        throw new ArgumentException($"Config name must be specified for {resource}");
+                    }
+                    
+                    var error = Librdkafka.ConfigResource_set_incremental_config(resourcePtr, rc.Name, rc.IncrementalOperation, rc.Value);
+                    if (error != IntPtr.Zero)
+                    {
+                        throw new KafkaException(new Error(error, true));
+                    }
+                }
+                configPtrs[configPtrsIdx++] = resourcePtr;
+            }
+
+            options = options == null ? new IncrementalAlterConfigsOptions() : options;
+            IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.IncrementalAlterConfigs);
+            setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_completionSource(optionsPtr, completionSourcePtr);
+            
+            Librdkafka.IncrementalAlterConfigs(handle, configPtrs, (UIntPtr)configPtrs.Length, optionsPtr, resultQueuePtr);
+
+            for (int i=0; i<configPtrs.Length; ++i)
+            {
+                Librdkafka.ConfigResource_destroy(configPtrs[i]);
+            }
+
+            Librdkafka.AdminOptions_destroy(optionsPtr);
+        }
+
         internal void DescribeConfigs(
             IEnumerable<ConfigResource> resources,
             DescribeConfigsOptions options,
