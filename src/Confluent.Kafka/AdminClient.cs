@@ -574,7 +574,7 @@ namespace Confluent.Kafka
                                             if (errorCode != ErrorCode.NoError)
                                             {
                                                 Task.Run(() =>
-                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsReport>>)adminClientResult).TrySetException(
+                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                             }

@@ -30,7 +30,7 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     Sets the configuration value to default or NULL.
         /// </summary>
-        Remove = 1,
+        Delete = 1,
 
         /// <summary>
         ///     Appends the value to existing configuration values(only for list type values).
