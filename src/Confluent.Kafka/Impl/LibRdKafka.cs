@@ -181,6 +181,7 @@ namespace Confluent.Kafka.Impl
             _message_timestamp = (messageTimestampDelegate)methods.Single(m => m.Name == "rd_kafka_message_timestamp").CreateDelegate(typeof(messageTimestampDelegate));
             _message_headers = (messageHeadersDelegate)methods.Single(m => m.Name == "rd_kafka_message_headers").CreateDelegate(typeof(messageHeadersDelegate));
             _message_status = (Func<IntPtr, PersistenceStatus>)methods.Single(m => m.Name == "rd_kafka_message_status").CreateDelegate(typeof(Func<IntPtr, PersistenceStatus>));
+            _message_leader_epoch = (messageLeaderEpoch)methods.Single(m => m.Name == "rd_kafka_message_leader_epoch").CreateDelegate(typeof(messageLeaderEpoch));
             _message_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_message_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _conf_new = (Func<SafeConfigHandle>)methods.Single(m => m.Name == "rd_kafka_conf_new").CreateDelegate(typeof(Func<SafeConfigHandle>));
             _conf_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_conf_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -210,6 +211,8 @@ namespace Confluent.Kafka.Impl
             _topic_conf_set_partitioner_cb = (Action<IntPtr, PartitionerDelegate>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set_partitioner_cb").CreateDelegate(typeof(Action<IntPtr, PartitionerDelegate>));
             _topic_conf_set_opaque = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set_opaque").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
             _topic_partition_available = (Func<IntPtr, int, bool>)methods.Single(m => m.Name == "rd_kafka_topic_partition_available").CreateDelegate(typeof(Func<IntPtr, int, bool>));
+            _topic_partition_get_leader_epoch = (Func<IntPtr, int>)methods.Single(m => m.Name == "rd_kafka_topic_partition_get_leader_epoch").CreateDelegate(typeof(Func<IntPtr, int>));
+            _topic_partition_set_leader_epoch = (Action<IntPtr, int>)methods.Single(m => m.Name == "rd_kafka_topic_partition_set_leader_epoch").CreateDelegate(typeof(Action<IntPtr, int>));
             _init_transactions = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_init_transactions").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _begin_transaction = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_begin_transaction").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _commit_transaction = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_commit_transaction").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
@@ -249,6 +252,7 @@ namespace Confluent.Kafka.Impl
             _pause_partitions = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_pause_partitions").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _resume_partitions = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_resume_partitions").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _seek = (Func<IntPtr, int, long, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_seek").CreateDelegate(typeof(Func<IntPtr, int, long, IntPtr, ErrorCode>));
+            _seek_partitions = (Func<IntPtr, IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_seek_partitions").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, IntPtr>));
             _position = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_position").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _produceva = (Produceva)methods.Single(m => m.Name == "rd_kafka_produceva").CreateDelegate(typeof(Produceva));
             _flush = (Flush)methods.Single(m => m.Name == "rd_kafka_flush").CreateDelegate(typeof(Flush));
@@ -791,6 +795,10 @@ namespace Confluent.Kafka.Impl
         private static messageHeadersDelegate _message_headers;
         internal static ErrorCode message_headers(IntPtr rkmessage, out IntPtr hdrs) => _message_headers(rkmessage, out hdrs);
 
+        internal delegate int messageLeaderEpoch(IntPtr rkmessage);
+        private static messageLeaderEpoch _message_leader_epoch;
+        internal static int message_leader_epoch(IntPtr rkmessage) => _message_leader_epoch(rkmessage);
+
         private static Action<IntPtr> _message_destroy;
         internal static void message_destroy(IntPtr rkmessage) => _message_destroy(rkmessage);
 
@@ -909,6 +917,15 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, int, bool> _topic_partition_available;
         internal static bool topic_partition_available(IntPtr rkt, int partition)
             => _topic_partition_available(rkt, partition);
+
+
+        private static Func<IntPtr, int> _topic_partition_get_leader_epoch;
+        internal static int topic_partition_get_leader_epoch(IntPtr rkt)
+            => _topic_partition_get_leader_epoch(rkt);
+
+        private static Action<IntPtr, int> _topic_partition_set_leader_epoch;
+        internal static void topic_partition_set_leader_epoch(IntPtr rkt, int leader_epoch)
+            => _topic_partition_set_leader_epoch(rkt, leader_epoch);
 
         private static Func<IntPtr, IntPtr, IntPtr> _init_transactions;
         internal static IntPtr init_transactions(IntPtr rk, IntPtr timeout)
@@ -1073,6 +1090,10 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, int, long, IntPtr, ErrorCode> _seek;
         internal static ErrorCode seek(IntPtr rkt, int partition, long offset, IntPtr timeout_ms)
             => _seek(rkt, partition, offset, timeout_ms);
+            
+        private static Func<IntPtr, IntPtr, IntPtr, IntPtr> _seek_partitions;
+        internal static IntPtr seek_partitions(IntPtr rkt, IntPtr partitions, IntPtr timeout_ms)
+            => _seek_partitions(rkt, partitions, timeout_ms);
 
         private static Func<IntPtr, IntPtr, IntPtr, ErrorCode> _committed;
         internal static ErrorCode committed(IntPtr rk, IntPtr partitions, IntPtr timeout_ms)
@@ -1100,6 +1121,7 @@ namespace Confluent.Kafka.Impl
             IntPtr msg_opaque)
         {
             IntPtr topicStrPtr = Marshal.StringToHGlobalAnsi(topic);
+            
             try
             {
                 rd_kafka_vu* vus = stackalloc rd_kafka_vu[] {
@@ -1112,14 +1134,29 @@ namespace Confluent.Kafka.Impl
                     new rd_kafka_vu() {vt = rd_kafka_vtype.Headers,   data  = new vu_data() {headers = headers}},
                     new rd_kafka_vu() {vt = rd_kafka_vtype.Opaque,    data  = new vu_data() {opaque = msg_opaque}},
                 };
-                return new Error(_produceva(rk,
-                    vus,
-                    new IntPtr(8))).Code;
+
+                IntPtr result = _produceva(rk, vus, new IntPtr(8));
+                return GetErrorCodeAndDestroy(result);
             }
             finally
             {
                 Marshal.FreeHGlobal(topicStrPtr);
             }
+        }
+
+        /// <summary>
+        ///  Mimicks what ctor in <see cref="Error"/> will do
+        /// </summary>
+        private static ErrorCode GetErrorCodeAndDestroy(IntPtr ptr)
+        {
+            if (ptr == IntPtr.Zero)
+            {
+                return ErrorCode.NoError;
+            }
+
+            var code = error_code(ptr);
+            error_destroy(ptr);
+            return code;
         }
 
         private delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
