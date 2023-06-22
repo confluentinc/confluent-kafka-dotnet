@@ -1517,6 +1517,77 @@ namespace Confluent.Kafka.Impl
             Librdkafka.AdminOptions_destroy(optionsPtr);
         }
 
+        internal void IncrementalAlterConfigs(
+            IDictionary<ConfigResource, List<ConfigEntry>> configs,
+            IncrementalAlterConfigsOptions options,
+            IntPtr resultQueuePtr,
+            IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            options = options == null ? new IncrementalAlterConfigsOptions() : options;
+            IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.IncrementalAlterConfigs);
+            setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_completionSource(optionsPtr, completionSourcePtr);
+
+            IntPtr[] configPtrs = new IntPtr[configs.Count()];
+            int configPtrsIdx = 0;
+            foreach (var config in configs)
+            {
+                var resource = config.Key;
+                var resourceConfig = config.Value;
+
+                if (string.IsNullOrEmpty(resource.Name))
+                {
+                    throw new ArgumentException("Resource must be specified.");
+                }
+
+                var resourcePtr = Librdkafka.ConfigResource_new(resource.Type, resource.Name);
+                foreach (var rc in resourceConfig)
+                {
+                    if (string.IsNullOrEmpty(rc.Name))
+                    {
+                        throw new ArgumentException($"config name must be specified for {resource}");
+                    }
+                    
+                    var errorCode = ErrorCode.NoError;
+
+                    switch(rc.Operation) {
+                        case IncrementalAlterConfigsOperation.Set:
+                            errorCode = Librdkafka.ConfigResource_incremental_set_config(resourcePtr, rc.Name, rc.Value);
+                            break;
+                        case IncrementalAlterConfigsOperation.Remove:
+                            errorCode = Librdkafka.ConfigResource_incremental_delete_config(resourcePtr, rc.Name);
+                            break;
+                        case IncrementalAlterConfigsOperation.Append:
+                            errorCode = Librdkafka.ConfigResource_incremental_append_config(resourcePtr, rc.Name, rc.Value);
+                            break;
+                        case IncrementalAlterConfigsOperation.Subtract:
+                            errorCode = Librdkafka.ConfigResource_incremental_subtract_config(resourcePtr, rc.Name, rc.Value);
+                            break;
+                        default:
+                            throw new ArgumentException($"{rc.Operation} is not a valid operation type");
+                    }
+
+                    if (errorCode != ErrorCode.NoError)
+                    {
+                        throw new KafkaException(CreatePossiblyFatalError(errorCode, null));
+                    }
+                }
+                configPtrs[configPtrsIdx++] = resourcePtr;
+            }
+
+            Librdkafka.IncrementalAlterConfigs(handle, configPtrs, (UIntPtr)configPtrs.Length, optionsPtr, resultQueuePtr);
+
+            for (int i=0; i<configPtrs.Length; ++i)
+            {
+                Librdkafka.ConfigResource_destroy(configPtrs[i]);
+            }
+
+            Librdkafka.AdminOptions_destroy(optionsPtr);
+        }
+
         internal void DescribeConfigs(
             IEnumerable<ConfigResource> resources,
             DescribeConfigsOptions options,

@@ -69,6 +69,7 @@ namespace Confluent.Kafka.Impl
             DescribeConsumerGroups = 13,
             ListConsumerGroupOffsets = 14,
             AlterConsumerGroupOffsets = 15,
+            IncrementalAlterConfigs = 16,
         }
 
         public enum EventType : int
@@ -96,6 +97,7 @@ namespace Confluent.Kafka.Impl
             DescribeConsumerGroups_Result = 0x4000,
             ListConsumerGroupOffsets_Result = 0x8000,
             AlterConsumerGroupOffsets_Result = 0x10000,
+            IncrementalAlterConfigs_Result = 0x20000,
         }
 
         // Minimum librdkafka version.
@@ -339,6 +341,10 @@ namespace Confluent.Kafka.Impl
             _ConfigResource_add_config = (Func<IntPtr, string, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_add_config").CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
             _ConfigResource_set_config = (Func<IntPtr, string, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_set_config").CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
             _ConfigResource_delete_config = (Func<IntPtr, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_delete_config").CreateDelegate(typeof(Func<IntPtr, string, ErrorCode>));
+            _ConfigResource_incremental_set_config = (Func<IntPtr, string, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_incremental_set_config").CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
+            _ConfigResource_incremental_delete_config = (Func<IntPtr, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_incremental_delete_config").CreateDelegate(typeof(Func<IntPtr, string, ErrorCode>));
+            _ConfigResource_incremental_append_config = (Func<IntPtr, string, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_incremental_append_config").CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
+            _ConfigResource_incremental_subtract_config = (Func<IntPtr, string, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_incremental_subtract_config").CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
             _ConfigResource_configs = (_ConfigResource_configs_delegate)methods.Single(m => m.Name == "rd_kafka_ConfigResource_configs").CreateDelegate(typeof(_ConfigResource_configs_delegate));
 
             _ConfigResource_type = (Func<IntPtr, ResourceType>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_type").CreateDelegate(typeof(Func<IntPtr, ResourceType>));
@@ -348,6 +354,9 @@ namespace Confluent.Kafka.Impl
 
             _AlterConfigs = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AlterConfigs").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
             _AlterConfigs_result_resources = (_AlterConfigs_result_resources_delegate)methods.Single(m => m.Name == "rd_kafka_AlterConfigs_result_resources").CreateDelegate(typeof(_AlterConfigs_result_resources_delegate));
+
+            _IncrementalAlterConfigs = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_IncrementalAlterConfigs").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
+            _IncrementalAlterConfigs_result_resources = (_IncrementalAlterConfigs_result_resources_delegate)methods.Single(m => m.Name == "rd_kafka_IncrementalAlterConfigs_result_resources").CreateDelegate(typeof(_IncrementalAlterConfigs_result_resources_delegate));
 
             _DescribeConfigs = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DescribeConfigs").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
             _DescribeConfigs_result_resources = (_DescribeConfigs_result_resources_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeConfigs_result_resources").CreateDelegate(typeof(_DescribeConfigs_result_resources_delegate));
@@ -1446,6 +1455,29 @@ namespace Confluent.Kafka.Impl
                 IntPtr config,
                 string name) => _ConfigResource_delete_config(config, name);
 
+        private static Func<IntPtr, string, string, ErrorCode> _ConfigResource_incremental_set_config;
+        internal static ErrorCode ConfigResource_incremental_set_config(
+                IntPtr config,
+                string name, 
+                string value) => _ConfigResource_incremental_set_config(config, name, value);
+        
+        private static Func<IntPtr, string, ErrorCode> _ConfigResource_incremental_delete_config;
+        internal static ErrorCode ConfigResource_incremental_delete_config(
+                IntPtr config,
+                string name) => _ConfigResource_incremental_delete_config(config, name);
+
+        private static Func<IntPtr, string, string, ErrorCode> _ConfigResource_incremental_append_config;
+        internal static ErrorCode ConfigResource_incremental_append_config(
+                IntPtr config,
+                string name, 
+                string value) => _ConfigResource_incremental_append_config(config, name, value);
+        
+        private static Func<IntPtr, string, string, ErrorCode> _ConfigResource_incremental_subtract_config;
+        internal static ErrorCode ConfigResource_incremental_subtract_config(
+                IntPtr config,
+                string name, 
+                string value) => _ConfigResource_incremental_subtract_config(config, name, value);
+
         private delegate IntPtr _ConfigResource_configs_delegate(IntPtr config, out UIntPtr cntp);
         private static _ConfigResource_configs_delegate _ConfigResource_configs;
         internal static IntPtr ConfigResource_configs(
@@ -1483,6 +1515,20 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr AlterConfigs_result_resources(
                 IntPtr result,
                 out UIntPtr cntp) => _AlterConfigs_result_resources(result, out cntp);
+        
+        private static Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr> _IncrementalAlterConfigs;
+        internal static void IncrementalAlterConfigs (
+                IntPtr rk,
+                IntPtr[] configs,
+                UIntPtr config_cnt,
+                IntPtr options,
+                IntPtr rkqu) => _IncrementalAlterConfigs(rk, configs, config_cnt, options, rkqu);
+
+        private delegate IntPtr _IncrementalAlterConfigs_result_resources_delegate(IntPtr result, out UIntPtr cntp);
+        private static _IncrementalAlterConfigs_result_resources_delegate _IncrementalAlterConfigs_result_resources;
+        internal static IntPtr IncrementalAlterConfigs_result_resources(
+                IntPtr result,
+                out UIntPtr cntp) => _IncrementalAlterConfigs_result_resources(result, out cntp);
 
         private static Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr> _DescribeConfigs;
         internal static void DescribeConfigs (
