@@ -33,8 +33,8 @@ namespace Confluent.Kafka.Admin
         public string Value { get; set; }
 
         /// <summary>
-        ///     Incremental Alter Config Operation to perform.
+        ///     Incremental operation to perform.
         /// </summary>
-        public IncrementalAlterConfigsOperation Operation { get; set; }
+        public AlterConfigOpType IncrementalOperation { get; set; }
     }
 }

@@ -51,8 +51,8 @@ namespace Confluent.Kafka.IntegrationTests
                     {
                         configResource,
                         new List<ConfigEntry> {
-                            new ConfigEntry { Name = "cleanup.policy", Value = "compact", Operation = IncrementalAlterConfigsOperation.Append },
-                            new ConfigEntry { Name = "flush.ms", Value = "10001", Operation = IncrementalAlterConfigsOperation.Append }
+                            new ConfigEntry { Name = "cleanup.policy", Value = "compact", IncrementalOperation = AlterConfigOpType.Append },
+                            new ConfigEntry { Name = "flush.ms", Value = "10001", IncrementalOperation = AlterConfigOpType.Append }
                         }
                     }
                 };
@@ -80,8 +80,8 @@ namespace Confluent.Kafka.IntegrationTests
                     { 
                         configResource,
                         new List<ConfigEntry> {
-                            new ConfigEntry { Name = "flush.ms", Value = "10001", Operation = IncrementalAlterConfigsOperation.Set  },
-                            new ConfigEntry { Name = "cleanup.policy", Value = "compact", Operation = IncrementalAlterConfigsOperation.Append } 
+                            new ConfigEntry { Name = "flush.ms", Value = "10001", IncrementalOperation = AlterConfigOpType.Set  },
+                            new ConfigEntry { Name = "cleanup.policy", Value = "compact", IncrementalOperation = AlterConfigOpType.Append } 
                         } 
                     } 
                 };
@@ -93,7 +93,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // 4. test ValidateOnly = true does not update config entry.
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
                 { 
-                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "20002" , Operation = IncrementalAlterConfigsOperation.Set } } } 
+                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "20002" , IncrementalOperation = AlterConfigOpType.Set } } } 
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate, new IncrementalAlterConfigsOptions { ValidateOnly = true }).Wait();
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
@@ -104,7 +104,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     { 
                         new ConfigResource { Name = "0", Type = ResourceType.Broker },
-                        new List<ConfigEntry> { new ConfigEntry { Name = "num.network.threads", Value = "2" , Operation = IncrementalAlterConfigsOperation.Set } }
+                        new List<ConfigEntry> { new ConfigEntry { Name = "num.network.threads", Value = "2" , IncrementalOperation = AlterConfigOpType.Set } }
                     }
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
@@ -118,8 +118,8 @@ namespace Confluent.Kafka.IntegrationTests
                 var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
                 {
-                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "222" , Operation = IncrementalAlterConfigsOperation.Set } } },
-                    { configResource2, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "333" , Operation = IncrementalAlterConfigsOperation.Set } } }
+                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "222" , IncrementalOperation = AlterConfigOpType.Set } } },
+                    { configResource2, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "333" , IncrementalOperation = AlterConfigOpType.Set } } }
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource, configResource2 }).Result;
