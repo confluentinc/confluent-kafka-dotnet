@@ -587,13 +587,18 @@ namespace Confluent.Kafka
                                             if (result.Any(r => r.Error.IsError))
                                             {
                                                 Task.Run(() =>
-                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsReport>>)adminClientResult).TrySetException(
+                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>)adminClientResult).TrySetException(
                                                         new IncrementalAlterConfigsException(result)));
                                             }
                                             else
                                             {
                                                 Task.Run(() =>
-                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsReport>>) adminClientResult).TrySetResult(result));
+                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>) adminClientResult).TrySetResult(
+                                                            result.Select(r => new IncrementalAlterConfigsResult
+                                                            {
+                                                               ConfigResource = r.ConfigResource,
+                                                            }).ToList()
+                                                    ));
                                             }
                                         }
                                         break;
@@ -894,7 +899,7 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.DeleteTopics_Result, typeof(TaskCompletionSource<List<DeleteTopicReport>>) },
             { Librdkafka.EventType.DescribeConfigs_Result, typeof(TaskCompletionSource<List<DescribeConfigsResult>>) },
             { Librdkafka.EventType.AlterConfigs_Result, typeof(TaskCompletionSource<List<AlterConfigsReport>>) },
-            { Librdkafka.EventType.IncrementalAlterConfigs_Result, typeof(TaskCompletionSource<List<IncrementalAlterConfigsReport>>) },
+            { Librdkafka.EventType.IncrementalAlterConfigs_Result, typeof(TaskCompletionSource<List<IncrementalAlterConfigsResult>>) },
             { Librdkafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsReport>>) },
             { Librdkafka.EventType.DeleteRecords_Result, typeof(TaskCompletionSource<List<DeleteRecordsResult>>) },
             { Librdkafka.EventType.DeleteConsumerGroupOffsets_Result, typeof(TaskCompletionSource<DeleteConsumerGroupOffsetsResult>) },
@@ -948,10 +953,10 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.IncrementalAlterConfigsAsync(Dictionary{ConfigResource, List{ConfigEntry}}, IncrementalAlterConfigsOptions)" />
         /// </summary>
-        public Task IncrementalAlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, IncrementalAlterConfigsOptions options = null)
+        public Task<List<IncrementalAlterConfigsResult>> IncrementalAlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, IncrementalAlterConfigsOptions options = null)
         {
 
-            var completionSource = new TaskCompletionSource<List<IncrementalAlterConfigsReport>>();
+            var completionSource = new TaskCompletionSource<List<IncrementalAlterConfigsResult>>();
             // Note: There is a level of indirection between the GCHandle and
             // physical memory address. GCHandle.ToIntPtr doesn't return the
             // physical address, it returns an id that refers to the object via

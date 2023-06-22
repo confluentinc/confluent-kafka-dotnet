@@ -220,7 +220,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The results of the alter configs requests.
         /// </returns>
-        Task IncrementalAlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, IncrementalAlterConfigsOptions options = null);
+        Task<List<IncrementalAlterConfigsResult>> IncrementalAlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, IncrementalAlterConfigsOptions options = null);
 
 
         /// <summary>

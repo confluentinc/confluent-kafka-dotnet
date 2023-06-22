@@ -18,19 +18,13 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The result of incremental alter config request for a specific resource,
-    ///     when an error occurred.
+    ///     The result of incremental alter config request for a specific resource.
     /// </summary>
-    public class IncrementalAlterConfigsReport
+    public class IncrementalAlterConfigsResult
     {
         /// <summary>
         ///     The resource the result corresponds to.
         /// </summary>
         public ConfigResource ConfigResource;
-
-        /// <summary>
-        ///     The error (or success) of the incremental alter config request.
-        /// </summary>
-        public Error Error { get; set; }
     }
 }
