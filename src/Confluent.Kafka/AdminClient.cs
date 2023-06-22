@@ -894,7 +894,7 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.DeleteTopics_Result, typeof(TaskCompletionSource<List<DeleteTopicReport>>) },
             { Librdkafka.EventType.DescribeConfigs_Result, typeof(TaskCompletionSource<List<DescribeConfigsResult>>) },
             { Librdkafka.EventType.AlterConfigs_Result, typeof(TaskCompletionSource<List<AlterConfigsReport>>) },
-            {Librdkafka.EventType.IncrementalAlterConfigs_Result, typeof(TaskCompletionSource<List<IncrementalAlterConfigsReport>>) },
+            { Librdkafka.EventType.IncrementalAlterConfigs_Result, typeof(TaskCompletionSource<List<IncrementalAlterConfigsReport>>) },
             { Librdkafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsReport>>) },
             { Librdkafka.EventType.DeleteRecords_Result, typeof(TaskCompletionSource<List<DeleteRecordsResult>>) },
             { Librdkafka.EventType.DeleteConsumerGroupOffsets_Result, typeof(TaskCompletionSource<DeleteConsumerGroupOffsetsResult>) },
@@ -951,7 +951,7 @@ namespace Confluent.Kafka
         public Task IncrementalAlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, IncrementalAlterConfigsOptions options = null)
         {
 
-            var completionSource = new TaskCompletionSource<List<AlterConfigsReport>>();
+            var completionSource = new TaskCompletionSource<List<IncrementalAlterConfigsReport>>();
             // Note: There is a level of indirection between the GCHandle and
             // physical memory address. GCHandle.ToIntPtr doesn't return the
             // physical address, it returns an id that refers to the object via

@@ -14,8 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-#pragma warning disable xUnit1026
-
 using System;
 using System.Threading;
 using System.Collections.Generic;
@@ -28,12 +26,12 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///     Test functionality of AdminClient.AlterConfigs.
+        ///     Test functionality of AdminClient.IncrementalAlterConfigs.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AdminClient_IncrementalAlterConfigs(string bootstrapServers)
         {
-            LogToFile("start AdminClient_AlterConfigs");
+            LogToFile("start AdminClient_IncrementalAlterConfigs");
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
@@ -66,11 +64,11 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.True(e.InnerException.GetType() == typeof(IncrementalAlterConfigsException));
                     var ace = (IncrementalAlterConfigsException)e.InnerException;
                     Assert.Single(ace.Results);
-                    Assert.Contains("Unknown", ace.Results[0].Error.Reason);
+                    Assert.Contains("not allowed", ace.Results[0].Error.Reason);
                 }
 
                 // 3. test that in the failed alter configs call for the specified config resource, the 
-                // config that was specified correctly wasn't updated.
+                // config that was specified correctly isn't updated.
                 List<DescribeConfigsResult> describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
                 Assert.NotEqual("delete,compact", describeConfigsResult[0].Entries["cleanup.policy"].Value);
 
@@ -85,9 +83,9 @@ namespace Confluent.Kafka.IntegrationTests
                         } 
                     } 
                 };
-                adminClient.AlterConfigsAsync(toUpdate);
+                adminClient.IncrementalAlterConfigsAsync(toUpdate);
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
-                Assert.Equal("10011", describeConfigsResult[0].Entries["flush.ms"].Value);
+                Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
                 Assert.Equal("delete,compact", describeConfigsResult[0].Entries["cleanup.policy"].Value);
 
                 // 4. test ValidateOnly = true does not update config entry.
@@ -97,7 +95,7 @@ namespace Confluent.Kafka.IntegrationTests
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate, new IncrementalAlterConfigsOptions { ValidateOnly = true }).Wait();
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
-                Assert.Equal("10011", describeConfigsResult[0].Entries["flush.ms"].Value);
+                Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 5. test updating broker resource. 
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
@@ -129,7 +127,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   AdminClient_AlterConfigs");
+            LogToFile("end   AdminClient_IncrementalAlterConfigs");
         }
     }
 }
