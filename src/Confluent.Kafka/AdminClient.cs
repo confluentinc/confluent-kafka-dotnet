@@ -814,7 +814,7 @@ namespace Confluent.Kafka
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
-                                        var results = extractDescribeConsumerGroupsResults(eventPtr);
+                                        var results = extractDescribeConsumerGroupsResults(eventPtr); // resultClass
                                         if (results.ConsumerGroupDescriptions.Any(desc => desc.Error.IsError))
                                         {
                                             Task.Run(() =>

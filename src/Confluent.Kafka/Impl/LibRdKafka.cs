@@ -414,6 +414,14 @@ namespace Confluent.Kafka.Impl
             _Node_port = (_Node_port_delegate)methods.Single(m => m.Name == "rd_kafka_Node_port").CreateDelegate(typeof (_Node_port_delegate));
 
             // Insert Scram API
+            _DescribeUserScramCredentials = (_DescribeUserScramCredentials_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeUserScramCredentials").CreateDelegate(typeof (_DescribeUserScramCredentials_delegate));
+            
+            _UserScramCredentialUpsertion_new = (_UserScramCredentialUpsertion_new_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialUpsertion_new").CreateDelegate(typeof (_UserScramCredentialUpsertion_new_delegate)); 
+            _UserScramCredentialDeletion_new = (_UserScramCredentialDeletion_new_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialDeletion_new").CreateDelegate(typeof (_UserScramCredentialDeletion_new_delegate));
+            _AlterUserScramCredentials = (_AlterUserScramCredentials_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials").CreateDelegate(typeof (_AlterUserScramCredentials_delegate));
+            
+            
+            
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_result_name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1789,6 +1797,39 @@ namespace Confluent.Kafka.Impl
             IntPtr handle, [MarshalAs(UnmanagedType.LPArray)] string[] groups, UIntPtr groupsCnt, IntPtr optionsPtr, IntPtr resultQueuePtr)
             => _DescribeConsumerGroups(handle, groups, groupsCnt, optionsPtr, resultQueuePtr);
 
+        private delegate ErrorCode _DescribeUserScramCredentials_delegate(
+            IntPtr handle, [MarshalAs(UnmanagedType.LPArray)] string[] users, UIntPtr usersCnt, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _DescribeUserScramCredentials_delegate _DescribeUserScramCredentials;
+        internal static ErrorCode DescribeUserScramCredentials(
+            IntPtr handle, [MarshalAs(UnmanagedType.LPArray)] string[] users, UIntPtr usersCnt, IntPtr optionsPtr, IntPtr resultQueuePtr)
+            => _DescribeUserScramCredentials(handle, users, usersCnt, optionsPtr, resultQueuePtr);
+        
+        private delegate IntPtr _UserScramCredentialUpsertion_new_delegate(
+            string user, string salt, string password, byte mechanism, int iterations);
+        private static _UserScramCredentialUpsertion_new_delegate _UserScramCredentialUpsertion_new;
+        internal static IntPtr UserScramCredentialUpsertion_new(
+            string user, string salt, string password, byte mechanism, int iterations)
+            => _UserScramCredentialUpsertion_new(user,salt,password,mechanism,iterations);
+
+        private delegate IntPtr _UserScramCredentialDeletion_new_delegate(
+            string user, byte mechanism);
+        private static _UserScramCredentialDeletion_new_delegate _UserScramCredentialDeletion_new;
+        internal static IntPtr UserScramCredentialDeletion_new(
+            string user,byte mechanism)
+            => _UserScramCredentialDeletion_new(user,mechanism);
+
+        private delegate void _UserScramCredentialAlteration_destroy_delegate(
+            IntPtr alteration);
+        private static _UserScramCredentialAlteration_destroy_delegate _UserScramCredentialAlteration_destroy;
+        internal static void UserScramCredentialAlteration_destroy(
+            IntPtr alteration)
+            => _UserScramCredentialAlteration_destroy(alteration);
+        private delegate ErrorCode _AlterUserScramCredentials_delegate(
+            IntPtr handle, IntPtr[] alterations, UIntPtr alterationsCnt, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _AlterUserScramCredentials_delegate _AlterUserScramCredentials;
+        internal static ErrorCode AlterUserScramCredentials(
+            IntPtr handle, IntPtr[] alterations, UIntPtr alterationsCnt, IntPtr optionsPtr, IntPtr resultQueuePtr)
+            => _AlterUserScramCredentials(handle, alterations, alterationsCnt, optionsPtr, resultQueuePtr);
          private delegate IntPtr  _DescribeConsumerGroups_result_groups_delegate(IntPtr result, out UIntPtr cntp);
          private static _DescribeConsumerGroups_result_groups_delegate _DescribeConsumerGroups_result_groups;
          internal static IntPtr  DescribeConsumerGroups_result_groups(IntPtr result, out UIntPtr cntp)

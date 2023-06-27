@@ -2345,7 +2345,7 @@ namespace Confluent.Kafka.Impl
             setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
 
-            IntPtr[] c_alterationsPtr = IntPtr[alterations.Count()];
+            IntPtr[] c_alterationsPtr = new IntPtr[alterations.Count()];
             var idx = 0;
             foreach (var alteration in alterations)
             {
@@ -2356,12 +2356,12 @@ namespace Confluent.Kafka.Impl
 
                 if (alteration.GetType() == typeof(UserScramCredentialDeletion))
                 {
-                    c_alterationsPtr[idx] = Librdkafka.UserScramCredentialDeletion_new(alteration.User,(byte)(alteration.Mechanism));
+                    c_alterationsPtr[idx] = Librdkafka.UserScramCredentialDeletion_new(alteration.User,(byte)(((UserScramCredentialDeletion)alteration).Mechanism));
                     idx++;
                 }
                 else if (alteration.GetType() == typeof(UserScramCredentialUpsertion))
                 {
-                    c_alterationsPtr[idx] = Librdkafka.UserScramCredentialUpsertion_new(alteration.User,alteration.Salt,alteration.Password,(byte)(alteration.Mechanism),(int)(alteration.Iterations));
+                    c_alterationsPtr[idx] = Librdkafka.UserScramCredentialUpsertion_new(alteration.User,((UserScramCredentialUpsertion)alteration).Salt,((UserScramCredentialUpsertion)alteration).Password,(byte)(((UserScramCredentialUpsertion)alteration).Mechanism),(int)(((UserScramCredentialUpsertion)alteration).Iterations));
                     idx++;
                 }
                 else
@@ -2373,7 +2373,7 @@ namespace Confluent.Kafka.Impl
                     handle, c_alterationsPtr, (UIntPtr)(alterations.Count()),
                     optionsPtr, resultQueuePtr);
 
-            for(idx=0;idx<alteration.Count();idx++)
+            for(idx=0;idx<alterations.Count();idx++)
             {
                 Librdkafka.UserScramCredentialAlteration_destroy(c_alterationsPtr[idx]);
             }
