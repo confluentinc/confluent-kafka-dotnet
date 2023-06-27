@@ -34,6 +34,7 @@ namespace Confluent.Kafka
         /// </param>
         public TopicPartitionOffset(TopicPartition tp, Offset offset)
             : this(tp.Topic, tp.Partition, offset, null) { }
+        
         /// <summary>
         ///     Initializes a new TopicPartitionOffset instance.
         /// </summary>
@@ -62,12 +63,9 @@ namespace Confluent.Kafka
         /// <param name="offset">
         ///     A Kafka offset value.
         /// </param>
-        /// <param name="leaderEpoch">
-        ///     The optional offset leader epoch.
-        /// </param>
         public TopicPartitionOffset(string topic, Partition partition,
                                     Offset offset)
-            : this(topic, tp.Partition, offset, null) { }
+            : this(topic, partition, offset, null) { }
 
         /// <summary>
         ///     Initializes a new TopicPartitionOffset instance.
