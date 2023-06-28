@@ -840,14 +840,13 @@ namespace Confluent.Kafka
                                                 break;
                                         }
                                         var result = new DescribeUserScramCredentialsReport();
-                                        if (Librdkafka.DescribeUserScramCredentials_result_get_errorcode(eventPtr))
+                                        if (Librdkafka.DescribeUserScramCredentials_result_get_errorcode(eventPtr)!= ErrorCode.NoError)
                                         {
-                                            result.Error = new Error(Librdkafka.DescribeUserScramCredentials_result_get_errorcode(eventPtr),
-                                                                     Librdkafka.DescribeUserScramCredentials_result_get_errormessage(eventPtr));
+                                            result.Error = new Error(Librdkafka.DescribeUserScramCredentials_result_get_errorcode(eventPtr));
                                         }
                                         else
                                         {
-                                            result.Error = new Error(0,Librdkafka.err2str(0));
+                                            result.Error = new Error(ErrorCode.NoError);
                                             var Descriptions = new List<UserScramCredentialsDescription>();
                                             int count = Librdkafka.DescribeUserScramCredentials_result_get_count(eventPtr);
                                             for(int i=0;i<count;i++)
@@ -866,7 +865,7 @@ namespace Confluent.Kafka
                                                     {
                                                         var ScramCredentialInfo = new ScramCredentialInfo();
                                                         IntPtr c_ScramCredentialInfo = Librdkafka.UserScramCredentialsDescription_get_scramcredentialinfo(c_Description,j);
-                                                        ScramCredentialInfo.Mechanism = Librdkafka.ScramCredentialInfo_get_mechanism(c_ScramCredentialInfo);
+                                                        ScramCredentialInfo.Mechanism = (ScramMechanism)Librdkafka.ScramCredentialInfo_get_mechanism(c_ScramCredentialInfo);
                                                         ScramCredentialInfo.Iterations = Librdkafka.ScramCredentialInfo_get_iterations(c_ScramCredentialInfo);
                                                         ScramCredentialInfos.Add(ScramCredentialInfo);
                                                     }
@@ -899,8 +898,6 @@ namespace Confluent.Kafka
                                             element.Error = new Error(Librdkafka.error_code(c_error),Librdkafka.error_string(c_error));
                                             result.Add(element);
                                         }
-
-
                                     }
                                     default:
                                         // Should never happen.
