@@ -1866,10 +1866,10 @@ namespace Confluent.Kafka.Impl
             IntPtr event_result,int i)
             => _DescribeUserScramCredentials_result_get_description(event_result,i);
 
-        private delegate string _UserScramCredentialsDescription_get_user_delegate(
+        private delegate IntPtr _UserScramCredentialsDescription_get_user_delegate(
             IntPtr description);
         private static _UserScramCredentialsDescription_get_user_delegate _UserScramCredentialsDescription_get_user;
-        internal static string UserScramCredentialsDescription_get_user(
+        internal static IntPtr UserScramCredentialsDescription_get_user(
             IntPtr description)
             => _UserScramCredentialsDescription_get_user(description);
 
@@ -1922,10 +1922,10 @@ namespace Confluent.Kafka.Impl
             IntPtr event_result,int i)
             => _AlterUserScramCredentials_result_get_element(event_result,i);
 
-        private delegate string _UserScramCredentialAlterationResultElement_get_user_delegate(
+        private delegate IntPtr _UserScramCredentialAlterationResultElement_get_user_delegate(
             IntPtr element);
         private static _UserScramCredentialAlterationResultElement_get_user_delegate _UserScramCredentialAlterationResultElement_get_user;
-        internal static string UserScramCredentialAlterationResultElement_get_user(
+        internal static IntPtr UserScramCredentialAlterationResultElement_get_user(
             IntPtr element)
             => _UserScramCredentialAlterationResultElement_get_user(element);
 

@@ -853,7 +853,7 @@ namespace Confluent.Kafka
                                             {
                                                 var Description = new UserScramCredentialsDescription();
                                                 IntPtr c_Description = Librdkafka.DescribeUserScramCredentials_result_get_description(eventPtr,i);
-                                                Description.User = String.Copy(Librdkafka.UserScramCredentialsDescription_get_user(c_Description));
+                                                Description.User = PtrToStringUTF8(Librdkafka.UserScramCredentialsDescription_get_user(c_Description));
                                                 IntPtr c_error = Librdkafka.UserScramCredentialsDescription_get_error(c_Description);
 
                                                 Description.Error = new Error(Librdkafka.error_code(c_error),Librdkafka.error_string(c_error));
@@ -896,7 +896,7 @@ namespace Confluent.Kafka
                                         {
                                             var element = new AlterUserScramCredentialsReport();
                                             IntPtr c_ResultElement = Librdkafka.AlterUserScramCredentials_result_get_element(eventPtr,i);
-                                            element.User = String.Copy(Librdkafka.UserScramCredentialAlterationResultElement_get_user(c_ResultElement));
+                                            element.User = PtrToStringUTF8(Librdkafka.UserScramCredentialAlterationResultElement_get_user(c_ResultElement));
                                             IntPtr c_error = Librdkafka.UserScramCredentialAlterationResultElement_get_error(c_ResultElement);
                                             element.Error = new Error(Librdkafka.error_code(c_error),Librdkafka.error_string(c_error));
                                             result.Add(element);
@@ -926,7 +926,7 @@ namespace Confluent.Kafka
                             {
                                 if (eventPtr != IntPtr.Zero)
                                 {
-                                    // Librdkafka.event_destroy(eventPtr);
+                                    Librdkafka.event_destroy(eventPtr);
                                 }
                             }
                         }

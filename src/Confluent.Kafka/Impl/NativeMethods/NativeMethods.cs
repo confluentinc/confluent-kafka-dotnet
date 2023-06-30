@@ -1118,7 +1118,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_DescribeUserScramCredentials_result_get_description(IntPtr event_result,int i);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern string rd_kafka_UserScramCredentialsDescription_get_user(IntPtr description);
+        internal static extern IntPtr rd_kafka_UserScramCredentialsDescription_get_user(IntPtr description);
 
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1143,7 +1143,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_AlterUserScramCredentials_result_get_element(IntPtr event_result,int i);
         
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern string rd_kafka_UserScramCredentialAlterationResultElement_get_user(IntPtr element);
+        internal static extern IntPtr rd_kafka_UserScramCredentialAlterationResultElement_get_user(IntPtr element);
         
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_UserScramCredentialAlterationResultElement_get_error(IntPtr element);
