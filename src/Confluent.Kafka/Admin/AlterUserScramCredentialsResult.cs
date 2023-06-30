@@ -13,33 +13,29 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
+using System;
 using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents the result of a describe consumer group operation.
+    ///     The per-group result for an alter consumer group offsets request
+    ///     including errors.
     /// </summary>
-    public class DescribeUserScramCredentialsReport
+    public class AlterUserScramCredentialsResult
     {
-
         /// <summary>
-        ///    Request Level Error
+        ///     Reports for each users
         /// </summary>
-        public Error Error { get; set; }
-
-        /// <summary>
-        ///    Descriptions of various Users
-        /// </summary>
-        public List<UserScramCredentialsDescription> UserScramCredentialsDescriptions { get; set; }
+        public List<AlterUserScramCredentialsReport> AlterUserScramCredentialsReports { get; set;}
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-            string res = "DescribeUserScramCredentialsReport\n";
-            
-            return res;
+           
+            return "Hello World!";
         }
     }
 }

@@ -839,7 +839,7 @@ namespace Confluent.Kafka
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
-                                        var result = new DescribeUserScramCredentialsReport();
+                                        var result = new DescribeUserScramCredentialsResult();
                                         if (Librdkafka.DescribeUserScramCredentials_result_get_errorcode(eventPtr)!= ErrorCode.NoError)
                                         {
                                             result.Error = new Error(Librdkafka.DescribeUserScramCredentials_result_get_errorcode(eventPtr));
@@ -875,7 +875,10 @@ namespace Confluent.Kafka
                                             }
                                             result.UserScramCredentialsDescriptions = Descriptions;
                                         }
-
+                                        Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeUserScramCredentialsResult>)adminClientResult).TrySetResult(
+                                                        new DescribeUserScramCredentialsResult(){Error = result.Error, UserScramCredentialsDescriptions = result.UserScramCredentialsDescriptions}));
+                                        break;
 
                                     }
                                     case Librdkafka.EventType.AlterUserScramCredentials_Result:
@@ -898,6 +901,11 @@ namespace Confluent.Kafka
                                             element.Error = new Error(Librdkafka.error_code(c_error),Librdkafka.error_string(c_error));
                                             result.Add(element);
                                         }
+                                        Task.Run(() =>
+                                                    ((TaskCompletionSource<AlterUserScramCredentialsResult>)adminClientResult).TrySetResult(
+                                                        new AlterUserScramCredentialsResult(){AlterUserScramCredentialsReports = result}));
+                                        
+                                        break;
                                     }
                                     default:
                                         // Should never happen.
