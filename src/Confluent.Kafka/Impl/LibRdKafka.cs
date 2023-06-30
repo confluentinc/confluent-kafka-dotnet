@@ -418,6 +418,7 @@ namespace Confluent.Kafka.Impl
             
             _UserScramCredentialUpsertion_new = (_UserScramCredentialUpsertion_new_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialUpsertion_new").CreateDelegate(typeof (_UserScramCredentialUpsertion_new_delegate)); 
             _UserScramCredentialDeletion_new = (_UserScramCredentialDeletion_new_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialDeletion_new").CreateDelegate(typeof (_UserScramCredentialDeletion_new_delegate));
+            _UserScramCredentialAlteration_destroy = (_UserScramCredentialAlteration_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialAlteration_destroy").CreateDelegate(typeof (_UserScramCredentialAlteration_destroy_delegate));
             _AlterUserScramCredentials = (_AlterUserScramCredentials_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials").CreateDelegate(typeof (_AlterUserScramCredentials_delegate));
             
             _DescribeUserScramCredentials_result_get_errorcode = (_DescribeUserScramCredentials_result_get_errorcode_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeUserScramCredentials_result_get_errorcode").CreateDelegate(typeof (_DescribeUserScramCredentials_result_get_errorcode_delegate));
@@ -432,6 +433,7 @@ namespace Confluent.Kafka.Impl
             _AlterUserScramCredentials_result_get_count = (_AlterUserScramCredentials_result_get_count_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_get_count").CreateDelegate(typeof(_AlterUserScramCredentials_result_get_count_delegate));
             _AlterUserScramCredentials_result_get_element = (_AlterUserScramCredentials_result_get_element_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_get_element").CreateDelegate(typeof(_AlterUserScramCredentials_result_get_element_delegate));
             _UserScramCredentialAlterationResultElement_get_user = (_UserScramCredentialAlterationResultElement_get_user_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialAlterationResultElement_get_user").CreateDelegate(typeof(_UserScramCredentialAlterationResultElement_get_user_delegate));
+            _UserScramCredentialAlterationResultElement_get_error = (_UserScramCredentialAlterationResultElement_get_error_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialAlterationResultElement_get_error").CreateDelegate(typeof(_UserScramCredentialAlterationResultElement_get_error_delegate));
             
             // Scram API end
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));

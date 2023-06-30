@@ -1342,5 +1342,32 @@ namespace Confluent.Kafka
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
+
+
+        /// <summary>
+        ///     Endpoint of DescribeUserScramCredentials
+        /// </summary>
+        public Task<DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(IEnumerable<string> users, DescribeUserScramCredentialsOptions options = null) {
+            var completionSource = new TaskCompletionSource<DescribeUserScramCredentialsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DescribeUserScramCredentials(
+                users, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+
+        /// <summary>
+        ///     Endpoint of AlterUserScramCredentials
+        /// </summary>
+        public Task<AlterUserScramCredentialsResult> AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null) {
+            var completionSource = new TaskCompletionSource<AlterUserScramCredentialsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.AlterUserScramCredentials(
+                alterations, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+        
     }
 }
