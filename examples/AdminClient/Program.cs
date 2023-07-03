@@ -606,23 +606,23 @@ namespace Confluent.Kafka.Examples
 
         public static async Task Main(string[] args)
         {
-            // if (args.Length < 2)
-            // {
-            //     Console.WriteLine(
-            //         "usage: .. <bootstrapServers> " + String.Join("|", new string[] {
-            //             "list-groups", "metadata", "library-version", "create-topic", "create-acls",
-            //             "describe-acls", "delete-acls",
-            //             "list-consumer-groups", "describe-consumer-groups",
-            //             "list-consumer-group-offsets", "alter-consumer-group-offsets"
-            //         }) +
-            //         " ..");
-            //     Environment.ExitCode = 1;
-            //     return;
-            // }
+            if (args.Length < 2)
+            {
+                Console.WriteLine(
+                    "usage: .. <bootstrapServers> " + String.Join("|", new string[] {
+                        "list-groups", "metadata", "library-version", "create-topic", "create-acls",
+                        "describe-acls", "delete-acls",
+                        "list-consumer-groups", "describe-consumer-groups",
+                        "list-consumer-group-offsets", "alter-consumer-group-offsets",
+                        "user-scram"
+                    }) +
+                    " ..");
+                Environment.ExitCode = 1;
+                return;
+            }
 
-            var bootstrapServers = "localhost:9092";
-            var command = "user-scram";
-            
+            var bootstrapServers = args[0];
+            var command = args[1];
             var commandArgs = args.Skip(2).ToArray();
             switch (command)
             {
