@@ -25,8 +25,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
         public static void ProtobufWithReferences(Config config)
         {
-            string onSemaphore = Environment.GetEnvironmentVariable("onSemaphore");
-            if(onSemaphore!=null){
+            bool onSemaphore = semaphoreSkipFlakyTests();
+            if(onSemaphore){
                 return;
             }
             var srInitial = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
