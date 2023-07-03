@@ -9,7 +9,9 @@
 
   <ItemGroup>
     <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="2.1.1" /> -->
-    <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
+	<PackageReference Include="Confluent.Kafka" Version="2.1.1" />
+    <!--<ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />-->
+	<PackageReference Include="Testcontainers.Kafka" Version="3.1.0" />
   </ItemGroup>
 
 </Project>
