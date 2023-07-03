@@ -449,6 +449,17 @@ namespace Confluent.Kafka
         /// </returns>
         Task<DescribeConsumerGroupsResult> DescribeConsumerGroupsAsync(
             IEnumerable<string> groups, DescribeConsumerGroupsOptions options = null);
+
+        /// <summary>
+        ///     Endpoint of DescribeUserScramCredentials
+        /// </summary>
+        Task<DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(IEnumerable<string> users, DescribeUserScramCredentialsOptions options = null);
+
+
+        /// <summary>
+        ///     Endpoint of AlterUserScramCredentials
+        /// </summary>
+        Task<AlterUserScramCredentialsResult> AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
     }
 
 }
