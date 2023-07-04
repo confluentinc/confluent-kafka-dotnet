@@ -764,27 +764,68 @@ namespace Confluent.Kafka.Examples
 
             // flushing the producer
 
-            // fetch the listoffsets 3 times 
+            // fetch the listoffsets 3 times
 
             // try to match the result
-            using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            string TopicName = "non-existing-topic";
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                var lCount = 0;
-                foreach (var l in lines)
+                try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(1), ct);  // slow down the calls to produce to make the output more interesting to watch.
-                    await producer.ProduceAsync(, new Message<Null, string> { Value = l }, ct);
-                    lCount += 1;
-                    if (lCount % 10 == 0)
-                    {
-                        Console.WriteLine($"produced {lCount} input lines.");
-                    }
+                    await adminClient.CreateTopicsAsync(new TopicSpecification[] { 
+                        new TopicSpecification { Name = TopicName, ReplicationFactor = 1, NumPartitions = 1 } });
                 }
-                string TopicName = "non-existing-topic";
-                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message"});
-
-                producer.Flush(ct);
+                catch (CreateTopicsException e)
+                {
+                    Console.WriteLine($"An error occurred creating topic {e.Results[0].Topic}: {e.Results[0].Error.Reason}");
+                }
             }
+
+            using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            {   
+                long basetimestamp = 10000000;
+                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 100,TimestampType.CreateTime)});
+                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 400,TimestampType.CreateTime)});
+                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 250,TimestampType.CreateTime)});
+                producer.Flush(new TimeSpan(0,0,20));
+            }
+            var timeout = TimeSpan.FromSeconds(30);
+            ListOffsetsOptions options = new ListOffsetsOptions(){RequestTimeout = timeout, IsolationLevel = Confluent.Kafka.Admin.IsolationLevel.ReadUncommitted};
+            Dictionary<TopicPartition,OffsetSpec> requests = new Dictionary<TopicPartition, OffsetSpec>();
+            TopicPartition tp = new TopicPartition(TopicName,0);
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                requests[tp] = OffsetSpec.Earliest;
+                var ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
+                foreach(var ListOffsetResultInfo in ListOffsetsResult.ListOffsetResultInfos)
+                {
+                    TopicPartitionOffsetError topic_partition = ListOffsetResultInfo.TopicPartitionOffsetError;
+                    long Timestamp = ListOffsetResultInfo.Timestamp;
+                    Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
+                }
+
+                requests[tp] = OffsetSpec.Latest;
+                ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
+                foreach(var ListOffsetResultInfo in ListOffsetsResult.ListOffsetResultInfos)
+                {
+                    TopicPartitionOffsetError topic_partition = ListOffsetResultInfo.TopicPartitionOffsetError;
+                    long Timestamp = ListOffsetResultInfo.Timestamp;
+                    Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
+                }
+
+                requests[tp] = OffsetSpec.MaxTimestamp;
+                ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
+                foreach(var ListOffsetResultInfo in ListOffsetsResult.ListOffsetResultInfos)
+                {
+                    TopicPartitionOffsetError topic_partition = ListOffsetResultInfo.TopicPartitionOffsetError;
+                    long Timestamp = ListOffsetResultInfo.Timestamp;
+                    Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
+                }
+
+            }
+
+
+
         }
         public static async Task Main(string[] args)
         {

@@ -1476,6 +1476,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+<<<<<<< HEAD
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeUserScramCredentialsAsync(IEnumerable{string}, DescribeUserScramCredentialsOptions)" />
         /// </summary>
         public Task<DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(IEnumerable<string> users, DescribeUserScramCredentialsOptions options = null) {
@@ -1499,5 +1500,17 @@ namespace Confluent.Kafka
             return completionSource.Task;
         }
         
+=======
+        ///     ListOffsets End-Point
+        /// </summary>
+        public Task<ListOffsetsResult> ListOffsetsAsync(Dictionary<TopicPartition,OffsetSpec> requests,ListOffsetsOptions options = null) {
+            var completionSource = new TaskCompletionSource<ListOffsetsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.ListOffsets(
+                requests, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+>>>>>>> 14f6ca5 (changes)
     }
 }

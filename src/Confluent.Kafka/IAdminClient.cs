@@ -479,6 +479,7 @@ namespace Confluent.Kafka
             IEnumerable<string> groups, DescribeConsumerGroupsOptions options = null);
 
         /// <summary>
+<<<<<<< HEAD
         ///    Describes user SASL/SCRAM credentials.
         /// </summary>
         /// <param name="users">
@@ -529,6 +530,18 @@ namespace Confluent.Kafka
         ///     A Task with an empty result when successful.
         /// </returns>
         Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
+=======
+        ///    Describes consumer groups in the cluster.
+        /// </summary>
+        /// <param name="requests">
+        ///     The mapping of TopicPartitions to OffsetSpec.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while List Offsets.
+        /// </param>
+        Task<ListOffsetsResult> ListOffsetsAsync(
+            Dictionary<TopicPartition,OffsetSpec> requests, ListOffsetsOptions options = null);
+>>>>>>> 14f6ca5 (changes)
     }
 
 }
