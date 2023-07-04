@@ -753,6 +753,13 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 [MarshalAs(UnmanagedType.LPStr)] string name);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_error_t * */ IntPtr rd_kafka_ConfigResource_set_incremental_config(
+                /* rd_kafka_ConfigResource_t * */ IntPtr config,
+                [MarshalAs(UnmanagedType.LPStr)] string name,
+                /* rd_kafka_AlterConfigOpType_t */ AlterConfigOpType optype,
+                [MarshalAs(UnmanagedType.LPStr)] string value);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_ConfigEntry_t ** */ IntPtr rd_kafka_ConfigResource_configs(
                 /* rd_kafka_ConfigResource_t * */ IntPtr config,
                 /* size_t * */ out UIntPtr cntp);
@@ -786,6 +793,19 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_ConfigResource_t ** */ IntPtr rd_kafka_AlterConfigs_result_resources(
                 /* rd_kafka_AlterConfigs_result_t * */ IntPtr result,
+                out UIntPtr cntp);
+                
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_IncrementalAlterConfigs(
+                /* rd_kafka_t * */ IntPtr rk,
+                /* rd_kafka_ConfigResource_t ** */ IntPtr[] configs,
+                UIntPtr config_cnt,
+                /* rd_kafka_AdminOptions_t * */ IntPtr options,
+                /* rd_kafka_queue_t * */ IntPtr rkqu);
+                
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_ConfigResource_t ** */ IntPtr rd_kafka_IncrementalAlterConfigs_result_resources(
+                /* rd_kafka_IncrementalAlterConfigs_result_t * */ IntPtr result,
                 out UIntPtr cntp);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
