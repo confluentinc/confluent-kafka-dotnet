@@ -757,6 +757,35 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static async Task ListOffsetsAsync(string bootstrapServers) {
+            // first create a topic partition with only 1 partition 
+
+            // push 3 lines via producer
+
+            // flushing the producer
+
+            // fetch the listoffsets 3 times 
+
+            // try to match the result
+            using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                var lCount = 0;
+                foreach (var l in lines)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1), ct);  // slow down the calls to produce to make the output more interesting to watch.
+                    await producer.ProduceAsync(, new Message<Null, string> { Value = l }, ct);
+                    lCount += 1;
+                    if (lCount % 10 == 0)
+                    {
+                        Console.WriteLine($"produced {lCount} input lines.");
+                    }
+                }
+                string TopicName = "non-existing-topic";
+                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message"});
+
+                producer.Flush(ct);
+            }
+        }
         public static async Task Main(string[] args)
         {
             if (args.Length < 2)
@@ -823,6 +852,9 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "alter-user-scram-credentials":
                     await AlterUserScramCredentialsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "list-offsets":
+                    await ListOffsetsAsync(bootstrapServers);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");
