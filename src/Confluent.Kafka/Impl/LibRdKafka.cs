@@ -71,7 +71,8 @@ namespace Confluent.Kafka.Impl
             AlterConsumerGroupOffsets = 15,
             IncrementalAlterConfigs = 16,
             DescribeUserScramCredentials = 17,
-            AlterUserScramCredentials = 18
+            AlterUserScramCredentials = 18,
+            ListOffsets = 19,
         }
 
         public enum EventType : int
@@ -101,7 +102,8 @@ namespace Confluent.Kafka.Impl
             AlterConsumerGroupOffsets_Result = 0x10000,
             IncrementalAlterConfigs_Result = 0x20000,
             DescribeUserScramCredentials_Result = 0x40000,
-            AlterUserScramCredentials_Result = 0x80000
+            AlterUserScramCredentials_Result = 0x80000,
+            ListOffsets_Result = 1048576,
         }
 
         // Minimum librdkafka version.
@@ -287,6 +289,7 @@ namespace Confluent.Kafka.Impl
             _AdminOptions_set_opaque = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_opaque").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
             _AdminOptions_set_require_stable_offsets = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_require_stable_offsets").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _AdminOptions_set_match_consumer_group_states = (Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_match_consumer_group_states").CreateDelegate(typeof(Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>));
+            _AdminOptions_set_isolation_level = (Func<IntPtr, byte, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_isolation_level").CreateDelegate(typeof(Func<IntPtr, byte, IntPtr>));
 
             _NewTopic_new = (Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_new").CreateDelegate(typeof(Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>));
             _NewTopic_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -1276,6 +1279,9 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr AdminOptions_set_match_consumer_group_states(IntPtr options, ConsumerGroupState[] states, UIntPtr statesCnt)
             => _AdminOptions_set_match_consumer_group_states(options, states, statesCnt);
 
+        private static Func<IntPtr, byte, IntPtr> _AdminOptions_set_isolation_level;
+        internal static IntPtr AdminOptions_set_isolation_level(IntPtr options, byte IsolationLevel)
+            => _AdminOptions_set_isolation_level(options, IsolationLevel);
         private static Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr> _NewTopic_new;
         internal static IntPtr NewTopic_new(
                         string topic,
