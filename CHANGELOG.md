@@ -4,6 +4,10 @@
 - [KIP-339](https://cwiki.apache.org/confluence/display/KAFKA/KIP-339%3A+Create+a+new+IncrementalAlterConfigs+API)
   IncrementalAlterConfigs API (#2005).
 
+## Fixes
+
+- Fix backwards compatability of TopicPartitionOffset constructor. ([drinehimer](https://github.com/drinehimer), #2066)
+
 
 # 2.1.1
 

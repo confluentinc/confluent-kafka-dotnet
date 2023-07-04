@@ -67,6 +67,8 @@ matches the appveyor build number. You can see which commit a particular build n
 
 For a step-by-step guide and code samples, see [Getting Started with Apache Kafka and .NET](https://developer.confluent.io/get-started/dotnet/) on [Confluent Developer](https://developer.confluent.io/). 
 
+You can also take the free self-paced training course [Apache Kafka for .NET Developers](https://developer.confluent.io/learn-kafka/apache-kafka-for-dotnet/) on [Confluent Developer](https://developer.confluent.io/). 
+
 Take a look in the [examples](examples) directory and at the [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) for further examples. 
 
 For an overview of configuration properties, refer to the [librdkafka documentation](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md). 
