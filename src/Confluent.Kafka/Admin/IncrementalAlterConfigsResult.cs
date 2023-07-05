@@ -18,23 +18,13 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Encapsulates a config property name / value pair.
+    ///     The result of incremental alter config request for a specific resource.
     /// </summary>
-    public class ConfigEntry
+    public class IncrementalAlterConfigsResult
     {
         /// <summary>
-        ///     The config name.
+        ///     The resource the result corresponds to.
         /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        ///     The config value.
-        /// </summary>
-        public string Value { get; set; }
-
-        /// <summary>
-        ///     Incremental operation to perform.
-        /// </summary>
-        public AlterConfigOpType IncrementalOperation { get; set; }
+        public ConfigResource ConfigResource;
     }
 }
