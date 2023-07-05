@@ -1545,7 +1545,7 @@ namespace Confluent.Kafka.Impl
                         throw new ArgumentException($"Config name must be specified for {resource}");
                     }
                     
-                    var error = Librdkafka.ConfigResource_set_incremental_config(resourcePtr, rc.Name, rc.IncrementalOperation, rc.Value);
+                    var error = Librdkafka.ConfigResource_add_incremental_config(resourcePtr, rc.Name, rc.IncrementalOperation, rc.Value);
                     if (error != IntPtr.Zero)
                     {
                         throw new KafkaException(new Error(error, true));

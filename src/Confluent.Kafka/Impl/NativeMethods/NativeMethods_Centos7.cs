@@ -757,7 +757,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 [MarshalAs(UnmanagedType.LPStr)] string name);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern /* rd_kafka_error_t * */ IntPtr rd_kafka_ConfigResource_set_incremental_config(
+        internal static extern /* rd_kafka_error_t * */ IntPtr rd_kafka_ConfigResource_add_incremental_config(
                 /* rd_kafka_ConfigResource_t * */ IntPtr config,
                 [MarshalAs(UnmanagedType.LPStr)] string name,
                 /* rd_kafka_AlterConfigOpType_t */ AlterConfigOpType optype,

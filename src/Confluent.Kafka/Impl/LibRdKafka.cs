@@ -341,7 +341,7 @@ namespace Confluent.Kafka.Impl
             _ConfigResource_add_config = (Func<IntPtr, string, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_add_config").CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
             _ConfigResource_set_config = (Func<IntPtr, string, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_set_config").CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
             _ConfigResource_delete_config = (Func<IntPtr, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_delete_config").CreateDelegate(typeof(Func<IntPtr, string, ErrorCode>));
-            _ConfigResource_set_incremental_config = (Func<IntPtr, string, AlterConfigOpType, string, IntPtr>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_set_incremental_config").CreateDelegate(typeof(Func<IntPtr, string, AlterConfigOpType, string, IntPtr>));
+            _ConfigResource_add_incremental_config = (Func<IntPtr, string, AlterConfigOpType, string, IntPtr>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_add_incremental_config").CreateDelegate(typeof(Func<IntPtr, string, AlterConfigOpType, string, IntPtr>));
             _ConfigResource_configs = (_ConfigResource_configs_delegate)methods.Single(m => m.Name == "rd_kafka_ConfigResource_configs").CreateDelegate(typeof(_ConfigResource_configs_delegate));
 
             _ConfigResource_type = (Func<IntPtr, ResourceType>)methods.Single(m => m.Name == "rd_kafka_ConfigResource_type").CreateDelegate(typeof(Func<IntPtr, ResourceType>));
@@ -1452,12 +1452,12 @@ namespace Confluent.Kafka.Impl
                 IntPtr config,
                 string name) => _ConfigResource_delete_config(config, name);
 
-        private static Func<IntPtr, string, AlterConfigOpType, string, IntPtr> _ConfigResource_set_incremental_config;
-        internal static IntPtr ConfigResource_set_incremental_config(
+        private static Func<IntPtr, string, AlterConfigOpType, string, IntPtr> _ConfigResource_add_incremental_config;
+        internal static IntPtr ConfigResource_add_incremental_config(
                 IntPtr config,
                 string name, 
                 AlterConfigOpType optype,
-                string value) => _ConfigResource_set_incremental_config(config, name, optype, value);
+                string value) => _ConfigResource_add_incremental_config(config, name, optype, value);
 
         private delegate IntPtr _ConfigResource_configs_delegate(IntPtr config, out UIntPtr cntp);
         private static _ConfigResource_configs_delegate _ConfigResource_configs;
