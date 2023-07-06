@@ -1554,7 +1554,7 @@ namespace Confluent.Kafka.Impl
                 configPtrs[configPtrsIdx++] = resourcePtr;
             }
 
-            options = options == null ? new IncrementalAlterConfigsOptions() : options;
+            options = options ?? new IncrementalAlterConfigsOptions();
             IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.IncrementalAlterConfigs);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
             setOption_RequestTimeout(optionsPtr, options.RequestTimeout);

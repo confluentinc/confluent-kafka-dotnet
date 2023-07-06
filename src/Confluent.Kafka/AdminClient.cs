@@ -569,40 +569,6 @@ namespace Confluent.Kafka
                                         }
                                         break;
 
-                                    case Librdkafka.EventType.IncrementalAlterConfigs_Result:
-                                        {
-                                            if (errorCode != ErrorCode.NoError)
-                                            {
-                                                Task.Run(() =>
-                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>)adminClientResult).TrySetException(
-                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
-                                                break;
-                                            }
-
-                                            var result = extractResultConfigs(
-                                                Librdkafka.IncrementalAlterConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp)
-                                                    .Select(r => new IncrementalAlterConfigsReport { ConfigResource = r.ConfigResource, Error = r.Error })
-                                                    .ToList();
-
-                                            if (result.Any(r => r.Error.IsError))
-                                            {
-                                                Task.Run(() =>
-                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>)adminClientResult).TrySetException(
-                                                        new IncrementalAlterConfigsException(result)));
-                                            }
-                                            else
-                                            {
-                                                Task.Run(() =>
-                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>) adminClientResult).TrySetResult(
-                                                            result.Select(r => new IncrementalAlterConfigsResult
-                                                            {
-                                                               ConfigResource = r.ConfigResource,
-                                                            }).ToList()
-                                                    ));
-                                            }
-                                        }
-                                        break;
-
                                     case Librdkafka.EventType.DeleteRecords_Result:
                                         {
                                             if (errorCode != ErrorCode.NoError)
@@ -784,6 +750,40 @@ namespace Confluent.Kafka
                                         }
                                         break;
                                     }
+                                    
+                                    case Librdkafka.EventType.IncrementalAlterConfigs_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                            }
+
+                                            var result = extractResultConfigs(
+                                                Librdkafka.IncrementalAlterConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp)
+                                                    .Select(r => new IncrementalAlterConfigsReport { ConfigResource = r.ConfigResource, Error = r.Error })
+                                                    .ToList();
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>)adminClientResult).TrySetException(
+                                                        new IncrementalAlterConfigsException(result)));
+                                            }
+                                            else
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>) adminClientResult).TrySetResult(
+                                                            result.Select(r => new IncrementalAlterConfigsResult
+                                                            {
+                                                               ConfigResource = r.ConfigResource,
+                                                            }).ToList()
+                                                    ));
+                                            }
+                                        }
+                                        break;
 
                                     case Librdkafka.EventType.ListConsumerGroupOffsets_Result:
                                     {
