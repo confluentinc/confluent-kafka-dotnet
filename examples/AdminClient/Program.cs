@@ -777,7 +777,7 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (CreateTopicsException e)
                 {
-                    Console.WriteLine($"An error occurred creating topic {e.Results[0].Topic}: {e.Results[0].Error.Reason}");
+                    Console.WriteLine($"An error occurred creating topic : {e}");
                 }
             }
 
@@ -787,7 +787,7 @@ namespace Confluent.Kafka.Examples
                 await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 100,TimestampType.CreateTime)});
                 await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 400,TimestampType.CreateTime)});
                 await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 250,TimestampType.CreateTime)});
-                producer.Flush(new TimeSpan(0,0,20));
+                producer.Flush(new TimeSpan(0,0,10));
             }
             var timeout = TimeSpan.FromSeconds(30);
             ListOffsetsOptions options = new ListOffsetsOptions(){RequestTimeout = timeout, IsolationLevel = Confluent.Kafka.Admin.IsolationLevel.ReadUncommitted};
@@ -822,9 +822,16 @@ namespace Confluent.Kafka.Examples
                     Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
                 }
 
+                try
+                {
+                    await adminClient.DeleteTopicsAsync(new List<string>{ TopicName });
+                }
+                catch (CreateTopicsException e)
+                {
+                    Console.WriteLine($"An error occurred deleting topic : ${e}");
+                }
+
             }
-
-
 
         }
         public static async Task Main(string[] args)
