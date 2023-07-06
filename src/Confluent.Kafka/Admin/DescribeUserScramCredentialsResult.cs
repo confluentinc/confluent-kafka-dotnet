@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents the result of a describe consumer group operation.
+    ///     Represents the result of a Describe User Scram Credentials operation.
     /// </summary>
     public class DescribeUserScramCredentialsResult
     {
@@ -36,9 +36,11 @@ namespace Confluent.Kafka.Admin
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-            string res = "DescribeUserScramCredentialsResult\n";
-            
-            return res;
+            string result = "DescribeUserScramCredentialsResult :\n";
+            foreach(var description in UserScramCredentialsDescriptions){
+                result += description.ToString();
+            }
+            return result;
         }
     }
 }

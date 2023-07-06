@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The per-group result for an alter consumer group offsets request
+    ///     The per-user result for an alter user scram credentials request
     ///     including errors.
     /// </summary>
     public class AlterUserScramCredentialsReport
@@ -39,8 +39,8 @@ namespace Confluent.Kafka.Admin
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-           
-            return "Hello World!";
+            string result = $"Username : {User} ErrorCode : ${Error.Code}\n";
+            return result;
         }
     }
 }

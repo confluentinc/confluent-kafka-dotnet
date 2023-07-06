@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Enumerates the different types of ACL permission types.
+    ///     Enumerates the different types of ScramMechanism types.
     /// </summary>
     public enum ScramMechanism : int
     {
@@ -36,10 +36,10 @@ namespace Confluent.Kafka.Admin
         ///     SHA 512
         /// </summary>        
         Scram_SHA_512 = 2,
+        
          /// <summary>
         ///     Mechanism CNT
         /// </summary>        
-
         Scram_SHA_CNT = 3
     }
 }

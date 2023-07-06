@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,8 +34,11 @@ namespace Confluent.Kafka.Admin
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-           
-            return "Hello World!";
+            string result = "AlterUserScramCredentials Result :\n";
+            foreach(var report in AlterUserScramCredentialsReports){
+                result += report.ToString();
+            }
+            return result;
         }
     }
 }
