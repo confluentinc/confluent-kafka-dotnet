@@ -19,7 +19,7 @@ using System;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the "AdminClient.AlterConsumerGroupOffsetsAsync" method.
+    ///     Options for the AlterUserScramCredentials method.
     /// </summary>
     public class AlterUserScramCredentialsOptions
     {
