@@ -814,7 +814,7 @@ namespace Confluent.Kafka
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
-                                        var results = extractDescribeConsumerGroupsResults(eventPtr);
+                                        var results = extractDescribeConsumerGroupsResults(eventPtr); // resultClass
                                         if (results.ConsumerGroupDescriptions.Any(desc => desc.Error.IsError))
                                         {
                                             Task.Run(() =>
@@ -830,7 +830,83 @@ namespace Confluent.Kafka
                                         }
                                         break;
                                     }
+                                    case Librdkafka.EventType.DescribeUserScramCredentials_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeUserScramCredentialsResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        var result = new DescribeUserScramCredentialsResult();
+                                        if (Librdkafka.DescribeUserScramCredentials_result_get_errorcode(eventPtr)!= ErrorCode.NoError)
+                                        {
+                                            result.Error = new Error(Librdkafka.DescribeUserScramCredentials_result_get_errorcode(eventPtr));
+                                        }
+                                        else
+                                        {
+                                            result.Error = new Error(ErrorCode.NoError);
+                                            var Descriptions = new List<UserScramCredentialsDescription>();
+                                            int count = Librdkafka.DescribeUserScramCredentials_result_get_count(eventPtr);
+                                            for(int i=0;i<count;i++)
+                                            {
+                                                var Description = new UserScramCredentialsDescription();
+                                                IntPtr c_Description = Librdkafka.DescribeUserScramCredentials_result_get_description(eventPtr,i);
+                                                Description.User = PtrToStringUTF8(Librdkafka.UserScramCredentialsDescription_get_user(c_Description));
+                                                IntPtr c_error = Librdkafka.UserScramCredentialsDescription_get_error(c_Description);
 
+                                                Description.Error = new Error(Librdkafka.error_code(c_error),Librdkafka.error_string(c_error));
+                                                if (Librdkafka.error_code(c_error)==0)
+                                                {
+                                                    int num_credentials = Librdkafka.UserScramCredentialsDescription_get_scramcredentialinfo_cnt(c_Description);
+                                                    var ScramCredentialInfos = new List<ScramCredentialInfo>();
+                                                    for(int j=0;j<num_credentials;j++)
+                                                    {
+                                                        var ScramCredentialInfo = new ScramCredentialInfo();
+                                                        IntPtr c_ScramCredentialInfo = Librdkafka.UserScramCredentialsDescription_get_scramcredentialinfo(c_Description,j);
+                                                        ScramCredentialInfo.Mechanism = (ScramMechanism)Librdkafka.ScramCredentialInfo_get_mechanism(c_ScramCredentialInfo);
+                                                        ScramCredentialInfo.Iterations = Librdkafka.ScramCredentialInfo_get_iterations(c_ScramCredentialInfo);
+                                                        ScramCredentialInfos.Add(ScramCredentialInfo);
+                                                    }
+                                                    Description.ScramCredentialInfos = ScramCredentialInfos;
+                                                }
+                                                Descriptions.Add(Description);
+                                            }
+                                            result.UserScramCredentialsDescriptions = Descriptions;
+                                        }
+                                        Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeUserScramCredentialsResult>)adminClientResult).TrySetResult(
+                                                        new DescribeUserScramCredentialsResult(){Error = result.Error, UserScramCredentialsDescriptions = result.UserScramCredentialsDescriptions}));
+                                        break;
+
+                                    }
+                                    case Librdkafka.EventType.AlterUserScramCredentials_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeUserScramCredentialsResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        var result = new List<AlterUserScramCredentialsReport>();
+                                        int count = Librdkafka.AlterUserScramCredentials_result_get_count(eventPtr);
+                                        for(int i=0;i<count;i++)
+                                        {
+                                            var element = new AlterUserScramCredentialsReport();
+                                            IntPtr c_ResultElement = Librdkafka.AlterUserScramCredentials_result_get_element(eventPtr,i);
+                                            element.User = PtrToStringUTF8(Librdkafka.UserScramCredentialAlterationResultElement_get_user(c_ResultElement));
+                                            IntPtr c_error = Librdkafka.UserScramCredentialAlterationResultElement_get_error(c_ResultElement);
+                                            element.Error = new Error(Librdkafka.error_code(c_error),Librdkafka.error_string(c_error));
+                                            result.Add(element);
+                                        }
+                                        Task.Run(() =>
+                                                    ((TaskCompletionSource<AlterUserScramCredentialsResult>)adminClientResult).TrySetResult(
+                                                        new AlterUserScramCredentialsResult(){AlterUserScramCredentialsReports = result}));
+                                        
+                                        break;
+                                    }
                                     default:
                                         // Should never happen.
                                         throw new InvalidOperationException($"Unknown result type: {type}");
@@ -876,6 +952,8 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.ListConsumerGroupOffsets_Result, typeof(TaskCompletionSource<List<ListConsumerGroupOffsetsResult>>) },
             { Librdkafka.EventType.ListConsumerGroups_Result, typeof(TaskCompletionSource<ListConsumerGroupsResult>) },
             { Librdkafka.EventType.DescribeConsumerGroups_Result, typeof(TaskCompletionSource<DescribeConsumerGroupsResult>) },
+            { Librdkafka.EventType.DescribeUserScramCredentials_Result, typeof(TaskCompletionSource<DescribeUserScramCredentialsResult>) },
+            { Librdkafka.EventType.AlterUserScramCredentials_Result, typeof(TaskCompletionSource<AlterUserScramCredentialsResult>) },
         };
 
 
@@ -1266,5 +1344,32 @@ namespace Confluent.Kafka
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
+
+
+        /// <summary>
+        ///     Endpoint of DescribeUserScramCredentials
+        /// </summary>
+        public Task<DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(IEnumerable<string> users, DescribeUserScramCredentialsOptions options = null) {
+            var completionSource = new TaskCompletionSource<DescribeUserScramCredentialsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DescribeUserScramCredentials(
+                users, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+
+        /// <summary>
+        ///     Endpoint of AlterUserScramCredentials
+        /// </summary>
+        public Task<AlterUserScramCredentialsResult> AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null) {
+            var completionSource = new TaskCompletionSource<AlterUserScramCredentialsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.AlterUserScramCredentials(
+                alterations, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+        
     }
 }
