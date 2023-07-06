@@ -2308,7 +2308,85 @@ namespace Confluent.Kafka.Impl
                 }
             }
         }
+        internal void DescribeUserScramCredentials(IEnumerable<string> users, DescribeUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
 
+            var optionsPtr = IntPtr.Zero;
+            
+            // Set Admin Options if any.
+            options = options ?? new DescribeUserScramCredentialsOptions();
+            optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeUserScramCredentials);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_completionSource(optionsPtr, completionSourcePtr);
+
+            // Call DescribeUserScramCredentials (async).
+            var errorCode = Librdkafka.DescribeUserScramCredentials(
+                    handle, users.ToArray(), (UIntPtr)(users.Count()),
+                    optionsPtr, resultQueuePtr);
+            if (optionsPtr != IntPtr.Zero)
+            {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+            }
+            if(errorCode != ErrorCode.NoError)
+            {
+                throw new KafkaException(errorCode);
+            }
+        }
+        internal void AlterUserScramCredentials(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            var optionsPtr = IntPtr.Zero;
+            
+            // Set Admin Options if any.
+            options = options ?? new AlterUserScramCredentialsOptions();
+            optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.AlterUserScramCredentials);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_completionSource(optionsPtr, completionSourcePtr);
+
+            IntPtr[] c_alterationsPtr = new IntPtr[alterations.Count()];
+            var idx = 0;
+            foreach (var alteration in alterations)
+            {
+                if (alteration == null)
+                {
+                    throw new ArgumentException("Cannot have a null alteration");
+                }
+
+                if (alteration.GetType() == typeof(UserScramCredentialDeletion))
+                {
+                    c_alterationsPtr[idx] = Librdkafka.UserScramCredentialDeletion_new(alteration.User,(byte)(((UserScramCredentialDeletion)alteration).Mechanism));
+                    idx++;
+                }
+                else if (alteration.GetType() == typeof(UserScramCredentialUpsertion))
+                {
+                    c_alterationsPtr[idx] = Librdkafka.UserScramCredentialUpsertion_new(alteration.User,((UserScramCredentialUpsertion)alteration).Salt,((UserScramCredentialUpsertion)alteration).Password,(byte)(((UserScramCredentialUpsertion)alteration).Mechanism),(int)(((UserScramCredentialUpsertion)alteration).Iterations));
+                    idx++;
+                }
+                else
+                {
+                    throw new ArgumentException("Every Alteration must be either an instance of Deletion or Upsertion Subclass");
+                }
+            }
+            var errorCode = Librdkafka.AlterUserScramCredentials(
+                    handle, c_alterationsPtr, (UIntPtr)(alterations.Count()),
+                    optionsPtr, resultQueuePtr);
+
+            for(idx=0;idx<alterations.Count();idx++)
+            {
+                Librdkafka.UserScramCredentialAlteration_destroy(c_alterationsPtr[idx]);
+            }
+            if (optionsPtr != IntPtr.Zero)
+            {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+            }
+            if(errorCode != ErrorCode.NoError)
+            {
+                throw new KafkaException(errorCode);
+            }
+
+        }
         internal void OAuthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
         {
             if (tokenValue == null) throw new ArgumentNullException(nameof(tokenValue));
