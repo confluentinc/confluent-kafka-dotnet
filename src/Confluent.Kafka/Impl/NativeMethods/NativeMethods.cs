@@ -1071,9 +1071,6 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_group_result_partitions(IntPtr groupres);
 
-        // 
-        // SCRAM API
-        // 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_DescribeUserScramCredentials(
                 IntPtr handle,

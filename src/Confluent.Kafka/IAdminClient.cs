@@ -451,14 +451,39 @@ namespace Confluent.Kafka
             IEnumerable<string> groups, DescribeConsumerGroupsOptions options = null);
 
         /// <summary>
-        ///     Endpoint of DescribeUserScramCredentials
+        ///    Describes User Scram Credentials for the listed users
         /// </summary>
+        /// <param name="users">
+        ///     The list of users to describe for. This can be set
+        ///     to null to describe all users.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while describing user scram credentials.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <returns>
+        ///     A List of <see cref="Confluent.Kafka.Admin.DescribeUserScramCredentialsResult"/>.
+        /// </returns>
         Task<DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(IEnumerable<string> users, DescribeUserScramCredentialsOptions options = null);
 
 
         /// <summary>
-        ///     Endpoint of AlterUserScramCredentials
+        ///    Alter User Scram Credentials for the listed alteration
         /// </summary>
+        /// <param name="alterations">
+        ///     The list of alterations to exercise. 
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while alter user scram credentials.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <returns>
+        ///     A List of <see cref="Confluent.Kafka.Admin.AlterUserScramCredentialsResult"/>.
+        /// </returns>
         Task<AlterUserScramCredentialsResult> AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
     }
 
