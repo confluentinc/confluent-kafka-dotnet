@@ -26,6 +26,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         private static List<object[]> schemaRegistryParameters;
+
         static Tests()
         {
             // Quick fix for https://github.com/Microsoft/vstest/issues/918

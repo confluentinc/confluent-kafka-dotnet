@@ -34,10 +34,9 @@ namespace Confluent.Kafka.IntegrationTests
         public void AdminClient_AlterConfigs(string bootstrapServers)
         {
             LogToFile("start AdminClient_AlterConfigs");
-            bool skipFlakyTests = semaphoreSkipFlakyTests();
-            if (skipFlakyTests)
-            {
-                LogToFile("Skipping AdminClient_AlterConfigs Test on Semaphore due to its flaky nature");
+            bool onSemaphore = semaphoreSkipFlakyTests();
+            if(onSemaphore){
+                LogToFile("skipping AdminClient_AlterConfigs due to flaky nature");
                 return;
             }
 
