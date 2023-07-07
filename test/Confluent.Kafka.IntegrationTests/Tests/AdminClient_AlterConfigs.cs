@@ -38,6 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
             if (skipFlakyTests)
             {
                 LogToFile("Skipping AdminClient_AlterConfigs Test on Semaphore due to its flaky nature");
+                return;
             }
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
