@@ -23,12 +23,12 @@ namespace Confluent.Kafka.Admin
     public class DescribeUserScramCredentialsResult
     {
         /// <summary>
-        ///    Request Level Error
+        ///    Request Level Error for the whole batch of Describe user scram credentials.
         /// </summary>
         public Error Error { get; set; }
 
         /// <summary>
-        ///    Descriptions of various Users
+        ///    UserScramCredentialsDescription of requested users.
         /// </summary>
         public List<UserScramCredentialsDescription> UserScramCredentialsDescriptions { get; set; }
 

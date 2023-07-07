@@ -25,10 +25,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
         public static void ProtobufWithReferences(Config config)
         {
-            bool onSemaphore = semaphoreSkipFlakyTests();
-            if(onSemaphore){
-                return;
-            }
+            // FIXME : The Tests always Fails !!
             var srInitial = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
             var testSchemaBase64 = Confluent.Kafka.Examples.Protobuf.Person.Descriptor.File.SerializedData.ToBase64();

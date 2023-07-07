@@ -26,12 +26,12 @@ namespace Confluent.Kafka.Admin
     public class AlterUserScramCredentialsReport
     {
         /// <summary>
-        ///     User.
+        ///     Username for the performed Alteration.
         /// </summary>
         public string User { get; set; }
 
         /// <summary>
-        ///     Error.
+        ///     Error of the performed Alteration.
         /// </summary>
         public Error Error { get; set; }
 

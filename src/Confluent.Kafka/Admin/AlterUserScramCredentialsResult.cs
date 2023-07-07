@@ -20,13 +20,13 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The per-group result for an alter consumer group offsets request
+    ///     The result for an alter user scram credentials request
     ///     including errors.
     /// </summary>
     public class AlterUserScramCredentialsResult
     {
         /// <summary>
-        ///     Reports for each users
+        ///     Reports for each user scram credentials alterations
         /// </summary>
         public List<AlterUserScramCredentialsReport> AlterUserScramCredentialsReports { get; set;}
 

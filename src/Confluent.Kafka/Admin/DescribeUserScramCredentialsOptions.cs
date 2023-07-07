@@ -20,7 +20,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the "AdminClient.DescribeConsumerGroupsOptions" method.
+    ///     Options for the "AdminClient.DescribeUserScramCredentialsOptions" method.
     /// </summary>
     public class DescribeUserScramCredentialsOptions
     {

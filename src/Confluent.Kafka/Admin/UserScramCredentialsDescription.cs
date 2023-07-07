@@ -17,13 +17,13 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     UserScramCredentials Description : Describe all the mechanism of a user
+    ///     UserScramCredentials Description : Describe all the ScramCredentialInfo of a user
     /// </summary>
     public class UserScramCredentialsDescription
     {
 
         /// <summary>
-        ///     User
+        ///     Username of the Description
         /// </summary>
         public string User { get; set; }
 

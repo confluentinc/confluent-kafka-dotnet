@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Threading;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Xunit;
@@ -28,7 +27,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///     Test functionality of AdminClient.AlterConfigs.
+        ///     Test functionality of AdminClient.DescribeUserScramCredentials and AdminClient.AlterUserScramCredentials.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public async void AdminClient_UserScram(string bootstrapServers)
@@ -37,7 +36,6 @@ namespace Confluent.Kafka.IntegrationTests
             var timeout = TimeSpan.FromSeconds(30);
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                // 1. create a new topic to play with.
                 var users = new List<string>();
                 users.Add("non-existing-user");
                 var descResult = await adminClient.DescribeUserScramCredentialsAsync(users, new DescribeUserScramCredentialsOptions() { RequestTimeout = timeout });

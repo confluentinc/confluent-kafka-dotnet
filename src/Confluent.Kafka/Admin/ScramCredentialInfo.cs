@@ -16,9 +16,7 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Specification of a new topic to be created via the CreateTopics
-    ///     method. This class is used for the same purpose as NewTopic in
-    ///     the Java API.
+    ///     Specification of a ScramCredential corresponding to a user.
     /// </summary>
     public class ScramCredentialInfo
     {

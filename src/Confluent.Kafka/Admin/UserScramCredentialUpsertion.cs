@@ -16,9 +16,8 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Specification of a new topic to be created via the CreateTopics
-    ///     method. This class is used for the same purpose as NewTopic in
-    ///     the Java API.
+    ///     Upsertion for the UserScramCredentialAlteration
+    ///     Used to upsert new Scram Credential for a user.
     /// </summary>
     public class UserScramCredentialUpsertion : UserScramCredentialAlteration
     {
