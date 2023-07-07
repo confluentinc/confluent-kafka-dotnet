@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Text;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Xunit;
@@ -36,8 +37,10 @@ namespace Confluent.Kafka.IntegrationTests
             var timeout = TimeSpan.FromSeconds(30);
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                var users = new List<string>();
-                users.Add("non-existing-user");
+                var users = new List<string>
+                {
+                    "non-existing-user"
+                };
                 var descResult = await adminClient.DescribeUserScramCredentialsAsync(users, new DescribeUserScramCredentialsOptions() { RequestTimeout = timeout });
                 foreach (var description in descResult.UserScramCredentialsDescriptions)
                 {
@@ -45,13 +48,15 @@ namespace Confluent.Kafka.IntegrationTests
                 }
 
                 var upsertions = new List<UserScramCredentialAlteration>();
-                var upsertion = new UserScramCredentialUpsertion(){User = "non-existing-user", Salt = "Salt", Password = "Password", Mechanism = ScramMechanism.Scram_SHA_256, Iterations = 15000 };
-                upsertions.Add(upsertion);
-                var alterResult = await adminClient.AlterUserScramCredentialsAsync(upsertions, new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
-                foreach (var alterReport in alterResult.AlterUserScramCredentialsReports)
+                var upsertion = new UserScramCredentialUpsertion()
                 {
-                    Assert.Equal(ErrorCode.NoError,alterReport.Error.Code);
-                }
+                    User = users[0],
+                    Mechanism = ScramMechanism.ScramSha256, Iterations = 15000,
+                    Password = Encoding.UTF8.GetBytes("Password"),
+                    Salt = Encoding.UTF8.GetBytes("Salt")
+                };
+                upsertions.Add(upsertion);
+                await adminClient.AlterUserScramCredentialsAsync(upsertions, new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
 
                 descResult = await adminClient.DescribeUserScramCredentialsAsync(users, new DescribeUserScramCredentialsOptions() { RequestTimeout = timeout });
                 foreach (var description in descResult.UserScramCredentialsDescriptions)
@@ -59,18 +64,14 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(ErrorCode.NoError,description.Error.Code);
                     foreach(var credentialinfo in description.ScramCredentialInfos){
                         Assert.Equal(15000,credentialinfo.Iterations);
-                        Assert.Equal(ScramMechanism.Scram_SHA_256,credentialinfo.Mechanism);
+                        Assert.Equal(ScramMechanism.ScramSha256,credentialinfo.Mechanism);
                     }
                 }
 
                 var deletions = new List<UserScramCredentialAlteration>();
-                var deletion = new UserScramCredentialDeletion(){User = "non-existing-user", Mechanism = ScramMechanism.Scram_SHA_256};
+                var deletion = new UserScramCredentialDeletion(){User = "non-existing-user", Mechanism = ScramMechanism.ScramSha256};
                 deletions.Add(deletion);
-                alterResult = await adminClient.AlterUserScramCredentialsAsync(deletions,new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
-                foreach (var alterReport in alterResult.AlterUserScramCredentialsReports)
-                {
-                    Assert.Equal(ErrorCode.NoError,alterReport.Error.Code);
-                }
+                await adminClient.AlterUserScramCredentialsAsync(deletions,new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
 
                 descResult = await adminClient.DescribeUserScramCredentialsAsync(users, new DescribeUserScramCredentialsOptions() { RequestTimeout = timeout });
                 foreach (var description in descResult.UserScramCredentialsDescriptions)

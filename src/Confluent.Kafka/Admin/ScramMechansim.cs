@@ -28,18 +28,13 @@ namespace Confluent.Kafka.Admin
         Unknown = 0,
 
         /// <summary>
-        ///     SHA 256
+        ///     SCRAM-SHA-256
         /// </summary>        
-        Scram_SHA_256 = 1,
+        ScramSha256 = 1,
 
         /// <summary>
-        ///     SHA 512
+        ///     SCRAM-SHA-512
         /// </summary>        
-        Scram_SHA_512 = 2,
-        
-         /// <summary>
-        ///     Mechanism CNT
-        /// </summary>        
-        Scram_SHA_CNT = 3
+        ScramSha512 = 2,
     }
 }

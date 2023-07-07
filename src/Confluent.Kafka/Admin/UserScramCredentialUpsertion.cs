@@ -24,22 +24,21 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     The salt of the Upsertion
         /// </summary>
-        public string Salt { get; set; }
-
-        /// <summary>
-        ///     The salt of the Upsertion
-        /// </summary>
-        public string Password { get; set; }
-
-        /// <summary>
-        ///     The salt of the Upsertion
-        /// </summary>
         public ScramMechanism Mechanism { get; set; }
 
         /// <summary>
         ///     The salt of the Upsertion
         /// </summary>
         public int Iterations { get; set; }
-    
+        
+        /// <summary>
+        ///     The salt of the Upsertion
+        /// </summary>
+        public byte[] Password { get; set; }
+        
+        /// <summary>
+        ///     The salt of the Upsertion
+        /// </summary>
+        public byte[] Salt { get; set; }
     }
 }

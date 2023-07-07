@@ -13,30 +13,33 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
-
-using System;
 using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The result for an alter user scram credentials request
-    ///     including errors.
+    ///     Represents the result of a DescribeUserScramCredentials operation.
+    ///     (including error status).
     /// </summary>
-    public class AlterUserScramCredentialsResult
+    public class DescribeUserScramCredentialsReport
     {
         /// <summary>
-        ///     Reports for each user scram credentials alterations
+        ///    Request level error for the whole batch of describe user scram credentials.
         /// </summary>
-        public List<AlterUserScramCredentialsReport> AlterUserScramCredentialsReports { get; set;}
+        public Error Error { get; set; }
+
+        /// <summary>
+        ///    User SCRAM credentials description of requested users.
+        /// </summary>
+        public List<UserScramCredentialsDescription> UserScramCredentialsDescriptions { get; set; }
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-            string result = "AlterUserScramCredentials Result :\n";
-            foreach(var report in AlterUserScramCredentialsReports){
-                result += report.ToString();
+            string result = "DescribeUserScramCredentialsResult :\n";
+            foreach(var description in UserScramCredentialsDescriptions){
+                result += description.ToString();
             }
             return result;
         }

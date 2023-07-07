@@ -14,19 +14,15 @@
 //
 // Refer to LICENSE for more information.
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents the result of a Describe User Scram Credentials operation.
+    ///     Represents the result of a DescribeUserScramCredentials operation.
     /// </summary>
     public class DescribeUserScramCredentialsResult
     {
-        /// <summary>
-        ///    Request Level Error for the whole batch of Describe user scram credentials.
-        /// </summary>
-        public Error Error { get; set; }
-
         /// <summary>
         ///    UserScramCredentialsDescription of requested users.
         /// </summary>
@@ -36,11 +32,7 @@ namespace Confluent.Kafka.Admin
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-            string result = "DescribeUserScramCredentialsResult :\n";
-            foreach(var description in UserScramCredentialsDescriptions){
-                result += description.ToString();
-            }
-            return result;
+            return $"{string.Join(", ", UserScramCredentialsDescriptions.Select(description => description.ToString()))}";
         }
     }
 }

@@ -20,7 +20,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The per-user result for an alter user scram credentials request
+    ///     The per-user result for an alter user scram credentials request,
     ///     including errors.
     /// </summary>
     public class AlterUserScramCredentialsReport
@@ -39,8 +39,8 @@ namespace Confluent.Kafka.Admin
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-            string result = $"Username : {User} ErrorCode : ${Error.Code}\n";
-            return result;
+            var errString = Error.IsError ? Error.ToString() : "";
+            return $"Username : {User} Error : ${errString}\n";
         }
     }
 }

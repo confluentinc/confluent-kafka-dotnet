@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 
 
 namespace Confluent.Kafka.Examples
@@ -529,13 +530,16 @@ namespace Confluent.Kafka.Examples
                 try
                 {
                     var alterations = new List<UserScramCredentialAlteration>();
-                    var upsertion = new UserScramCredentialUpsertion(){User = "Adhitya", Salt = "Salt", Password = "Password", Mechanism = ScramMechanism.Scram_SHA_256, Iterations = 15000 };
-                    alterations.Add(upsertion);
-                    var alterResult = await adminClient.AlterUserScramCredentialsAsync(alterations, new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
-                    foreach (var alterReport in alterResult.AlterUserScramCredentialsReports)
+                    var upsertion = new UserScramCredentialUpsertion()
                     {
-                        Console.WriteLine($"(1)  Username: {alterReport.User} {alterReport.Error.Code}\n");
-                    }
+                        User = "Test",
+                        Mechanism = ScramMechanism.ScramSha256, Iterations = 15000,
+                        Password = Encoding.UTF8.GetBytes("Password"),
+                        Salt = Encoding.UTF8.GetBytes("Salt")
+                    };
+                    alterations.Add(upsertion);
+                    await adminClient.AlterUserScramCredentialsAsync(alterations, new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
+                    Console.WriteLine($"Alterations were executed successfully");
                 }
                 catch (KafkaException e)
                 {
@@ -567,13 +571,13 @@ namespace Confluent.Kafka.Examples
                 try
                 {
                     var alterations = new List<UserScramCredentialAlteration>();
-                    var deletion = new UserScramCredentialDeletion(){User = "Adhitya", Mechanism = ScramMechanism.Scram_SHA_256};
+                    var deletion = new UserScramCredentialDeletion(){
+                        User = "Test",
+                        Mechanism = ScramMechanism.ScramSha256
+                    };
                     alterations.Add(deletion);
-                    var alterResult = await adminClient.AlterUserScramCredentialsAsync(alterations, new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
-                    foreach (var alterReport in alterResult.AlterUserScramCredentialsReports)
-                    {
-                        Console.WriteLine($"(2)  Username: {alterReport.User} {alterReport.Error.Code}\n");
-                    }
+                    await adminClient.AlterUserScramCredentialsAsync(alterations, new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
+                    Console.WriteLine($"Alterations were executed successfully");
                 }
                 catch (KafkaException e)
                 {

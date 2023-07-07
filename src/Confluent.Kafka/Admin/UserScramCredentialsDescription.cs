@@ -14,10 +14,12 @@
 //
 // Refer to LICENSE for more information.
 using System.Collections.Generic;
+using System.Linq;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     UserScramCredentials Description : Describe all the ScramCredentialInfo of a user
+    ///     UserScramCredentials Description: Describe SCRAM credentials
+    ///     of a single user.
     /// </summary>
     public class UserScramCredentialsDescription
     {
