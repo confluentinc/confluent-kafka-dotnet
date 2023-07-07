@@ -1,3 +1,10 @@
+# 2.2.0
+
+## Fixes
+
+- Fix backwards compatability of TopicPartitionOffset constructor. ([drinehimer](https://github.com/drinehimer), #2066)
+
+
 # 2.1.1
 
 ## Enhancements
