@@ -2367,12 +2367,19 @@ namespace Confluent.Kafka.Impl
                     {
                         UserScramCredentialUpsertion upsertion =
                             (UserScramCredentialUpsertion)alteration;
+                        byte[] salt = upsertion.Salt;
+                        int saltSize = 0;
+                        if (salt != null)
+                            saltSize = salt.Length;
+                        
                         c_alterationsPtr[idx] = Librdkafka.UserScramCredentialUpsertion_new(
                             upsertion.User,
-                            upsertion.Mechanism,
-                            upsertion.Iterations,
+                            upsertion.ScramCredentialInfo.Mechanism,
+                            upsertion.ScramCredentialInfo.Iterations,
                             upsertion.Password,
-                            upsertion.Salt
+                            (IntPtr) upsertion.Password.Length,
+                            salt,
+                            (IntPtr) saltSize
                         );
                         idx++;
                     }

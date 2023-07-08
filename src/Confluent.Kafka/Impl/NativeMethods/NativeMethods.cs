@@ -1072,10 +1072,10 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_group_result_partitions(IntPtr groupres);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_DescribeUserScramCredentials(
+        internal static extern void rd_kafka_DescribeUserScramCredentials(
                 IntPtr handle,
-                [MarshalAs(UnmanagedType.LPArray)] string[] groups,
-                UIntPtr groupsCnt,
+                [MarshalAs(UnmanagedType.LPArray)] string[] users,
+                UIntPtr usersCnt,
                 IntPtr optionsPtr,
                 IntPtr resultQueuePtr);
         
@@ -1098,7 +1098,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 ScramMechanism mechanism,
                 int iterations,
                 byte[] password,
-                byte[] salt);
+                IntPtr passwordSize,
+                byte[] salt,
+                IntPtr saltSize);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_UserScramCredentialAlteration_destroy(

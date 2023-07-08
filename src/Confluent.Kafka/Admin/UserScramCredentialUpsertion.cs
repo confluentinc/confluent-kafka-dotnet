@@ -22,22 +22,17 @@ namespace Confluent.Kafka.Admin
     public class UserScramCredentialUpsertion : UserScramCredentialAlteration
     {
         /// <summary>
-        ///     The salt of the Upsertion
+        ///     The mechanism and iterations.
         /// </summary>
-        public ScramMechanism Mechanism { get; set; }
-
-        /// <summary>
-        ///     The salt of the Upsertion
-        /// </summary>
-        public int Iterations { get; set; }
+        public ScramCredentialInfo ScramCredentialInfo { get; set; }
         
         /// <summary>
-        ///     The salt of the Upsertion
+        ///     Password to HMAC before storage
         /// </summary>
         public byte[] Password { get; set; }
         
         /// <summary>
-        ///     The salt of the Upsertion
+        ///     Salt to use. Will be generated randomly if null (optional)
         /// </summary>
         public byte[] Salt { get; set; }
     }

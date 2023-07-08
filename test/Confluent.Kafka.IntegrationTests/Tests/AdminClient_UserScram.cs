@@ -51,7 +51,11 @@ namespace Confluent.Kafka.IntegrationTests
                 var upsertion = new UserScramCredentialUpsertion()
                 {
                     User = users[0],
-                    Mechanism = ScramMechanism.ScramSha256, Iterations = 15000,
+                    ScramCredentialInfo = new ScramCredentialInfo
+                    {
+                        Mechanism = ScramMechanism.ScramSha256,
+                        Iterations = 15000,
+                    },
                     Password = Encoding.UTF8.GetBytes("Password"),
                     Salt = Encoding.UTF8.GetBytes("Salt")
                 };

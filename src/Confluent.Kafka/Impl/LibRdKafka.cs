@@ -98,8 +98,8 @@ namespace Confluent.Kafka.Impl
             DescribeConsumerGroups_Result = 0x4000,
             ListConsumerGroupOffsets_Result = 0x8000,
             AlterConsumerGroupOffsets_Result = 0x10000,
-            DescribeUserScramCredentials_Result = 0x20000,
-            AlterUserScramCredentials_Result = 0x40000
+            DescribeUserScramCredentials_Result = 0x40000,
+            AlterUserScramCredentials_Result = 0x80000
         }
 
         // Minimum librdkafka version.
@@ -1972,11 +1972,14 @@ namespace Confluent.Kafka.Impl
             => _ScramCredentialInfo_iterations(scramcredentialinfo);
 
         private delegate IntPtr _UserScramCredentialUpsertion_new_delegate(
-            string user, ScramMechanism mechanism, int iterations, byte[] password, byte[] salt);
+            string user, ScramMechanism mechanism, int iterations, byte[] password,
+            IntPtr passwordSize, byte[] salt, IntPtr saltSize);
         private static _UserScramCredentialUpsertion_new_delegate _UserScramCredentialUpsertion_new;
         internal static IntPtr UserScramCredentialUpsertion_new(
-            string user, ScramMechanism mechanism, int iterations, byte[] password, byte[] salt)
-            => _UserScramCredentialUpsertion_new(user, mechanism, iterations, password, salt);
+            string user, ScramMechanism mechanism, int iterations, byte[] password,
+            IntPtr passwordSize, byte[] salt, IntPtr saltSize)
+            => _UserScramCredentialUpsertion_new(user, mechanism, iterations,
+                    password, passwordSize, salt, saltSize);
 
         private delegate IntPtr _UserScramCredentialDeletion_new_delegate(
             string user, ScramMechanism mechanism);
