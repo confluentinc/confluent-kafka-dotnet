@@ -31,9 +31,9 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.DescribeUserScramCredentials and AdminClient.AlterUserScramCredentials.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public async void AdminClient_UserScram(string bootstrapServers)
+        public async void AdminClient_UserScramCredentials(string bootstrapServers)
         {
-            LogToFile("start AdminClient_UserScram");
+            LogToFile("start AdminClient_UserScramCredentials");
             var timeout = TimeSpan.FromSeconds(30);
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
@@ -41,10 +41,25 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     "non-existing-user"
                 };
-                var descResult = await adminClient.DescribeUserScramCredentialsAsync(users, new DescribeUserScramCredentialsOptions() { RequestTimeout = timeout });
-                foreach (var description in descResult.UserScramCredentialsDescriptions)
+                var describeOptions =
+                    new DescribeUserScramCredentialsOptions() { RequestTimeout = timeout };
+                var alterOptions =
+                    new AlterUserScramCredentialsOptions() { RequestTimeout = timeout };
+                List<UserScramCredentialsDescription> descriptions;
+                
+                try
                 {
-                    Assert.Equal(ErrorCode.ResourceNotFound,description.Error.Code);
+                    await adminClient.DescribeUserScramCredentialsAsync(users, describeOptions);
+                    Assert.True(false, "Describe request shouldn't succeed");
+                }
+                catch (DescribeUserScramCredentialsException e)
+                {
+                    descriptions = e.Results.UserScramCredentialsDescriptions;
+                    foreach (var description in descriptions)
+                    {
+                        Assert.Equal(users[0], description.User);
+                        Assert.Equal(ErrorCode.ResourceNotFound,description.Error.Code);
+                    }
                 }
 
                 var upsertions = new List<UserScramCredentialAlteration>();
@@ -60,33 +75,45 @@ namespace Confluent.Kafka.IntegrationTests
                     Salt = Encoding.UTF8.GetBytes("Salt")
                 };
                 upsertions.Add(upsertion);
-                await adminClient.AlterUserScramCredentialsAsync(upsertions, new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
+                await adminClient.AlterUserScramCredentialsAsync(upsertions, alterOptions);
 
-                descResult = await adminClient.DescribeUserScramCredentialsAsync(users, new DescribeUserScramCredentialsOptions() { RequestTimeout = timeout });
+                var descResult = await adminClient.DescribeUserScramCredentialsAsync(users, describeOptions);
                 foreach (var description in descResult.UserScramCredentialsDescriptions)
                 {
-                    Assert.Equal(ErrorCode.NoError,description.Error.Code);
+                    Assert.Equal(users[0], description.User);
+                    Assert.Equal(ErrorCode.NoError, description.Error.Code);
                     foreach(var credentialinfo in description.ScramCredentialInfos){
                         Assert.Equal(15000,credentialinfo.Iterations);
-                        Assert.Equal(ScramMechanism.ScramSha256,credentialinfo.Mechanism);
+                        Assert.Equal(ScramMechanism.ScramSha256, credentialinfo.Mechanism);
                     }
                 }
 
                 var deletions = new List<UserScramCredentialAlteration>();
-                var deletion = new UserScramCredentialDeletion(){User = "non-existing-user", Mechanism = ScramMechanism.ScramSha256};
-                deletions.Add(deletion);
-                await adminClient.AlterUserScramCredentialsAsync(deletions,new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
-
-                descResult = await adminClient.DescribeUserScramCredentialsAsync(users, new DescribeUserScramCredentialsOptions() { RequestTimeout = timeout });
-                foreach (var description in descResult.UserScramCredentialsDescriptions)
+                var deletion = new UserScramCredentialDeletion()
                 {
-                    Assert.Equal(ErrorCode.ResourceNotFound,description.Error.Code);
+                    User = "non-existing-user",
+                    Mechanism = ScramMechanism.ScramSha256
+                };
+                deletions.Add(deletion);
+                await adminClient.AlterUserScramCredentialsAsync(deletions, alterOptions);
+
+                try
+                {
+                    await adminClient.DescribeUserScramCredentialsAsync(users, describeOptions);
+                    Assert.True(false, "Describe request shouldn't succeed");
                 }
-
-
-                Assert.Equal(0, Library.HandleCount);
-                LogToFile("end   AdminClient_UserScram");
+                catch (DescribeUserScramCredentialsException e)
+                {
+                    descriptions = e.Results.UserScramCredentialsDescriptions;
+                    foreach (var description in descriptions)
+                    {
+                        Assert.Equal(users[0], description.User);
+                        Assert.Equal(ErrorCode.ResourceNotFound,description.Error.Code);
+                    }
+                }
             }
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end AdminClient_UserScramCredentials");
         }
     }
 }
