@@ -69,6 +69,8 @@ namespace Confluent.Kafka.Impl
             DescribeConsumerGroups = 13,
             ListConsumerGroupOffsets = 14,
             AlterConsumerGroupOffsets = 15,
+            DescribeUserScramCredentials = 16,
+            AlterUserScramCredentials = 17
         }
 
         public enum EventType : int
@@ -96,6 +98,8 @@ namespace Confluent.Kafka.Impl
             DescribeConsumerGroups_Result = 0x4000,
             ListConsumerGroupOffsets_Result = 0x8000,
             AlterConsumerGroupOffsets_Result = 0x10000,
+            DescribeUserScramCredentials_Result = 0x40000,
+            AlterUserScramCredentials_Result = 0x80000
         }
 
         // Minimum librdkafka version.
@@ -409,6 +413,22 @@ namespace Confluent.Kafka.Impl
             _Node_host = (_Node_host_delegate)methods.Single(m => m.Name == "rd_kafka_Node_host").CreateDelegate(typeof (_Node_host_delegate));
             _Node_port = (_Node_port_delegate)methods.Single(m => m.Name == "rd_kafka_Node_port").CreateDelegate(typeof (_Node_port_delegate));
 
+            _DescribeUserScramCredentials = (_DescribeUserScramCredentials_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeUserScramCredentials").CreateDelegate(typeof (_DescribeUserScramCredentials_delegate));
+            _DescribeUserScramCredentials_result_descriptions = (_DescribeUserScramCredentials_result_descriptions_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeUserScramCredentials_result_descriptions").CreateDelegate(typeof(_DescribeUserScramCredentials_result_descriptions_delegate));
+            _UserScramCredentialsDescription_user = (_UserScramCredentialsDescription_user_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialsDescription_user").CreateDelegate(typeof(_UserScramCredentialsDescription_user_delegate));
+            _UserScramCredentialsDescription_error = (_UserScramCredentialsDescription_error_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialsDescription_error").CreateDelegate(typeof(_UserScramCredentialsDescription_error_delegate));
+            _UserScramCredentialsDescription_scramcredentialinfo_count = (_UserScramCredentialsDescription_scramcredentialinfo_count_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialsDescription_scramcredentialinfo_count").CreateDelegate(typeof(_UserScramCredentialsDescription_scramcredentialinfo_count_delegate));
+            _UserScramCredentialsDescription_scramcredentialinfo = (_UserScramCredentialsDescription_scramcredentialinfo_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialsDescription_scramcredentialinfo").CreateDelegate(typeof(_UserScramCredentialsDescription_scramcredentialinfo_delegate));
+            _ScramCredentialInfo_mechanism = (_ScramCredentialInfo_mechanism_delegate)methods.Single(m => m.Name == "rd_kafka_ScramCredentialInfo_mechanism").CreateDelegate(typeof(_ScramCredentialInfo_mechanism_delegate));
+            _ScramCredentialInfo_iterations = (_ScramCredentialInfo_iterations_delegate)methods.Single(m => m.Name == "rd_kafka_ScramCredentialInfo_iterations").CreateDelegate(typeof(_ScramCredentialInfo_iterations_delegate));
+
+            _UserScramCredentialUpsertion_new = (_UserScramCredentialUpsertion_new_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialUpsertion_new").CreateDelegate(typeof (_UserScramCredentialUpsertion_new_delegate)); 
+            _UserScramCredentialDeletion_new = (_UserScramCredentialDeletion_new_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialDeletion_new").CreateDelegate(typeof (_UserScramCredentialDeletion_new_delegate));
+            _UserScramCredentialAlteration_destroy = (_UserScramCredentialAlteration_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_UserScramCredentialAlteration_destroy").CreateDelegate(typeof (_UserScramCredentialAlteration_destroy_delegate));
+            _AlterUserScramCredentials = (_AlterUserScramCredentials_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials").CreateDelegate(typeof (_AlterUserScramCredentials_delegate));
+            _AlterUserScramCredentials_result_responses = (_AlterUserScramCredentials_result_responses_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_responses").CreateDelegate(typeof(_AlterUserScramCredentials_result_responses_delegate));
+            _AlterUserScramCredentials_result_response_user = (_AlterUserScramCredentials_result_response_user_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_response_user").CreateDelegate(typeof(_AlterUserScramCredentials_result_response_user_delegate));
+            _AlterUserScramCredentials_result_response_error = (_AlterUserScramCredentials_result_response_error_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_response_error").CreateDelegate(typeof(_AlterUserScramCredentials_result_response_error_delegate));
 
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1890,6 +1910,120 @@ namespace Confluent.Kafka.Impl
 
         private static Func<IntPtr, IntPtr> _group_result_partitions;
         internal static IntPtr group_result_partitions(IntPtr groupres) => _group_result_partitions(groupres);
+        
+        //
+        // User SCRAM credentials
+        //
+        
+        private delegate void _DescribeUserScramCredentials_delegate(
+            IntPtr handle, [MarshalAs(UnmanagedType.LPArray)] string[] users, UIntPtr usersCnt, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _DescribeUserScramCredentials_delegate _DescribeUserScramCredentials;
+        internal static void DescribeUserScramCredentials(
+            IntPtr handle, [MarshalAs(UnmanagedType.LPArray)] string[] users, UIntPtr usersCnt, IntPtr optionsPtr, IntPtr resultQueuePtr)
+            => _DescribeUserScramCredentials(handle, users, usersCnt, optionsPtr, resultQueuePtr);
+        
+        private delegate IntPtr _DescribeUserScramCredentials_result_descriptions_delegate(
+            IntPtr event_result, out UIntPtr cntp);
+        private static _DescribeUserScramCredentials_result_descriptions_delegate _DescribeUserScramCredentials_result_descriptions;
+        internal static IntPtr DescribeUserScramCredentials_result_descriptions(
+            IntPtr event_result, out UIntPtr cntp)
+            => _DescribeUserScramCredentials_result_descriptions(event_result, out cntp);
+
+        private delegate IntPtr _UserScramCredentialsDescription_user_delegate(
+            IntPtr description);
+        private static _UserScramCredentialsDescription_user_delegate _UserScramCredentialsDescription_user;
+        internal static IntPtr UserScramCredentialsDescription_user(
+            IntPtr description)
+            => _UserScramCredentialsDescription_user(description);
+
+        private delegate IntPtr _UserScramCredentialsDescription_error_delegate(
+            IntPtr description);
+        private static _UserScramCredentialsDescription_error_delegate _UserScramCredentialsDescription_error;
+        internal static IntPtr UserScramCredentialsDescription_error(
+            IntPtr description)
+            => _UserScramCredentialsDescription_error(description);
+
+        private delegate int _UserScramCredentialsDescription_scramcredentialinfo_count_delegate(
+            IntPtr description);
+        private static _UserScramCredentialsDescription_scramcredentialinfo_count_delegate _UserScramCredentialsDescription_scramcredentialinfo_count;
+        internal static int UserScramCredentialsDescription_scramcredentialinfo_count(
+            IntPtr description)
+            => _UserScramCredentialsDescription_scramcredentialinfo_count(description);
+
+        private delegate IntPtr _UserScramCredentialsDescription_scramcredentialinfo_delegate(
+            IntPtr description, int i);
+        private static _UserScramCredentialsDescription_scramcredentialinfo_delegate _UserScramCredentialsDescription_scramcredentialinfo;
+        internal static IntPtr UserScramCredentialsDescription_scramcredentialinfo(
+            IntPtr description, int i)
+            => _UserScramCredentialsDescription_scramcredentialinfo(description,i);
+
+        private delegate ScramMechanism _ScramCredentialInfo_mechanism_delegate(
+            IntPtr scramcredentialinfo);
+        private static _ScramCredentialInfo_mechanism_delegate _ScramCredentialInfo_mechanism;
+        internal static ScramMechanism ScramCredentialInfo_mechanism(
+            IntPtr scramcredentialinfo)
+            => _ScramCredentialInfo_mechanism(scramcredentialinfo);
+
+        private delegate int _ScramCredentialInfo_iterations_delegate(
+            IntPtr scramcredentialinfo);
+        private static _ScramCredentialInfo_iterations_delegate _ScramCredentialInfo_iterations;
+        internal static int ScramCredentialInfo_iterations(
+            IntPtr scramcredentialinfo)
+            => _ScramCredentialInfo_iterations(scramcredentialinfo);
+
+        private delegate IntPtr _UserScramCredentialUpsertion_new_delegate(
+            string user, ScramMechanism mechanism, int iterations, byte[] password,
+            IntPtr passwordSize, byte[] salt, IntPtr saltSize);
+        private static _UserScramCredentialUpsertion_new_delegate _UserScramCredentialUpsertion_new;
+        internal static IntPtr UserScramCredentialUpsertion_new(
+            string user, ScramMechanism mechanism, int iterations, byte[] password,
+            IntPtr passwordSize, byte[] salt, IntPtr saltSize)
+            => _UserScramCredentialUpsertion_new(user, mechanism, iterations,
+                    password, passwordSize, salt, saltSize);
+
+        private delegate IntPtr _UserScramCredentialDeletion_new_delegate(
+            string user, ScramMechanism mechanism);
+        private static _UserScramCredentialDeletion_new_delegate _UserScramCredentialDeletion_new;
+        internal static IntPtr UserScramCredentialDeletion_new(
+            string user,ScramMechanism mechanism)
+            => _UserScramCredentialDeletion_new(user,mechanism);
+
+        private delegate void _UserScramCredentialAlteration_destroy_delegate(
+            IntPtr alteration);
+        private static _UserScramCredentialAlteration_destroy_delegate _UserScramCredentialAlteration_destroy;
+        internal static void UserScramCredentialAlteration_destroy(
+            IntPtr alteration)
+            => _UserScramCredentialAlteration_destroy(alteration);
+            
+
+        private delegate ErrorCode _AlterUserScramCredentials_delegate(
+            IntPtr handle, IntPtr[] alterations, UIntPtr alterationsCnt, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _AlterUserScramCredentials_delegate _AlterUserScramCredentials;
+        internal static ErrorCode AlterUserScramCredentials(
+            IntPtr handle, IntPtr[] alterations, UIntPtr alterationsCnt, IntPtr optionsPtr, IntPtr resultQueuePtr)
+            => _AlterUserScramCredentials(handle, alterations, alterationsCnt, optionsPtr, resultQueuePtr);
+
+        private delegate IntPtr _AlterUserScramCredentials_result_responses_delegate(
+            IntPtr event_result, out UIntPtr cntp);
+        private static _AlterUserScramCredentials_result_responses_delegate _AlterUserScramCredentials_result_responses;
+        internal static IntPtr AlterUserScramCredentials_result_responses(
+            IntPtr event_result, out UIntPtr cntp)
+            => _AlterUserScramCredentials_result_responses(event_result,
+                                                           out cntp);
+
+        private delegate IntPtr _AlterUserScramCredentials_result_response_user_delegate(
+            IntPtr element);
+        private static _AlterUserScramCredentials_result_response_user_delegate _AlterUserScramCredentials_result_response_user;
+        internal static IntPtr AlterUserScramCredentials_result_response_user(
+            IntPtr element)
+            => _AlterUserScramCredentials_result_response_user(element);
+
+        private delegate IntPtr _AlterUserScramCredentials_result_response_error_delegate(
+            IntPtr element);
+        private static _AlterUserScramCredentials_result_response_error_delegate _AlterUserScramCredentials_result_response_error;
+        internal static IntPtr AlterUserScramCredentials_result_response_error(
+            IntPtr element)
+            => _AlterUserScramCredentials_result_response_error(element);
 
         //
         // Queues
