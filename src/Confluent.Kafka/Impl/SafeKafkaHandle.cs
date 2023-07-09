@@ -2312,6 +2312,14 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
+            foreach (var user in users)
+            {
+                if (string.IsNullOrEmpty(user))
+                {
+                    throw new ArgumentException("Cannot have a null or empty user");
+                }
+            }
+            
             var optionsPtr = IntPtr.Zero;
             try
             {
@@ -2323,7 +2331,7 @@ namespace Confluent.Kafka.Impl
 
                 // Call DescribeUserScramCredentials (async).
                 Librdkafka.DescribeUserScramCredentials(
-                    handle, users.ToArray(), (UIntPtr)(users.Count()),
+                    handle, users.ToArray(), (UIntPtr) users.Count(),
                     optionsPtr, resultQueuePtr);
             }
             finally

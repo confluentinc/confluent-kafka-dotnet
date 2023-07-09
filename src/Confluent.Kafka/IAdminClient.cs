@@ -454,11 +454,15 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="users">
         ///     The list of users to describe for. This can be set
-        ///     to null to describe all users.
+        ///     to null to describe all users. Individual users
+        ///     cannot be empty strings.
         /// </param>
         /// <param name="options">
         ///     The options to use while describing user scram credentials.
         /// </param>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if any requested user is a null or empty string.
+        /// </exception>
         /// <exception cref="Confluent.Kafka.Admin.DescribeUserScramCredentialsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
@@ -481,6 +485,10 @@ namespace Confluent.Kafka
         /// <param name="options">
         ///     The options to use when alter user scram credentials.
         /// </param>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if any alteration isn't an instance of
+        ///     UserScramCredentialUpsertion or UserScramCredentialDeletion.
+        /// </exception>
         /// <exception cref="Confluent.Kafka.Admin.AlterUserScramCredentialsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
