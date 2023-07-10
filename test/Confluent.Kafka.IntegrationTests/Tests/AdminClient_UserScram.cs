@@ -34,7 +34,7 @@ namespace Confluent.Kafka.IntegrationTests
         public async void AdminClient_UserScramCredentials(string bootstrapServers)
         {
             LogToFile("start AdminClient_UserScramCredentials");
-            var timeout = TimeSpan.FromSeconds(30);
+            var timeout = TimeSpan.FromSeconds(10);
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 var users = new List<string>
