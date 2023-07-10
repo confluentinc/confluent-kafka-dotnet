@@ -13,8 +13,12 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -40,14 +44,22 @@ namespace Confluent.Kafka.Admin
         public Error Error {get;set;}
 
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Returns a JSON representation of the UserScramCredentialsDescription object.
         /// </summary>
-        public override string ToString() {
-            string result = $"Username : ${User} ErrorCode : {Error.Code}\n";
-            foreach(var info in ScramCredentialInfos){
-                result += info.ToString();
-            }
-            return result;
+        /// <returns>
+        ///     A JSON representation the UserScramCredentialsDescription object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            result.Append(
+                "{\"User\": ");
+            result.Append(User.Quote());
+            result.Append(", \"ScramCredentialInfos\": [");
+            result.Append(string.Join(", ",ScramCredentialInfos.Select(u => u.ToString())));
+            result.Append("]");
+            result.Append($", \"Error\": {Error.ToString().Quote()}}}");
+            return  result.ToString();
         }
 
     }

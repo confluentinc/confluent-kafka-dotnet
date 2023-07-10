@@ -13,8 +13,11 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
 using System.Collections.Generic;
+using System.Text;
 using System.Linq;
+
 
 namespace Confluent.Kafka.Admin
 {
@@ -29,10 +32,19 @@ namespace Confluent.Kafka.Admin
         public List<UserScramCredentialsDescription> UserScramCredentialsDescriptions { get; set; }
 
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Returns a JSON representation of the DescribeUserScramCredentialsResult object.
         /// </summary>
-        public override string ToString() {
-            return $"{string.Join(", ", UserScramCredentialsDescriptions.Select(description => description.ToString()))}";
+        /// <returns>
+        ///     A JSON representation the DescribeUserScramCredentialsResult object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            result.Append(
+                "{\"UserScramCredentialsDescriptions\": [");
+            result.Append(string.Join(",",UserScramCredentialsDescriptions.Select(u => u.ToString())));
+            result.Append("]}");
+            return  result.ToString();
         }
     }
 }

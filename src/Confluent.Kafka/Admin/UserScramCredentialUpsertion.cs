@@ -13,6 +13,10 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
+using System.Text;
+
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -35,5 +39,26 @@ namespace Confluent.Kafka.Admin
         ///     Salt to use. Will be generated randomly if null (optional)
         /// </summary>
         public byte[] Salt { get; set; }
+
+        /// <summary>
+        ///     Returns a JSON representation of the UserScramCredentialUpsertion object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation the UserScramCredentialUpsertion object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            result.Append(
+                "{\"User\": ");
+            result.Append(User.ToString().Quote());
+            result.Append(
+                ", \"ScramCredentialInfo\": ");
+            result.Append(ScramCredentialInfo.ToString());
+            // Password and Salt aren't included to
+            // avoid accidental leak.
+            result.Append("}");
+            return  result.ToString();
+        }
     }
 }

@@ -14,8 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
@@ -36,11 +34,15 @@ namespace Confluent.Kafka.Admin
         public Error Error { get; set; }
 
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Returns a JSON representation of the AlterUserScramCredentialsReport object.
         /// </summary>
-        public override string ToString() {
-            var errString = Error.IsError ? Error.ToString() : "";
-            return $"Username : {User} Error : ${errString}\n";
+        /// <returns>
+        ///     A JSON representation the AlterUserScramCredentialsReport object.
+        /// </returns>
+        public override string ToString()
+        {
+            return $"{{\"User\": {User.Quote()}, " + 
+                   $"\"Error\": {Error.ToString().Quote()}}}";
         }
     }
 }

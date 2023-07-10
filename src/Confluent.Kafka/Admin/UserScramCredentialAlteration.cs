@@ -13,6 +13,8 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>

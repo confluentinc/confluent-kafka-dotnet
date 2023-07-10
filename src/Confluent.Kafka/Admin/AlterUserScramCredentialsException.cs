@@ -16,6 +16,7 @@
 
 using System.Collections.Generic;
 
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>

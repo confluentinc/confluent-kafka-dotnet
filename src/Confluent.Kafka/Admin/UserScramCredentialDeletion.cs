@@ -13,6 +13,10 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
+using System.Text;
+
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -27,5 +31,23 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         public ScramMechanism Mechanism { get; set; }
 
+        /// <summary>
+        ///     Returns a JSON representation of the UserScramCredentialDeletion object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation the UserScramCredentialDeletion object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            result.Append(
+                "{\"User\": ");
+            result.Append(User.ToString().Quote());
+            result.Append(
+                ", \"Mechanism\": ");
+            result.Append(Mechanism.ToString().Quote());
+            result.Append("}");
+            return  result.ToString();
+        }
     }
 }

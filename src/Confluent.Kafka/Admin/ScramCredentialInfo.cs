@@ -13,6 +13,10 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
+using System.Text;
+
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -30,13 +34,22 @@ namespace Confluent.Kafka.Admin
         ///     The iterations of the ScramCredentialInfo
         /// </summary>
         public int Iterations { get; set; }
-
+        
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Returns a JSON representation of the ScramCredentialInfo object.
         /// </summary>
-        public override string ToString() {
-            string result = $"Mechanism : ${Mechanism} Iterations : {Iterations}\n";
-            return result;
+        /// <returns>
+        ///     A JSON representation the ScramCredentialInfo object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            result.Append("{\"Mechanism\": ");
+            result.Append(Mechanism.ToString().Quote());
+            result.Append(", \"Iterations\": ");
+            result.Append(Iterations);
+            result.Append("}");
+            return result.ToString();
         }
     }
 }
