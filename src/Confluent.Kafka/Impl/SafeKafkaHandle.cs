@@ -2393,7 +2393,8 @@ namespace Confluent.Kafka.Impl
                     }
                     else
                     {
-                        throw new ArgumentException("Every alteration must be either a Deletion or Upsertion");
+                        throw new ArgumentException("Every alteration must be either a UserScramCredentialDeletion " + 
+                            "or UserScramCredentialUpsertion");
                     }
                 }
                 Librdkafka.AlterUserScramCredentials(
