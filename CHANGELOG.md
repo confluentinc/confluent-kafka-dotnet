@@ -1,3 +1,11 @@
+# 2.2.0
+
+## Enhancements
+
+- [KIP-554](https://cwiki.apache.org/confluence/display/KAFKA/KIP-554%3A+Add+Broker-side+SCRAM+Config+API):
+  User SASL/SCRAM credentials alteration and description (#2070).
+
+
 # 2.1.1
 
 ## Enhancements
