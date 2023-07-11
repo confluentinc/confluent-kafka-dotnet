@@ -33,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start AdminClient_IncrementalAlterConfigs");
 
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers, Debug = "all" }).Build())
             {
                 // 1. create new topics to play with.
                 string topicName = Guid.NewGuid().ToString(), topicName2 = Guid.NewGuid().ToString();
@@ -102,7 +102,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     { 
                         new ConfigResource { Name = "0", Type = ResourceType.Broker },
-                        new List<ConfigEntry> { new ConfigEntry { Name = "num.network.threads", Value = "2" , IncrementalOperation = AlterConfigOpType.Set } }
+                        new List<ConfigEntry> { new ConfigEntry { Name = "num.network.threads", Value = "6" , IncrementalOperation = AlterConfigOpType.Set } }
                     }
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
