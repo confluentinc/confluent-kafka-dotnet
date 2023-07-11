@@ -87,6 +87,19 @@ namespace Confluent.Kafka.IntegrationTests
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
                 Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
                 Assert.Equal("delete,compact", describeConfigsResult[0].Entries["cleanup.policy"].Value);
+                
+                // 6. test updating more than one resource.
+                var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
+                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
+                {
+                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "222" , IncrementalOperation = AlterConfigOpType.Set } } },
+                    { configResource2, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "333" , IncrementalOperation = AlterConfigOpType.Set } } }
+                };
+                adminClient.IncrementalAlterConfigsAsync(toUpdate, new IncrementalAlterConfigsOptions { RequestTimeout = TimeSpan.FromSeconds(10) }).Wait();
+                describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource, configResource2 }).Result;
+                Assert.Equal(2, describeConfigsResult.Count);
+                Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
+                Assert.Equal("333", describeConfigsResult[1].Entries["flush.ms"].Value);
 
                 // 4. test ValidateOnly = true does not update config entry.
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
@@ -106,19 +119,6 @@ namespace Confluent.Kafka.IntegrationTests
                     }
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
-                
-                // 6. test updating more than one resource.
-                var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
-                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
-                {
-                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "222" , IncrementalOperation = AlterConfigOpType.Set } } },
-                    { configResource2, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "333" , IncrementalOperation = AlterConfigOpType.Set } } }
-                };
-                adminClient.IncrementalAlterConfigsAsync(toUpdate, new IncrementalAlterConfigsOptions { RequestTimeout = TimeSpan.FromSeconds(10) }).Wait();
-                describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource, configResource2 }).Result;
-                Assert.Equal(2, describeConfigsResult.Count);
-                Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
-                Assert.Equal("333", describeConfigsResult[1].Entries["flush.ms"].Value);
             }
 
             Assert.Equal(0, Library.HandleCount);
