@@ -96,6 +96,7 @@ namespace Confluent.Kafka.IntegrationTests
                     { configResource2, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "333" , IncrementalOperation = AlterConfigOpType.Set } } }
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate, new IncrementalAlterConfigsOptions { RequestTimeout = TimeSpan.FromSeconds(10) }).Wait();
+                Thread.Sleep(10000);
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource, configResource2 }).Result;
                 Assert.Equal(2, describeConfigsResult.Count);
                 Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
