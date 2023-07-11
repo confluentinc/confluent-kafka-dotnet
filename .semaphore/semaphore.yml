@@ -121,7 +121,7 @@ blocks:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
             - dotnet restore
-            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+            - cd test/Confluent.Kafka.IntegrationTests && dotnet test --filter "FullyQualifiedName=Confluent.Kafka.IntegrationTests.Tests.AdminClient_IncrementalAlterConfigs" && dotnet test -l "console;verbosity=normal" && cd ../..
   - name: 'Schema registry and serdes integration tests'
     dependencies: [ ]
     task:
