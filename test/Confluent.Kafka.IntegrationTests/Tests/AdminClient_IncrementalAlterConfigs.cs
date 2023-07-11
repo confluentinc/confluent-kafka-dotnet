@@ -35,10 +35,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                // 1. create a new topic to play with.
-                string topicName = Guid.NewGuid().ToString();
+                // 1. create new topics to play with.
+                string topicName = Guid.NewGuid().ToString(), topicName2 = Guid.NewGuid().ToString();
                 adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 }, new TopicSpecification { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throws unknown topic/partition error.
 
                 // 2. do an invalid alter configs call to change it.
@@ -108,11 +108,6 @@ namespace Confluent.Kafka.IntegrationTests
                 adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
                 
                 // 6. test updating more than one resource.
-                string topicName2 = Guid.NewGuid().ToString();
-                adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
-                Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throws unknown topic/partition error.
-
                 var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
                 {
