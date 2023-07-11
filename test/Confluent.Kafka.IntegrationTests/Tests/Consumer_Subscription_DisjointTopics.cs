@@ -197,6 +197,14 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_Subscription_DisjointTopics(string bootstrapServers)
         {
+            
+            bool skipFlakyTests = semaphoreSkipFlakyTests();
+            if (skipFlakyTests)
+            {
+                LogToFile("Skipping Consumer_Subscription_DisjointTopics Test ");
+                return;
+            }
+
             LogToFile("start Consumer_Subscription_DisjointTopics");
 
             DisjointTopicsSubscribeTest(bootstrapServers, PartitionAssignmentStrategy.Range);

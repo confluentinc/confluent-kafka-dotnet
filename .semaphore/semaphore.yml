@@ -118,6 +118,7 @@ blocks:
       jobs:
         - name: 'Build and test'
           commands:
+#            - cd test/docker && docker-compose up -d && docker-compose logs -f &
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
             - dotnet restore
