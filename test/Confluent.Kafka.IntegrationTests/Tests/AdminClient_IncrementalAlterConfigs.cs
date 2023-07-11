@@ -32,9 +32,8 @@ namespace Confluent.Kafka.IntegrationTests
         public void AdminClient_IncrementalAlterConfigs(string bootstrapServers)
         {
             LogToFile("start AdminClient_IncrementalAlterConfigs");
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers, Debug = "all" })
-                .SetLogHandler((_, m) => Console.WriteLine(m.Message))
-                .Build())
+
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers, Debug = "all" }).Build())
             {
                 // 1. create new topics to play with.
                 string topicName = Guid.NewGuid().ToString(), topicName2 = Guid.NewGuid().ToString();
