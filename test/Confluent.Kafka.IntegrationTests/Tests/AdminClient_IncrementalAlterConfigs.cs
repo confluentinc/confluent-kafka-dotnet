@@ -103,7 +103,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     { 
                         new ConfigResource { Name = "0", Type = ResourceType.Broker },
-                        new List<ConfigEntry> { new ConfigEntry { Name = "num.network.threads", Value = "10" , IncrementalOperation = AlterConfigOpType.Set } }
+                        new List<ConfigEntry> { new ConfigEntry { Name = "num.network.threads", Value = "6" , IncrementalOperation = AlterConfigOpType.Set } }
                     }
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
