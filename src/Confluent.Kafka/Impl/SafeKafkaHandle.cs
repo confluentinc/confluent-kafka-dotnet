@@ -2361,7 +2361,111 @@ namespace Confluent.Kafka.Impl
                 }
             }
         }
+        internal void DescribeUserScramCredentials(IEnumerable<string> users, DescribeUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
 
+            foreach (var user in users)
+            {
+                if (string.IsNullOrEmpty(user))
+                {
+                    throw new ArgumentException("Cannot have a null or empty user");
+                }
+            }
+            
+            var optionsPtr = IntPtr.Zero;
+            try
+            {
+                // Set Admin Options if any.
+                options = options ?? new DescribeUserScramCredentialsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeUserScramCredentials);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                // Call DescribeUserScramCredentials (async).
+                Librdkafka.DescribeUserScramCredentials(
+                    handle, users.ToArray(), (UIntPtr) users.Count(),
+                    optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+            }
+        }
+        internal void AlterUserScramCredentials(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            var optionsPtr = IntPtr.Zero;
+            IntPtr[] c_alterationsPtr = new IntPtr[alterations.Count()];
+            var idx = 0;
+            try
+            {
+                // Set Admin Options if any.
+                options = options ?? new AlterUserScramCredentialsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.AlterUserScramCredentials);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                foreach (var alteration in alterations)
+                {
+                    if (alteration == null)
+                    {
+                        throw new ArgumentException("Cannot have a null alteration");
+                    }
+
+                    if (alteration.GetType() == typeof(UserScramCredentialDeletion))
+                    {
+                        UserScramCredentialDeletion deletion =
+                            (UserScramCredentialDeletion)alteration;
+                        c_alterationsPtr[idx] = Librdkafka.UserScramCredentialDeletion_new(deletion.User, deletion.Mechanism);
+                        idx++;
+                    }
+                    else if (alteration.GetType() == typeof(UserScramCredentialUpsertion))
+                    {
+                        UserScramCredentialUpsertion upsertion =
+                            (UserScramCredentialUpsertion)alteration;
+                        byte[] salt = upsertion.Salt;
+                        int saltSize = 0;
+                        if (salt != null)
+                            saltSize = salt.Length;
+                        
+                        c_alterationsPtr[idx] = Librdkafka.UserScramCredentialUpsertion_new(
+                            upsertion.User,
+                            upsertion.ScramCredentialInfo.Mechanism,
+                            upsertion.ScramCredentialInfo.Iterations,
+                            upsertion.Password,
+                            (IntPtr) upsertion.Password.Length,
+                            salt,
+                            (IntPtr) saltSize
+                        );
+                        idx++;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Every alteration must be either a UserScramCredentialDeletion " + 
+                            "or UserScramCredentialUpsertion");
+                    }
+                }
+                Librdkafka.AlterUserScramCredentials(
+                        handle, c_alterationsPtr, (UIntPtr)(alterations.Count()),
+                        optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                for(var i=0; i<idx; i++)
+                {
+                    Librdkafka.UserScramCredentialAlteration_destroy(c_alterationsPtr[i]);
+                }
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+            }
+        }
         internal void OAuthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
         {
             if (tokenValue == null) throw new ArgumentNullException(nameof(tokenValue));
