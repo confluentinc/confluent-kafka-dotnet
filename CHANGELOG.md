@@ -1,5 +1,10 @@
 # 2.2.0
 
+## Enhancements
+
+- [KIP-554](https://cwiki.apache.org/confluence/display/KAFKA/KIP-554%3A+Add+Broker-side+SCRAM+Config+API):
+  User SASL/SCRAM credentials alteration and description (#2070).
+
 ## Fixes
 
 - Fix backwards compatability of TopicPartitionOffset constructor. ([drinehimer](https://github.com/drinehimer), #2066)
