@@ -195,6 +195,35 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Update the configuration for the specified
+        ///     resources. Updates are transactional so if
+        ///     on of them may fail then all the of them
+        ///     will fail. The configs for a particular
+        ///     resource are updated atomically. This operation
+        ///     is supported by brokers with version 2.3.0
+        ///     or higher. Only specified configuration properties
+        ///     will be updated others will stay same as before,
+        ///     so there is no need to call DescribleConfigsAsync
+        ///     before altering configs.
+        ///     Sensitive non-default values are retained after
+        ///     IncrementalAlterConfigsAsync unlike
+        ///     AlterConfigsAsync.
+        /// </summary>
+        /// <param name="configs">
+        ///     The resources with their configs
+        ///     (topic is the only resource type with configs
+        ///     that can be updated currently).
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when altering configs.
+        /// </param>
+        /// <returns>
+        ///     The results of the alter configs requests.
+        /// </returns>
+        Task<List<IncrementalAlterConfigsResult>> IncrementalAlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, IncrementalAlterConfigsOptions options = null);
+
+
+        /// <summary>
         ///     Get the configuration for the specified
         ///     resources. The returned  configuration includes
         ///     default values and the IsDefault property can be

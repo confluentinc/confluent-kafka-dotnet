@@ -386,7 +386,8 @@ namespace Confluent.Kafka.Examples
 
             var group = commandArgs[0];
             var tpoes = new List<TopicPartitionOffset>();
-            for (int i = 1; i + 2 < commandArgs.Length; i += 3) {
+            for (int i = 1; i + 2 < commandArgs.Length; i += 3)
+            {
                 try
                 {
                     var topic = commandArgs[i];
@@ -410,7 +411,8 @@ namespace Confluent.Kafka.Examples
                 {
                     var results = await adminClient.AlterConsumerGroupOffsetsAsync(input);
                     Console.WriteLine("Successfully altered offsets:");
-                    foreach(var groupResult in results) {
+                    foreach(var groupResult in results)
+                    {
                         Console.WriteLine(groupResult);
                     }
 
@@ -443,7 +445,8 @@ namespace Confluent.Kafka.Examples
 
             var group = commandArgs[0];
             var tpes = new List<TopicPartition>();
-            for (int i = 1; i + 1 < commandArgs.Length; i += 2) {
+            for (int i = 1; i + 1 < commandArgs.Length; i += 2)
+            {
                 try
                 {
                     var topic = commandArgs[i];
@@ -471,7 +474,8 @@ namespace Confluent.Kafka.Examples
                 {
                     var result = await adminClient.ListConsumerGroupOffsetsAsync(input);
                     Console.WriteLine("Successfully listed offsets:");
-                    foreach(var groupResult in result) {
+                    foreach(var groupResult in result)
+                    {
                         Console.WriteLine(groupResult);
                     }
                 }
@@ -492,7 +496,8 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static async Task ListConsumerGroupsAsync(string bootstrapServers, string[] commandArgs) {
+        static async Task ListConsumerGroupsAsync(string bootstrapServers, string[] commandArgs)
+        {
             var timeout = TimeSpan.FromSeconds(30);
             var statesList = new List<ConsumerGroupState>();
             try
@@ -503,7 +508,8 @@ namespace Confluent.Kafka.Examples
                 }
                 if (commandArgs.Length > 1)
                 {
-                    for (int i = 1; i < commandArgs.Length; i++) {
+                    for (int i = 1; i < commandArgs.Length; i++)
+                    {
                         statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
                     }
                 }
@@ -537,7 +543,9 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static async Task DescribeConsumerGroupsAsync(string bootstrapServers, string[] commandArgs) {
+
+        static async Task DescribeConsumerGroupsAsync(string bootstrapServers, string[] commandArgs)
+        {
             if (commandArgs.Length < 1)
             {
                 Console.WriteLine("usage: .. <bootstrapServers> describe-consumer-groups <group1> [<group2 ... <groupN>]");
@@ -576,6 +584,96 @@ namespace Confluent.Kafka.Examples
                 catch (KafkaException e)
                 {
                     Console.WriteLine($"An error occurred describing consumer groups: {e}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
+        
+        static async Task IncrementalAlterConfigsAsync(string bootstrapServers, string[] commandArgs)
+        {
+            var timeout = TimeSpan.FromSeconds(30);
+            var configResourceList = new Dictionary<ConfigResource, List<ConfigEntry>>();
+            try
+            {
+                if (commandArgs.Length > 0)
+                {
+                    timeout = TimeSpan.FromSeconds(Int32.Parse(commandArgs[0]));
+                }
+                if (((commandArgs.Length - 1) % 3) != 0)
+                {
+                    throw new ArgumentException("invalid arguments length");
+                }
+                
+                for (int i = 1; i < commandArgs.Length; i+=3)
+                {
+                    var resourceType = Enum.Parse<ResourceType>(commandArgs[i]);
+                    var resourceName = commandArgs[i + 1];
+                    var configs = commandArgs[i + 2];
+                    var configList = new List<ConfigEntry>();
+                    foreach (var config in configs.Split(";"))
+                    {
+                        var nameOpValue = config.Split("=");
+                        if (nameOpValue.Length != 2)
+                        {
+                            throw new ArgumentException($"invalid alteration name \"{config}\"");
+                        }
+                        
+                        var name = nameOpValue[0];
+                        var opValue = nameOpValue[1].Split(":");
+                        if (opValue.Length != 2)
+                        {
+                            throw new ArgumentException($"invalid alteration value \"{nameOpValue[1]}\"");
+                        }
+                        
+                        var op = Enum.Parse<AlterConfigOpType>(opValue[0]);
+                        var value = opValue[1];
+                        configList.Add(new ConfigEntry
+                        {
+                            Name = name,
+                            Value = value,
+                            IncrementalOperation = op
+                        });
+                    }
+                    var resource = new ConfigResource
+                    {
+                        Name = resourceName,
+                        Type = resourceType
+                    };
+                    configResourceList[resource] = configList;
+                }
+            }
+            catch (Exception  e) when (
+                e is ArgumentException ||
+                e is FormatException
+            )
+            {
+                Console.WriteLine($"error: {e.Message}");
+                Console.WriteLine("usage: .. <bootstrapServers> incremental-alter-configs [<timeout_seconds> <resource-type1> <resource-name1> <config-name1=op-type1:config-value1;config-name1=op-type1:config-value1> ...]");
+                Environment.ExitCode = 1;
+                return;
+            }
+            
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var alterResultList = await adminClient.IncrementalAlterConfigsAsync(configResourceList, new IncrementalAlterConfigsOptions() { RequestTimeout = timeout });
+                    foreach (var alterResult in alterResultList)
+                    {
+                        Console.WriteLine($"Resource {alterResult.ConfigResource} altered correctly");
+                    }
+                }
+                catch (IncrementalAlterConfigsException e)
+                {
+                    foreach (var alterResult in e.Results)
+                    {
+                        Console.WriteLine($"Resource {alterResult.ConfigResource} had error: {alterResult.Error}");
+                    }
+                    Environment.ExitCode = 1;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"An error occurred altering configs incrementally: {e.Message}");
                     Environment.ExitCode = 1;
                 }
             }
@@ -669,7 +767,9 @@ namespace Confluent.Kafka.Examples
                         "describe-acls", "delete-acls",
                         "list-consumer-groups", "describe-consumer-groups",
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
-                        "describe-user-scram-credentials", "alter-user-scram-credentials"
+                        "incremental-alter-configs", "describe-user-scram-credentials", 
+                        "alter-user-scram-credentials"
+
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
@@ -714,6 +814,9 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "describe-consumer-groups":
                     await DescribeConsumerGroupsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "incremental-alter-configs":
+                    await IncrementalAlterConfigsAsync(bootstrapServers, commandArgs);
                     break;
                 case "describe-user-scram-credentials":
                     await DescribeUserScramCredentialsAsync(bootstrapServers, commandArgs);
