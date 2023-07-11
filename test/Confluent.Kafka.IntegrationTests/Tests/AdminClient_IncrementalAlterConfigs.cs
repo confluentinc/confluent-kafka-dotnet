@@ -96,7 +96,7 @@ namespace Confluent.Kafka.IntegrationTests
                     { configResource2, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "333" , IncrementalOperation = AlterConfigOpType.Set } } }
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate, new IncrementalAlterConfigsOptions { RequestTimeout = TimeSpan.FromSeconds(10) }).Wait();
-                Thread.Sleep(10000);
+                // Thread.Sleep(10000);
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource, configResource2 }).Result;
                 Assert.Equal(2, describeConfigsResult.Count);
                 Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
@@ -109,7 +109,7 @@ namespace Confluent.Kafka.IntegrationTests
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate, new IncrementalAlterConfigsOptions { ValidateOnly = true }).Wait();
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
-                Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
+                Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 5. test updating broker resource. 
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
