@@ -18,23 +18,28 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Encapsulates a config property name / value pair.
+    ///     Enum of allowed AlterConfigOpType.
     /// </summary>
-    public class ConfigEntry
+    public enum AlterConfigOpType : int
     {
         /// <summary>
-        ///     The config name.
+        ///     Sets/overwrites the configuration value.
         /// </summary>
-        public string Name { get; set; }
+        Set = 0,
 
         /// <summary>
-        ///     The config value.
+        ///     Sets the configuration value to default or NULL.
         /// </summary>
-        public string Value { get; set; }
+        Delete = 1,
 
         /// <summary>
-        ///     Incremental operation to perform.
+        ///     Appends the value to existing configuration values(only for list type values).
         /// </summary>
-        public AlterConfigOpType IncrementalOperation { get; set; }
-    }
+        Append = 2,
+
+        /// <summary>
+        ///     Subtracts the value from existing configuration values(only for list type values).
+        /// </summary>
+        Subtract = 3,
+    };
 }
