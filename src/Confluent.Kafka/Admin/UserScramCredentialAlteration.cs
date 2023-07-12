@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,23 +18,14 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Encapsulates a config property name / value pair.
+    ///     The UserScramCredentialAlteration for both Upsertion and Deletion Operation
     /// </summary>
-    public class ConfigEntry
+    public class UserScramCredentialAlteration
     {
         /// <summary>
-        ///     The config name.
+        ///     The username of the Alteration
         /// </summary>
-        public string Name { get; set; }
+        public string User { get; set; }
 
-        /// <summary>
-        ///     The config value.
-        /// </summary>
-        public string Value { get; set; }
-
-        /// <summary>
-        ///     Incremental operation to perform.
-        /// </summary>
-        public AlterConfigOpType IncrementalOperation { get; set; }
     }
 }

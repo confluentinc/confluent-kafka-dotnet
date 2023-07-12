@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,23 +18,23 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Encapsulates a config property name / value pair.
+    ///     Enumerates the different types of ScramMechanism types.
     /// </summary>
-    public class ConfigEntry
+    public enum ScramMechanism : int
     {
         /// <summary>
-        ///     The config name.
-        /// </summary>
-        public string Name { get; set; }
+        ///     Unknown Mechanism
+        /// </summary>        
+        Unknown = 0,
 
         /// <summary>
-        ///     The config value.
-        /// </summary>
-        public string Value { get; set; }
+        ///     SCRAM-SHA-256
+        /// </summary>        
+        ScramSha256 = 1,
 
         /// <summary>
-        ///     Incremental operation to perform.
-        /// </summary>
-        public AlterConfigOpType IncrementalOperation { get; set; }
+        ///     SCRAM-SHA-512
+        /// </summary>        
+        ScramSha512 = 2,
     }
 }

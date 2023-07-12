@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,27 +14,27 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka.Admin;
+using Xunit;
 
-namespace Confluent.Kafka.Admin
+
+namespace Confluent.Kafka.UnitTests
 {
-    /// <summary>
-    ///     Encapsulates a config property name / value pair.
-    /// </summary>
-    public class ConfigEntry
+    public class UserScramCredentialDeletionTests
     {
-        /// <summary>
-        ///     The config name.
-        /// </summary>
-        public string Name { get; set; }
+        [Fact]
+        public void StringRepresentation()
+        {
+            // Deletion
+            var deletion = new UserScramCredentialDeletion {
+                User = "test",
+                Mechanism = ScramMechanism.ScramSha256
+            };
 
-        /// <summary>
-        ///     The config value.
-        /// </summary>
-        public string Value { get; set; }
-
-        /// <summary>
-        ///     Incremental operation to perform.
-        /// </summary>
-        public AlterConfigOpType IncrementalOperation { get; set; }
+            Assert.Equal(
+                @"{""User"": ""test"", " +
+                @"""Mechanism"": ""ScramSha256""}",
+                deletion.ToString());
+        }
     }
 }

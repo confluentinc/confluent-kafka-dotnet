@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,27 +14,24 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Encapsulates a config property name / value pair.
+    ///     Options for the "AdminClient.DescribeUserScramCredentialsOptions" method.
     /// </summary>
-    public class ConfigEntry
+    public class DescribeUserScramCredentialsOptions
     {
         /// <summary>
-        ///     The config name.
+        ///     The overall request timeout, including broker lookup, request
+        ///     transmission, operation time on broker, and response. If set
+        ///     to null, the default request timeout for the AdminClient will
+        ///     be used.
+        ///
+        ///     Default: null
         /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        ///     The config value.
-        /// </summary>
-        public string Value { get; set; }
-
-        /// <summary>
-        ///     Incremental operation to perform.
-        /// </summary>
-        public AlterConfigOpType IncrementalOperation { get; set; }
+        public TimeSpan? RequestTimeout { get; set; }
     }
 }

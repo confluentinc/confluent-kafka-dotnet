@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,23 +18,31 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Encapsulates a config property name / value pair.
+    ///     The per-user result for an alter user scram credentials request,
+    ///     including errors.
     /// </summary>
-    public class ConfigEntry
+    public class AlterUserScramCredentialsReport
     {
         /// <summary>
-        ///     The config name.
+        ///     Username for the performed Alteration.
         /// </summary>
-        public string Name { get; set; }
+        public string User { get; set; }
 
         /// <summary>
-        ///     The config value.
+        ///     Error of the performed Alteration.
         /// </summary>
-        public string Value { get; set; }
+        public Error Error { get; set; }
 
         /// <summary>
-        ///     Incremental operation to perform.
+        ///     Returns a JSON representation of the AlterUserScramCredentialsReport object.
         /// </summary>
-        public AlterConfigOpType IncrementalOperation { get; set; }
+        /// <returns>
+        ///     A JSON representation the AlterUserScramCredentialsReport object.
+        /// </returns>
+        public override string ToString()
+        {
+            return $"{{\"User\": {User.Quote()}, " + 
+                   $"\"Error\": {Error.ToString().Quote()}}}";
+        }
     }
 }
