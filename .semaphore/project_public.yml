@@ -1,0 +1,22 @@
+version: v1.0
+name: ''
+agent:
+  machine:
+    type: ''
+    os_image: ''
+apiVersion: v1alpha
+kind: Project
+metadata:
+  name: confluent-kafka-dotnet
+  description: ''
+spec:
+  visibility: private
+  repository:
+    url: 'git@github.com:confluentinc/confluent-kafka-dotnet.git'
+    pipeline_file: .semaphore/semaphore.yml
+    integration_type: github_app
+    status:
+      pipeline_files:
+        - path: .semaphore/semaphore.yml
+          level: pipeline
+blocks: []
