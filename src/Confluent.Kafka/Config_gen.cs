@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.2.0-RC2 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.2.0 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -229,14 +229,14 @@ namespace Confluent.Kafka
     public enum ClientDnsLookup
     {
         /// <summary>
-        ///     Use_all_dns_ips
+        ///     UseAllDnsIps
         /// </summary>
-        Use_all_dns_ips,
+        UseAllDnsIps,
 
         /// <summary>
-        ///     Resolve_canonical_bootstrap_servers_only
+        ///     ResolveCanonicalBootstrapServersOnly
         /// </summary>
-        Resolve_canonical_bootstrap_servers_only
+        ResolveCanonicalBootstrapServersOnly
     }
 
     /// <summary>
