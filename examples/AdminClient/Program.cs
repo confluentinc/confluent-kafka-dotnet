@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 
 
 namespace Confluent.Kafka.Examples
@@ -159,6 +160,85 @@ namespace Confluent.Kafka.Examples
             {
                 Console.WriteLine($"\t{aclBinding}");
             }
+        }
+
+        static List<UserScramCredentialAlteration> ParseUserScramCredentialAlterations(
+            string[] args)
+        {
+            if (args.Length == 0)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> alter-user-scram-alterations " + 
+                    "UPSERT <user1> <mechanism1> <iterations1> <password1> <salt1> " +
+                    "[UPSERT <user2> <mechanism2> <iterations2> <password2> <salt2> " +
+                    "DELETE <user3> <mechanism3> ..]");
+                Environment.ExitCode = 1;
+                return null;
+            }
+            
+            var alterations = new List<UserScramCredentialAlteration>();
+            for (int i = 0; i < args.Length;) {
+                string alterationName = args[i];
+                if (alterationName == "UPSERT")
+                {
+                    if (i + 5 >= args.Length)
+                    {
+                        throw new ArgumentException(
+                            $"invalid number of arguments for alteration {alterations.Count},"+
+                            $" expected 5, got {args.Length - i - 1}");
+                    }
+
+                    string user = args[i + 1];
+                    var mechanism = Enum.Parse<ScramMechanism>(args[i + 2]);
+                    var iterations = Int32.Parse(args[i + 3]);
+                    var password = Encoding.UTF8.GetBytes(args[i + 4]);
+                    string saltString = args[i + 5];
+                    byte[] salt = null;
+                    if (saltString != "")
+                    {
+                        salt = Encoding.UTF8.GetBytes(saltString);
+                    }
+                    alterations.Add(
+                        new UserScramCredentialUpsertion
+                        {
+                            User = user,
+                            ScramCredentialInfo = new ScramCredentialInfo
+                            {
+                                Mechanism = mechanism,
+                                Iterations = iterations,
+                            },
+                            Password = password,
+                            Salt = salt,
+                        }
+                    );
+                    i += 6;
+                }
+                else if (alterationName == "DELETE")
+                {
+                    if (i + 2 >= args.Length)
+                    {
+                        throw new ArgumentException(
+                            $"invalid number of arguments for alteration {alterations.Count},"+
+                            $" expected 2, got {args.Length - i - 1}");
+                    }
+
+                    string user = args[i + 1];
+                    var mechanism = Enum.Parse<ScramMechanism>(args[i + 2]);
+                    alterations.Add(
+                        new UserScramCredentialDeletion
+                        {
+                            User = user,
+                            Mechanism = mechanism,
+                        }
+                    );
+                    i += 3;
+                }
+                else
+                {
+                    throw new ArgumentException(
+                        $"invalid alteration {alterations.Count}, must be UPSERT or DELETE");
+                }
+            }
+            return alterations;
         }
 
         static async Task CreateAclsAsync(string bootstrapServers, string[] commandArgs)
@@ -599,6 +679,84 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static async Task DescribeUserScramCredentialsAsync(string bootstrapServers, string[] commandArgs)
+        {          
+            var users = commandArgs.ToList();
+            var timeout = TimeSpan.FromSeconds(30);
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var descResult = await adminClient.DescribeUserScramCredentialsAsync(users, new DescribeUserScramCredentialsOptions() { RequestTimeout = timeout });
+                    foreach (var description in descResult.UserScramCredentialsDescriptions)
+                    {
+                        Console.WriteLine($"  User: {description.User}");
+                        foreach (var scramCredentialInfo in description.ScramCredentialInfos)
+                        {
+                            Console.WriteLine($"    Mechanism: {scramCredentialInfo.Mechanism}");
+                            Console.WriteLine($"      Iterations: {scramCredentialInfo.Iterations}");
+                        }
+                    }
+                }
+                catch (DescribeUserScramCredentialsException e)
+                {
+                    Console.WriteLine($"An error occurred describing user SCRAM credentials" +
+                                       " for some users:");
+                    foreach (var description in e.Results.UserScramCredentialsDescriptions)
+                    {
+                        Console.WriteLine($"  User: {description.User}");
+                        Console.WriteLine($"    Error: {description.Error}");
+                        if (!description.Error.IsError)
+                        {
+                            foreach (var scramCredentialInfo in description.ScramCredentialInfos)
+                            {
+                                Console.WriteLine($"    Mechanism: {scramCredentialInfo.Mechanism}");
+                                Console.WriteLine($"      Iterations: {scramCredentialInfo.Iterations}");
+                            }
+                        }
+                    }
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred describing user SCRAM credentials: {e}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
+
+        static async Task AlterUserScramCredentialsAsync(string bootstrapServers, string[] commandArgs)
+        {
+            var alterations = ParseUserScramCredentialAlterations(commandArgs);
+            if (alterations == null)
+                return;
+
+            var timeout = TimeSpan.FromSeconds(30);
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    await adminClient.AlterUserScramCredentialsAsync(alterations,
+                        new AlterUserScramCredentialsOptions() { RequestTimeout = timeout });
+                    Console.WriteLine("All AlterUserScramCredentials operations completed successfully");
+                }
+                catch (AlterUserScramCredentialsException e)
+                {
+                    Console.WriteLine($"An error occurred altering user SCRAM credentials" +
+                                       " for some users:");
+                    foreach (var result in e.Results)
+                    {
+                        Console.WriteLine($"  User: {result.User}");
+                        Console.WriteLine($"    Error: {result.Error}");
+                    }
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred altering user SCRAM credentials: {e}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
+
         public static async Task Main(string[] args)
         {
             if (args.Length < 2)
@@ -609,7 +767,9 @@ namespace Confluent.Kafka.Examples
                         "describe-acls", "delete-acls",
                         "list-consumer-groups", "describe-consumer-groups",
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
-                        "incremental-alter-configs"
+                        "incremental-alter-configs", "describe-user-scram-credentials", 
+                        "alter-user-scram-credentials"
+
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
@@ -657,6 +817,12 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "incremental-alter-configs":
                     await IncrementalAlterConfigsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "describe-user-scram-credentials":
+                    await DescribeUserScramCredentialsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "alter-user-scram-credentials":
+                    await AlterUserScramCredentialsAsync(bootstrapServers, commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");
