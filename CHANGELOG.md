@@ -12,6 +12,7 @@
 ## Fixes
 
 - Fix backwards compatability of TopicPartitionOffset constructor. ([drinehimer](https://github.com/drinehimer), #2066)
+- Fix IConsumer breaking change. ([ttd2089](https://github.com/ttd2089), #2071)
 
 
 # 2.1.1
