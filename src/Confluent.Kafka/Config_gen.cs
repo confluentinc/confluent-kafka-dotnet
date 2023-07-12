@@ -229,14 +229,14 @@ namespace Confluent.Kafka
     public enum ClientDnsLookup
     {
         /// <summary>
-        ///     Use_all_dns_ips
+        ///     UseAllDnsIps
         /// </summary>
-        Use_all_dns_ips,
+        UseAllDnsIps,
 
         /// <summary>
-        ///     Resolve_canonical_bootstrap_servers_only
+        ///     ResolveCanonicalBootstrapServersOnly
         /// </summary>
-        Resolve_canonical_bootstrap_servers_only
+        ResolveCanonicalBootstrapServersOnly
     }
 
     /// <summary>
