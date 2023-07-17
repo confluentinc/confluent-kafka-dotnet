@@ -2328,6 +2328,27 @@ namespace Confluent.Kafka.Impl.NativeMethods
 #pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
         [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
 #pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial /* rd_kafka_error_t * */ IntPtr rd_kafka_ConfigResource_add_incremental_config(
+                /* rd_kafka_ConfigResource_t * */ IntPtr config,
+                [MarshalAs(UnmanagedType.LPStr)] string name,
+                /* rd_kafka_AlterConfigOpType_t */ AlterConfigOpType optype,
+                [MarshalAs(UnmanagedType.LPStr)] string value
+                );
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_error_t * */ IntPtr rd_kafka_ConfigResource_add_incremental_config(
+                /* rd_kafka_ConfigResource_t * */ IntPtr config,
+                [MarshalAs(UnmanagedType.LPStr)] string name,
+                /* rd_kafka_AlterConfigOpType_t */ AlterConfigOpType optype,
+                [MarshalAs(UnmanagedType.LPStr)] string value
+                );
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
         internal static partial /* rd_kafka_ConfigEntry_t ** */ IntPtr rd_kafka_ConfigResource_configs(
                 /* rd_kafka_ConfigResource_t * */ IntPtr config,
                 /* size_t * */ out UIntPtr cntp
@@ -2436,6 +2457,46 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_ConfigResource_t ** */ IntPtr rd_kafka_AlterConfigs_result_resources(
                 /* rd_kafka_AlterConfigs_result_t * */ IntPtr result,
+                out UIntPtr cntp
+                );
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial void rd_kafka_IncrementalAlterConfigs(
+                /* rd_kafka_t * */ IntPtr rk,
+                /* rd_kafka_ConfigResource_t ** */ IntPtr[] configs,
+                UIntPtr config_cnt,
+                /* rd_kafka_AdminOptions_t * */ IntPtr options,
+                /* rd_kafka_queue_t * */ IntPtr rkqu
+                );
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_IncrementalAlterConfigs(
+                /* rd_kafka_t * */ IntPtr rk,
+                /* rd_kafka_ConfigResource_t ** */ IntPtr[] configs,
+                UIntPtr config_cnt,
+                /* rd_kafka_AdminOptions_t * */ IntPtr options,
+                /* rd_kafka_queue_t * */ IntPtr rkqu
+                );
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial /* rd_kafka_ConfigResource_t ** */ IntPtr rd_kafka_IncrementalAlterConfigs_result_resources(
+                /* rd_kafka_IncrementalAlterConfigs_result_t * */ IntPtr result,
+                out UIntPtr cntp
+                );
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_ConfigResource_t ** */ IntPtr rd_kafka_IncrementalAlterConfigs_result_resources(
+                /* rd_kafka_IncrementalAlterConfigs_result_t * */ IntPtr result,
                 out UIntPtr cntp
                 );
 #endif
@@ -3344,6 +3405,219 @@ namespace Confluent.Kafka.Impl.NativeMethods
 #else
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_group_result_partitions(IntPtr groupres);
+#endif
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DescribeUserScramCredentials(
+                IntPtr handle,
+                [MarshalAs(UnmanagedType.LPArray)] string[] users,
+                UIntPtr usersCnt,
+                IntPtr optionsPtr,
+                IntPtr resultQueuePtr
+                );
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial ErrorCode rd_kafka_AlterUserScramCredentials(
+                IntPtr handle,
+                IntPtr[] alterations,
+                UIntPtr alterationsCnt,
+                IntPtr optionsPtr,
+                IntPtr resultQueuePtr
+                );
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_AlterUserScramCredentials(
+                IntPtr handle,
+                IntPtr[] alterations,
+                UIntPtr alterationsCnt,
+                IntPtr optionsPtr,
+                IntPtr resultQueuePtr
+                );
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial IntPtr rd_kafka_UserScramCredentialDeletion_new(
+                [MarshalAs(UnmanagedType.LPStr)] string user,
+                ScramMechanism mechanism
+                );
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_UserScramCredentialDeletion_new(
+                string user,
+                ScramMechanism mechanism
+                );
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial IntPtr rd_kafka_UserScramCredentialUpsertion_new(
+                [MarshalAs(UnmanagedType.LPStr)] string user,
+                ScramMechanism mechanism,
+                int iterations,
+                byte[] password,
+                IntPtr passwordSize,
+                byte[] salt,
+                IntPtr saltSize
+                );
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_UserScramCredentialUpsertion_new(
+                string user,
+                ScramMechanism mechanism,
+                int iterations,
+                byte[] password,
+                IntPtr passwordSize,
+                byte[] salt,
+                IntPtr saltSize
+                );
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial void rd_kafka_UserScramCredentialAlteration_destroy(
+                IntPtr alteration
+                );
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_UserScramCredentialAlteration_destroy(
+                IntPtr alteration
+                );
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial IntPtr rd_kafka_DescribeUserScramCredentials_result_descriptions(
+                IntPtr event_result,
+                out UIntPtr cntp
+                );
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_DescribeUserScramCredentials_result_descriptions(
+                IntPtr event_result,
+                out UIntPtr cntp
+                );
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial IntPtr rd_kafka_UserScramCredentialsDescription_user(IntPtr description);
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_UserScramCredentialsDescription_user(IntPtr description);
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial IntPtr rd_kafka_UserScramCredentialsDescription_error(IntPtr description);
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_UserScramCredentialsDescription_error(IntPtr description);
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial int rd_kafka_UserScramCredentialsDescription_scramcredentialinfo_count(IntPtr description);
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int rd_kafka_UserScramCredentialsDescription_scramcredentialinfo_count(IntPtr description);
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial IntPtr rd_kafka_UserScramCredentialsDescription_scramcredentialinfo(IntPtr description, int i);
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_UserScramCredentialsDescription_scramcredentialinfo(IntPtr description, int i);
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial ScramMechanism rd_kafka_ScramCredentialInfo_mechanism(IntPtr scramcredentialinfo);
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ScramMechanism rd_kafka_ScramCredentialInfo_mechanism(IntPtr scramcredentialinfo);
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial int rd_kafka_ScramCredentialInfo_iterations(IntPtr scramcredentialinfo);
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int rd_kafka_ScramCredentialInfo_iterations(IntPtr scramcredentialinfo);
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial IntPtr rd_kafka_AlterUserScramCredentials_result_responses(
+                IntPtr event_result,
+                out UIntPtr cntp
+                );
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AlterUserScramCredentials_result_responses(
+                IntPtr event_result,
+                out UIntPtr cntp
+                );
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial IntPtr rd_kafka_AlterUserScramCredentials_result_response_user(IntPtr element);
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AlterUserScramCredentials_result_response_user(IntPtr element);
+#endif
+
+#if NET7_0_OR_GREATER
+        [LibraryImport(DllName)]
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(CallConvCdecl) })]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        internal static partial IntPtr rd_kafka_AlterUserScramCredentials_result_response_error(IntPtr element);
+#else
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AlterUserScramCredentials_result_response_error(IntPtr element);
 #endif
 
         //
