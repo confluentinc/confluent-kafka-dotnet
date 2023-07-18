@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,19 +18,20 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents the result of a list consumer group operation.
+    ///     Represents the result of a list offset request for a single topic partition.
     /// </summary>
     public class ListOffsetResultInfo
     {
         /// <summary>
-        ///    TopicPartition of the ListOffset Result Element
+        ///    TopicPartitionOffsetError of the ListOffset Result Element which is a Topic Partition
         /// </summary>
         public TopicPartitionOffsetError TopicPartitionOffsetError { get; set; }
 
         /// <summary>
-        ///    Timestamp Corresponding to the Offset
+        ///    Timestamp Corresponding to the Offset, -1 if not set by broker.
         /// </summary>
         public long Timestamp {get; set; }
+
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>

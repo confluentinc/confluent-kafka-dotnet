@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the "AdminClient.ListConsumerGroupsAsync" method.
+    ///     Options for the "AdminClient.ListOffsetsAsync" method.
     /// </summary>
     public class ListOffsetsOptions
     {
@@ -35,10 +35,10 @@ namespace Confluent.Kafka.Admin
         public TimeSpan? RequestTimeout { get; set; }
 
         /// <summary>
-        ///      An enumerable with the states to query, null to query for all
-        ///      the states.
+        ///      Isolation Level to fetch the offset for. This is on the request level 
+        ///      rather than different isolation level for different TopicPartitions
         ///
-        ///     Default: null
+        ///     Default: ReadUncommitted
         /// </summary>
         public IsolationLevel IsolationLevel { get; set; } = IsolationLevel.ReadUncommitted;
     }
