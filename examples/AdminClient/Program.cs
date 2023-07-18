@@ -845,8 +845,7 @@ namespace Confluent.Kafka.Examples
                         "list-consumer-groups", "describe-consumer-groups",
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
                         "incremental-alter-configs", "describe-user-scram-credentials", 
-                        "alter-user-scram-credentials"
-
+                        "alter-user-scram-credentials", "list-offsets"
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
