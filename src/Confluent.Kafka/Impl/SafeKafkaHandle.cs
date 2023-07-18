@@ -2492,11 +2492,8 @@ namespace Confluent.Kafka.Impl
                     var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
                     tp.offset = (long)item.Value;
                 }  
-                ErrorCode code = Librdkafka.ListOffsets(handle,topic_partition_list,optionsPtr,resultQueuePtr);
-                if (code != ErrorCode.NoError)
-                {
-                    throw new KafkaException(CreatePossiblyFatalError(code, Librdkafka.err2str(code).ToString()));
-                }
+                Librdkafka.ListOffsets(handle,topic_partition_list,optionsPtr,resultQueuePtr);
+                Librdkafka.topic_partition_list_destroy(topic_partition_list);
             }
             finally
             {

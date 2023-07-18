@@ -1931,9 +1931,9 @@ namespace Confluent.Kafka.Impl
         private static _Node_port_delegate _Node_port;
         internal static IntPtr Node_port(IntPtr node) => _Node_port(node);
 
-        private delegate ErrorCode _ListOffsets_delegate(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr);
+        private delegate void _ListOffsets_delegate(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr);
         private static _ListOffsets_delegate _ListOffsets;
-        internal static ErrorCode ListOffsets(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr)
+        internal static void ListOffsets(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr)
             => _ListOffsets(handle,topic_partition_list,options, resultQueuePtr);
         
         private delegate int _ListOffsets_result_get_count_delegate(IntPtr resultPtr);
