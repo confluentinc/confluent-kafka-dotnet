@@ -2475,6 +2475,7 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
             var optionsPtr = IntPtr.Zero;
+            var topic_partition_list = IntPtr.Zero;
             try
             {
                 // set Admin Options if any
@@ -2484,7 +2485,7 @@ namespace Confluent.Kafka.Impl
                 setOption_IsolationLevel(optionsPtr, options.IsolationLevel);
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
-                IntPtr topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)requests.Count);
+                topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)requests.Count);
                 foreach(var item in requests){
                     string Topic = item.Key.Topic;
                     int Partition = item.Key.Partition;
@@ -2493,13 +2494,16 @@ namespace Confluent.Kafka.Impl
                     tp.offset = (long)item.Value;
                 }  
                 Librdkafka.ListOffsets(handle,topic_partition_list,optionsPtr,resultQueuePtr);
-                Librdkafka.topic_partition_list_destroy(topic_partition_list);
             }
             finally
             {
                 if (optionsPtr != IntPtr.Zero)
                 {
                     Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+                if (topic_partition_list != IntPtr.Zero)
+                {
+                    Librdkafka.topic_partition_list_destroy(topic_partition_list);
                 }
             }
         }
