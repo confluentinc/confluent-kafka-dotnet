@@ -71,7 +71,8 @@ namespace Confluent.Kafka.Impl
             AlterConsumerGroupOffsets = 15,
             IncrementalAlterConfigs = 16,
             DescribeUserScramCredentials = 17,
-            AlterUserScramCredentials = 18
+            AlterUserScramCredentials = 18,
+            ListOffsets = 19,
         }
 
         public enum EventType : int
@@ -101,7 +102,8 @@ namespace Confluent.Kafka.Impl
             AlterConsumerGroupOffsets_Result = 0x10000,
             IncrementalAlterConfigs_Result = 0x20000,
             DescribeUserScramCredentials_Result = 0x40000,
-            AlterUserScramCredentials_Result = 0x80000
+            AlterUserScramCredentials_Result = 0x80000,
+            ListOffsets_Result = 1048576,
         }
 
         // Minimum librdkafka version.
@@ -287,6 +289,7 @@ namespace Confluent.Kafka.Impl
             _AdminOptions_set_opaque = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_opaque").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
             _AdminOptions_set_require_stable_offsets = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_require_stable_offsets").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _AdminOptions_set_match_consumer_group_states = (Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_match_consumer_group_states").CreateDelegate(typeof(Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>));
+            _AdminOptions_set_isolation_level = (Func<IntPtr, byte, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_isolation_level").CreateDelegate(typeof(Func<IntPtr, byte, IntPtr>));
 
             _NewTopic_new = (Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_new").CreateDelegate(typeof(Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>));
             _NewTopic_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -435,6 +438,11 @@ namespace Confluent.Kafka.Impl
             _AlterUserScramCredentials_result_responses = (_AlterUserScramCredentials_result_responses_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_responses").CreateDelegate(typeof(_AlterUserScramCredentials_result_responses_delegate));
             _AlterUserScramCredentials_result_response_user = (_AlterUserScramCredentials_result_response_user_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_response_user").CreateDelegate(typeof(_AlterUserScramCredentials_result_response_user_delegate));
             _AlterUserScramCredentials_result_response_error = (_AlterUserScramCredentials_result_response_error_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_response_error").CreateDelegate(typeof(_AlterUserScramCredentials_result_response_error_delegate));
+            _ListOffsets = (_ListOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets").CreateDelegate(typeof (_ListOffsets_delegate));
+            _ListOffsets_result_get_count = (_ListOffsets_result_get_count_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets_result_get_count").CreateDelegate(typeof (_ListOffsets_result_get_count_delegate));
+            _ListOffsets_result_get_element = (_ListOffsets_result_get_element_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets_result_get_element").CreateDelegate(typeof (_ListOffsets_result_get_element_delegate));
+            _ListOffsetResultInfo_get_timestamp = (_ListOffsetResultInfo_get_timestamp_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetResultInfo_get_timestamp").CreateDelegate(typeof (_ListOffsetResultInfo_get_timestamp_delegate));
+            _ListOffsetResultInfo_get_topic_partition = (_ListOffsetResultInfo_get_topic_partition_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetResultInfo_get_topic_partition").CreateDelegate(typeof (_ListOffsetResultInfo_get_topic_partition_delegate));
 
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1276,6 +1284,9 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr AdminOptions_set_match_consumer_group_states(IntPtr options, ConsumerGroupState[] states, UIntPtr statesCnt)
             => _AdminOptions_set_match_consumer_group_states(options, states, statesCnt);
 
+        private static Func<IntPtr, byte, IntPtr> _AdminOptions_set_isolation_level;
+        internal static IntPtr AdminOptions_set_isolation_level(IntPtr options, byte IsolationLevel)
+            => _AdminOptions_set_isolation_level(options, IsolationLevel);
         private static Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr> _NewTopic_new;
         internal static IntPtr NewTopic_new(
                         string topic,
@@ -1920,6 +1931,31 @@ namespace Confluent.Kafka.Impl
         private static _Node_port_delegate _Node_port;
         internal static IntPtr Node_port(IntPtr node) => _Node_port(node);
 
+        private delegate void _ListOffsets_delegate(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr);
+        private static _ListOffsets_delegate _ListOffsets;
+        internal static void ListOffsets(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr)
+            => _ListOffsets(handle,topic_partition_list,options, resultQueuePtr);
+        
+        private delegate int _ListOffsets_result_get_count_delegate(IntPtr resultPtr);
+        private static _ListOffsets_result_get_count_delegate _ListOffsets_result_get_count;
+        internal static int ListOffsets_result_get_count(IntPtr resultPtr)
+            => _ListOffsets_result_get_count(resultPtr);
+        
+        private delegate IntPtr _ListOffsets_result_get_element_delegate(IntPtr resultPtr, int i);
+        private static _ListOffsets_result_get_element_delegate _ListOffsets_result_get_element;
+        internal static IntPtr ListOffsets_result_get_element(IntPtr resultPtr, int i)
+            => _ListOffsets_result_get_element(resultPtr,i);
+        
+        private delegate long _ListOffsetResultInfo_get_timestamp_delegate(IntPtr element);
+        private static _ListOffsetResultInfo_get_timestamp_delegate _ListOffsetResultInfo_get_timestamp;
+        internal static long ListOffsetResultInfo_get_timestamp(IntPtr element)
+            => _ListOffsetResultInfo_get_timestamp(element);
+        
+        private delegate IntPtr _ListOffsetResultInfo_get_topic_partition_delegate(IntPtr element);
+        private static _ListOffsetResultInfo_get_topic_partition_delegate _ListOffsetResultInfo_get_topic_partition;
+        internal static IntPtr ListOffsetResultInfo_get_topic_partition(IntPtr element)
+            => _ListOffsetResultInfo_get_topic_partition(element);
+        
         private static Func<IntPtr, ErrorCode> _topic_result_error;
         internal static ErrorCode topic_result_error(IntPtr topicres) => _topic_result_error(topicres);
 
