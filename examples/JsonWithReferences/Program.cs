@@ -22,7 +22,9 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
+using NJsonSchema.Generation;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 
 /// <summary>
@@ -33,13 +35,6 @@ using Newtonsoft.Json.Linq;
 /// </summary>
 namespace Confluent.Kafka.Examples.JsonWithReferences
 {
-
-    // public class Product
-    // {
-    //     public int ProductId { get; set; }
-    //     public string ProductName { get; set; }
-    //     public GeographicalLocation WarehouseLocation { get; set; }
-    // }
 
     /// <remarks>
     ///     The deserializer allows multiple ways to consume data.
@@ -64,24 +59,32 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
     /// </remarks>
     public class Product
     {
-        public int ProductId { get; set; }
+        public long ProductId { get; set; }
+
         public string ProductName { get; set; }
+
         public decimal Price { get; set; }
+
         public List<string> Tags { get; set; }
+        
         public Dimensions Dimensions { get; set; }
+
         public GeographicalLocation WarehouseLocation { get; set; }
     }
 
     public class Dimensions
     {
         public decimal Length { get; set; }
+
         public decimal Width { get; set; }
+
         public decimal Height { get; set; }
     }
 
     public class GeographicalLocation
     {
         public decimal Latitude { get; set; }
+
         public decimal Longitude { get; set; }
     }
 
@@ -92,23 +95,6 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
     /// </remarks>
     class Program
     {
-        public static Func<string, Product> Convertor = (json) =>{
-            JObject obj = JObject.Parse(json);
-            int productId = (int) obj["productId"];
-            string productName = (string) obj["productName"];
-            decimal latitude = (decimal) obj["warehouseLocation"]["latitude"];
-            decimal longitude = (decimal) obj["warehouseLocation"]["longitude"];
-            GeographicalLocation geographicalLocation = new GeographicalLocation{
-                Latitude = latitude,
-                Longitude = longitude
-            };
-            Product product = new Product{
-                ProductId = productId,
-                ProductName = productName,
-                WarehouseLocation = geographicalLocation
-            };
-            return product;
-        };
         // from: https://json-schema.org/learn/getting-started-step-by-step.html
         private static string S1;
         private static string S2;
@@ -148,10 +134,10 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
             var subject2 = $"{topicName}-Product";
 
             // Test there are no errors (exceptions) registering a schema that references another.
-            var id1 = sr.RegisterSchemaAsync(subject1, new Schema(S1, Confluent.SchemaRegistry.SchemaType.Json)).Result;
+            var id1 = sr.RegisterSchemaAsync(subject1, new Schema(S1, SchemaType.Json)).Result;
             var s1 = sr.GetLatestSchemaAsync(subject1).Result;
             var refs = new List<SchemaReference> { new SchemaReference("geographical-location.json", subject1, s1.Version) };
-            var id2 = sr.RegisterSchemaAsync(subject2, new Schema(S2, refs, Confluent.SchemaRegistry.SchemaType.Json)).Result;
+            var id2 = sr.RegisterSchemaAsync(subject2, new Schema(S2, refs, SchemaType.Json)).Result;
 
             // In fact, it seems references are not checked server side.
             var latestSchema2 = sr.GetLatestSchemaAsync(subject2).Result;
@@ -165,17 +151,25 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                 AutoRegisterSchemas = false,
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
+            
+            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            {
+                SerializerSettings = new JsonSerializerSettings
+                {
+                    ContractResolver = new DefaultContractResolver
+                    {
+                        NamingStrategy = new CamelCaseNamingStrategy()
+                    }
+                }
+            };
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
             var consumeTask = Task.Run(() =>
             {
                 using (var consumer =
-                    new ConsumerBuilder<string, Product>(consumerConfig)
-                        .SetKeyDeserializer(Deserializers.Utf8)
-                        // uncomment this and comment the line below to pass Convertor to deserializer
-                        // .SetValueDeserializer(new JsonDeserializer<Product>(sr, latestSchema2_unreg, convertor: Convertor).AsSyncOverAsync())
-                        .SetValueDeserializer(new JsonDeserializer<Product>(sr, latestSchema2Unreg).AsSyncOverAsync())
+                    new ConsumerBuilder<long, Product>(consumerConfig)
+                        .SetValueDeserializer(new JsonDeserializer<Product>(sr, latestSchema2Unreg, null, jsonSchemaGeneratorSettings).AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -190,9 +184,11 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                                 var cr = consumer.Consume(cts.Token);
                                 var product = cr.Message.Value;
 
-                                System.Console.WriteLine("CONSUMER: product name " + product.ProductName +
-                                    " Product id " + product.ProductId.ToString() + " latitude " +
-                                    product.WarehouseLocation.Latitude.ToString());
+                                Console.WriteLine("CONSUMER: product name " + product.ProductName +
+                                    $" Product id {product.ProductId} " +
+                                    $"Price: {product.Price} " +
+                                    $"Latitude: {product.WarehouseLocation.Latitude} " +
+                                    $"Longitude: {product.WarehouseLocation.Longitude}");
                             }
                             catch (ConsumeException e)
                             {
@@ -209,9 +205,9 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
-                new ProducerBuilder<string, Object>(producerConfig)
-                    .SetValueSerializer(new ReferenceSchemaBasedJsonSerializer(schemaRegistry, latestSchema2Unreg, jsonSerializerConfig))
-                    // .SetValueSerializer(new JsonSerializer<Object>(schemaRegistry, latestSchema2Unreg, jsonSerializerConfig))
+                new ProducerBuilder<long, Product>(producerConfig)
+                    .SetValueSerializer(new JsonSerializer<Product>(schemaRegistry, latestSchema2Unreg,
+                        jsonSerializerConfig, jsonSchemaGeneratorSettings))
                     .Build())
             {
                 Console.WriteLine($"PRODUCER: {producer.Name} producing on {topicName}. Enter product name, q to exit.");
@@ -220,27 +216,31 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    var obj = new
+                    var product = new Product
                     {
-                        productId = i++,
-                        productName = text,
-                        price = 9.99,
-                        tags = new List<string> { "tag1", "tag2" },
-                        dimensions = new
+                        ProductId = i++,
+                        ProductName = text,
+                        Price = 9.99M,
+                        Tags = new List<string> { "tag1", "tag2" },
+                        Dimensions = new Dimensions
                         {
-                            length = 10.0,
-                            width = 5.0,
-                            height = 2.0
+                            Length = 10.0M,
+                            Width = 5.0M,
+                            Height = 2.0M
                         },
-                        warehouseLocation = new
+                        WarehouseLocation = new GeographicalLocation
                         {
-                            latitude = 37.7749,
-                            longitude = -122.4194
+                            Latitude = 37.7749M,
+                            Longitude = -122.4194M
                         }
                     };
                     try
                     {
-                        await producer.ProduceAsync(topicName, new Message<string, Object> { Value = obj });
+                        await producer.ProduceAsync(topicName, new Message<long, Product>
+                        {
+                            Key = product.ProductId,
+                            Value = product
+                        });
                     }
                     catch (Exception e)
                     {
