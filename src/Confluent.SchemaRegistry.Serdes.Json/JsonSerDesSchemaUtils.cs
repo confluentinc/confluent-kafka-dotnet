@@ -13,13 +13,14 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Reflection.Emit;
 using NJsonSchema;
 using NJsonSchema.Generation;
 using Newtonsoft.Json.Linq;
+
+
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
@@ -36,39 +37,10 @@ namespace Confluent.SchemaRegistry.Serdes
         private JsonSchema resolvedJsonSchema;
         private Schema root;
         private ISchemaRegistryClient schemaRegistryClient;
+        private JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private Dictionary<string, Schema> dictSchemaNameToSchema = new Dictionary<string, Schema>();
         private Dictionary<string, JsonSchema> dictSchemaNameToJsonSchema = new Dictionary<string, JsonSchema>();
-        private static bool IsIntegerEnumSchemaUtil(JObject schema)
-        {
-            JToken typeToken = schema["type"];
-            JToken enumToken = schema["enum"];
-            if (typeToken != null && enumToken != null && typeToken.Type == JTokenType.String && typeToken.Value<string>() == "integer")
-            {
-                if (enumToken.Type == JTokenType.Array)
-                {
-                    foreach (JToken enumValue in enumToken)
-                    {
-                        if (enumValue.Type != JTokenType.Integer)
-                        {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }
-        private static Type GetTypeForSchema()
-        {
-            string className = Guid.NewGuid().ToString();
-            string nameSpace = "Confluent.SchemaRegistry.Serdes";
-            AssemblyName assemblyName = new AssemblyName(nameSpace);
-            AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
-            ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(nameSpace);
-            TypeBuilder typeBuilder = moduleBuilder.DefineType(nameSpace + "." + className, TypeAttributes.Public);
-            Type dynamicType = typeBuilder.CreateTypeInfo().AsType();
-            return dynamicType;
-        }
+
         private void CreateSchemaDictUtil(Schema root)
         {
             string root_str = root.SchemaString;
@@ -95,19 +67,12 @@ namespace Confluent.SchemaRegistry.Serdes
             }
 
             Func<JsonSchema, JsonReferenceResolver> factory;
-            factory = x =>
+            factory = rootObject =>
             {
                 JsonSchemaResolver schemaResolver =
-                    new JsonSchemaResolver(x, new JsonSchemaGeneratorSettings());
-                foreach (var reference in refers)
-                {
-                    JsonSchema jschema =
-                        dictSchemaNameToJsonSchema[reference.Name];
-                    Type type = GetTypeForSchema();
-                    JObject schemaObject = JObject.Parse(jschema.ToJson());
-                    var isIntEnum = IsIntegerEnumSchemaUtil(schemaObject);
-                    schemaResolver.AddSchema(type, isIntEnum, jschema);
-                }
+                    new JsonSchemaResolver(rootObject, this.jsonSchemaGeneratorSettings ??
+                        new JsonSchemaGeneratorSettings());
+
                 JsonReferenceResolver referenceResolver =
                     new JsonReferenceResolver(schemaResolver);
                 foreach (var reference in refers)
@@ -147,9 +112,13 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Populate the References list of the schema for
         ///     the same.
         /// </param>
-        public JsonSerDesSchemaUtils(ISchemaRegistryClient schemaRegistryClient, Schema schema){
+        /// <param name="jsonSchemaGeneratorSettings">
+        ///     Schema generator setting to use.
+        /// </param>
+        public JsonSerDesSchemaUtils(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
             this.schemaRegistryClient = schemaRegistryClient;
             this.root = schema;
+            this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
             CreateSchemaDictUtil(root);
             this.resolvedJsonSchema = GetSchemaUtil(root);
         }
