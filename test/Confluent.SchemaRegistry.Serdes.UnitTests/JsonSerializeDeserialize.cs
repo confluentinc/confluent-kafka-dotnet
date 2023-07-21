@@ -248,7 +248,20 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 AutoRegisterSchemas = false,
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
-            var jsonSerializer = new JsonSerializer<Schema1>(schemaRegistryClientJsonRef, unreg_schema1, jsonSerializerConfig);
+            
+            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            {
+                SerializerSettings = new JsonSerializerSettings
+                {
+                    ContractResolver = new DefaultContractResolver
+                    {
+                        NamingStrategy = new CamelCaseNamingStrategy()
+                    }
+                }
+            };
+            
+            var jsonSerializer = new JsonSerializer<Schema1>(schemaRegistryClientJsonRef, unreg_schema1,
+                jsonSerializerConfig, jsonSchemaGeneratorSettings);
             var jsonDeserializer = new JsonDeserializer<Schema1>(schemaRegistryClientJsonRef, unreg_schema1);
             var v = new Schema1
             {
