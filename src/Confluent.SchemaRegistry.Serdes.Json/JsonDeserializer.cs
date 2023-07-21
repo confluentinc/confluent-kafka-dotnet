@@ -1,4 +1,4 @@
-// Copyright 2023 Confluent Inc.
+// Copyright 2020-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,10 +55,10 @@ namespace Confluent.SchemaRegistry.Serdes
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private JsonSchema schema = null;
         private ISchemaRegistryClient schemaRegistryClient;
-        private Func<string, T> convertor = null;
         
         /// <summary>
-        ///     Initialize a new JsonDeserializer instance.
+        ///     Initialize a new JsonDeserializer instance
+        ///     with a given Schema.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///     Confluent Schema Registry client instance.
@@ -77,18 +77,14 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        /// <param name="convertor">
-        ///     Function to be used to convert the serialized
-        ///     string to an object of class T.
-        /// </param>
         public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, IEnumerable<KeyValuePair<string, string>> config = null,
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, Func<string, T> convertor = null)
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
-            this.convertor = convertor;
 
-            JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(schemaRegistryClient, schema);
+            JsonSchemaResolver utils = new JsonSchemaResolver(
+                schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
             JsonSchema jsonSchema = utils.GetResolvedSchema();
             this.schema = jsonSchema;
 
@@ -158,8 +154,6 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 // A schema is not required to deserialize json messages.
-                // TODO: add validation capability.
-
                 using (var stream = new MemoryStream(array, headerSize, array.Length - headerSize))
                 using (var sr = new System.IO.StreamReader(stream, Encoding.UTF8))
                 {
@@ -174,10 +168,6 @@ namespace Confluent.SchemaRegistry.Serdes
                         {
                             throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
                         }
-                    }
-                    if(this.convertor != null){
-                        T obj = this.convertor(serializedString);
-                        return Task.FromResult(obj);
                     }
                     return Task.FromResult(Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings));
                 }
