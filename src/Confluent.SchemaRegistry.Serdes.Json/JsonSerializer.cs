@@ -65,11 +65,9 @@ namespace Confluent.SchemaRegistry.Serdes
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-
         private HashSet<string> subjectsRegistered = new HashSet<string>();
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
-
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
         /// <remarks>
@@ -157,7 +155,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 ReferenceList.Add(reference);
             }
 
-            JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(schemaRegistryClient, schema);
+            JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(
+                schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
             JsonSchema jsonSchema = utils.GetResolvedSchema();
             this.schema = jsonSchema;
 
