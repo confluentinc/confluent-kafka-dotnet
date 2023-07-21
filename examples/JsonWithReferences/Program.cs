@@ -46,16 +46,10 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
     ///       the serialized string to the object of this class.
     ///     - pass a schema and allow validating against it.
     ///
-    ///     If the user is aware of some parts of the schema, they can
-    ///     create and pass a function that converts the json string to
-    ///     an object of the class corresponding to the parts of schema
-    ///     the user is aware of (comment this class and uncomment the
-    ///     Product class above, pass Func<string, Product> Convertor)
-    ///     to constructor of deserializer.
-    ///
     ///     Note: The user can also pass JObject to the 
     ///     ConsumerBuilder<string, JObject> and JsonDeserializer<JObject>
-    ///     in order to get JObject instead in consumer.
+    ///     in order to get JObject instead in consumer, this is possible
+    ///     in the producer too.
     /// </remarks>
     public class Product
     {

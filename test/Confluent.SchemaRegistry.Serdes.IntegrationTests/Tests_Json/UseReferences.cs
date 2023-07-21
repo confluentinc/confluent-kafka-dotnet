@@ -21,6 +21,7 @@ using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json.Linq;
 using NJsonSchema.Generation;
 
 
@@ -169,42 +170,70 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             {
+                var order = new Order
+                {
+                    OrderDetails = new OrderDetails
+                    {
+                        Id = 123,
+                        Customer = new Customer
+                        {
+                            Name = "Schema Registry",
+                            Id = 456,
+                            Email = "schema@example.com"
+                        },
+                        PaymentId = "abc123"
+                    },
+                    OrderDate = DateTime.UtcNow
+                };
+                
                 using (var producer =
                     new ProducerBuilder<string, Order>(producerConfig)
                         .SetValueSerializer(new JsonSerializer<Order>(schemaRegistry, s2.Schema,
                             jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings))
                         .Build())
                 {
-                    var order = new Order
-                    {
-                        OrderDetails = new OrderDetails
-                        {
-                            Id = 123,
-                            Customer = new Customer
-                            {
-                                Name = "Schema Registry",
-                                Id = 456,
-                                Email = "schema@example.com"
-                            },
-                            PaymentId = "abc123"
-                        },
-                        OrderDate = DateTime.UtcNow
-                    };
                     producer.ProduceAsync(topic.Name, new Message<string, Order> { Key = "test1", Value = order }).Wait();
-
-                    using (var consumer =
-                    new ConsumerBuilder<string, Order>(consumerConfig)
-                        .SetValueDeserializer(new JsonDeserializer<Order>(sr, s2.Schema,
-                             jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings).AsSyncOverAsync())
-                        .Build())
-                    {
-                        consumer.Subscribe(topic.Name);
-                        var cr = consumer.Consume();
-                        var classObj = cr.Message.Value;
-                        Assert.Equal<int>(123, classObj.OrderDetails.Id);
-                    }
+                }
+                
+                using (var consumer =
+                new ConsumerBuilder<string, Order>(consumerConfig)
+                    .SetValueDeserializer(new JsonDeserializer<Order>(sr, s2.Schema,
+                            jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings).AsSyncOverAsync())
+                    .Build())
+                {
+                    consumer.Subscribe(topic.Name);
+                    var cr = consumer.Consume();
+                    var classObj = cr.Message.Value;
+                    Assert.Equal<int>(123, classObj.OrderDetails.Id);
                 }
 
+                // Test producing and consuming directly a JObject
+                var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(order,
+                    jsonSchemaGeneratorSettings.ActualSerializerSettings);
+                var jsonObject = JObject.Parse(serializedString);
+                
+                using (var producer =
+                    new ProducerBuilder<string, JObject>(producerConfig)
+                        .SetValueSerializer(new JsonSerializer<JObject>(schemaRegistry, s2.Schema,
+                            jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings))
+                        .Build())
+                {
+                    producer.ProduceAsync(topic.Name, new Message<string, JObject> { Key = "test1", Value = jsonObject }).Wait();
+                }
+                
+                using (var consumer =
+                new ConsumerBuilder<string, JObject>(consumerConfig)
+                    .SetValueDeserializer(new JsonDeserializer<JObject>(sr, s2.Schema,
+                            jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings).AsSyncOverAsync())
+                    .Build())
+                {
+                    consumer.Subscribe(topic.Name);
+                    var cr = consumer.Consume();
+                    var classObj = cr.Message.Value;
+                    Assert.Equal(123, classObj["order_details"]?["id"]?.Value<int>() ?? 0);
+                }
+
+                // Test producing with a different class
                 using (var producer =
                     new ProducerBuilder<string, TestClasses2.TestPoco>(producerConfig)
                         .SetValueSerializer(new JsonSerializer<TestClasses2.TestPoco>(
