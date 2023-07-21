@@ -1,4 +1,4 @@
-// Copyright 2023 Confluent Inc.
+// Copyright 2020-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -155,7 +155,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 ReferenceList.Add(reference);
             }
 
-            JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(
+            JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
             JsonSchema jsonSchema = utils.GetResolvedSchema();
             this.schema = jsonSchema;

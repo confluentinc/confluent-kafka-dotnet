@@ -24,15 +24,15 @@ using Newtonsoft.Json.Linq;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     JSON SerDes Schema Utils.
+    ///     JSON Schema Resolver.
     /// </summary>
     /// <remarks>
-    ///     JsonSerDesSchemaUtils provides GetResolvedSchema() function that
+    ///     JsonSchemaResolver provides GetResolvedSchema() function that
     ///     can be used to get the NJsonSchema.JsonSchema object corresponding to a
     ///     resolved parent schema with a list of reference schemas. Assuming that the
     ///     references have been registered in the schema registry already.
     /// </remarks>
-    public class JsonSerDesSchemaUtils
+    public class JsonSchemaResolver
     {
         private JsonSchema resolvedJsonSchema;
         private Schema root;
@@ -69,8 +69,8 @@ namespace Confluent.SchemaRegistry.Serdes
             Func<JsonSchema, JsonReferenceResolver> factory;
             factory = rootObject =>
             {
-                JsonSchemaResolver schemaResolver =
-                    new JsonSchemaResolver(rootObject, this.jsonSchemaGeneratorSettings ??
+                NJsonSchema.Generation.JsonSchemaResolver schemaResolver =
+                    new NJsonSchema.Generation.JsonSchemaResolver(rootObject, this.jsonSchemaGeneratorSettings ??
                         new JsonSchemaGeneratorSettings());
 
                 JsonReferenceResolver referenceResolver =
@@ -115,7 +115,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     Schema generator setting to use.
         /// </param>
-        public JsonSerDesSchemaUtils(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
+        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
             this.schemaRegistryClient = schemaRegistryClient;
             this.root = schema;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;

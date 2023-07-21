@@ -82,7 +82,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schemaRegistryClient = schemaRegistryClient;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
-            JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(
+            JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
             JsonSchema jsonSchema = utils.GetResolvedSchema();
             this.schema = jsonSchema;
