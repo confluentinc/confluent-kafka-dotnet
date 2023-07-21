@@ -57,7 +57,8 @@ namespace Confluent.SchemaRegistry.Serdes
         private ISchemaRegistryClient schemaRegistryClient;
         
         /// <summary>
-        ///     Initialize a new JsonDeserializer instance.
+        ///     Initialize a new JsonDeserializer instance
+        ///     with a given Schema.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///     Confluent Schema Registry client instance.
@@ -153,8 +154,6 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 // A schema is not required to deserialize json messages.
-                // TODO: add validation capability.
-
                 using (var stream = new MemoryStream(array, headerSize, array.Length - headerSize))
                 using (var sr = new System.IO.StreamReader(stream, Encoding.UTF8))
                 {
