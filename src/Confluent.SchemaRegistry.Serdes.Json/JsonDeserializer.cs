@@ -55,7 +55,6 @@ namespace Confluent.SchemaRegistry.Serdes
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private JsonSchema schema = null;
         private ISchemaRegistryClient schemaRegistryClient;
-        private Func<string, T> convertor = null;
         
         /// <summary>
         ///     Initialize a new JsonDeserializer instance.
@@ -77,18 +76,14 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        /// <param name="convertor">
-        ///     Function to be used to convert the serialized
-        ///     string to an object of class T.
-        /// </param>
         public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, IEnumerable<KeyValuePair<string, string>> config = null,
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, Func<string, T> convertor = null)
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
-            this.convertor = convertor;
 
-            JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(schemaRegistryClient, schema);
+            JsonSchemaResolver utils = new JsonSchemaResolver(
+                schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
             JsonSchema jsonSchema = utils.GetResolvedSchema();
             this.schema = jsonSchema;
 
@@ -174,10 +169,6 @@ namespace Confluent.SchemaRegistry.Serdes
                         {
                             throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
                         }
-                    }
-                    if(this.convertor != null){
-                        T obj = this.convertor(serializedString);
-                        return Task.FromResult(obj);
                     }
                     return Task.FromResult(Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings));
                 }

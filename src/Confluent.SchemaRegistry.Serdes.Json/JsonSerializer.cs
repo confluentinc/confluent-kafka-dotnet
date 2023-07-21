@@ -1,4 +1,4 @@
-// Copyright 2023 Confluent Inc.
+// Copyright 2020-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,11 +65,9 @@ namespace Confluent.SchemaRegistry.Serdes
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-
         private HashSet<string> subjectsRegistered = new HashSet<string>();
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
-
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
         /// <remarks>
@@ -157,7 +155,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 ReferenceList.Add(reference);
             }
 
-            JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(schemaRegistryClient, schema);
+            JsonSchemaResolver utils = new JsonSchemaResolver(
+                schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
             JsonSchema jsonSchema = utils.GetResolvedSchema();
             this.schema = jsonSchema;
 
