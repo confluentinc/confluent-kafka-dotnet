@@ -1,4 +1,4 @@
-// Copyright 2023 Confluent Inc.
+// Copyright 2020-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
 using Confluent.Kafka;
 using Moq;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using NJsonSchema.Generation;
 using System;
@@ -34,7 +33,7 @@ using Xunit;
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
 {
-    public class JsonSerializeDeserialzeTests
+    public class JsonSerializeDeserializeTests
     {
         public string schema1 = @"
 {
@@ -68,21 +67,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
   }
 }
 ";
-        public class BoolValue
+        public class Schema1
         {
-            public bool Value { get; set; }
+            public string Field1 { get; set; }
+            
+            public int Field2 { get; set; }
+            
+            public bool Field3 { get; set; }
         }
-        public static Func<string, BoolValue> Convertor = (json) =>
-        {
-            JObject obj = JObject.Parse(json);
-            bool value = (bool)obj["field3"];
 
-            BoolValue boolValue = new BoolValue
-            {
-                Value = value
-            };
-            return boolValue;
-        };
         public class UInt32Value
         {
             public int Value { get; set; }
@@ -148,7 +141,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         private string testTopic;
         private Dictionary<string, int> store = new Dictionary<string, int>();
 
-        public JsonSerializeDeserialzeTests()
+        public JsonSerializeDeserializeTests()
         {
             testTopic = "topic";
             var schemaRegistryMock = new Mock<ISchemaRegistryClient>();
@@ -255,13 +248,13 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 AutoRegisterSchemas = false,
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
-            var jsonSerializer = new ReferenceSchemaBasedJsonSerializer(schemaRegistryClientJsonRef, unreg_schema1, jsonSerializerConfig);
-            var jsonDeserializer = new JsonDeserializer<BoolValue>(schemaRegistryClientJsonRef, unreg_schema1, convertor: Convertor);
-            var v = new
+            var jsonSerializer = new JsonSerializer<Schema1>(schemaRegistryClientJsonRef, unreg_schema1, jsonSerializerConfig);
+            var jsonDeserializer = new JsonDeserializer<Schema1>(schemaRegistryClientJsonRef, unreg_schema1);
+            var v = new Schema1
             {
-                field1 = "Hello",
-                field2 = 123,
-                field3 = true
+                Field1 = "Hello",
+                Field2 = 123,
+                Field3 = true
             };
             string expectedJson = "{\"field1\":\"Hello\",\"field2\":123,\"field3\":true}";
             var bytes = await jsonSerializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic));
@@ -269,7 +262,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(expectedJson, Encoding.UTF8.GetString(bytes.AsSpan().Slice(5)));
 
             var actual = await jsonDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
-            Assert.Equal(v.field3, actual.Value);
+            Assert.Equal(v.Field3, actual.Field3);
         }
 
         [Theory]
