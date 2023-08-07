@@ -355,7 +355,7 @@ namespace Confluent.SchemaRegistry
                 : (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{WebUtility.UrlEncode(subject)}/versions/latest", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
-        #endregion Compatibility
+        #endregion Compatibility 
 
         #region Config
 
