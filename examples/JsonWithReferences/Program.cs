@@ -146,6 +146,10 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
             
+            // This is needed only if you want to change attribute naming strategy
+            // from default one to camelCase.
+            // It's also possible to add JsonProperty attributes to customize
+            // serialization mapping and all available NJson attributes.
             var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
             {
                 SerializerSettings = new JsonSerializerSettings
