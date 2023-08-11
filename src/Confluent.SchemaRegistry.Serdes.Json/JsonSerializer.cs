@@ -1,4 +1,4 @@
-// Copyright 2023 Confluent Inc.
+// Copyright 2020-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,11 +65,9 @@ namespace Confluent.SchemaRegistry.Serdes
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-
         private HashSet<string> subjectsRegistered = new HashSet<string>();
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
-
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
         /// <remarks>
@@ -81,6 +79,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private JsonSchema schema;
         private string schemaText;
         private string schemaFullname;
+
         private void SetConfigUtil(JsonSerializerConfig config)
         {
             if (config == null) { return; }
@@ -122,8 +121,8 @@ namespace Confluent.SchemaRegistry.Serdes
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
             this.schema = this.jsonSchemaGeneratorSettings == null
-                ? NJsonSchema.JsonSchema.FromType<T>()
-                : NJsonSchema.JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
+                ? JsonSchema.FromType<T>()
+                : JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
             this.schemaFullname = schema.Title;
             this.schemaText = schema.ToJson();
 
@@ -131,7 +130,8 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <summary>
-        ///     Initialize a new instance of the JsonSerializer class.
+        ///     Initialize a new instance of the JsonSerializer class
+        ///     with a given Schema.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///     Confluent Schema Registry client instance.
@@ -157,7 +157,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 ReferenceList.Add(reference);
             }
 
-            JsonSerDesSchemaUtils utils = new JsonSerDesSchemaUtils(schemaRegistryClient, schema);
+            JsonSchemaResolver utils = new JsonSchemaResolver(
+                schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
             JsonSchema jsonSchema = utils.GetResolvedSchema();
             this.schema = jsonSchema;
 
