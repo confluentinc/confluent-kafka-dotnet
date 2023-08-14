@@ -44,7 +44,7 @@ blocks:
     task:
       agent:
         machine:
-          type: s1-prod-windows
+          type: s1-nonprod-windows
       jobs:
         - name: 'Build and test'
           commands:
