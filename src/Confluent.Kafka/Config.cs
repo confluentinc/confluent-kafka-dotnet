@@ -35,7 +35,9 @@ namespace Confluent.Kafka
             { "murmur2random", "murmur2_random" },
             { "readcommitted", "read_committed" },
             { "readuncommitted", "read_uncommitted" },
-            { "cooperativesticky", "cooperative-sticky" }
+            { "cooperativesticky", "cooperative-sticky" },
+            { "usealldnsips", "use_all_dns_ips"},
+            { "resolvecanonicalbootstrapserversonly", "resolve_canonical_bootstrap_servers_only"}
         };
 
         /// <summary>
