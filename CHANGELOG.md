@@ -1,3 +1,10 @@
+# vNext
+
+## Enhancements
+
+- Added support for external JSON schemas in `JsonSerializer` and `JsonDeserializer` (#2042).
+
+
 # 2.2.0
 
 ## Enhancements
@@ -21,8 +28,6 @@
 
 - References librdkafka.redist 2.1.1. Refer to the [librdkafka v2.1.1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.1.1) for more information.
 - Less heap allocations when calling Produce ([bjornbouetsmith](https://github.com/bjornbouetsmith), #2020)
-- Added support for external JSON schemas in `JsonSerializer` and `JsonDeserializer` (#2040).
-
 
 # 2.1.0
 
