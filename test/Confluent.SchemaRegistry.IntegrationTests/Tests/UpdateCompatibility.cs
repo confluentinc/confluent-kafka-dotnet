@@ -36,5 +36,6 @@ public static partial class Tests
 		Assert.Equal(Compatibility.FullTransitive, compatibility);
 
 		Assert.Equal(Compatibility.FullTransitive, await sr.GetCompatibilityAsync(subject));
+		Assert.Equal(Compatibility.BackwardTransitive, await sr.GetCompatibilityAsync());
 	}
 }
