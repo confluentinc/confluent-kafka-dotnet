@@ -359,10 +359,6 @@ namespace Confluent.SchemaRegistry
 
         #region Config
 
-        public async Task<Compatibility> GetGlobalCompatibilityAsync()
-            => (await RequestAsync<Config>("config", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
-
         public async Task<Compatibility> GetCompatibilityAsync(string subject)
             => (await RequestAsync<Config>(
                     string.IsNullOrEmpty(subject) ? "config" : $"config/{WebUtility.UrlEncode(subject)}",
