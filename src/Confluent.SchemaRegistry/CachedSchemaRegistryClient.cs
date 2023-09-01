@@ -47,6 +47,8 @@ namespace Confluent.SchemaRegistry
     ///      - <see cref="CachedSchemaRegistryClient.GetSubjectVersionsAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, Schema)" />
     ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetCompatibilityAsync(string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.UpdateCompatibilityAsync(Compatibility, string)" />
     /// </summary>
     public class CachedSchemaRegistryClient : ISchemaRegistryClient, IDisposable
     {
@@ -523,6 +525,16 @@ namespace Confluent.SchemaRegistry
         [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructValueSubjectName(string topic, string recordType = null)
             => valueSubjectNameStrategy(new SerializationContext(MessageComponentType.Value, topic), recordType);
+
+        /// <inheritdoc />
+        public async Task<Compatibility> GetCompatibilityAsync(string subject = null)
+            => await restService.GetCompatibilityAsync(subject)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+
+        /// <inheritdoc />
+        public async Task<Compatibility> UpdateCompatibilityAsync(Compatibility compatibility, string subject = null)
+            => await restService.UpdateCompatibilityAsync(subject, compatibility)
+                .ConfigureAwait(continueOnCapturedContext: false);
 
 
         /// <summary>
