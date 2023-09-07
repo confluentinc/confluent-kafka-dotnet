@@ -58,5 +58,11 @@ namespace Confluent.Kafka.Admin
         ///    Members list.
         /// </summary>
         public List<MemberDescription> Members { get; set; }
+
+        /// <summary>
+        ///    AclOperation list.
+        /// </summary>
+        public List<AclOperation> AuthorizedOperations { get; set; }
+
     }
 }

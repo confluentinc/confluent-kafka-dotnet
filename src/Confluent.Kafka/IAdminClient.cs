@@ -529,6 +529,46 @@ namespace Confluent.Kafka
         ///     A Task with an empty result when successful.
         /// </returns>
         Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
+        /// <summary>
+        ///    Describes topics in the cluster.
+        /// </summary>
+        /// <param name="topics">
+        ///     The list of topics to describe.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while describing topics.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.DescribeTopicsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeTopicsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A List of <see cref="Confluent.Kafka.Admin.TopicDescription"/>.
+        /// </returns>
+
+        Task<DescribeTopicsResult> DescribeTopicsAsync(
+            IEnumerable<string> topics, DescribeTopicsOptions options = null);
+
+        /// <summary>
+        ///    Describes  the cluster.
+        /// </summary>
+        /// <param name="options">
+        ///     The options to use while describing cluster.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <returns>
+        ///     A ClusterDescription object <see cref="Confluent.Kafka.Admin.ClusterDescription"/>.
+        /// </returns>
+        Task<DescribeClusterResult> DescribeClusterAsync(
+            DescribeClusterOptions options = null);
     }
 
 }
