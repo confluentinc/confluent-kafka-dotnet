@@ -772,6 +772,13 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 [MarshalAs(UnmanagedType.LPStr)] string name);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_error_t * */ IntPtr rd_kafka_ConfigResource_add_incremental_config(
+                /* rd_kafka_ConfigResource_t * */ IntPtr config,
+                [MarshalAs(UnmanagedType.LPStr)] string name,
+                /* rd_kafka_AlterConfigOpType_t */ AlterConfigOpType optype,
+                [MarshalAs(UnmanagedType.LPStr)] string value);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_ConfigEntry_t ** */ IntPtr rd_kafka_ConfigResource_configs(
                 /* rd_kafka_ConfigResource_t * */ IntPtr config,
                 /* size_t * */ out UIntPtr cntp);
@@ -805,6 +812,19 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_ConfigResource_t ** */ IntPtr rd_kafka_AlterConfigs_result_resources(
                 /* rd_kafka_AlterConfigs_result_t * */ IntPtr result,
+                out UIntPtr cntp);
+                
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_IncrementalAlterConfigs(
+                /* rd_kafka_t * */ IntPtr rk,
+                /* rd_kafka_ConfigResource_t ** */ IntPtr[] configs,
+                UIntPtr config_cnt,
+                /* rd_kafka_AdminOptions_t * */ IntPtr options,
+                /* rd_kafka_queue_t * */ IntPtr rkqu);
+                
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_ConfigResource_t ** */ IntPtr rd_kafka_IncrementalAlterConfigs_result_resources(
+                /* rd_kafka_IncrementalAlterConfigs_result_t * */ IntPtr result,
                 out UIntPtr cntp);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1039,13 +1059,13 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_ConsumerGroupDescription_coordinator(IntPtr grpdesc);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_ConsumerGroupDescription_member_count(IntPtr grpdesc);
-
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_ConsumerGroupDescription_authorized_operations_count(IntPtr grpdesc);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_ConsumerGroupDescription_authorized_operation(IntPtr grpdesc, IntPtr idx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ConsumerGroupDescription_member_count(IntPtr grpdesc);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_ConsumerGroupDescription_member(IntPtr grpdesc, IntPtr idx);
@@ -1097,6 +1117,76 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_group_result_partitions(IntPtr groupres);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DescribeUserScramCredentials(
+                IntPtr handle,
+                [MarshalAs(UnmanagedType.LPArray)] string[] users,
+                UIntPtr usersCnt,
+                IntPtr optionsPtr,
+                IntPtr resultQueuePtr);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_AlterUserScramCredentials(
+                IntPtr handle,
+                IntPtr[] alterations,
+                UIntPtr alterationsCnt,
+                IntPtr optionsPtr,
+                IntPtr resultQueuePtr);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_UserScramCredentialDeletion_new(
+                string user,
+                ScramMechanism mechanism);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_UserScramCredentialUpsertion_new(
+                string user,
+                ScramMechanism mechanism,
+                int iterations,
+                byte[] password,
+                IntPtr passwordSize,
+                byte[] salt,
+                IntPtr saltSize);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_UserScramCredentialAlteration_destroy(
+                IntPtr alteration);
+             
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_DescribeUserScramCredentials_result_descriptions(
+                IntPtr event_result,
+                out UIntPtr cntp);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_UserScramCredentialsDescription_user(IntPtr description);
+
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_UserScramCredentialsDescription_error(IntPtr description);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int rd_kafka_UserScramCredentialsDescription_scramcredentialinfo_count(IntPtr description);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_UserScramCredentialsDescription_scramcredentialinfo(IntPtr description, int i);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ScramMechanism rd_kafka_ScramCredentialInfo_mechanism(IntPtr scramcredentialinfo);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int rd_kafka_ScramCredentialInfo_iterations(IntPtr scramcredentialinfo);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AlterUserScramCredentials_result_responses(
+                IntPtr event_result,
+                out UIntPtr cntp);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AlterUserScramCredentials_result_response_user(IntPtr element);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AlterUserScramCredentials_result_response_error(IntPtr element);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_DescribeTopics(
                 IntPtr handle,
                 [MarshalAs(UnmanagedType.LPArray)] string[] topics,
@@ -1144,6 +1234,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_TopicDescription_partiton_id(IntPtr topicdesc, IntPtr idx);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        
         internal static extern void rd_kafka_DescribeCluster(
                 IntPtr handle,
                 IntPtr optionsPtr,
@@ -1169,6 +1260,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_ClusterDescription_node_idx(IntPtr clusterdesc, IntPtr idx);
+
         //
         // Queues
         //

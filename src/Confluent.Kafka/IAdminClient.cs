@@ -195,6 +195,35 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Update the configuration for the specified
+        ///     resources. Updates are transactional so if
+        ///     on of them may fail then all the of them
+        ///     will fail. The configs for a particular
+        ///     resource are updated atomically. This operation
+        ///     is supported by brokers with version 2.3.0
+        ///     or higher. Only specified configuration properties
+        ///     will be updated others will stay same as before,
+        ///     so there is no need to call DescribleConfigsAsync
+        ///     before altering configs.
+        ///     Sensitive non-default values are retained after
+        ///     IncrementalAlterConfigsAsync unlike
+        ///     AlterConfigsAsync.
+        /// </summary>
+        /// <param name="configs">
+        ///     The resources with their configs
+        ///     (topic is the only resource type with configs
+        ///     that can be updated currently).
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when altering configs.
+        /// </param>
+        /// <returns>
+        ///     The results of the alter configs requests.
+        /// </returns>
+        Task<List<IncrementalAlterConfigsResult>> IncrementalAlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, IncrementalAlterConfigsOptions options = null);
+
+
+        /// <summary>
         ///     Get the configuration for the specified
         ///     resources. The returned  configuration includes
         ///     default values and the IsDefault property can be
@@ -419,8 +448,7 @@ namespace Confluent.Kafka
         /// </exception>
         /// <returns>
         ///     A ListConsumerGroupsResult, which contains a List of
-        ///     <see cref="Confluent.Kafka.Admin.ConsumerGroupListing"/> and a
-        ///     List of Errors.
+        ///     <see cref="Confluent.Kafka.Admin.ConsumerGroupListing"/>.
         /// </returns>
         Task<ListConsumerGroupsResult> ListConsumerGroupsAsync(ListConsumerGroupsOptions options = null);
 
@@ -449,7 +477,58 @@ namespace Confluent.Kafka
         /// </returns>
         Task<DescribeConsumerGroupsResult> DescribeConsumerGroupsAsync(
             IEnumerable<string> groups, DescribeConsumerGroupsOptions options = null);
-        
+
+        /// <summary>
+        ///    Describes user SASL/SCRAM credentials.
+        /// </summary>
+        /// <param name="users">
+        ///     The list of users to describe for. This can be set
+        ///     to null to describe all users. Individual users
+        ///     cannot be empty strings.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while describing user scram credentials.
+        /// </param>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if any requested user is a null or empty string.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.DescribeUserScramCredentialsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeUserScramCredentialsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A <see cref="Confluent.Kafka.Admin.DescribeUserScramCredentialsResult"/>, which contains a List of
+        ///     <see cref="Confluent.Kafka.Admin.UserScramCredentialsDescription"/>.
+        /// </returns>
+        Task<DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(IEnumerable<string> users, DescribeUserScramCredentialsOptions options = null);
+
+        /// <summary>
+        ///     Alter user SASL/SCRAM credentials.
+        /// </summary>
+        /// <param name="alterations">
+        ///     A IEnumerable with alterations to execute.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when alter user scram credentials.
+        /// </param>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if any alteration isn't an instance of
+        ///     UserScramCredentialUpsertion or UserScramCredentialDeletion.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.AlterUserScramCredentialsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.AlterUserScramCredentialsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A Task with an empty result when successful.
+        /// </returns>
+        Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
         /// <summary>
         ///    Describes topics in the cluster.
         /// </summary>
@@ -472,6 +551,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     A List of <see cref="Confluent.Kafka.Admin.TopicDescription"/>.
         /// </returns>
+
         Task<DescribeTopicsResult> DescribeTopicsAsync(
             IEnumerable<string> topics, DescribeTopicsOptions options = null);
 

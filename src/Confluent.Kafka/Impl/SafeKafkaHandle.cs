@@ -310,20 +310,21 @@ namespace Confluent.Kafka.Impl
             return topicHandle;
         }
 
-        private IntPtr marshalHeaders(IEnumerable<IHeader> headers)
+        private IntPtr marshalHeaders(IReadOnlyList<IHeader> headers)
         {
             var headersPtr = IntPtr.Zero;
 
-            if (headers != null && headers.Any())
+            if (headers != null && headers.Count > 0)
             {
-                headersPtr = Librdkafka.headers_new((IntPtr) headers.Count());
+                headersPtr = Librdkafka.headers_new((IntPtr)headers.Count);
                 if (headersPtr == IntPtr.Zero)
                 {
                     throw new Exception("Failed to create headers list.");
                 }
-
-                foreach (var header in headers)
+                for (int x = 0; x < headers.Count; x++)
                 {
+                    var header = headers[x];
+
                     if (header.Key == null)
                     {
                         throw new ArgumentNullException("Message header keys must not be null.");
@@ -361,7 +362,7 @@ namespace Confluent.Kafka.Impl
             byte[] key, int keyOffset, int keyLength,
             int partition,
             long timestamp,
-            IEnumerable<IHeader> headers,
+            IReadOnlyList<IHeader> headers,
             IntPtr opaque)
         {
             var pValue = IntPtr.Zero;
@@ -1549,6 +1550,59 @@ namespace Confluent.Kafka.Impl
             Librdkafka.AdminOptions_destroy(optionsPtr);
         }
 
+        internal void IncrementalAlterConfigs(
+            IDictionary<ConfigResource, List<ConfigEntry>> configs,
+            IncrementalAlterConfigsOptions options,
+            IntPtr resultQueuePtr,
+            IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            IntPtr[] configPtrs = new IntPtr[configs.Count()];
+            int configPtrsIdx = 0;
+            foreach (var config in configs)
+            {
+                var resource = config.Key;
+                var resourceConfig = config.Value;
+
+                if (string.IsNullOrEmpty(resource.Name))
+                {
+                    throw new ArgumentException("Resource must be specified.");
+                }
+
+                var resourcePtr = Librdkafka.ConfigResource_new(resource.Type, resource.Name);
+                foreach (var rc in resourceConfig)
+                {
+                    if (string.IsNullOrEmpty(rc.Name))
+                    {
+                        throw new ArgumentException($"Config name must be specified for {resource}");
+                    }
+                    
+                    var error = Librdkafka.ConfigResource_add_incremental_config(resourcePtr, rc.Name, rc.IncrementalOperation, rc.Value);
+                    if (error != IntPtr.Zero)
+                    {
+                        throw new KafkaException(new Error(error, true));
+                    }
+                }
+                configPtrs[configPtrsIdx++] = resourcePtr;
+            }
+
+            options = options ?? new IncrementalAlterConfigsOptions();
+            IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.IncrementalAlterConfigs);
+            setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_completionSource(optionsPtr, completionSourcePtr);
+            
+            Librdkafka.IncrementalAlterConfigs(handle, configPtrs, (UIntPtr)configPtrs.Length, optionsPtr, resultQueuePtr);
+
+            for (int i=0; i<configPtrs.Length; ++i)
+            {
+                Librdkafka.ConfigResource_destroy(configPtrs[i]);
+            }
+
+            Librdkafka.AdminOptions_destroy(optionsPtr);
+        }
+
         internal void DescribeConfigs(
             IEnumerable<ConfigResource> resources,
             DescribeConfigsOptions options,
@@ -2335,6 +2389,111 @@ namespace Confluent.Kafka.Impl
             }
             finally
             {
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+            }
+        }
+        internal void DescribeUserScramCredentials(IEnumerable<string> users, DescribeUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            foreach (var user in users)
+            {
+                if (string.IsNullOrEmpty(user))
+                {
+                    throw new ArgumentException("Cannot have a null or empty user");
+                }
+            }
+            
+            var optionsPtr = IntPtr.Zero;
+            try
+            {
+                // Set Admin Options if any.
+                options = options ?? new DescribeUserScramCredentialsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeUserScramCredentials);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                // Call DescribeUserScramCredentials (async).
+                Librdkafka.DescribeUserScramCredentials(
+                    handle, users.ToArray(), (UIntPtr) users.Count(),
+                    optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+            }
+        }
+        internal void AlterUserScramCredentials(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            var optionsPtr = IntPtr.Zero;
+            IntPtr[] c_alterationsPtr = new IntPtr[alterations.Count()];
+            var idx = 0;
+            try
+            {
+                // Set Admin Options if any.
+                options = options ?? new AlterUserScramCredentialsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.AlterUserScramCredentials);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                foreach (var alteration in alterations)
+                {
+                    if (alteration == null)
+                    {
+                        throw new ArgumentException("Cannot have a null alteration");
+                    }
+
+                    if (alteration.GetType() == typeof(UserScramCredentialDeletion))
+                    {
+                        UserScramCredentialDeletion deletion =
+                            (UserScramCredentialDeletion)alteration;
+                        c_alterationsPtr[idx] = Librdkafka.UserScramCredentialDeletion_new(deletion.User, deletion.Mechanism);
+                        idx++;
+                    }
+                    else if (alteration.GetType() == typeof(UserScramCredentialUpsertion))
+                    {
+                        UserScramCredentialUpsertion upsertion =
+                            (UserScramCredentialUpsertion)alteration;
+                        byte[] salt = upsertion.Salt;
+                        int saltSize = 0;
+                        if (salt != null)
+                            saltSize = salt.Length;
+                        
+                        c_alterationsPtr[idx] = Librdkafka.UserScramCredentialUpsertion_new(
+                            upsertion.User,
+                            upsertion.ScramCredentialInfo.Mechanism,
+                            upsertion.ScramCredentialInfo.Iterations,
+                            upsertion.Password,
+                            (IntPtr) upsertion.Password.Length,
+                            salt,
+                            (IntPtr) saltSize
+                        );
+                        idx++;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Every alteration must be either a UserScramCredentialDeletion " + 
+                            "or UserScramCredentialUpsertion");
+                    }
+                }
+                Librdkafka.AlterUserScramCredentials(
+                        handle, c_alterationsPtr, (UIntPtr)(alterations.Count()),
+                        optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                for(var i=0; i<idx; i++)
+                {
+                    Librdkafka.UserScramCredentialAlteration_destroy(c_alterationsPtr[i]);
+                }
                 if (optionsPtr != IntPtr.Zero)
                 {
                     Librdkafka.AdminOptions_destroy(optionsPtr);

@@ -291,5 +291,34 @@ namespace Confluent.SchemaRegistry
         /// </returns>
         [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         string ConstructValueSubjectName(string topic, string recordType = null);
+
+
+        /// <summary>
+        ///     If the subject is specified returns compatibility type for the specified subject.
+        ///     Otherwise returns global compatibility type.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to get the compatibility for.
+        /// </param>
+        /// <returns>
+        ///     Compatibility type.
+        /// </returns>
+        Task<Compatibility> GetCompatibilityAsync(string subject = null);
+
+
+        /// <summary>
+        ///     If the subject is specified sets compatibility type for the specified subject.
+        ///     Otherwise sets global compatibility type.
+        /// </summary>
+        /// <param name="subject">
+        ///      The subject to set the compatibility for.
+        /// </param>
+        /// <param name="compatibility">
+        ///     Compatibility type.
+        /// </param>
+        /// <returns>
+        ///      New compatibility type.
+        /// </returns>
+        Task<Compatibility> UpdateCompatibilityAsync(Compatibility compatibility, string subject = null);
     }
 }

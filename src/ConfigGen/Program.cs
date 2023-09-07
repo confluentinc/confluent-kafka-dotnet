@@ -315,7 +315,9 @@ namespace Confluent.Kafka
             { "roundrobin", "RoundRobin" },
             { "cooperative-sticky", "CooperativeSticky"},
             { "read_uncommitted", "ReadUncommitted" },
-            { "read_committed", "ReadCommitted" }
+            { "read_committed", "ReadCommitted" },
+            { "use_all_dns_ips", "UseAllDnsIps"},
+            { "resolve_canonical_bootstrap_servers_only", "ResolveCanonicalBootstrapServersOnly"}
         };
 
         static string EnumNameToDotnetName(string enumName)
