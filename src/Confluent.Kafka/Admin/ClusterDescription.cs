@@ -14,31 +14,35 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the "AdminClient.DescribeConsumerGroupsOptions" method.
+    ///     Represents the cluster's description in the result of a
+    ///     describe cluster operation.
     /// </summary>
-    public class DescribeConsumerGroupsOptions
+    public class ClusterDescription
     {
         /// <summary>
-        ///     The overall request timeout, including broker lookup, request
-        ///     transmission, operation time on broker, and response. If set
-        ///     to null, the default request timeout for the AdminClient will
-        ///     be used.
-        ///
-        ///     Default: null
+        ///     The current cluster Id.
         /// </summary>
-        public TimeSpan? RequestTimeout { get; set; }
+        public string ClusterId { get; set; }
 
         /// <summary>
-        ///     Decides if the broker should return authorized operations.
-        ///
-        ///     Default: false
+        ///     The current controller Id.
         /// </summary>
-        public bool IncludeAuthorizedOperations { get; set; } = false;
+        public int ControllerId { get; set; }
+
+        /// <summary>
+        ///     The broker nodes in the cluster.
+        /// </summary>
+        public List<Node> Nodes{ get; set; }
+
+        /// <summary>
+        ///    AclOperation list.
+        /// </summary>
+        public List<AclOperation> AuthorizedOperations { get; set; }
+
     }
 }

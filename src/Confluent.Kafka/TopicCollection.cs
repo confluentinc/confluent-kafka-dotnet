@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,31 +14,36 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Collections.Generic;
 
-namespace Confluent.Kafka.Admin
+namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Options for the "AdminClient.DescribeConsumerGroupsOptions" method.
+    ///     A class used to represent a collection of topics.
     /// </summary>
-    public class DescribeConsumerGroupsOptions
+    public class TopicCollection
     {
         /// <summary>
-        ///     The overall request timeout, including broker lookup, request
-        ///     transmission, operation time on broker, and response. If set
-        ///     to null, the default request timeout for the AdminClient will
-        ///     be used.
-        ///
-        ///     Default: null
+        ///    Avoid direct instantiation.
         /// </summary>
-        public TimeSpan? RequestTimeout { get; set; }
+        private TopicCollection()
+        {
+        }
+        
+        /// <summary>
+        ///     Topic names.
+        /// </summary>
+        internal IEnumerable<string> Topics { get; set; }
 
         /// <summary>
-        ///     Decides if the broker should return authorized operations.
-        ///
-        ///     Default: false
+        ///    Returns a human readable representation of this object.
         /// </summary>
-        public bool IncludeAuthorizedOperations { get; set; } = false;
+        public static TopicCollection OfTopicNames(IEnumerable<string> topics)
+        {
+            return new TopicCollection
+            {
+                Topics = topics
+            };
+        }
     }
 }

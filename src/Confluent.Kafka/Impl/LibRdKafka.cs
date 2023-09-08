@@ -71,7 +71,9 @@ namespace Confluent.Kafka.Impl
             AlterConsumerGroupOffsets = 15,
             IncrementalAlterConfigs = 16,
             DescribeUserScramCredentials = 17,
-            AlterUserScramCredentials = 18
+            AlterUserScramCredentials = 18,
+            DescribeTopics = 19,
+            DescribeCluster = 20,
         }
 
         public enum EventType : int
@@ -101,7 +103,9 @@ namespace Confluent.Kafka.Impl
             AlterConsumerGroupOffsets_Result = 0x10000,
             IncrementalAlterConfigs_Result = 0x20000,
             DescribeUserScramCredentials_Result = 0x40000,
-            AlterUserScramCredentials_Result = 0x80000
+            AlterUserScramCredentials_Result = 0x80000,
+            DescribeTopics_Result = 0x100000,
+            DescribeCluster_Result = 0x200000,
         }
 
         // Minimum librdkafka version.
@@ -286,6 +290,7 @@ namespace Confluent.Kafka.Impl
             _AdminOptions_set_broker = (Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_broker").CreateDelegate(typeof(Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>));
             _AdminOptions_set_opaque = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_opaque").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
             _AdminOptions_set_require_stable_offsets = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_require_stable_offsets").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _AdminOptions_set_include_authorized_operations = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_include_authorized_operations").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _AdminOptions_set_match_consumer_group_states = (Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_match_consumer_group_states").CreateDelegate(typeof(Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>));
 
             _NewTopic_new = (Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_new").CreateDelegate(typeof(Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>));
@@ -408,6 +413,7 @@ namespace Confluent.Kafka.Impl
             _ConsumerGroupDescription_state = (_ConsumerGroupDescription_state_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_state").CreateDelegate(typeof (_ConsumerGroupDescription_state_delegate));
             _ConsumerGroupDescription_coordinator = (_ConsumerGroupDescription_coordinator_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_coordinator").CreateDelegate(typeof (_ConsumerGroupDescription_coordinator_delegate));
             _ConsumerGroupDescription_member_count = (_ConsumerGroupDescription_member_count_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_member_count").CreateDelegate(typeof (_ConsumerGroupDescription_member_count_delegate));
+            _ConsumerGroupDescription_authorized_operations = (_ConsumerGroupDescription_authorized_operations_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_authorized_operations").CreateDelegate(typeof (_ConsumerGroupDescription_authorized_operations_delegate));
             _ConsumerGroupDescription_member = (_ConsumerGroupDescription_member_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_member").CreateDelegate(typeof (_ConsumerGroupDescription_member_delegate));
             _MemberDescription_client_id = (_MemberDescription_client_id_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_client_id").CreateDelegate(typeof (_MemberDescription_client_id_delegate));
             _MemberDescription_group_instance_id = (_MemberDescription_group_instance_id_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_group_instance_id").CreateDelegate(typeof (_MemberDescription_group_instance_id_delegate));
@@ -418,6 +424,7 @@ namespace Confluent.Kafka.Impl
             _Node_id = (_Node_id_delegate)methods.Single(m => m.Name == "rd_kafka_Node_id").CreateDelegate(typeof (_Node_id_delegate));
             _Node_host = (_Node_host_delegate)methods.Single(m => m.Name == "rd_kafka_Node_host").CreateDelegate(typeof (_Node_host_delegate));
             _Node_port = (_Node_port_delegate)methods.Single(m => m.Name == "rd_kafka_Node_port").CreateDelegate(typeof (_Node_port_delegate));
+            _Node_rack = (_Node_rack_delegate)methods.Single(m => m.Name == "rd_kafka_Node_rack_id").CreateDelegate(typeof (_Node_rack_delegate));
 
             _DescribeUserScramCredentials = (_DescribeUserScramCredentials_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeUserScramCredentials").CreateDelegate(typeof (_DescribeUserScramCredentials_delegate));
             _DescribeUserScramCredentials_result_descriptions = (_DescribeUserScramCredentials_result_descriptions_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeUserScramCredentials_result_descriptions").CreateDelegate(typeof(_DescribeUserScramCredentials_result_descriptions_delegate));
@@ -435,6 +442,26 @@ namespace Confluent.Kafka.Impl
             _AlterUserScramCredentials_result_responses = (_AlterUserScramCredentials_result_responses_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_responses").CreateDelegate(typeof(_AlterUserScramCredentials_result_responses_delegate));
             _AlterUserScramCredentials_result_response_user = (_AlterUserScramCredentials_result_response_user_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_response_user").CreateDelegate(typeof(_AlterUserScramCredentials_result_response_user_delegate));
             _AlterUserScramCredentials_result_response_error = (_AlterUserScramCredentials_result_response_error_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_response_error").CreateDelegate(typeof(_AlterUserScramCredentials_result_response_error_delegate));
+
+            _DescribeTopics = (_DescribeTopics_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeTopics").CreateDelegate(typeof (_DescribeTopics_delegate));
+            _DescribeTopics_result_topics = (_DescribeTopics_result_topics_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeTopics_result_topics").CreateDelegate(typeof (_DescribeTopics_result_topics_delegate));
+            _TopicCollection_new_from_names = (_TopicCollection_new_from_names_delegate)methods.Single(m => m.Name == "rd_kafka_TopicCollection_new_from_names").CreateDelegate(typeof (_TopicCollection_new_from_names_delegate));
+            _TopicCollection_destroy = (_TopicCollection_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_TopicCollection_destroy").CreateDelegate(typeof (_TopicCollection_destroy_delegate));
+            _TopicDescription_error = (_TopicDescription_error_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_error").CreateDelegate(typeof (_TopicDescription_error_delegate));
+            _TopicDescription_name = (_TopicDescription_name_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_name").CreateDelegate(typeof (_TopicDescription_name_delegate));
+            _TopicDescription_partitions = (_TopicDescription_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_partitions").CreateDelegate(typeof (_TopicDescription_partitions_delegate));
+            _TopicDescription_is_internal = (_TopicDescription_is_internal_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_is_internal").CreateDelegate(typeof (_TopicDescription_is_internal_delegate));
+            _TopicDescription_authorized_operations = (_TopicDescription_authorized_operations_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_authorized_operations").CreateDelegate(typeof (_TopicDescription_authorized_operations_delegate));
+            _TopicPartitionInfo_isr = (_TopicPartitionInfo_isr_delegate)methods.Single(m => m.Name == "rd_kafka_TopicPartitionInfo_isr").CreateDelegate(typeof (_TopicPartitionInfo_isr_delegate));
+            _TopicPartitionInfo_leader = (_TopicPartitionInfo_leader_delegate)methods.Single(m => m.Name == "rd_kafka_TopicPartitionInfo_leader").CreateDelegate(typeof (_TopicPartitionInfo_leader_delegate));
+            _TopicPartitionInfo_partition = (_TopicPartitionInfo_partition_delegate)methods.Single(m => m.Name == "rd_kafka_TopicPartitionInfo_partition").CreateDelegate(typeof (_TopicPartitionInfo_partition_delegate));
+            _TopicPartitionInfo_replicas = (_TopicPartitionInfo_replicas_delegate)methods.Single(m => m.Name == "rd_kafka_TopicPartitionInfo_replicas").CreateDelegate(typeof (_TopicPartitionInfo_replicas_delegate));
+
+            _DescribeCluster = (_DescribeCluster_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster").CreateDelegate(typeof (_DescribeCluster_delegate));
+            _DescribeCluster_result_nodes = (_DescribeCluster_result_nodes_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster_result_nodes").CreateDelegate(typeof (_DescribeCluster_result_nodes_delegate));
+            _DescribeCluster_result_authorized_operations = (_DescribeCluster_result_authorized_operations_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster_result_authorized_operations").CreateDelegate(typeof (_DescribeCluster_result_authorized_operations_delegate));
+            _DescribeCluster_result_controller = (_DescribeCluster_result_controller_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster_result_controller").CreateDelegate(typeof (_DescribeCluster_result_controller_delegate));
+            _DescribeCluster_result_cluster_id = (_DescribeCluster_result_cluster_id_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster_result_cluster_id").CreateDelegate(typeof (_DescribeCluster_result_cluster_id_delegate));
 
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1272,6 +1299,11 @@ namespace Confluent.Kafka.Impl
             IntPtr options,
             IntPtr true_or_false) => _AdminOptions_set_require_stable_offsets(options, true_or_false);
 
+        private static Func<IntPtr, IntPtr, IntPtr> _AdminOptions_set_include_authorized_operations;
+        internal static IntPtr AdminOptions_set_include_authorized_operations(
+            IntPtr options,
+            IntPtr true_or_false) => _AdminOptions_set_include_authorized_operations(options, true_or_false);
+
         private static Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr> _AdminOptions_set_match_consumer_group_states;
         internal static IntPtr AdminOptions_set_match_consumer_group_states(IntPtr options, ConsumerGroupState[] states, UIntPtr statesCnt)
             => _AdminOptions_set_match_consumer_group_states(options, states, statesCnt);
@@ -1873,6 +1905,11 @@ namespace Confluent.Kafka.Impl
          internal static IntPtr  ConsumerGroupDescription_member_count(IntPtr grpdesc)
             => _ConsumerGroupDescription_member_count(grpdesc);
 
+         private delegate IntPtr  _ConsumerGroupDescription_authorized_operations_delegate(IntPtr grpdesc, out UIntPtr cntp);
+         private static _ConsumerGroupDescription_authorized_operations_delegate _ConsumerGroupDescription_authorized_operations;
+         internal static IntPtr  ConsumerGroupDescription_authorized_operations(IntPtr grpdesc, out UIntPtr cntp)
+            => _ConsumerGroupDescription_authorized_operations(grpdesc, out cntp);
+
          private delegate IntPtr  _ConsumerGroupDescription_member_delegate(IntPtr grpdesc, IntPtr idx);
          private static _ConsumerGroupDescription_member_delegate _ConsumerGroupDescription_member;
          internal static IntPtr  ConsumerGroupDescription_member(IntPtr grpdesc, IntPtr idx)
@@ -1919,6 +1956,10 @@ namespace Confluent.Kafka.Impl
         private delegate IntPtr _Node_port_delegate(IntPtr node);
         private static _Node_port_delegate _Node_port;
         internal static IntPtr Node_port(IntPtr node) => _Node_port(node);
+
+        private delegate IntPtr _Node_rack_delegate(IntPtr node);
+        private static _Node_rack_delegate _Node_rack;
+        internal static IntPtr Node_rack(IntPtr node) => _Node_rack(node);
 
         private static Func<IntPtr, ErrorCode> _topic_result_error;
         internal static ErrorCode topic_result_error(IntPtr topicres) => _topic_result_error(topicres);
@@ -2051,6 +2092,104 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr AlterUserScramCredentials_result_response_error(
             IntPtr element)
             => _AlterUserScramCredentials_result_response_error(element);
+
+        private delegate void _DescribeTopics_delegate(
+            IntPtr handle, IntPtr topicCollectionPtr, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _DescribeTopics_delegate _DescribeTopics;
+        internal static void DescribeTopics(
+            IntPtr handle, IntPtr topicCollectionPtr, IntPtr optionsPtr, IntPtr resultQueuePtr)
+            => _DescribeTopics(handle, topicCollectionPtr, optionsPtr, resultQueuePtr);
+
+        private delegate IntPtr _TopicCollection_new_from_names_delegate(
+            [MarshalAs(UnmanagedType.LPArray)] string[] topics, UIntPtr topicsCnt);
+        private static _TopicCollection_new_from_names_delegate _TopicCollection_new_from_names;
+        internal static IntPtr TopicCollection_new_from_names(
+            [MarshalAs(UnmanagedType.LPArray)] string[] topics,
+            UIntPtr topicsCnt) =>
+            _TopicCollection_new_from_names(topics, topicsCnt);
+
+        private delegate void _TopicCollection_destroy_delegate(
+            IntPtr topic_collection);
+        private static _TopicCollection_destroy_delegate _TopicCollection_destroy;
+        internal static void TopicCollection_destroy(IntPtr topic_collection)
+            => _TopicCollection_destroy(topic_collection);
+
+         private delegate IntPtr _DescribeTopics_result_topics_delegate(IntPtr result, out UIntPtr cntp);
+         private static _DescribeTopics_result_topics_delegate _DescribeTopics_result_topics;
+         internal static IntPtr DescribeTopics_result_topics(IntPtr result, out UIntPtr cntp)
+            => _DescribeTopics_result_topics(result, out cntp);
+
+         private delegate IntPtr _TopicDescription_error_delegate(IntPtr topicdesc);
+         private static _TopicDescription_error_delegate _TopicDescription_error;
+         internal static IntPtr TopicDescription_error(IntPtr topicdesc)
+            => _TopicDescription_error(topicdesc);
+
+         private delegate IntPtr _TopicDescription_name_delegate(IntPtr topicdesc);
+         private static _TopicDescription_name_delegate _TopicDescription_name;
+         internal static IntPtr TopicDescription_name(IntPtr topicdesc)
+            => _TopicDescription_name(topicdesc);
+
+         private delegate IntPtr _TopicDescription_partitions_delegate(IntPtr topicdesc, out UIntPtr cntp);
+         private static _TopicDescription_partitions_delegate _TopicDescription_partitions;
+         internal static IntPtr TopicDescription_partitions(IntPtr topicdesc, out UIntPtr cntp)
+            => _TopicDescription_partitions(topicdesc, out cntp);
+
+         private delegate IntPtr _TopicDescription_is_internal_delegate(IntPtr topicdesc);
+         private static _TopicDescription_is_internal_delegate _TopicDescription_is_internal;
+         internal static IntPtr TopicDescription_is_internal(IntPtr topicdesc)
+            => _TopicDescription_is_internal(topicdesc);
+
+         private delegate IntPtr _TopicDescription_authorized_operations_delegate(IntPtr topicdesc, out UIntPtr cntp);
+         private static _TopicDescription_authorized_operations_delegate _TopicDescription_authorized_operations;
+         internal static IntPtr TopicDescription_authorized_operations(IntPtr topicdesc, out UIntPtr cntp)
+            => _TopicDescription_authorized_operations(topicdesc, out cntp);
+
+         private delegate IntPtr _TopicPartitionInfo_isr_delegate(IntPtr topic_partition_info, out UIntPtr cntp);
+         private static _TopicPartitionInfo_isr_delegate _TopicPartitionInfo_isr;
+         internal static IntPtr TopicPartitionInfo_isr(IntPtr topic_partition_info, out UIntPtr cntp)
+            => _TopicPartitionInfo_isr(topic_partition_info, out cntp);
+            
+         private delegate IntPtr _TopicPartitionInfo_leader_delegate(IntPtr topic_partition_info);
+         private static _TopicPartitionInfo_leader_delegate _TopicPartitionInfo_leader;
+         internal static IntPtr TopicPartitionInfo_leader(IntPtr topic_partition_info)
+            => _TopicPartitionInfo_leader(topic_partition_info);
+
+         private delegate int _TopicPartitionInfo_partition_delegate(IntPtr topic_partition_info);
+         private static _TopicPartitionInfo_partition_delegate _TopicPartitionInfo_partition;
+         internal static int TopicPartitionInfo_partition(IntPtr topic_partition_info)
+            => _TopicPartitionInfo_partition(topic_partition_info);
+
+         private delegate IntPtr _TopicPartitionInfo_replicas_delegate(IntPtr topic_partition_info, out UIntPtr cntp);
+         private static _TopicPartitionInfo_replicas_delegate _TopicPartitionInfo_replicas;
+         internal static IntPtr TopicPartitionInfo_replicas(IntPtr topic_partition_info, out UIntPtr cntp)
+            => _TopicPartitionInfo_replicas(topic_partition_info, out cntp);
+
+         private delegate void _DescribeCluster_delegate(
+            IntPtr handle, IntPtr optionsPtr, IntPtr resultQueuePtr);
+         private static _DescribeCluster_delegate _DescribeCluster;
+         internal static void DescribeCluster(
+            IntPtr handle, IntPtr optionsPtr, IntPtr resultQueuePtr)
+            => _DescribeCluster(handle, optionsPtr, resultQueuePtr);
+
+         private delegate IntPtr _DescribeCluster_result_nodes_delegate(IntPtr result, out UIntPtr cntp);
+         private static _DescribeCluster_result_nodes_delegate _DescribeCluster_result_nodes;
+         internal static IntPtr DescribeCluster_result_nodes(IntPtr result, out UIntPtr cntp)
+            => _DescribeCluster_result_nodes(result, out cntp);
+
+         private delegate IntPtr _DescribeCluster_result_authorized_operations_delegate(IntPtr result, out UIntPtr cntp);
+         private static _DescribeCluster_result_authorized_operations_delegate _DescribeCluster_result_authorized_operations;
+         internal static IntPtr DescribeCluster_result_authorized_operations(IntPtr result, out UIntPtr cntp)
+            => _DescribeCluster_result_authorized_operations(result, out cntp);
+
+         private delegate IntPtr _DescribeCluster_result_controller_delegate(IntPtr result);
+         private static _DescribeCluster_result_controller_delegate _DescribeCluster_result_controller;
+         internal static IntPtr DescribeCluster_result_controller(IntPtr result)
+            => _DescribeCluster_result_controller(result);
+
+         private delegate IntPtr _DescribeCluster_result_cluster_id_delegate(IntPtr result);
+         private static _DescribeCluster_result_cluster_id_delegate _DescribeCluster_result_cluster_id;
+         internal static IntPtr DescribeCluster_result_cluster_id(IntPtr result)
+            => _DescribeCluster_result_cluster_id(result);
 
         //
         // Queues

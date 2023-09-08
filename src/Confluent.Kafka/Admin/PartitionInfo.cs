@@ -14,31 +14,34 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the "AdminClient.DescribeConsumerGroupsOptions" method.
+    ///     TopicPartitionInfo represents the description of a partition within a topic.
+    ///     Used for result of DescribeTopics for an individual topic.
     /// </summary>
-    public class DescribeConsumerGroupsOptions
+    public class TopicPartitionInfo
     {
         /// <summary>
-        ///     The overall request timeout, including broker lookup, request
-        ///     transmission, operation time on broker, and response. If set
-        ///     to null, the default request timeout for the AdminClient will
-        ///     be used.
-        ///
-        ///     Default: null
+        ///     Partition id.
         /// </summary>
-        public TimeSpan? RequestTimeout { get; set; }
+        public int Partition { get; set; }
 
         /// <summary>
-        ///     Decides if the broker should return authorized operations.
-        ///
-        ///     Default: false
+        ///     Leader broker.
         /// </summary>
-        public bool IncludeAuthorizedOperations { get; set; } = false;
+        public Node Leader { get; set; }
+
+        /// <summary>
+        ///    Replica brokers list.
+        /// </summary>
+        public List<Node> Replicas { get; set; }
+
+        /// <summary>
+        ///    In-sync replica brokers list.
+        /// </summary>
+        public List<Node> ISR { get; set; }
     }
 }
