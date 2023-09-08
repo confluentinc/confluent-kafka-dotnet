@@ -37,11 +37,17 @@ namespace Confluent.Kafka
         public int Port { get; set; }
 
         /// <summary>
+        ///     Rack id (optional).
+        /// </summary>
+        public string Rack { get; set; }
+
+        /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString()
         {
-            return $"Id = {Id}, {Host}:{Port}";
+            var rack = Rack != null ? ", Rack = " + Rack: "";
+            return $"Id = {Id}, {Host}:{Port}{rack}";
         }
     }
 }

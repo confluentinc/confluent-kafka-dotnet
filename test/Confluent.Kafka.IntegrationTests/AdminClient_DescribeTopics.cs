@@ -31,8 +31,8 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.DescribeTopics and
         ///     We test three cases:
         ///     1. For a non-existing topic.
-        ///     1. Without creating Acls and with includeTopicAuthorizedOperations.
-        ///     2. After creating Acls and with includeTopicAuthorizedOperations.
+        ///     1. Without creating Acls and with IncludeAuthorizedOperations.
+        ///     2. After creating Acls and with IncludeAuthorizedOperations.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AdminClient_DescribeTopics(string bootstrapServers)
@@ -45,20 +45,25 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 var describeOptionsWithTimeout = new Admin.DescribeTopicsOptions() { 
                     RequestTimeout = TimeSpan.FromSeconds(30), 
-                    IncludeTopicAuthorizedOperations = false
+                    IncludeAuthorizedOperations = false
                 };
                 var describeOptionsWithAuthOps = new Admin.DescribeTopicsOptions() { 
                     RequestTimeout = TimeSpan.FromSeconds(30), 
-                    IncludeTopicAuthorizedOperations = true
+                    IncludeAuthorizedOperations = true
                 };
 
                 var nonexistTopic = Guid.NewGuid().ToString();
-                var topicList = new List<string>();
-                topicList.Add(nonexistTopic);
-                topicList.Add(singlePartitionTopic);
+                var topicList = new List<string>
+                {
+                    nonexistTopic,
+                    singlePartitionTopic
+                };
 
-                try{
-                    var descResult = adminClient.DescribeTopicsAsync(topicList, describeOptionsWithTimeout).Result;
+                try
+                {
+                    var descResult = adminClient.DescribeTopicsAsync(
+                        TopicCollection.OfTopicNames(topicList),
+                        describeOptionsWithTimeout).Result;
                 }
                 catch(AggregateException ex){
                     var desTE = (DescribeTopicsException) ex.InnerException;
@@ -70,9 +75,16 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.True(!(desTE.Results.TopicDescriptions[1].Error.IsError));
                 }
 
-                var topicListAuthOps = new List<string>();
-                topicListAuthOps.Add(singlePartitionTopic);
-                var descResWithAuthOps = adminClient.DescribeTopicsAsync(topicListAuthOps, describeOptionsWithAuthOps).Result;
+                var topicListAuthOps = 
+                TopicCollection.OfTopicNames(
+                    new List<string>
+                    {
+                        singlePartitionTopic
+                    }
+                );
+                var descResWithAuthOps = adminClient.DescribeTopicsAsync(
+                    topicListAuthOps,
+                    describeOptionsWithAuthOps).Result;
                 Assert.NotEmpty(descResWithAuthOps.TopicDescriptions[0].AuthorizedOperations);
                 var initialCount = descResWithAuthOps.TopicDescriptions[0].AuthorizedOperations.Count;
                 LogToFile($"{initialCount} initial");

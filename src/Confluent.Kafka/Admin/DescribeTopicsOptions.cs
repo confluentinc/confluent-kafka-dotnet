@@ -39,6 +39,6 @@ namespace Confluent.Kafka.Admin
         ///
         ///     Default: false
         /// </summary>
-        public bool IncludeTopicAuthorizedOperations { get; set; } = false;
+        public bool IncludeAuthorizedOperations { get; set; } = false;
     }
 }

@@ -13,7 +13,9 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
 using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Admin
 {
@@ -23,19 +25,35 @@ namespace Confluent.Kafka.Admin
     public class DescribeClusterResult
     {
         /// <summary>
-        ///    Cluster description.
+        ///     Current cluster Id.
         /// </summary>
-        public ClusterDescription clusterDescription { get; set; }
+        public string ClusterId { get; set; }
+
+        /// <summary>
+        ///     Current controller (optional).
+        /// </summary>
+        public Node Controller { get; set; }
+
+        /// <summary>
+        ///     Nodes in the cluster.
+        /// </summary>
+        public List<Node> Nodes { get; set; }
+
+        /// <summary>
+        ///    AclOperation list.
+        /// </summary>
+        public List<AclOperation> AuthorizedOperations { get; set; }
+
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
             string res = "ClusterId: ";
-            res += clusterDescription.ClusterId + "\n";
-            res += "ControllerId: " + clusterDescription.ControllerId + "\n";
+            res += ClusterId + "\n";
+            res += "ControllerId: " + Controller + "\n";
             res += "Nodes:\n";
-            foreach (Node node in clusterDescription.Nodes) {
+            foreach (Node node in Nodes) {
                 res += "\t" + node.ToString() + "\n";
             }
             return res;

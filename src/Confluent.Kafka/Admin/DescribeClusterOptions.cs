@@ -15,12 +15,12 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the "AdminClient.DescribeClusterOptions" method.
+    ///     Options for the "IAdminClient.DescribeCluster" method.
     /// </summary>
     public class DescribeClusterOptions
     {
@@ -39,6 +39,6 @@ namespace Confluent.Kafka.Admin
         ///
         ///     Default: false
         /// </summary>
-        public bool IncludeClusterAuthorizedOperations { get; set; } = false;
+        public bool IncludeAuthorizedOperations { get; set; } = false;
     }
 }

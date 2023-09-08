@@ -37,7 +37,7 @@ namespace Confluent.Kafka.Admin
         public DescribeTopicsException(DescribeTopicsReport results)
             : base(new Error(ErrorCode.Local_Partial,
                 "An error occurred describing topics: [" +
-                String.Join(", ", results.TopicDescriptions.Where(r => r.Error.IsError).Select(r => r.TopicName)) +
+                String.Join(", ", results.TopicDescriptions.Where(r => r.Error.IsError).Select(r => r.Name)) +
                 "]: [" + String.Join(", ", results.TopicDescriptions.Where(r => r.Error.IsError).Select(r => r.Error)) +
                 "]."))
         {

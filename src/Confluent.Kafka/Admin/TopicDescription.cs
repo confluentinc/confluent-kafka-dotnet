@@ -27,17 +27,23 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     The topic name.
         /// </summary>
-        public string TopicName { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         ///     Error, if any, of topic reported by the broker
         /// </summary>
         public Error Error { get; set; }
+        
+        /// <summary>
+        ///      Whether the topic is internal to Kafka.
+        ///      An example of an internal topic is the offsets and group management topic: __consumer_offsets.
+        /// </summary>
+        public bool IsInternal { get; set; }
 
         /// <summary>
         ///    List of partitions and their information.
         /// </summary>
-        public List<PartitionInfo> Partitions { get; set; }
+        public List<TopicPartitionInfo> Partitions { get; set; }
 
         /// <summary>
         ///    AclOperation list.

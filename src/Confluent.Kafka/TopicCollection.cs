@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,32 +16,34 @@
 
 using System.Collections.Generic;
 
-namespace Confluent.Kafka.Admin
+namespace Confluent.Kafka
 {
     /// <summary>
-    ///     TopicPartitionInfo represents the description of a partition within a topic.
-    ///     Used for result of DescribeTopics for an individual topic.
+    ///     A class used to represent a collection of topics.
     /// </summary>
-    public class TopicPartitionInfo
+    public class TopicCollection
     {
         /// <summary>
-        ///     Partition id.
+        ///    Avoid direct instantiation.
         /// </summary>
-        public int Partition { get; set; }
+        private TopicCollection()
+        {
+        }
+        
+        /// <summary>
+        ///     Topic names.
+        /// </summary>
+        internal IEnumerable<string> Topics { get; set; }
 
         /// <summary>
-        ///     Leader broker.
+        ///    Returns a human readable representation of this object.
         /// </summary>
-        public Node Leader { get; set; }
-
-        /// <summary>
-        ///    Replica brokers list.
-        /// </summary>
-        public List<Node> Replicas { get; set; }
-
-        /// <summary>
-        ///    In-sync replica brokers list.
-        /// </summary>
-        public List<Node> ISR { get; set; }
+        public static TopicCollection OfTopicNames(IEnumerable<string> topics)
+        {
+            return new TopicCollection
+            {
+                Topics = topics
+            };
+        }
     }
 }

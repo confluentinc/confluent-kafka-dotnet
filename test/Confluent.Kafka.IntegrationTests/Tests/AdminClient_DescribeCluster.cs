@@ -30,9 +30,9 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Test functionality of AdminClient.DescribeCLuster and
         ///     We test three cases:
-        ///     1. Without creating Acls and without includeClusterAuthorizedOperations .
-        ///     2. Without creating Acls and with includeClusterAuthorizedOperations.
-        ///     3. After creating Acls and without includeClusterAuthorizedOperations.
+        ///     1. Without creating Acls and without includeAuthorizedOperations .
+        ///     2. Without creating Acls and with includeAuthorizedOperations.
+        ///     3. After creating Acls and without includeAuthorizedOperations.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AdminClient_DescribeCluster(string bootstrapServers)
@@ -44,8 +44,8 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers }).Build())
             {
                 var listOptionsWithTimeout = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
-                var describeOptionsWithTimeout = new Admin.DescribeClusterOptions() { RequestTimeout = TimeSpan.FromSeconds(30) , IncludeClusterAuthorizedOperations = false};
-                var describeOptionsWithAuthOps = new Admin.DescribeClusterOptions() { RequestTimeout = TimeSpan.FromSeconds(30) , IncludeClusterAuthorizedOperations = true};
+                var describeOptionsWithTimeout = new Admin.DescribeClusterOptions() { RequestTimeout = TimeSpan.FromSeconds(30) , IncludeAuthorizedOperations = false};
+                var describeOptionsWithAuthOps = new Admin.DescribeClusterOptions() { RequestTimeout = TimeSpan.FromSeconds(30) , IncludeAuthorizedOperations = true};
 
                 var descResult = adminClient.DescribeClusterAsync(describeOptionsWithTimeout).Result;
                 var clusterDesc = descResult.clusterDescription;

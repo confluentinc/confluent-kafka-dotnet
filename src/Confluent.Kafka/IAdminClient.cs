@@ -529,11 +529,12 @@ namespace Confluent.Kafka
         ///     A Task with an empty result when successful.
         /// </returns>
         Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
+
         /// <summary>
         ///    Describes topics in the cluster.
         /// </summary>
-        /// <param name="topics">
-        ///     The list of topics to describe.
+        /// <param name="topicCollection">
+        ///     A collection of topics to describe.
         /// </param>
         /// <param name="options">
         ///     The options to use while describing topics.
@@ -549,14 +550,14 @@ namespace Confluent.Kafka
         ///     property of the exception.
         /// </exception>
         /// <returns>
-        ///     A List of <see cref="Confluent.Kafka.Admin.TopicDescription"/>.
+        ///     A <see cref="Confluent.Kafka.Admin.DescribeTopicsResult"/>, which contains a List of
+        ///     <see cref="Confluent.Kafka.Admin.TopicDescription"/>.
         /// </returns>
-
         Task<DescribeTopicsResult> DescribeTopicsAsync(
-            IEnumerable<string> topics, DescribeTopicsOptions options = null);
+            TopicCollection topicCollection, DescribeTopicsOptions options = null);
 
         /// <summary>
-        ///    Describes  the cluster.
+        ///    Describes the cluster.
         /// </summary>
         /// <param name="options">
         ///     The options to use while describing cluster.
@@ -565,7 +566,7 @@ namespace Confluent.Kafka
         ///     Thrown if there is any client-level error.
         /// </exception>
         /// <returns>
-        ///     A ClusterDescription object <see cref="Confluent.Kafka.Admin.ClusterDescription"/>.
+        ///     A <see cref="Confluent.Kafka.Admin.DescribeClusterResult"/>.
         /// </returns>
         Task<DescribeClusterResult> DescribeClusterAsync(
             DescribeClusterOptions options = null);
