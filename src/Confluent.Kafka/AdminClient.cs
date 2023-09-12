@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2018-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -312,11 +312,7 @@ namespace Confluent.Kafka
             result.ConsumerGroupDescriptions = groupPtrArr.Select(groupPtr => {
 
                 var coordinatorPtr = Librdkafka.ConsumerGroupDescription_coordinator(groupPtr);
-                var coordinator = new Node() {
-                    Id = (int)Librdkafka.Node_id(coordinatorPtr),
-                    Host = PtrToStringUTF8(Librdkafka.Node_host(coordinatorPtr)),
-                    Port = (int)Librdkafka.Node_port(coordinatorPtr),
-                };
+                var coordinator = extractNode(coordinatorPtr);
 
                 var memberCount = (int)Librdkafka.ConsumerGroupDescription_member_count(groupPtr);
                 var members = new List<MemberDescription>();
@@ -343,11 +339,16 @@ namespace Confluent.Kafka
                     members.Add(member);
                 }
 
+                var authorizedOperations = extractAuthorizedOperations(
+                    Librdkafka.ConsumerGroupDescription_authorized_operations(groupPtr,
+                        out UIntPtr authorizedOperationCount),
+                    (int) authorizedOperationCount);
+
                 var desc = new ConsumerGroupDescription() {
                     GroupId =
                         PtrToStringUTF8(Librdkafka.ConsumerGroupDescription_group_id(groupPtr)),
                     Error =
-                        new Error(Librdkafka.ConsumerGroupDescription_error(groupPtr)),
+                        new Error(Librdkafka.ConsumerGroupDescription_error(groupPtr), false),
                     IsSimpleConsumerGroup =
                         (int)Librdkafka.ConsumerGroupDescription_is_simple_consumer_group(groupPtr) == 1,
                     PartitionAssignor =
@@ -356,6 +357,7 @@ namespace Confluent.Kafka
                         Librdkafka.ConsumerGroupDescription_state(groupPtr),
                     Coordinator = coordinator,
                     Members = members,
+                    AuthorizedOperations = authorizedOperations,
                 };
                 return desc;
             }).ToList();
@@ -426,6 +428,140 @@ namespace Confluent.Kafka
                     Error = error
                 };
             }).ToList();
+        }
+
+        private List<TopicPartitionInfo> extractTopicPartitionInfo(IntPtr topicPartitionInfosPtr, int topicPartitionInfosCount)
+        {
+            if (topicPartitionInfosCount == 0)
+                return new List<TopicPartitionInfo>();
+                
+            IntPtr[] topicPartitionInfos = new IntPtr[topicPartitionInfosCount];
+            Marshal.Copy(topicPartitionInfosPtr, topicPartitionInfos, 0, topicPartitionInfosCount);
+
+            return topicPartitionInfos.Select(topicPartitionInfoPtr => {
+                return new TopicPartitionInfo
+                {
+                    ISR = extractNodeList(
+                        Librdkafka.TopicPartitionInfo_isr(topicPartitionInfoPtr,
+                            out UIntPtr isrCount
+                        ),
+                        (int) isrCount                        
+                    ),
+                    Leader = extractNode(Librdkafka.TopicPartitionInfo_leader(topicPartitionInfoPtr)),
+                    Partition = Librdkafka.TopicPartitionInfo_partition(topicPartitionInfoPtr),
+                    Replicas = extractNodeList(
+                        Librdkafka.TopicPartitionInfo_replicas(topicPartitionInfoPtr,
+                            out UIntPtr replicasCount
+                        ),
+                        (int) replicasCount                        
+                    ),
+                };
+            }).ToList();
+        }
+
+        private DescribeTopicsReport extractDescribeTopicsResults(IntPtr resultPtr) {
+            var topicsPtr = Librdkafka.DescribeTopics_result_topics(resultPtr, out UIntPtr topicsCountPtr);
+
+            var result = new DescribeTopicsReport()
+            {
+                TopicDescriptions = new List<TopicDescription>()
+            };
+
+            if ((int)topicsCountPtr == 0)
+                return result;
+
+            IntPtr[] topicPtrArr = new IntPtr[(int)topicsCountPtr];
+            Marshal.Copy(topicsPtr, topicPtrArr, 0, (int)topicsCountPtr);
+
+            result.TopicDescriptions = topicPtrArr.Select(topicPtr =>
+            {
+
+                var topicName = PtrToStringUTF8(Librdkafka.TopicDescription_name(topicPtr));
+                var error = new Error(Librdkafka.TopicDescription_error(topicPtr), false);
+                var isInternal = Librdkafka.TopicDescription_is_internal(topicPtr) != IntPtr.Zero;
+                List<AclOperation> authorizedOperations = extractAuthorizedOperations(
+                    Librdkafka.TopicDescription_authorized_operations(
+                        topicPtr,
+                        out UIntPtr authorizedOperationCount),
+                    (int) authorizedOperationCount);
+                
+                return new TopicDescription()
+                {
+                    Name = topicName,
+                    Error = error,
+                    AuthorizedOperations = authorizedOperations,
+                    IsInternal = isInternal,
+                    Partitions = extractTopicPartitionInfo(
+                        Librdkafka.TopicDescription_partitions(topicPtr,
+                            out UIntPtr partitionsCount),
+                        (int) partitionsCount
+                    ),
+                };
+            }).ToList();
+            return result;
+        }
+        
+        private Node extractNode(IntPtr nodePtr)
+        {
+            if (nodePtr == IntPtr.Zero)
+            {
+                return null;
+            }
+            
+            return new Node()
+            {
+                Id = (int)Librdkafka.Node_id(nodePtr),
+                Host = PtrToStringUTF8(Librdkafka.Node_host(nodePtr)),
+                Port = (int)Librdkafka.Node_port(nodePtr),
+                Rack = PtrToStringUTF8(Librdkafka.Node_rack(nodePtr)),
+            };
+        }
+
+
+        private List<Node> extractNodeList(IntPtr nodesPtr, int nodesCount)
+        {
+            IntPtr[] nodes = new IntPtr[nodesCount];
+            Marshal.Copy(nodesPtr, nodes, 0, nodesCount);
+
+            return nodes.Select(nodePtr =>
+                extractNode(nodePtr)
+            ).ToList();
+        }
+
+        private unsafe List<AclOperation> extractAuthorizedOperations(IntPtr authorizedOperationsPtr, int authorizedOperationCount)
+        {
+            List<AclOperation> authorizedOperations = new List<AclOperation>(authorizedOperationCount);
+            for (int i = 0; i < authorizedOperationCount; i++)
+            {
+                AclOperation *aclOperationPtr = ((AclOperation *) authorizedOperationsPtr.ToPointer()) + i;
+                authorizedOperations.Add(
+                    *aclOperationPtr);
+            }
+            return authorizedOperations;
+        }
+
+        private DescribeClusterResult extractDescribeClusterResult(IntPtr resultPtr) {
+            var clusterId = PtrToStringUTF8(Librdkafka.DescribeCluster_result_cluster_id(resultPtr));
+            var controller = extractNode(
+                    Librdkafka.DescribeCluster_result_controller(resultPtr));
+
+            var nodes = extractNodeList(
+                Librdkafka.DescribeCluster_result_nodes(resultPtr, out UIntPtr nodeCount),
+                (int) nodeCount);
+
+            List<AclOperation> authorizedOperations = extractAuthorizedOperations(
+                Librdkafka.DescribeCluster_result_authorized_operations(
+                    resultPtr,
+                    out UIntPtr authorizedOperationCount),
+                (int) authorizedOperationCount);
+
+            return new DescribeClusterResult()
+            {
+                ClusterId = clusterId,
+                Controller = controller,
+                AuthorizedOperations = authorizedOperations,
+                Nodes = nodes
+            };
         }
 
         private Task StartPollTask(CancellationToken ct)
@@ -981,6 +1117,45 @@ namespace Confluent.Kafka
                                         
                                         break;
                                     }
+                                    case Librdkafka.EventType.DescribeTopics_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeTopicsResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        var results = extractDescribeTopicsResults(eventPtr);
+                                        if (results.TopicDescriptions.Any(desc => desc.Error.IsError))
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeTopicsResult>)adminClientResult).TrySetException(
+                                                        new DescribeTopicsException(results)));
+                                        }
+                                        else
+                                        {
+                                            Task.Run(() =>
+                                                ((TaskCompletionSource<DescribeTopicsResult>)adminClientResult).TrySetResult(
+                                                    new DescribeTopicsResult() { TopicDescriptions = results.TopicDescriptions }
+                                                ));
+                                        }
+                                        break;
+                                    }
+                                    case Librdkafka.EventType.DescribeCluster_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeClusterResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        var res = extractDescribeClusterResult(eventPtr);
+                                        Task.Run(() =>
+                                            ((TaskCompletionSource<DescribeClusterResult>)adminClientResult).TrySetResult(res));
+                                        break;
+                                    }
                                     default:
                                         // Should never happen.
                                         throw new InvalidOperationException($"Unknown result type: {type}");
@@ -1029,6 +1204,8 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.DescribeConsumerGroups_Result, typeof(TaskCompletionSource<DescribeConsumerGroupsResult>) },
             { Librdkafka.EventType.DescribeUserScramCredentials_Result, typeof(TaskCompletionSource<DescribeUserScramCredentialsResult>) },
             { Librdkafka.EventType.AlterUserScramCredentials_Result, typeof(TaskCompletionSource<Null>) },
+            { Librdkafka.EventType.DescribeTopics_Result, typeof(TaskCompletionSource<DescribeTopicsResult>) },
+            { Librdkafka.EventType.DescribeCluster_Result, typeof(TaskCompletionSource<DescribeClusterResult>) },
         };
 
 
@@ -1460,6 +1637,29 @@ namespace Confluent.Kafka
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
-        
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeTopicsAsync(TopicCollection, DescribeTopicsOptions)" />
+        /// </summary>
+        public Task<DescribeTopicsResult> DescribeTopicsAsync(TopicCollection topicCollection, DescribeTopicsOptions options = null) {
+            var completionSource = new TaskCompletionSource<DescribeTopicsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DescribeTopics(
+                topicCollection, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeClusterAsync(DescribeClusterOptions)" />
+        /// </summary>
+        public Task<DescribeClusterResult> DescribeClusterAsync(DescribeClusterOptions options = null) {
+            var completionSource = new TaskCompletionSource<DescribeClusterResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DescribeCluster(
+                options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
     }
 }
