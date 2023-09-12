@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Xunit;
 using Confluent.Kafka.Admin;
+
 
 namespace Confluent.Kafka.IntegrationTests
 {
