@@ -1,4 +1,17 @@
 {
   "bootstrapServers": "127.0.0.1:9092",
+  "saslPlain": {
+    "bootstrapServers": "127.0.0.1:9093",
+    "users": {
+      "admin": {
+        "username": "admin",
+        "password": "admin"
+      },
+      "user": {
+        "username": "user",
+        "password": "user"
+      }
+    }
+  },
   "oauthbearerBootstrapServers": ""
 }

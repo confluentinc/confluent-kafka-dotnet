@@ -83,6 +83,7 @@ namespace Confluent.Kafka.IntegrationTests
         public const int partitionedTopicNumPartitions = GlobalFixture.partitionedTopicNumPartitions;
 
         private static List<object[]> kafkaParameters;
+        private static List<object[]> saslPlainKafkaParameters;
         private static List<object[]> oAuthBearerKafkaParameters;
 
         private object logLockObj = new object();
@@ -128,6 +129,33 @@ namespace Confluent.Kafka.IntegrationTests
                 };
             }
             return kafkaParameters;
+        }
+
+        public static IEnumerable<object[]> SaslPlainKafkaParameters()
+        {
+            if (saslPlainKafkaParameters == null)
+            {
+                var assemblyPath = typeof(Tests).GetTypeInfo().Assembly.Location;
+                var assemblyDirectory = Path.GetDirectoryName(assemblyPath);
+                var jsonPath = Path.Combine(assemblyDirectory, "testconf.json");
+                var json = JObject.Parse(File.ReadAllText(jsonPath));
+                var saslPlain = json["saslPlain"];
+                var users = saslPlain["users"];
+                var admin = users["admin"];
+                var user = users["user"];
+                saslPlainKafkaParameters = new List<object[]>
+                {
+                    new object[]
+                    {
+                        saslPlain["bootstrapServers"].ToString(),
+                        admin["username"].ToString(),
+                        admin["password"].ToString(),
+                        user["username"].ToString(),
+                        user["password"].ToString(),
+                    }
+                };
+            }
+            return saslPlainKafkaParameters;
         }
 
         public static IEnumerable<object[]> OAuthBearerKafkaParameters()

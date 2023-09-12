@@ -548,21 +548,27 @@ namespace Confluent.Kafka.Examples
         {
             if (commandArgs.Length < 1)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> describe-consumer-groups <group1> [<group2 ... <groupN>]");
+                Console.WriteLine("usage: .. <bootstrapServers> describe-consumer-groups <include_authorized_operations> <group1> [<group2 ... <groupN>]");
                 Environment.ExitCode = 1;
                 return;
             }
+            
+            var includeAuthorizedOperations = (commandArgs[0] == "1");
+            var groupNames = commandArgs.Skip(1).ToList();
 
-            var groupNames = commandArgs.ToList();
             var timeout = TimeSpan.FromSeconds(30);
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            var config = new AdminClientConfig
+            {
+                BootstrapServers = bootstrapServers,
+            };
+            using (var adminClient = new AdminClientBuilder(config).Build())
             {
                 try
                 {
-                    var descResult = await adminClient.DescribeConsumerGroupsAsync(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout });
+                    var descResult = await adminClient.DescribeConsumerGroupsAsync(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout , IncludeAuthorizedOperations = includeAuthorizedOperations});
                     foreach (var group in descResult.ConsumerGroupDescriptions)
                     {
-                        Console.WriteLine($"  Group: {group.GroupId} {group.Error}");
+                        Console.WriteLine($"\n  Group: {group.GroupId} {group.Error}");
                         Console.WriteLine($"  Broker: {group.Coordinator}");
                         Console.WriteLine($"  IsSimpleConsumerGroup: {group.IsSimpleConsumerGroup}");
                         Console.WriteLine($"  PartitionAssignor: {group.PartitionAssignor}");
@@ -578,6 +584,10 @@ namespace Confluent.Kafka.Examples
                                 topicPartitions = String.Join(", ", m.Assignment.TopicPartitions.Select(tp => tp.ToString()));
                             }
                             Console.WriteLine($"      TopicPartitions: [{topicPartitions}]");
+                        }
+                        if(includeAuthorizedOperations){
+                            string operations = string.Join(" ", group.AuthorizedOperations);
+                            Console.WriteLine($"  Authorized operations: {operations}");
                         }
                     }
                 }
@@ -757,6 +767,153 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static void PrintTopicDescriptions(List<TopicDescription> topicDescriptions, bool includeAuthorizedOperations)
+        {
+            foreach (var topic in topicDescriptions)
+            {
+                Console.WriteLine($"\n  Topic: {topic.Name} {topic.Error}");
+                Console.WriteLine($"  Partitions:");
+                foreach (var partition in topic.Partitions)
+                {
+                    Console.WriteLine($"    Partition ID: {partition.Partition} with leader: {partition.Leader}");
+                    if(!partition.ISR.Any()){
+                        Console.WriteLine("      There is no In-Sync-Replica broker for the partition");
+                    }
+                    else{
+                        string isrs = string.Join("; ", partition.ISR);
+                        Console.WriteLine($"      The In-Sync-Replica brokers are: {isrs}");
+                    }
+
+                    if(!partition.Replicas.Any()){
+                        Console.WriteLine("      There is no Replica broker for the partition");
+                    }
+                    else{
+                        string replicas = string.Join("; ", partition.Replicas);
+                        Console.WriteLine($"      The Replica brokers are: {replicas}");
+                    }
+                    
+                }
+                Console.WriteLine($"  Is internal: {topic.IsInternal}");
+                if(includeAuthorizedOperations){
+                    string operations = string.Join(" ", topic.AuthorizedOperations);
+                    Console.WriteLine($"  Authorized operations: {operations}");
+                }
+            }
+        }
+
+        static async Task DescribeTopicsAsync(string bootstrapServers, string[] commandArgs) {
+            if (commandArgs.Length < 3)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> describe-topics <username> <password> <include_authorized_operations> <topic1> [<topic2 ... <topicN>]");
+                Environment.ExitCode = 1;
+                return;
+            }
+            
+            var username = commandArgs[0];
+            var password = commandArgs[1];
+            var includeAuthorizedOperations = (commandArgs[2] == "1");
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                username = null;
+            }
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                password = null;
+            }
+            var topicNames = commandArgs.Skip(3).ToList();
+
+            var timeout = TimeSpan.FromSeconds(30);
+            var config = new AdminClientConfig
+            {
+                BootstrapServers = bootstrapServers,
+            };
+            if (username != null && password != null)
+            {
+                config = new AdminClientConfig
+                {
+                    BootstrapServers = bootstrapServers,
+                    SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                    SaslMechanism = SaslMechanism.Plain,
+                    SaslUsername = username,
+                    SaslPassword = password,
+                };
+            }
+
+            using (var adminClient = new AdminClientBuilder(config).Build())
+            {
+                try
+                {
+                    var descResult = await adminClient.DescribeTopicsAsync(
+                        TopicCollection.OfTopicNames(topicNames),
+                        new DescribeTopicsOptions() { RequestTimeout = timeout , IncludeAuthorizedOperations = includeAuthorizedOperations});
+                    PrintTopicDescriptions(descResult.TopicDescriptions, includeAuthorizedOperations);
+                }
+                catch (DescribeTopicsException e)
+                {
+                    // At least one TopicDescription will have an error.
+                    PrintTopicDescriptions(e.Results.TopicDescriptions, includeAuthorizedOperations);
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred describing topics: {e}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
+
+        static async Task DescribeClusterAsync(string bootstrapServers, string[] commandArgs) {
+            if (commandArgs.Length < 3)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> describe-cluster <username> <password> <include_authorized_operations>");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            var username = commandArgs[0];
+            var password = commandArgs[1];
+            var includeAuthorizedOperations = (commandArgs[2] == "1");
+
+            var timeout = TimeSpan.FromSeconds(30);
+            var config = new AdminClientConfig
+            {
+                BootstrapServers = bootstrapServers,
+            };
+            if (username != null && password != null)
+            {
+                config = new AdminClientConfig
+                {
+                    BootstrapServers = bootstrapServers,
+                    SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                    SaslMechanism = SaslMechanism.Plain,
+                    SaslUsername = username,
+                    SaslPassword = password,
+                };
+            }
+
+            using (var adminClient = new AdminClientBuilder(config).Build())
+            {
+                try
+                {
+                    var descResult = await adminClient.DescribeClusterAsync(new DescribeClusterOptions() { RequestTimeout = timeout , IncludeAuthorizedOperations = includeAuthorizedOperations});
+                    
+                    Console.WriteLine($"  Cluster Id: {descResult.ClusterId}\n  Controller: {descResult.Controller}");
+                    Console.WriteLine("  Nodes:");
+                    foreach(var node in descResult.Nodes){
+                        Console.WriteLine($"    {node}");
+                    }
+                    if(includeAuthorizedOperations){
+                        string operations = string.Join(" ", descResult.AuthorizedOperations);
+                        Console.WriteLine($"  Authorized operations: {operations}");
+                    }
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred describing cluster: {e}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
+
         public static async Task Main(string[] args)
         {
             if (args.Length < 2)
@@ -768,8 +925,8 @@ namespace Confluent.Kafka.Examples
                         "list-consumer-groups", "describe-consumer-groups",
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
                         "incremental-alter-configs", "describe-user-scram-credentials", 
-                        "alter-user-scram-credentials"
-
+                        "alter-user-scram-credentials", "describe-topics",
+                        "describe-cluster"
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
@@ -823,6 +980,12 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "alter-user-scram-credentials":
                     await AlterUserScramCredentialsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "describe-topics":
+                    await DescribeTopicsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "describe-cluster":
+                    await DescribeClusterAsync(bootstrapServers, commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");

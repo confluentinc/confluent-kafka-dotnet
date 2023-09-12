@@ -14,40 +14,41 @@
 //
 // Refer to LICENSE for more information.
 
-namespace Confluent.Kafka
+using System.Collections.Generic;
+
+namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Node represents a Kafka broker.
+    ///     Represents a single topic's description in the result of a
+    ///     describe topic operation.
     /// </summary>
-    public class Node
+    public class TopicDescription
     {
         /// <summary>
-        ///     Id represents the Node Id.
+        ///     The topic name.
         /// </summary>
-        public int Id { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
-        ///     Host represents the host of the broker.
+        ///     Error, if any, of topic reported by the broker
         /// </summary>
-        public string Host { get; set; }
+        public Error Error { get; set; }
+        
+        /// <summary>
+        ///      Whether the topic is internal to Kafka.
+        ///      An example of an internal topic is the offsets and group management topic: __consumer_offsets.
+        /// </summary>
+        public bool IsInternal { get; set; }
 
         /// <summary>
-        ///     Port represents the port of the broker.
+        ///    List of partitions and their information.
         /// </summary>
-        public int Port { get; set; }
+        public List<TopicPartitionInfo> Partitions { get; set; }
 
         /// <summary>
-        ///     Rack id (optional).
+        ///    AclOperation list.
         /// </summary>
-        public string Rack { get; set; }
+        public List<AclOperation> AuthorizedOperations { get; set; }
 
-        /// <summary>
-        ///    Returns a human readable representation of this object.
-        /// </summary>
-        public override string ToString()
-        {
-            var rack = Rack != null ? ", Rack = " + Rack: "";
-            return $"Id = {Id}, {Host}:{Port}{rack}";
-        }
     }
 }
