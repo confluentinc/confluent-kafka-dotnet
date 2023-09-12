@@ -17,7 +17,7 @@
 using System.Collections.Generic;
 
 
-namespace Confluent.Kafka.Admin
+namespace Confluent.Kafka
 {
     /// <summary>
     ///     TopicPartitionInfo represents the description of a partition within a topic.
