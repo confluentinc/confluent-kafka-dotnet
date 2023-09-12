@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2018-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -529,6 +529,47 @@ namespace Confluent.Kafka
         ///     A Task with an empty result when successful.
         /// </returns>
         Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
+
+        /// <summary>
+        ///    Describes topics in the cluster.
+        /// </summary>
+        /// <param name="topicCollection">
+        ///     A collection of topics to describe.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while describing topics.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.DescribeTopicsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeTopicsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A <see cref="Confluent.Kafka.Admin.DescribeTopicsResult"/>, which contains a List of
+        ///     <see cref="Confluent.Kafka.Admin.TopicDescription"/>.
+        /// </returns>
+        Task<DescribeTopicsResult> DescribeTopicsAsync(
+            TopicCollection topicCollection, DescribeTopicsOptions options = null);
+
+        /// <summary>
+        ///    Describes the cluster.
+        /// </summary>
+        /// <param name="options">
+        ///     The options to use while describing cluster.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <returns>
+        ///     A <see cref="Confluent.Kafka.Admin.DescribeClusterResult"/>.
+        /// </returns>
+        Task<DescribeClusterResult> DescribeClusterAsync(
+            DescribeClusterOptions options = null);
     }
 
 }
