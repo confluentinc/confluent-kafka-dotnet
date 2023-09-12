@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,41 +14,49 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
 
-namespace Confluent.Kafka
+
+namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Node represents a Kafka broker.
+    ///     Represents the result of a describe cluster operation.
     /// </summary>
-    public class Node
+    public class DescribeClusterResult
     {
         /// <summary>
-        ///     Id represents the Node Id.
+        ///     Current cluster Id.
         /// </summary>
-        public int Id { get; set; }
+        public string ClusterId { get; set; }
 
         /// <summary>
-        ///     Host represents the host of the broker.
+        ///     Current controller (optional).
         /// </summary>
-        public string Host { get; set; }
+        public Node Controller { get; set; }
 
         /// <summary>
-        ///     Port represents the port of the broker.
+        ///     Nodes in the cluster.
         /// </summary>
-        public int Port { get; set; }
+        public List<Node> Nodes { get; set; }
 
         /// <summary>
-        ///     Rack id (optional).
+        ///    AclOperation list.
         /// </summary>
-        public string Rack { get; set; }
+        public List<AclOperation> AuthorizedOperations { get; set; }
+
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
-        public override string ToString()
-        {
-            var rack = Rack != null ? ", Rack = " + Rack: "";
-            return $"Id = {Id}, {Host}:{Port}{rack}";
+        public override string ToString() {
+            string res = "ClusterId: ";
+            res += ClusterId + "\n";
+            res += "ControllerId: " + Controller + "\n";
+            res += "Nodes:\n";
+            foreach (Node node in Nodes) {
+                res += "\t" + node.ToString() + "\n";
+            }
+            return res;
         }
     }
 }
