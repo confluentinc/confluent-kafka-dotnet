@@ -529,10 +529,20 @@ namespace Confluent.Kafka
         ///     A Task with an empty result when successful.
         /// </returns>
         Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
+    }
 
+    /// <summary>
+    ///     Extension methods for default <see cref="IAdminClient"/> implementations.
+    /// </summary>
+    public static class IAdminClientExtensions
+    {
+        
         /// <summary>
         ///    Describes topics in the cluster.
         /// </summary>
+        /// <param name="adminClient">
+        ///     AdminClient interface.
+        /// </param>
         /// <param name="topicCollection">
         ///     A collection of topics to describe.
         /// </param>
@@ -553,12 +563,24 @@ namespace Confluent.Kafka
         ///     A <see cref="Confluent.Kafka.Admin.DescribeTopicsResult"/>, which contains a List of
         ///     <see cref="Confluent.Kafka.Admin.TopicDescription"/>.
         /// </returns>
-        Task<DescribeTopicsResult> DescribeTopicsAsync(
-            TopicCollection topicCollection, DescribeTopicsOptions options = null);
+        public static Task<DescribeTopicsResult> DescribeTopicsAsync(
+            this IAdminClient adminClient,
+            TopicCollection topicCollection, DescribeTopicsOptions options = null)
+        {
+            if (adminClient is AdminClient)
+            {
+                return ((AdminClient) adminClient).DescribeTopicsAsync(
+                    topicCollection, options);
+            }
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         ///    Describes the cluster.
         /// </summary>
+        /// <param name="adminClient">
+        ///     AdminClient interface.
+        /// </param>
         /// <param name="options">
         ///     The options to use while describing cluster.
         /// </param>
@@ -568,8 +590,18 @@ namespace Confluent.Kafka
         /// <returns>
         ///     A <see cref="Confluent.Kafka.Admin.DescribeClusterResult"/>.
         /// </returns>
-        Task<DescribeClusterResult> DescribeClusterAsync(
-            DescribeClusterOptions options = null);
+        public static Task<DescribeClusterResult> DescribeClusterAsync(
+            this IAdminClient adminClient,
+            DescribeClusterOptions options = null)
+        {
+            if (adminClient is AdminClient)
+            {
+                return ((AdminClient) adminClient).DescribeClusterAsync(
+                    options);
+            }
+            throw new NotImplementedException();
+        }
     }
+
 
 }
