@@ -28,38 +28,40 @@ namespace Confluent.Kafka.IntegrationTests
     {
 
         /// <summary>
-        ///     Test functionality of AdminClient.DescribeCLuster and
+        ///     Test functionality of AdminClient.DescribeCluster and
         ///     We test three cases:
-        ///     1. Without creating Acls and without includeAuthorizedOperations .
-        ///     2. Without creating Acls and with includeAuthorizedOperations.
-        ///     3. After creating Acls and without includeAuthorizedOperations.
+        ///     1. Without creating ACLs and without includeAuthorizedOperations .
+        ///     2. Without creating ACLs and with includeAuthorizedOperations.
+        ///     3. After creating ACLs with the user matched by the ACL.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_DescribeCluster(string bootstrapServers)
+        [Theory, MemberData(nameof(SaslPlainKafkaParameters))]
+        public async void AdminClient_DescribeCluster(string bootstrapServers,
+            string admin, string adminSecret, string user, string userSecret)
         {
             LogToFile("start AdminClient_DescribeCluster");
 
             // Create an AdminClient here - we need it throughout the test.
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig {
-                BootstrapServers = bootstrapServers }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig
+            {
+                SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                SaslMechanism = SaslMechanism.Plain,
+                SaslUsername = admin,
+                SaslPassword = adminSecret,
+                BootstrapServers = bootstrapServers
+            }).Build())
             {
                 var listOptionsWithTimeout = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
                 var describeOptionsWithTimeout = new Admin.DescribeClusterOptions() { RequestTimeout = TimeSpan.FromSeconds(30) , IncludeAuthorizedOperations = false};
                 var describeOptionsWithAuthOps = new Admin.DescribeClusterOptions() { RequestTimeout = TimeSpan.FromSeconds(30) , IncludeAuthorizedOperations = true};
 
-                var descResult = adminClient.DescribeClusterAsync(describeOptionsWithTimeout).Result;
-                var clusterDesc = descResult.clusterDescription;
+                var descResult = await adminClient.DescribeClusterAsync(describeOptionsWithTimeout);
 
-                Assert.NotEmpty(clusterDesc.Nodes);
-                Assert.Empty(clusterDesc.AuthorizedOperations);
+                Assert.NotEmpty(descResult.Nodes);
+                Assert.Empty(descResult.AuthorizedOperations);
 
-                descResult = adminClient.DescribeClusterAsync(describeOptionsWithAuthOps).Result;
-                clusterDesc = descResult.clusterDescription;
-                Assert.NotEmpty(clusterDesc.AuthorizedOperations);
-                var initialCount = clusterDesc.AuthorizedOperations.Count;
+                descResult = await adminClient.DescribeClusterAsync(describeOptionsWithAuthOps);
+                Assert.Equal(7, descResult.AuthorizedOperations.Count);
                 
-                LogToFile($"{initialCount} initial");
-
                 var clusterACLs =  new List<AclBinding>
                 {
                     new AclBinding()
@@ -72,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
                         },
                         Entry = new AccessControlEntry
                         {
-                            Principal = "User:ANONYMOUS",
+                            Principal = "User:user",
                             Host =  "*",
                             Operation = AclOperation.Alter,
                             PermissionType = AclPermissionType.Allow
@@ -80,46 +82,44 @@ namespace Confluent.Kafka.IntegrationTests
                     },
                 };
 
-                var clusterACLFilter = new List<AclBindingFilter>{
-                    new AclBindingFilter()
-                    {
-                        PatternFilter = new ResourcePatternFilter
-                        {
-                            Type = ResourceType.Broker,
-                            Name = "kafka-cluster",
-                            ResourcePatternType = ResourcePatternType.Literal
-                        },
-                        EntryFilter = new AccessControlEntryFilter
-                        {
-                            Principal = "User:ANONYMOUS",
-                            Host = "*",
-                            Operation = AclOperation.Alter,
-                            PermissionType = AclPermissionType.Allow
-                        }
-                    },
-                };
+                var clusterACLFilters = clusterACLs.Select(acl =>
+                    acl.ToFilter()).ToList();
 
                 var createAclsOptions = new CreateAclsOptions
                 {
                     RequestTimeout = TimeSpan.FromSeconds(30)
                 };
+                await adminClient.CreateAclsAsync(clusterACLs, createAclsOptions);
+                
+                using (var adminClientUser = new AdminClientBuilder(new AdminClientConfig
+                {
+                    SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                    SaslMechanism = SaslMechanism.Plain,
+                    SaslUsername = user,
+                    SaslPassword = userSecret,
+                    BootstrapServers = bootstrapServers
+                }).Build())
+                {
+                     descResult = await adminClientUser.DescribeClusterAsync(describeOptionsWithAuthOps);
+                }
+
+                Assert.NotEmpty(descResult.Nodes);
+                Assert.NotEmpty(descResult.AuthorizedOperations);
+
+                var finalCount = descResult.AuthorizedOperations.Count;
+                Assert.Equal(new List<AclOperation>()
+                {
+                    AclOperation.Alter,
+                    AclOperation.Describe,
+                }, descResult.AuthorizedOperations);
+
                 var deleteAclsOptions = new DeleteAclsOptions
                 {
                     RequestTimeout = TimeSpan.FromSeconds(30)
                 };
-                var createAclsException = adminClient.CreateAclsAsync(clusterACLs, createAclsOptions).Exception;
-                
-                descResult = adminClient.DescribeClusterAsync(describeOptionsWithAuthOps).Result;
-                clusterDesc = descResult.clusterDescription;
-
-                Assert.NotEmpty(clusterDesc.Nodes);
-                Assert.NotEmpty(clusterDesc.AuthorizedOperations);
-
-                var finalCount = clusterDesc.AuthorizedOperations.Count;
-                LogToFile($"{finalCount} final");
-                var resultDeleteAcls = adminClient.DeleteAclsAsync(
-                    clusterACLFilter, deleteAclsOptions
-                ).Result;
+                var resultDeleteAcls = await adminClient.DeleteAclsAsync(
+                    clusterACLFilters, deleteAclsOptions
+                );
 
                 Assert.Single(resultDeleteAcls);
             }

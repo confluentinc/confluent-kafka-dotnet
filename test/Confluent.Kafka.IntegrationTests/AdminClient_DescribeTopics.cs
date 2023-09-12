@@ -34,14 +34,21 @@ namespace Confluent.Kafka.IntegrationTests
         ///     1. Without creating Acls and with IncludeAuthorizedOperations.
         ///     2. After creating Acls and with IncludeAuthorizedOperations.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_DescribeTopics(string bootstrapServers)
+        [Theory, MemberData(nameof(SaslPlainKafkaParameters))]
+        public async void AdminClient_DescribeTopics(string bootstrapServers,
+            string admin, string adminSecret, string user, string userSecret)
         {
             LogToFile("start AdminClient_DescribeTopics");
 
             // Create an AdminClient here - we need it throughout the test.
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig {
-                BootstrapServers = bootstrapServers }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig
+            {
+                BootstrapServers = bootstrapServers,
+                SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                SaslMechanism = SaslMechanism.Plain,
+                SaslUsername = admin,
+                SaslPassword = adminSecret
+            }).Build())
             {
                 var describeOptionsWithTimeout = new Admin.DescribeTopicsOptions() { 
                     RequestTimeout = TimeSpan.FromSeconds(30), 
@@ -61,18 +68,27 @@ namespace Confluent.Kafka.IntegrationTests
 
                 try
                 {
-                    var descResult = adminClient.DescribeTopicsAsync(
+                    var descResult = await adminClient.DescribeTopicsAsync(
                         TopicCollection.OfTopicNames(topicList),
-                        describeOptionsWithTimeout).Result;
+                        describeOptionsWithTimeout);
                 }
-                catch(AggregateException ex){
-                    var desTE = (DescribeTopicsException) ex.InnerException;
-                    var resCount = desTE.Results.TopicDescriptions.Count;
-                    Assert.True(resCount == 2);
-                    Assert.Empty(desTE.Results.TopicDescriptions[0].AuthorizedOperations);
-                    Assert.Empty(desTE.Results.TopicDescriptions[1].AuthorizedOperations);
-                    Assert.True(desTE.Results.TopicDescriptions[0].Error.IsError);
-                    Assert.True(!(desTE.Results.TopicDescriptions[1].Error.IsError));
+                catch (DescribeTopicsException ex)
+                {
+                    var resCount = ex.Results.TopicDescriptions.Count;
+                    Assert.Equal(2, resCount);
+                    
+                    // TODO: remove after fix
+                    ex.Results.TopicDescriptions.Sort(
+                        (a,b) =>
+                        {
+                            return topicList.IndexOf(a.Name) -
+                                topicList.IndexOf(b.Name);
+                        }
+                    );
+                    Assert.Empty(ex.Results.TopicDescriptions[0].AuthorizedOperations);
+                    Assert.Empty(ex.Results.TopicDescriptions[1].AuthorizedOperations);
+                    Assert.True(ex.Results.TopicDescriptions[0].Error.IsError);
+                    Assert.True(!ex.Results.TopicDescriptions[1].Error.IsError);
                 }
 
                 var topicListAuthOps = 
@@ -82,12 +98,11 @@ namespace Confluent.Kafka.IntegrationTests
                         singlePartitionTopic
                     }
                 );
-                var descResWithAuthOps = adminClient.DescribeTopicsAsync(
+                var descResWithAuthOps = await adminClient.DescribeTopicsAsync(
                     topicListAuthOps,
-                    describeOptionsWithAuthOps).Result;
+                    describeOptionsWithAuthOps);
                 Assert.NotEmpty(descResWithAuthOps.TopicDescriptions[0].AuthorizedOperations);
-                var initialCount = descResWithAuthOps.TopicDescriptions[0].AuthorizedOperations.Count;
-                LogToFile($"{initialCount} initial");
+                Assert.Equal(8, descResWithAuthOps.TopicDescriptions[0].AuthorizedOperations.Count);
 
                 var topicACLs =  new List<AclBinding>
                 {
@@ -101,31 +116,12 @@ namespace Confluent.Kafka.IntegrationTests
                         },
                         Entry = new AccessControlEntry
                         {
-                            Principal = "User:ANONYMOUS",
+                            Principal = "User:user",
                             Host =  "*",
                             Operation = AclOperation.Read,
                             PermissionType = AclPermissionType.Allow
                         }
                     },
-                };
-
-                var createAclsOptions = new CreateAclsOptions
-                {
-                    RequestTimeout = TimeSpan.FromSeconds(30)
-                };
-                var deleteAclsOptions = new DeleteAclsOptions
-                {
-                    RequestTimeout = TimeSpan.FromSeconds(30)
-                };
-                var createAclsException = adminClient.CreateAclsAsync(topicACLs, createAclsOptions).Exception;
-
-                descResWithAuthOps = adminClient.DescribeTopicsAsync(topicListAuthOps, describeOptionsWithAuthOps).Result;
-                Assert.NotEmpty(descResWithAuthOps.TopicDescriptions[0].AuthorizedOperations);
-                var finalCount = descResWithAuthOps.TopicDescriptions[0].AuthorizedOperations.Count;
-                LogToFile($"{finalCount} final");
-
-                topicACLs =  new List<AclBinding>
-                {
                     new AclBinding()
                     {
                         Pattern = new ResourcePattern
@@ -136,18 +132,57 @@ namespace Confluent.Kafka.IntegrationTests
                         },
                         Entry = new AccessControlEntry
                         {
-                            Principal = "User:ANONYMOUS",
+                            Principal = "User:user",
                             Host =  "*",
-                            Operation = AclOperation.Delete,
+                            Operation = AclOperation.Alter,
                             PermissionType = AclPermissionType.Allow
                         }
                     },
                 };
-                createAclsException = adminClient.CreateAclsAsync(topicACLs, createAclsOptions).Exception;
+
+                var createAclsOptions = new CreateAclsOptions
+                {
+                    RequestTimeout = TimeSpan.FromSeconds(30)
+                };
+                await adminClient.CreateAclsAsync(topicACLs, createAclsOptions);
+
+                using (var adminClientUser = new AdminClientBuilder(new AdminClientConfig
+                {
+                    SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                    SaslMechanism = SaslMechanism.Plain,
+                    SaslUsername = user,
+                    SaslPassword = userSecret,
+                    BootstrapServers = bootstrapServers
+                }).Build())
+                {
+                     descResWithAuthOps = await adminClientUser.DescribeTopicsAsync(topicListAuthOps,
+                        describeOptionsWithAuthOps);
+                }
+
+                var descResAuthOps =
+                    descResWithAuthOps.TopicDescriptions[0].AuthorizedOperations;
+                Assert.Equal(
+                    new List<AclOperation>()
+                    {
+                        AclOperation.Read,
+                        AclOperation.Alter,
+                        AclOperation.Describe, // implicit because of Read.
+                    },
+                    descResAuthOps
+                );
+
+                var deleteAclsOptions = new DeleteAclsOptions
+                {
+                    RequestTimeout = TimeSpan.FromSeconds(30)
+                };
+                var deleteTopicACLs = topicACLs.Select((acl) =>
+                    acl.ToFilter()
+                ).ToList();
+                await adminClient.DeleteAclsAsync(deleteTopicACLs, deleteAclsOptions);
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   AdminClient_DescribeTopics");
+            LogToFile("end AdminClient_DescribeTopics");
         }
     }
 }

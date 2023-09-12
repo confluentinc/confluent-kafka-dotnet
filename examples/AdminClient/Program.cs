@@ -802,21 +802,43 @@ namespace Confluent.Kafka.Examples
         }
 
         static async Task DescribeTopicsAsync(string bootstrapServers, string[] commandArgs) {
-            if (commandArgs.Length < 1)
+            if (commandArgs.Length < 3)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> describe-topics <include_authorized_operations> <topic1> [<topic2 ... <topicN>]");
+                Console.WriteLine("usage: .. <bootstrapServers> describe-topics <username> <password> <include_authorized_operations> <topic1> [<topic2 ... <topicN>]");
                 Environment.ExitCode = 1;
                 return;
             }
             
-            var includeAuthorizedOperations = (commandArgs[0] == "1");
-            var topicNames = commandArgs.Skip(1).ToList();
+            var username = commandArgs[0];
+            var password = commandArgs[1];
+            var includeAuthorizedOperations = (commandArgs[2] == "1");
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                username = null;
+            }
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                password = null;
+            }
+            var topicNames = commandArgs.Skip(3).ToList();
 
             var timeout = TimeSpan.FromSeconds(30);
             var config = new AdminClientConfig
             {
                 BootstrapServers = bootstrapServers,
             };
+            if (username != null && password != null)
+            {
+                config = new AdminClientConfig
+                {
+                    BootstrapServers = bootstrapServers,
+                    SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                    SaslMechanism = SaslMechanism.Plain,
+                    SaslUsername = username,
+                    SaslPassword = password,
+                };
+            }
+
             using (var adminClient = new AdminClientBuilder(config).Build())
             {
                 try
@@ -840,20 +862,34 @@ namespace Confluent.Kafka.Examples
         }
 
         static async Task DescribeClusterAsync(string bootstrapServers, string[] commandArgs) {
-            if (commandArgs.Length < 1)
+            if (commandArgs.Length < 3)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> describe-cluster <include_authorized_operations>");
+                Console.WriteLine("usage: .. <bootstrapServers> describe-cluster <username> <password> <include_authorized_operations>");
                 Environment.ExitCode = 1;
                 return;
             }
-            
-            var includeAuthorizedOperations = (commandArgs[0] == "1");
+
+            var username = commandArgs[0];
+            var password = commandArgs[1];
+            var includeAuthorizedOperations = (commandArgs[2] == "1");
 
             var timeout = TimeSpan.FromSeconds(30);
             var config = new AdminClientConfig
             {
                 BootstrapServers = bootstrapServers,
             };
+            if (username != null && password != null)
+            {
+                config = new AdminClientConfig
+                {
+                    BootstrapServers = bootstrapServers,
+                    SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                    SaslMechanism = SaslMechanism.Plain,
+                    SaslUsername = username,
+                    SaslPassword = password,
+                };
+            }
+
             using (var adminClient = new AdminClientBuilder(config).Build())
             {
                 try
