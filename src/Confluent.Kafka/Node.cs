@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Text;
+
 
 namespace Confluent.Kafka
 {
@@ -43,12 +45,18 @@ namespace Confluent.Kafka
         public string Rack { get; set; }
 
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Returns a JSON representation of this object.
         /// </summary>
+        /// <returns>
+        ///     A JSON representation of this object.
+        /// </returns>
         public override string ToString()
         {
-            var rack = Rack != null ? ", Rack = " + Rack: "";
-            return $"Id = {Id}, {Host}:{Port}{rack}";
+            var result = new StringBuilder();
+            result.Append($"{{\"Id\": {Id}");
+            result.Append($", \"Host\": {Host.Quote()}, \"Port\": {Port}");
+            result.Append($", \"Rack\": \"{Rack?.Quote()}\"}}");
+            return result.ToString();
         }
     }
 }

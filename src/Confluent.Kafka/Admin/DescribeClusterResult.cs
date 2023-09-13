@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 
 namespace Confluent.Kafka.Admin
@@ -44,19 +46,29 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         public List<AclOperation> AuthorizedOperations { get; set; }
 
-
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Returns a JSON representation of this object.
         /// </summary>
-        public override string ToString() {
-            string res = "ClusterId: ";
-            res += ClusterId + "\n";
-            res += "ControllerId: " + Controller + "\n";
-            res += "Nodes:\n";
-            foreach (Node node in Nodes) {
-                res += "\t" + node.ToString() + "\n";
-            }
-            return res;
+        /// <returns>
+        ///     A JSON representation of this object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            var nodes = string.Join(",",
+                Nodes.Select(node =>
+                    node?.ToString()
+                ).ToList());
+            var authorizedOperations = string.Join(",",
+                AuthorizedOperations.Select(authorizedOperation =>
+                    "\"" + authorizedOperation.ToString() + "\""
+                ).ToList());
+            
+            result.Append($"{{\"ClusterId\": \"{ClusterId.Quote()}\"");
+            result.Append($", \"Controller\": {Controller}, \"Nodes\": [{nodes}]");
+            result.Append($", \"AuthorizedOperations\": [{authorizedOperations}]}}");
+
+            return result.ToString();
         }
     }
 }

@@ -14,6 +14,9 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Linq;
+using System.Text;
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -45,5 +48,28 @@ namespace Confluent.Kafka.Admin
         ///     Member assignment.
         /// </summary>
         public MemberAssignment Assignment { get; set; }
+        
+        /// <summary>
+        ///     Returns a JSON representation of this object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation of this object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            var groupInstanceId = GroupInstanceId == null ? "null" :
+                                    $"\"{GroupInstanceId.Quote()}\"";
+            var assignment = string.Join(",",
+                Assignment.TopicPartitions.Select(topicPartition => 
+                    $"{{\"Topic\": \"{topicPartition.Topic.Quote()}\", \"Partition\": {topicPartition.Partition}}}"
+                ).ToList());
+            
+            result.Append($"{{\"ClientId\": \"{ClientId.Quote()}\"");
+            result.Append($", \"GroupInstanceId\": {groupInstanceId}, \"ConsumerId\": \"{ConsumerId.Quote()}\"");
+            result.Append($", \"Host\": \"{Host.Quote()}\", \"Assignment\": {assignment}}}");
+
+            return result.ToString();
+        }
     }
 }

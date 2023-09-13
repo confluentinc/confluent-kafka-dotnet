@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 
 namespace Confluent.Kafka.Admin
@@ -30,14 +32,21 @@ namespace Confluent.Kafka.Admin
         public List<TopicDescription> TopicDescriptions { get; set; }
 
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Returns a JSON representation of this object.
         /// </summary>
-        public override string ToString() {
-            string res = "Groups:\n";
-            foreach (TopicDescription topic in TopicDescriptions) {
-                res += "\t" + topic.ToString() + "\n";
-            }
-            return res;
+        /// <returns>
+        ///     A JSON representation of this object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            var topicDescriptions = string.Join(",",
+                TopicDescriptions.Select(topicDescription =>
+                    topicDescription.ToString()
+                ).ToList());
+            
+            result.Append($"{{\"TopicDescriptions\": [{topicDescriptions}]}}");
+            return result.ToString();
         }
     }
 }

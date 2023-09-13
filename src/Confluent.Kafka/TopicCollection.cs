@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 
 namespace Confluent.Kafka
@@ -45,6 +47,21 @@ namespace Confluent.Kafka
             {
                 Topics = topics
             };
+        }
+
+        /// <summary>
+        ///     Returns a JSON representation of this object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation of this object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            var topics = string.Join(",",
+                Topics.Select(topic => topic?.Quote()).ToList());
+            result.Append($"{{\"Topics\": [{topics}]}}");
+            return result.ToString();
         }
     }
 }

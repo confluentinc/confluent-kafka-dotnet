@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 
 namespace Confluent.Kafka
@@ -44,5 +46,30 @@ namespace Confluent.Kafka
         ///    In-sync replica brokers list.
         /// </summary>
         public List<Node> ISR { get; set; }
+
+        /// <summary>
+        ///     Returns a JSON representation of this object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation of this object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            var leader = Leader?.ToString();
+            var replicas = string.Join(",",
+                Replicas.Select(replica =>
+                    replica?.ToString()?.Quote())
+            );
+            var isrs = string.Join(",",
+                ISR.Select(isr =>
+                    isr?.ToString()?.Quote())
+            );
+            
+            result.Append($"{{\"Partition\": {Partition}");
+            result.Append($", \"Leader\": {leader}, \"Replicas\": [{replicas}]");
+            result.Append($", \"ISR\": [{isrs}]}}");
+            return result.ToString();
+        }
     }
 }

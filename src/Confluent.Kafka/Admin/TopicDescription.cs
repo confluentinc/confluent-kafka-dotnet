@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 
 namespace Confluent.Kafka.Admin
@@ -50,6 +52,28 @@ namespace Confluent.Kafka.Admin
         ///    AclOperation list.
         /// </summary>
         public List<AclOperation> AuthorizedOperations { get; set; }
-
+        
+        /// <summary>
+        ///     Returns a JSON representation of this object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation of this object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            var partitions = string.Join(",",
+                Partitions.Select(partition =>
+                    partition.ToString()).ToList());
+            var authorizedOperations = string.Join(",",
+                AuthorizedOperations.Select(authorizedOperation =>
+                    "\"" + authorizedOperation.ToString() + "\""
+                ).ToList());
+            
+            result.Append($"{{\"Name\": \"{Name.Quote()}\"");
+            result.Append($", \"Error\": \"{Error.Code}\", \"IsInternal\": {IsInternal}");
+            result.Append($", \"Partitions\": [{partitions}], \"AuthorizedOperations\": [{authorizedOperations}]}}");
+            return result.ToString();
+        }
     }
 }

@@ -1639,7 +1639,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeTopicsAsync(TopicCollection, DescribeTopicsOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.DescribeTopicsAsync(IAdminClient, TopicCollection, DescribeTopicsOptions)" />
         /// </summary>
         public Task<DescribeTopicsResult> DescribeTopicsAsync(TopicCollection topicCollection, DescribeTopicsOptions options = null) {
             var completionSource = new TaskCompletionSource<DescribeTopicsResult>();
@@ -1651,7 +1651,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeClusterAsync(DescribeClusterOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.DescribeClusterAsync(IAdminClient, DescribeClusterOptions)" />
         /// </summary>
         public Task<DescribeClusterResult> DescribeClusterAsync(DescribeClusterOptions options = null) {
             var completionSource = new TaskCompletionSource<DescribeClusterResult>();
