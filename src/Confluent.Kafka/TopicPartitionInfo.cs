@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,42 +14,39 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 
-namespace Confluent.Kafka.Admin
+namespace Confluent.Kafka
 {
     /// <summary>
-    ///     MemberDescription represents the description of a consumer group member
+    ///     TopicPartitionInfo represents the description of a partition within a topic.
+    ///     Used for result of DescribeTopics for an individual topic.
     /// </summary>
-    public class MemberDescription
+    public class TopicPartitionInfo
     {
         /// <summary>
-        ///     Client id.
+        ///     Partition id.
         /// </summary>
-        public string ClientId { get; set; }
+        public int Partition { get; set; }
 
         /// <summary>
-        ///     Group instance id.
+        ///     Leader broker.
         /// </summary>
-        public string GroupInstanceId { get; set; }
+        public Node Leader { get; set; }
 
         /// <summary>
-        ///     Consumer id.
+        ///    Replica brokers list.
         /// </summary>
-        public string ConsumerId { get; set; }
+        public List<Node> Replicas { get; set; }
 
         /// <summary>
-        ///     Group member host.
+        ///    In-sync replica brokers list.
         /// </summary>
-        public string Host { get; set; }
+        public List<Node> ISR { get; set; }
 
-        /// <summary>
-        ///     Member assignment.
-        /// </summary>
-        public MemberAssignment Assignment { get; set; }
-        
         /// <summary>
         ///     Returns a JSON representation of this object.
         /// </summary>
@@ -59,15 +56,19 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            var assignment = string.Join(",",
-                Assignment.TopicPartitions.Select(topicPartition => 
-                    $"{{\"Topic\": {topicPartition.Topic.Quote()}, \"Partition\": {topicPartition.Partition.Value}}}"
-                ).ToList());
+            var leader = Leader?.ToString() ?? "null";
+            var replicas = string.Join(",",
+                Replicas.Select(replica =>
+                    replica?.ToString() ?? "null")
+            );
+            var isrs = string.Join(",",
+                ISR.Select(isr =>
+                    isr?.ToString() ?? "null")
+            );
             
-            result.Append($"{{\"ClientId\": {ClientId.Quote()}");
-            result.Append($", \"GroupInstanceId\": {GroupInstanceId.Quote()}, \"ConsumerId\": {ConsumerId.Quote()}");
-            result.Append($", \"Host\": {Host.Quote()}, \"Assignment\": [{assignment}]}}");
-
+            result.Append($"{{\"Partition\": {Partition}");
+            result.Append($", \"Leader\": {leader}, \"Replicas\": [{replicas}]");
+            result.Append($", \"ISR\": [{isrs}]}}");
             return result.ToString();
         }
     }

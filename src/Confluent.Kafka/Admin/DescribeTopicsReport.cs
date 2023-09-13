@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,35 +14,23 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 
-namespace Confluent.Kafka
+namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Node represents a Kafka broker.
+    ///     Represents the result of a describe topic operation, where one
+    ///     or more of the results has an error.
     /// </summary>
-    public class Node
+    public class DescribeTopicsReport
     {
         /// <summary>
-        ///     Id represents the Node Id.
+        ///    List of topic descriptions.
         /// </summary>
-        public int Id { get; set; }
-
-        /// <summary>
-        ///     Host represents the host of the broker.
-        /// </summary>
-        public string Host { get; set; }
-
-        /// <summary>
-        ///     Port represents the port of the broker.
-        /// </summary>
-        public int Port { get; set; }
-
-        /// <summary>
-        ///     Rack id (optional).
-        /// </summary>
-        public string Rack { get; set; }
+        public List<TopicDescription> TopicDescriptions { get; set; }
 
         /// <summary>
         ///     Returns a JSON representation of this object.
@@ -53,9 +41,12 @@ namespace Confluent.Kafka
         public override string ToString()
         {
             var result = new StringBuilder();
-            result.Append($"{{\"Id\": {Id}");
-            result.Append($", \"Host\": {Host.Quote()}, \"Port\": {Port}");
-            result.Append($", \"Rack\": {Rack.Quote()}}}");
+            var topicDescriptions = string.Join(",",
+                TopicDescriptions.Select(topicDescription =>
+                    topicDescription.ToString()
+                ).ToList());
+            
+            result.Append($"{{\"TopicDescriptions\": [{topicDescriptions}]}}");
             return result.ToString();
         }
     }
