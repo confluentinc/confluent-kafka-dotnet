@@ -59,7 +59,7 @@ namespace Confluent.Kafka
         {
             var result = new StringBuilder();
             var topics = string.Join(",",
-                Topics.Select(topic => topic?.Quote()).ToList());
+                Topics.Select(topic => topic.Quote()).ToList());
             result.Append($"{{\"Topics\": [{topics}]}}");
             return result.ToString();
         }

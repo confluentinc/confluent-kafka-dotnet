@@ -17,6 +17,7 @@
 using System.Linq;
 using System.Text;
 
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -58,16 +59,14 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            var groupInstanceId = GroupInstanceId == null ? "null" :
-                                    $"\"{GroupInstanceId.Quote()}\"";
             var assignment = string.Join(",",
                 Assignment.TopicPartitions.Select(topicPartition => 
-                    $"{{\"Topic\": \"{topicPartition.Topic.Quote()}\", \"Partition\": {topicPartition.Partition}}}"
+                    $"{{\"Topic\": {topicPartition.Topic.Quote()}, \"Partition\": {topicPartition.Partition.Value}}}"
                 ).ToList());
             
-            result.Append($"{{\"ClientId\": \"{ClientId.Quote()}\"");
-            result.Append($", \"GroupInstanceId\": {groupInstanceId}, \"ConsumerId\": \"{ConsumerId.Quote()}\"");
-            result.Append($", \"Host\": \"{Host.Quote()}\", \"Assignment\": {assignment}}}");
+            result.Append($"{{\"ClientId\": {ClientId.Quote()}");
+            result.Append($", \"GroupInstanceId\": {GroupInstanceId.Quote()}, \"ConsumerId\": {ConsumerId.Quote()}");
+            result.Append($", \"Host\": {Host.Quote()}, \"Assignment\": [{assignment}]}}");
 
             return result.ToString();
         }

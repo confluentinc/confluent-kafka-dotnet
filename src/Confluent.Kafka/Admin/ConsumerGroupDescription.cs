@@ -81,13 +81,13 @@ namespace Confluent.Kafka.Admin
                 ).ToList());
             var authorizedOperations = string.Join(",",
                 AuthorizedOperations.Select(authorizedOperation =>
-                    "\"" + authorizedOperation.ToString() + "\""
+                    authorizedOperation.ToString().Quote()
                 ).ToList());
             
-            result.Append($"{{\"GroupId\": \"{GroupId.Quote()}\"");
-            result.Append($", \"Error\": \"{Error.Code}\", \"IsSimpleConsumerGroup\": {IsSimpleConsumerGroup}");
-            result.Append($", \"PartitionAssignor\": \"{PartitionAssignor}\", \"State\": \"{State}\"");
-            result.Append($", \"Coordinator\": {Coordinator}, \"Members\": [{Members}]");
+            result.Append($"{{\"GroupId\": {GroupId.Quote()}");
+            result.Append($", \"Error\": \"{Error.Code}\", \"IsSimpleConsumerGroup\": {IsSimpleConsumerGroup.Quote()}");
+            result.Append($", \"PartitionAssignor\": {PartitionAssignor.Quote()}, \"State\": {State.ToString().Quote()}");
+            result.Append($", \"Coordinator\": {Coordinator?.ToString() ?? "null"}, \"Members\": [{members}]");
             result.Append($", \"AuthorizedOperations\": [{authorizedOperations}]}}");
 
             return result.ToString();

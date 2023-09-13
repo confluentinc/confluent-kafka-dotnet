@@ -67,11 +67,11 @@ namespace Confluent.Kafka.Admin
                     partition.ToString()).ToList());
             var authorizedOperations = string.Join(",",
                 AuthorizedOperations.Select(authorizedOperation =>
-                    "\"" + authorizedOperation.ToString() + "\""
+                    authorizedOperation.ToString().Quote()
                 ).ToList());
             
-            result.Append($"{{\"Name\": \"{Name.Quote()}\"");
-            result.Append($", \"Error\": \"{Error.Code}\", \"IsInternal\": {IsInternal}");
+            result.Append($"{{\"Name\": {Name.Quote()}");
+            result.Append($", \"Error\": \"{Error.Code}\", \"IsInternal\": {IsInternal.Quote()}");
             result.Append($", \"Partitions\": [{partitions}], \"AuthorizedOperations\": [{authorizedOperations}]}}");
             return result.ToString();
         }

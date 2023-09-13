@@ -57,15 +57,15 @@ namespace Confluent.Kafka.Admin
             var result = new StringBuilder();
             var nodes = string.Join(",",
                 Nodes.Select(node =>
-                    node?.ToString()
+                    node?.ToString() ?? "null"
                 ).ToList());
             var authorizedOperations = string.Join(",",
                 AuthorizedOperations.Select(authorizedOperation =>
-                    "\"" + authorizedOperation.ToString() + "\""
+                    authorizedOperation.ToString().Quote()
                 ).ToList());
             
-            result.Append($"{{\"ClusterId\": \"{ClusterId.Quote()}\"");
-            result.Append($", \"Controller\": {Controller}, \"Nodes\": [{nodes}]");
+            result.Append($"{{\"ClusterId\": {ClusterId.Quote()}");
+            result.Append($", \"Controller\": {Controller?.ToString() ?? "null"}, \"Nodes\": [{nodes}]");
             result.Append($", \"AuthorizedOperations\": [{authorizedOperations}]}}");
 
             return result.ToString();

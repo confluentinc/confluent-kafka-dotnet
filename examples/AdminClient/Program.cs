@@ -547,21 +547,44 @@ namespace Confluent.Kafka.Examples
 
         static async Task DescribeConsumerGroupsAsync(string bootstrapServers, string[] commandArgs)
         {
-            if (commandArgs.Length < 1)
+            if (commandArgs.Length < 3)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> describe-consumer-groups <include_authorized_operations> <group1> [<group2 ... <groupN>]");
+                Console.WriteLine("usage: .. <bootstrapServers> describe-consumer-groups <username> <password> <include_authorized_operations> <group1> [<group2 ... <groupN>]");
                 Environment.ExitCode = 1;
                 return;
             }
+
+            var username = commandArgs[0];
+            var password = commandArgs[1];
+            var includeAuthorizedOperations = (commandArgs[2] == "1");
+            var groupNames = commandArgs.Skip(3).ToList();
             
-            var includeAuthorizedOperations = (commandArgs[0] == "1");
-            var groupNames = commandArgs.Skip(1).ToList();
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                username = null;
+            }
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                password = null;
+            }
 
             var timeout = TimeSpan.FromSeconds(30);
             var config = new AdminClientConfig
             {
                 BootstrapServers = bootstrapServers,
             };
+            if (username != null && password != null)
+            {
+                config = new AdminClientConfig
+                {
+                    BootstrapServers = bootstrapServers,
+                    SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                    SaslMechanism = SaslMechanism.Plain,
+                    SaslUsername = username,
+                    SaslPassword = password,
+                };
+            }
+
             using (var adminClient = new AdminClientBuilder(config).Build())
             {
                 try

@@ -55,7 +55,7 @@ namespace Confluent.Kafka
             var result = new StringBuilder();
             result.Append($"{{\"Id\": {Id}");
             result.Append($", \"Host\": {Host.Quote()}, \"Port\": {Port}");
-            result.Append($", \"Rack\": \"{Rack?.Quote()}\"}}");
+            result.Append($", \"Rack\": {Rack.Quote()}}}");
             return result.ToString();
         }
     }

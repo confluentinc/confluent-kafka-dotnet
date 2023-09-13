@@ -56,14 +56,14 @@ namespace Confluent.Kafka
         public override string ToString()
         {
             var result = new StringBuilder();
-            var leader = Leader?.ToString();
+            var leader = Leader?.ToString() ?? "null";
             var replicas = string.Join(",",
                 Replicas.Select(replica =>
-                    replica?.ToString()?.Quote())
+                    replica?.ToString() ?? "null")
             );
             var isrs = string.Join(",",
                 ISR.Select(isr =>
-                    isr?.ToString()?.Quote())
+                    isr?.ToString() ?? "null")
             );
             
             result.Append($"{{\"Partition\": {Partition}");
