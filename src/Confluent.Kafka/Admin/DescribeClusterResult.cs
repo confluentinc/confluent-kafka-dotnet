@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -21,35 +22,30 @@ using System.Text;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     MemberDescription represents the description of a consumer group member
+    ///     Represents the result of a describe cluster operation.
     /// </summary>
-    public class MemberDescription
+    public class DescribeClusterResult
     {
         /// <summary>
-        ///     Client id.
+        ///     Current cluster Id.
         /// </summary>
-        public string ClientId { get; set; }
+        public string ClusterId { get; set; }
 
         /// <summary>
-        ///     Group instance id.
+        ///     Current controller (optional).
         /// </summary>
-        public string GroupInstanceId { get; set; }
+        public Node Controller { get; set; }
 
         /// <summary>
-        ///     Consumer id.
+        ///     Nodes in the cluster.
         /// </summary>
-        public string ConsumerId { get; set; }
+        public List<Node> Nodes { get; set; }
 
         /// <summary>
-        ///     Group member host.
+        ///    AclOperation list.
         /// </summary>
-        public string Host { get; set; }
+        public List<AclOperation> AuthorizedOperations { get; set; }
 
-        /// <summary>
-        ///     Member assignment.
-        /// </summary>
-        public MemberAssignment Assignment { get; set; }
-        
         /// <summary>
         ///     Returns a JSON representation of this object.
         /// </summary>
@@ -59,14 +55,18 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            var assignment = string.Join(",",
-                Assignment.TopicPartitions.Select(topicPartition => 
-                    $"{{\"Topic\": {topicPartition.Topic.Quote()}, \"Partition\": {topicPartition.Partition.Value}}}"
+            var nodes = string.Join(",",
+                Nodes.Select(node =>
+                    node?.ToString() ?? "null"
+                ).ToList());
+            var authorizedOperations = string.Join(",",
+                AuthorizedOperations.Select(authorizedOperation =>
+                    authorizedOperation.ToString().Quote()
                 ).ToList());
             
-            result.Append($"{{\"ClientId\": {ClientId.Quote()}");
-            result.Append($", \"GroupInstanceId\": {GroupInstanceId.Quote()}, \"ConsumerId\": {ConsumerId.Quote()}");
-            result.Append($", \"Host\": {Host.Quote()}, \"Assignment\": [{assignment}]}}");
+            result.Append($"{{\"ClusterId\": {ClusterId.Quote()}");
+            result.Append($", \"Controller\": {Controller?.ToString() ?? "null"}, \"Nodes\": [{nodes}]");
+            result.Append($", \"AuthorizedOperations\": [{authorizedOperations}]}}");
 
             return result.ToString();
         }
