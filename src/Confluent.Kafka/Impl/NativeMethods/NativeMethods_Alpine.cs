@@ -502,6 +502,14 @@ namespace Confluent.Kafka.Impl.NativeMethods
                         StringBuilder errstr,
                         UIntPtr errstr_size);
 
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_AdminOptions_set_incremental(
+                        IntPtr options,
+                        IntPtr true_or_false,
+                        StringBuilder errstr,
+                        UIntPtr errstr_size);                        
+
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_AdminOptions_set_validate_only(
                         IntPtr options,
@@ -509,12 +517,6 @@ namespace Confluent.Kafka.Impl.NativeMethods
                         StringBuilder errstr,
                         UIntPtr errstr_size);
 
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_AdminOptions_set_incremental(
-                        IntPtr options,
-                        IntPtr true_or_false,
-                        StringBuilder errstr,
-                        UIntPtr errstr_size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_AdminOptions_set_broker(
