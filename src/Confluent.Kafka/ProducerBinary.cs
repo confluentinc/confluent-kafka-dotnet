@@ -62,7 +62,7 @@ namespace Confluent.Kafka
                         topicPartition.Topic,
                         value,
                         key,
-                        timestamp, topicPartition.Partition, headers,
+                        timestamp, topicPartition.Partition, headers.BackingList,
                         handler);
 
                     return handler.Task;
@@ -73,7 +73,7 @@ namespace Confluent.Kafka
                         topicPartition.Topic,
                         value,
                         key,
-                        timestamp, topicPartition.Partition, headers,
+                        timestamp, topicPartition.Partition, headers.BackingList,
                         null);
 
                     var result = new DeliveryResult
@@ -150,7 +150,7 @@ namespace Confluent.Kafka
                     value,
                     key,
                     timestamp, topicPartition.Partition,
-                    headers,
+                    headers.BackingList,
                     deliveryHandler == null
                         ? null
                         : new TypedDeliveryHandlerShim_Action(

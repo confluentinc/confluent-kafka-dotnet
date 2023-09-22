@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.0.2 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.2.0 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -221,6 +221,22 @@ namespace Confluent.Kafka
         ///     Zstd
         /// </summary>
         Zstd
+    }
+
+    /// <summary>
+    ///     ClientDnsLookup enum values
+    /// </summary>
+    public enum ClientDnsLookup
+    {
+        /// <summary>
+        ///     UseAllDnsIps
+        /// </summary>
+        UseAllDnsIps,
+
+        /// <summary>
+        ///     ResolveCanonicalBootstrapServersOnly
+        /// </summary>
+        ResolveCanonicalBootstrapServersOnly
     }
 
     /// <summary>
@@ -942,6 +958,14 @@ namespace Confluent.Kafka
         /// </summary>
         public string ClientRack { get { return Get("client.rack"); } set { this.SetObject("client.rack", value); } }
 
+        /// <summary>
+        ///     Controls how the client uses DNS lookups. By default, when the lookup returns multiple IP addresses for a hostname, they will all be attempted for connection before the connection is considered failed. This applies to both bootstrap and advertised servers. If the value is set to `resolve_canonical_bootstrap_servers_only`, each entry will be resolved and expanded into a list of canonical names. NOTE: Default here is different from the Java client's default behavior, which connects only to the first IP address returned for a hostname.
+        ///
+        ///     default: use_all_dns_ips
+        ///     importance: low
+        /// </summary>
+        public ClientDnsLookup? ClientDnsLookup { get { return (ClientDnsLookup?)GetEnum(typeof(ClientDnsLookup), "client.dns.lookup"); } set { this.SetObject("client.dns.lookup", value); } }
+
     }
 
 
@@ -1379,6 +1403,14 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public int? FetchWaitMaxMs { get { return GetInt("fetch.wait.max.ms"); } set { this.SetObject("fetch.wait.max.ms", value); } }
+
+        /// <summary>
+        ///     How long to postpone the next fetch request for a topic+partition in case the current fetch queue thresholds (queued.min.messages or queued.max.messages.kbytes) have been exceded. This property may need to be decreased if the queue thresholds are set low and the application is experiencing long (~1s) delays between messages. Low values may increase CPU utilization.
+        ///
+        ///     default: 1000
+        ///     importance: medium
+        /// </summary>
+        public int? FetchQueueBackoffMs { get { return GetInt("fetch.queue.backoff.ms"); } set { this.SetObject("fetch.queue.backoff.ms", value); } }
 
         /// <summary>
         ///     Initial maximum number of bytes per topic+partition to request when fetching messages from the broker. If the client encounters a message larger than this value it will gradually try to increase it until the entire message can be fetched.

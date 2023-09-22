@@ -32,6 +32,11 @@ namespace Confluent.Kafka
         private readonly List<IHeader> headers = new List<IHeader>();
 
         /// <summary>
+        /// Gets the underlying list of headers
+        /// </summary>
+        public IReadOnlyList<IHeader> BackingList => headers;
+
+        /// <summary>
         ///     Append a new header to the collection.
         /// </summary>
         /// <param name="key">

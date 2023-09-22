@@ -1,7 +1,49 @@
+# vNext
+
+## Enhancements
+
+- Added support for external JSON schemas in `JsonSerializer` and `JsonDeserializer` (#2042).
+- Added compatibility methods to CachedSchemaRegistryClient ([ISBronny](https://github.com/ISBronny), #2097).
+
+
+# 2.2.0
+
+## Enhancements
+
+- References librdkafka.redist 2.2.0. Refer to the [librdkafka v2.2.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.2.0) for more information.
+- [KIP-339](https://cwiki.apache.org/confluence/display/KAFKA/KIP-339%3A+Create+a+new+IncrementalAlterConfigs+API)
+  IncrementalAlterConfigs API (#2005).
+- [KIP-554](https://cwiki.apache.org/confluence/display/KAFKA/KIP-554%3A+Add+Broker-side+SCRAM+Config+API):
+    User SASL/SCRAM credentials alteration and description (#2070).
+
+
+## Fixes
+
+- Fix backwards compatability of TopicPartitionOffset constructor. ([drinehimer](https://github.com/drinehimer), #2066)
+- Fix IConsumer breaking change. ([ttd2089](https://github.com/ttd2089), #2071)
+
+
+# 2.1.1
+
+## Enhancements
+
+- References librdkafka.redist 2.1.1. Refer to the [librdkafka v2.1.1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.1.1) for more information.
+- Less heap allocations when calling Produce ([bjornbouetsmith](https://github.com/bjornbouetsmith), #2020)
+
 # 2.1.0
 
+## Enhancements
+
+- References librdkafka.redist 2.1.0. Refer to the [librdkafka v2.1.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.1.0) for more information.
 - Added SetSaslCredentials. This new method (on the Producer, Consumer, and AdminClient) allows modifying the stored
   SASL PLAIN/SCRAM credentials that will be used for subsequent (new) connections to a broker (#1980).
+- Changed the way the `_SCHEMA` filed is accessed internally from reflecting the static field to accessing it from the instance ([AlexeyRaga](https://github.com/AlexeyRaga)).
+- [KIP-320](https://cwiki.apache.org/confluence/display/KAFKA/KIP-320%3A+Allow+fetchers+to+detect+and+handle+log+truncation): add offset leader epoch fields to the TopicPartitionOffset,
+  TopicPartitionOffsetError and ConsumeResult classes (#2027).
+
+## Fixes
+
+- Fixed `OverflowException` thrown intermittently when using the `ListGroup` method (#2003).
 
 
 # 2.0.2
