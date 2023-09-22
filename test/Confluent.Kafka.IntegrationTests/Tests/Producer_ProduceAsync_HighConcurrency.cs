@@ -32,8 +32,8 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public partial class Tests
     {
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_ProduceAsync_HighConcurrency(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void Producer_ProduceAsync_HighConcurrency(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Producer_ProduceAsync_HighConcurrency");
 
@@ -46,10 +46,10 @@ namespace Confluent.Kafka.IntegrationTests
             var pConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             using (var tempTopic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<Null, string>(pConfig)
+            using (var producer = new TestProducerBuilder<Null, string>(pConfig, producerType)
                 .SetValueSerializer(new SimpleAsyncSerializer().SyncOverAsync())
                 .Build())
-            using (var dProducer = new DependentProducerBuilder<Null, string>(producer.Handle)
+            using (var dProducer = new TestDependentProducerBuilder<Null, string>(producer.Handle, producerType)
                 .SetValueSerializer(new SimpleAsyncSerializer())
                 .Build())
             {

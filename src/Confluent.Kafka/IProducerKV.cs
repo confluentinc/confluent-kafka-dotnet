@@ -22,9 +22,10 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a low-level Apache Kafka producer client
+    ///     Defines a high-level Apache Kafka producer client
+    ///     that provides key and value serialization.
     /// </summary>
-    public interface IProducer : IClient, ITransactionalProducer
+    public interface IProducer<TKey, TValue> : IClient, ITransactionalProducer
     {
         /// <summary>
         ///     Asynchronously send a single message to a
@@ -36,21 +37,8 @@ namespace Confluent.Kafka
         /// <param name="topic">
         ///     The topic to produce the message to.
         /// </param>
-        /// <param name="key">
-        ///     The message key. 'ReadOnlySpan&lt;byte&gt;.Empty' can be used for null key.
-        /// </param>
-        /// <param name="value">
-        ///     The message value. 'ReadOnlySpan&lt;byte&gt;.Empty' can be used for null value.
-        /// </param>
-        /// <param name="headers">
-        ///     The collection of message headers (or null). Specifying null or an 
-        ///      empty list are equivalent. The order of headers is maintained, and
-        ///     duplicate header keys are allowed.
-        /// </param>
-        /// <param name="timestamp">
-        ///     The message timestamp. The timestamp type must be set to CreateTime. 
-        ///     Specify Timestamp.Default to set the message timestamp to the time
-        ///     of this function call.
+        /// <param name="message">
+        ///     The message to produce.
         /// </param>
         /// <param name="cancellationToken">
         ///     A cancellation token to observe whilst waiting
@@ -61,22 +49,19 @@ namespace Confluent.Kafka
         ///     report corresponding to the produce request,
         ///     or an exception if an error occurred.
         /// </returns>
-        /// <exception cref="Confluent.Kafka.ProduceException">
+        /// <exception cref="ProduceException{TKey,TValue}">
         ///     Thrown in response to any produce request
         ///     that was unsuccessful for any reason
         ///     (excluding user application logic errors).
         ///     The Error property of the exception provides
         ///     more detailed information.
         /// </exception>
-        /// <exception cref="System.ArgumentException">
+        /// <exception cref="ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
-        Task<DeliveryResult> ProduceAsync(
+        Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             string topic,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> value,
-            Headers headers = null,
-            Timestamp timestamp = default,
+            Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken));
 
 
@@ -88,21 +73,8 @@ namespace Confluent.Kafka
         ///     The topic partition to produce the
         ///     message to.
         /// </param>
-        /// <param name="key">
-        ///     The message key. 'ReadOnlySpan&lt;byte&gt;.Empty' can be used for null key.
-        /// </param>
-        /// <param name="value">
-        ///     The message value. 'ReadOnlySpan&lt;byte&gt;.Empty' can be used for null value.
-        /// </param>
-        /// <param name="headers">
-        ///     The collection of message headers (or null). Specifying null or an 
-        ///      empty list are equivalent. The order of headers is maintained, and
-        ///     duplicate header keys are allowed.
-        /// </param>
-        /// <param name="timestamp">
-        ///     The message timestamp. The timestamp type must be set to CreateTime. 
-        ///     Specify Timestamp.Default to set the message timestamp to the time
-        ///     of this function call.
+        /// <param name="message">
+        ///     The message to produce.
         /// </param>
         /// <param name="cancellationToken">
         ///     A cancellation token to observe whilst waiting
@@ -113,22 +85,19 @@ namespace Confluent.Kafka
         ///     report corresponding to the produce request,
         ///     or an exception if an error occurred.
         /// </returns>
-        /// <exception cref="ProduceException">
+        /// <exception cref="ProduceException{TKey,TValue}">
         ///     Thrown in response to any produce request
         ///     that was unsuccessful for any reason
         ///     (excluding user application logic errors).
         ///     The Error property of the exception provides
         ///     more detailed information.
         /// </exception>
-        /// <exception cref="System.ArgumentException">
+        /// <exception cref="ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
-        Task<DeliveryResult> ProduceAsync(
+        Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> value,
-            Headers headers = null,
-            Timestamp timestamp = default,
+            Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken));
 
 
@@ -141,28 +110,15 @@ namespace Confluent.Kafka
         /// <param name="topic">
         ///     The topic to produce the message to.
         /// </param>
-        /// <param name="key">
-        ///     The message key. 'ReadOnlySpan&lt;byte&gt;.Empty' can be used for null key.
-        /// </param>
-        /// <param name="value">
-        ///     The message value. 'ReadOnlySpan&lt;byte&gt;.Empty' can be used for null value.
-        /// </param>
-        /// <param name="headers">
-        ///     The collection of message headers (or null). Specifying null or an 
-        ///      empty list are equivalent. The order of headers is maintained, and
-        ///     duplicate header keys are allowed.
-        /// </param>
-        /// <param name="timestamp">
-        ///     The message timestamp. The timestamp type must be set to CreateTime. 
-        ///     Specify Timestamp.Default to set the message timestamp to the time
-        ///     of this function call.
+        /// <param name="message">
+        ///     The message to produce.
         /// </param>
         /// <param name="deliveryHandler">
         ///     A delegate that will be called
         ///     with a delivery report corresponding to the
         ///     produce request (if enabled).
         /// </param>
-        /// <exception cref="Confluent.Kafka.ProduceException">
+        /// <exception cref="ProduceException{TKey,TValue}">
         ///     Thrown in response to any error that is known
         ///     immediately (excluding user application logic
         ///     errors), for example ErrorCode.Local_QueueFull.
@@ -172,21 +128,18 @@ namespace Confluent.Kafka
         ///     the exception / delivery report provides more
         ///     detailed information.
         /// </exception>
-        /// <exception cref="System.ArgumentException">
+        /// <exception cref="ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
-        /// <exception cref="System.InvalidOperationException">
+        /// <exception cref="InvalidOperationException">
         ///     Thrown in response to error conditions that
         ///     reflect an error in the application logic of
         ///     the calling application.
         /// </exception>
         void Produce(
             string topic,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> value,
-            Headers headers = null,
-            Timestamp timestamp = default,
-            Action<DeliveryReport> deliveryHandler = null);
+            Message<TKey, TValue> message,
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);
 
 
         /// <summary>
@@ -197,28 +150,15 @@ namespace Confluent.Kafka
         ///     The topic partition to produce
         ///     the message to.
         /// </param>
-        /// <param name="key">
-        ///     The message key. 'ReadOnlySpan&lt;byte&gt;.Empty' can be used for null key.
-        /// </param>
-        /// <param name="value">
-        ///     The message value. 'ReadOnlySpan&lt;byte&gt;.Empty' can be used for null value.
-        /// </param>
-        /// <param name="headers">
-        ///     The collection of message headers (or null). Specifying null or an 
-        ///      empty list are equivalent. The order of headers is maintained, and
-        ///     duplicate header keys are allowed.
-        /// </param>
-        /// <param name="timestamp">
-        ///     The message timestamp. The timestamp type must be set to CreateTime. 
-        ///     Specify Timestamp.Default to set the message timestamp to the time
-        ///     of this function call.
+        /// <param name="message">
+        ///     The message to produce.
         /// </param>
         /// <param name="deliveryHandler">
         ///     A delegate that will be called
         ///     with a delivery report corresponding to the
         ///     produce request (if enabled).
         /// </param>
-        /// <exception cref="ProduceException">
+        /// <exception cref="ProduceException{TKey,TValue}">
         ///     Thrown in response to any error that is known
         ///     immediately (excluding user application logic errors),
         ///     for example ErrorCode.Local_QueueFull. Asynchronous
@@ -228,21 +168,18 @@ namespace Confluent.Kafka
         ///     exception / delivery report provides more detailed
         ///     information.
         /// </exception>
-        /// <exception cref="System.ArgumentException">
+        /// <exception cref="ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
-        /// <exception cref="System.InvalidOperationException">
+        /// <exception cref="InvalidOperationException">
         ///     Thrown in response to error conditions that reflect
         ///     an error in the application logic of the calling
         ///     application.
         /// </exception>
         void Produce(
             TopicPartition topicPartition,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> value,
-            Headers headers = null,
-            Timestamp timestamp = default,
-            Action<DeliveryReport> deliveryHandler = null);
+            Message<TKey, TValue> message,
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);
 
         
         /// <summary>

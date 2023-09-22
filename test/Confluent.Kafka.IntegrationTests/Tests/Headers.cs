@@ -28,8 +28,8 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Test various message header produce / consume scenarios.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void MessageHeaderProduceConsume(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void MessageHeaderProduceConsume(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start MessageHeaderProduceConsume");
 
@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             var drs = new List<DeliveryReport<Null, string>>();
             DeliveryResult<Null, string> dr_single, dr_empty, dr_null, dr_multiple, dr_duplicate;
             DeliveryResult<Null, string> dr_ol1, dr_ol3;
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig, producerType).Build())
             {
                 // single header value.
                 var headers = new Headers();
@@ -131,7 +131,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             List<DeliveryReport<byte[], byte[]>> drs_2 = new List<DeliveryReport<byte[], byte[]>>();
             DeliveryResult<byte[], byte[]> dr_ol4, dr_ol5, dr_ol6, dr_ol7;
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig, producerType).Build())
             {
                 var headers = new Headers();
                 headers.Add("hkey", new byte[] { 44 });
@@ -281,7 +281,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // null key
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig, producerType).Build())
             {
                 var headers = new Headers();
                 var threw = false;
@@ -305,7 +305,7 @@ namespace Confluent.Kafka.IntegrationTests
             // null value
 
             DeliveryResult<Null, string> nulldr;
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig, producerType).Build())
             {
                 var headers = new Headers();
                 headers.Add("my-header", null);

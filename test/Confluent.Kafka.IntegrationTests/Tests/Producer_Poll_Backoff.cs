@@ -18,6 +18,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -77,6 +78,51 @@ namespace Confluent.Kafka.IntegrationTests
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_Poll_Backoff");
+        }
+
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public void Producer_Binary_Poll_Backoff(string bootstrapServers)
+        {
+            LogToFile("start Producer_Binary_Poll_Backoff");
+
+            var pConfig = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers,
+                QueueBufferingMaxMessages = 10,
+                LingerMs = 100
+            };
+
+            using (var tempTopic = new TemporaryTopic(bootstrapServers, 1))
+            using (var producer = new ProducerBuilder(pConfig).Build())
+            {
+                // test timing around producer.Poll.
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                var exceptionCount = 0;
+                for (int i = 0; i < 11; ++i)
+                {
+                    try
+                    {
+                        producer.Produce(tempTopic.Name, ReadOnlySpan<byte>.Empty,  Encoding.UTF8.GetBytes("a message"));
+                    }
+                    catch (ProduceException ex)
+                    {
+                        exceptionCount += 1;
+                        Assert.Equal(ErrorCode.Local_QueueFull, ex.Error.Code);
+                        var served = producer.Poll(TimeSpan.FromSeconds(4));
+                        Assert.True(served >= 1);
+                        var elapsed = sw.ElapsedMilliseconds;
+                        Assert.True(elapsed > 100); // linger.ms
+                        Assert.True(elapsed < 4000);
+                    }
+                }
+                Assert.Equal(1, exceptionCount);
+
+                producer.Flush();
+            }
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   Producer_Binary_Poll_Backoff");
         }
 
     }

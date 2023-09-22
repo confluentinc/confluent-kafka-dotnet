@@ -18,6 +18,7 @@ using Confluent.Kafka.Admin;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Newtonsoft.Json.Linq;
@@ -128,6 +129,15 @@ namespace Confluent.Kafka.IntegrationTests
                 };
             }
             return kafkaParameters;
+        }
+
+        public static IEnumerable<object[]> KafkaProducersParameters()
+        {
+            foreach (var kafkaParameter in kafkaParameters)
+            {
+                yield return kafkaParameter.Append(TestProducerType.KeyValue).ToArray();
+                yield return kafkaParameter.Append(TestProducerType.Binary).ToArray();
+            }
         }
 
         public static IEnumerable<object[]> OAuthBearerKafkaParameters()

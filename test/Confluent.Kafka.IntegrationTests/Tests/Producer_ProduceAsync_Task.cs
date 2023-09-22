@@ -31,8 +31,8 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public partial class Tests
     {
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_ProduceAsync_Task(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void Producer_ProduceAsync_Task(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Producer_ProduceAsync_Task");
 
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
             // serialize case
 
             var drs = new List<Task<DeliveryResult<string, string>>>();
-            using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<string, string>(producerConfig, producerType).Build())
             {
                 drs.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 1),
@@ -72,7 +72,7 @@ namespace Confluent.Kafka.IntegrationTests
             // byte[] case
 
             var drs2 = new List<Task<DeliveryResult<byte[], byte[]>>>();
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig, producerType).Build())
             {
                 drs2.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 1),
