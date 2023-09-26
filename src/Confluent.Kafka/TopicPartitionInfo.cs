@@ -33,7 +33,7 @@ namespace Confluent.Kafka
         public int Partition { get; set; }
 
         /// <summary>
-        ///     Leader broker.
+        ///     Leader broker (null if not known).
         /// </summary>
         public Node Leader { get; set; }
 

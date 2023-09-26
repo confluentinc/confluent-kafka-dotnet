@@ -27,12 +27,12 @@ namespace Confluent.Kafka.Admin
     public class DescribeClusterResult
     {
         /// <summary>
-        ///     Current cluster Id.
+        ///     Current cluster Id (null if not supported).
         /// </summary>
         public string ClusterId { get; set; }
 
         /// <summary>
-        ///     Current controller (optional).
+        ///     Current controller (null if not known).
         /// </summary>
         public Node Controller { get; set; }
 
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.Admin
         public List<Node> Nodes { get; set; }
 
         /// <summary>
-        ///    AclOperation list.
+        ///    AclOperation list (null if not requested or not supported).
         /// </summary>
         public List<AclOperation> AuthorizedOperations { get; set; }
 

@@ -52,7 +52,7 @@ namespace Confluent.Kafka.Admin
         public ConsumerGroupState State { get; set; }
 
         /// <summary>
-        ///     Consumer group coordinator (broker).
+        ///     Broker that acts as consumer group coordinator (null if not known).
         /// </summary>
         public Node Coordinator { get; set; }
 
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.Admin
         public List<MemberDescription> Members { get; set; }
 
         /// <summary>
-        ///    AclOperation list.
+        ///    AclOperation list (null if not requested or not supported).
         /// </summary>
         public List<AclOperation> AuthorizedOperations { get; set; }
 

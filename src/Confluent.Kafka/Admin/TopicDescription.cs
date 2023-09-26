@@ -49,7 +49,7 @@ namespace Confluent.Kafka.Admin
         public List<TopicPartitionInfo> Partitions { get; set; }
 
         /// <summary>
-        ///    AclOperation list.
+        ///    AclOperation list (null if not requested or not supported).
         /// </summary>
         public List<AclOperation> AuthorizedOperations { get; set; }
         
