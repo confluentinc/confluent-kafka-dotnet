@@ -1,4 +1,4 @@
-// Copyright 2020 Confluent Inc.
+// Copyright 2020-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,11 +65,9 @@ namespace Confluent.SchemaRegistry.Serdes
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-        
         private HashSet<string> subjectsRegistered = new HashSet<string>();
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
-        private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
-
+        private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
         /// <remarks>
@@ -82,29 +80,8 @@ namespace Confluent.SchemaRegistry.Serdes
         private string schemaText;
         private string schemaFullname;
 
-        /// <summary>
-        ///     Initialize a new instance of the JsonSerializer class.
-        /// </summary>
-        /// <param name="schemaRegistryClient">
-        ///     Confluent Schema Registry client instance.
-        /// </param>
-        /// <param name="config">
-        ///     Serializer configuration.
-        /// </param>
-        /// <param name="jsonSchemaGeneratorSettings">
-        ///     JSON schema generator settings.
-        /// </param>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        private void SetConfigUtil(JsonSerializerConfig config)
         {
-            this.schemaRegistryClient = schemaRegistryClient;
-            this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
-
-            this.schema = this.jsonSchemaGeneratorSettings == null
-                ? NJsonSchema.JsonSchema.FromType<T>()
-                : NJsonSchema.JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
-            this.schemaFullname = schema.Title;
-            this.schemaText = schema.ToJson();
-
             if (config == null) { return; }
 
             var nonJsonConfig = config.Where(item => !item.Key.StartsWith("json."));
@@ -126,6 +103,70 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+        /// <summary>
+        ///     Initialize a new instance of the JsonSerializer class.
+        /// </summary>
+        /// <param name="schemaRegistryClient">
+        ///     Confluent Schema Registry client instance.
+        /// </param>
+        /// <param name="config">
+        ///     Serializer configuration.
+        /// </param>
+        /// <param name="jsonSchemaGeneratorSettings">
+        ///     JSON schema generator settings.
+        /// </param>
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        {
+            this.schemaRegistryClient = schemaRegistryClient;
+            this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
+
+            this.schema = this.jsonSchemaGeneratorSettings == null
+                ? JsonSchema.FromType<T>()
+                : JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
+            this.schemaFullname = schema.Title;
+            this.schemaText = schema.ToJson();
+
+            SetConfigUtil(config);
+        }
+
+        /// <summary>
+        ///     Initialize a new instance of the JsonSerializer class
+        ///     with a given Schema.
+        /// </summary>
+        /// <param name="schemaRegistryClient">
+        ///     Confluent Schema Registry client instance.
+        /// </param>
+        /// <param name="schema">
+        ///     Schema to use for validation, used when external
+        ///     schema references are present in the schema. 
+        ///     Populate the References list of the schema for
+        ///     the same.
+        /// </param>
+        /// <param name="config">
+        ///     Serializer configuration.
+        /// </param>
+        /// <param name="jsonSchemaGeneratorSettings">
+        ///     JSON schema generator settings.
+        /// </param>
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        {
+            this.schemaRegistryClient = schemaRegistryClient;
+            this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
+            foreach (var reference in schema.References)
+            {
+                ReferenceList.Add(reference);
+            }
+
+            JsonSchemaResolver utils = new JsonSchemaResolver(
+                schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
+            JsonSchema jsonSchema = utils.GetResolvedSchema();
+            this.schema = jsonSchema;
+
+            this.schemaText = schema.SchemaString;
+            this.schemaFullname = jsonSchema.Title;
+
+            SetConfigUtil(config);
+        }
 
         /// <summary>
         ///     Serialize an instance of type <typeparamref name="T"/> to a UTF8 encoded JSON 
@@ -173,19 +214,19 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (!subjectsRegistered.Contains(subject))
                     {
-                        if (autoRegisterSchema) 
+                        if (autoRegisterSchema)
                         {
                             schemaId = await schemaRegistryClient.RegisterSchemaAsync(subject,
-                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
+                                        new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
-                        } 
+                        }
                         else if (useLatestVersion)
                         {
                             var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
                                 .ConfigureAwait(continueOnCapturedContext: false);
-                            if (latestCompatibilityStrict) 
+                            if (latestCompatibilityStrict)
                             {
-                                var isCompatible = await schemaRegistryClient.IsCompatibleAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                                var isCompatible = await schemaRegistryClient.IsCompatibleAsync(subject, new Schema(this.schemaText, ReferenceList, SchemaType.Json))
                                     .ConfigureAwait(continueOnCapturedContext: false);
                                 if (!isCompatible)
                                 {
@@ -197,7 +238,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         else
                         {
                             schemaId = await schemaRegistryClient.GetSchemaIdAsync(subject,
-                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
+                                        new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
                         }
                         subjectsRegistered.Add(subject);
@@ -207,7 +248,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     serializeMutex.Release();
                 }
-                
+
                 using (var stream = new MemoryStream(initialBufferSize))
                 using (var writer = new BinaryWriter(stream))
                 {
