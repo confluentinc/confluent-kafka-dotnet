@@ -103,7 +103,7 @@ namespace Confluent.Kafka.Impl
             IncrementalAlterConfigs_Result = 0x20000,
             DescribeUserScramCredentials_Result = 0x40000,
             AlterUserScramCredentials_Result = 0x80000,
-            ListOffsets_Result = 1048576,
+            ListOffsets_Result = 0x100000,
         }
 
         // Minimum librdkafka version.
