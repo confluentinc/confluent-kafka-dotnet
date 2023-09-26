@@ -1460,6 +1460,15 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        private void setOption_IsolationLevel(IntPtr optionsPtr, Confluent.Kafka.Admin.IsolationLevel IsolationLevel)
+        {
+            var error = Librdkafka.AdminOptions_set_isolation_level(optionsPtr,(byte)IsolationLevel);
+            if (error != IntPtr.Zero)
+            {
+                throw new KafkaException(new Error(error, true));
+            }
+        }
+
         private void setOption_completionSource(IntPtr optionsPtr, IntPtr completionSourcePtr)
             => Librdkafka.AdminOptions_set_opaque(optionsPtr, completionSourcePtr);
 
@@ -2460,9 +2469,41 @@ namespace Confluent.Kafka.Impl
                 {
                     Librdkafka.UserScramCredentialAlteration_destroy(c_alterationsPtr[i]);
                 }
+            }
+        }
+        internal void ListOffsets(Dictionary<TopicPartition,OffsetSpec> requests, ListOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+            var optionsPtr = IntPtr.Zero;
+            var topic_partition_list = IntPtr.Zero;
+            try
+            {
+                // set Admin Options if any
+                options = options ?? new ListOffsetsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.ListOffsets);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_IsolationLevel(optionsPtr, options.IsolationLevel);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)requests.Count);
+                foreach(var item in requests){
+                    string Topic = item.Key.Topic;
+                    int Partition = item.Key.Partition;
+                    IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list,Topic,Partition);
+                    var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
+                    tp.offset = (long)item.Value;
+                }  
+                Librdkafka.ListOffsets(handle,topic_partition_list,optionsPtr,resultQueuePtr);
+            }
+            finally
+            {
                 if (optionsPtr != IntPtr.Zero)
                 {
                     Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+                if (topic_partition_list != IntPtr.Zero)
+                {
+                    Librdkafka.topic_partition_list_destroy(topic_partition_list);
                 }
             }
         }
