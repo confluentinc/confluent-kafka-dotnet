@@ -433,12 +433,14 @@ namespace Confluent.Kafka
         {
 
             var ListOffsetResultInfos = new List<ListOffsetResultInfo>();
-            int count = Librdkafka.ListOffsets_result_get_count(resultPtr);
-            for(var i=0;i<count;i++)
+            var resultResponsesPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resultResponsesCntPtr);
+
+            IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resultResponsesCntPtr];
+            Marshal.Copy(resultResponsesPtr, resultResponsesPtrArr, 0, (int)resultResponsesCntPtr);
+            for(var i=0;i<(int)resultResponsesCntPtr;i++)
             {
-                IntPtr c_listoffsetresultinfo = Librdkafka.ListOffsets_result_get_element(resultPtr,i);
-                long Timestamp = Librdkafka.ListOffsetResultInfo_get_timestamp(c_listoffsetresultinfo);
-                IntPtr c_topicpartition = Librdkafka.ListOffsetResultInfo_get_topic_partition(c_listoffsetresultinfo);
+                long Timestamp = Librdkafka.ListOffsetResultInfo_timestamp(resultResponsesPtrArr[i]);
+                IntPtr c_topicpartition = Librdkafka.ListOffsetResultInfo_topic_partition(resultResponsesPtrArr[i]);
                 var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(c_topicpartition);
                 string topic = tp.topic;
                 int partition = tp.partition;

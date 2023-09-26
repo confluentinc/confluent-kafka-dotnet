@@ -1169,16 +1169,14 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern void rd_kafka_ListOffsets(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int rd_kafka_ListOffsets_result_get_count(IntPtr resultPtr);
+        internal static extern int rd_kafka_ListOffsets_result_infos(IntPtr resultPtr, out UIntPtr cntp);
+
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_ListOffsets_result_get_element(IntPtr resultPtr, int i);
+        internal static extern long rd_kafka_ListOffsetResultInfo_timestamp(IntPtr element);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern long rd_kafka_ListOffsetResultInfo_get_timestamp(IntPtr element);
-
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_ListOffsetResultInfo_get_topic_partition(IntPtr element);
+        internal static extern IntPtr rd_kafka_ListOffsetResultInfo_topic_partition(IntPtr element);
 
         //
         // Queues

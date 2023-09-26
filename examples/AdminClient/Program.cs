@@ -758,15 +758,6 @@ namespace Confluent.Kafka.Examples
         }
 
         static async Task ListOffsetsAsync(string bootstrapServers) {
-            // first create a topic partition with only 1 partition 
-
-            // push 3 lines via producer
-
-            // flushing the producer
-
-            // fetch the listoffsets 3 times
-
-            // try to match the result
             string TopicName = "non-existing-topic";
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {

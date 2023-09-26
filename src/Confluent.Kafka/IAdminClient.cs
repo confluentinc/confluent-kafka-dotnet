@@ -529,7 +529,8 @@ namespace Confluent.Kafka
         ///     A Task with an empty result when successful.
         /// </returns>
         Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
-        ///    Describes consumer groups in the cluster.
+        /// <summary>
+        ///     ListOffsets given the topic_partitions with the OffsetSpec
         /// </summary>
         /// <param name="requests">
         ///     The mapping of TopicPartitions to OffsetSpec.
