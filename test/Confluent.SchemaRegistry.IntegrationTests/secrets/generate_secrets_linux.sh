@@ -16,6 +16,12 @@ cp keystore/kafka.keystore.jks schema-registry.keystore.jks
 cp truststore/kafka.truststore.jks schema-registry.truststore.jks
 cp cert-signed schema-registry-ca.cer
 
+# Extract the private key and certificates
+openssl pkcs12 -in schema-registry.keystore.jks -nocerts -nodes -passin "pass:${PASSWORD}" | openssl pkcs8 -nocrypt -out schema-registry.key.unencrypted.pem
+openssl pkcs8 -in schema-registry.key.unencrypted.pem -topk8 -passout "pass:${PASSWORD}" -out schema-registry.key.encrypted2.pem
+openssl pkcs12 -in schema-registry.keystore.jks -clcerts -nokeys -passin "pass:${PASSWORD}"  | openssl x509 -out schema-registry.cer
+openssl pkcs12 -in schema-registry.keystore.jks -cacerts -nokeys -chain -passin "pass:${PASSWORD}"  | openssl x509 >> schema-registry.cer
+
 # Duplicate to docker secrets.
 # Docker containers will need to be restarted after this step.
 cp schema-registry.keystore.jks  ../../docker/secrets/schema-registry.keystore.jks

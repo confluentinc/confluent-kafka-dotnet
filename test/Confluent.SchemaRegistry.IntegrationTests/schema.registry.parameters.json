@@ -6,6 +6,10 @@
   "password": "test_secret",
   "keystore_location": "./secrets/schema-registry.keystore.jks",
   "keystore_password": "cnf123",
+  "certificate_location": "./secrets/schema-registry.cer",
+  "key_encrypted_location": "./secrets/schema-registry.key.encrypted.pem",
+  "key_unencrypted_location": "./secrets/schema-registry.key.unencrypted.pem",
+  "key_password": "cnf123",
   "ca_location": "./secrets/schema-registry-ca.cer",
   "enable_ssl_certificate_verification": "false"
 }

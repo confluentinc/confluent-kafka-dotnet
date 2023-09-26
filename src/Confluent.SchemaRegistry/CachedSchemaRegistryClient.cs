@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System;
 using System.Threading;
-using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using Confluent.Kafka;
 
 
@@ -236,10 +236,18 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystoreLocation &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification)
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystoreLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword &&
+                    #if NET5_0_OR_GREATER
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeyLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeyPassword &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCertificateLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeyPem &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCertificatePem &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCaPem &&
+                    #endif
+                    property.Key != SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification)
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
@@ -250,7 +258,7 @@ namespace Confluent.SchemaRegistry
             try { sslVerify = sslVerificationMaybe.Value == null ? DefaultEnableSslCertificateVerification : bool.Parse(sslVerificationMaybe.Value); }
             catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
         }
 
         /// <summary>
@@ -290,30 +298,72 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Add certificates for SSL handshake.
+        ///     Add certificates for SSL handshake.
         /// </summary>
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        private List<X509Certificate2> SetSslConfig(IEnumerable<KeyValuePair<string, string>> config)
-        {
-            var certificates = new List<X509Certificate2>();
+        private List<X509Certificate2> SetSslConfig(IEnumerable<KeyValuePair<string, string>> config)
+        {
+            var certificates = new List<X509Certificate2>();
 
-            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
-            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
-            if (!String.IsNullOrEmpty(certificateLocation))
-            {
-                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
-            }
+            #if NET5_0_OR_GREATER
+            var certificatePemLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCertificateLocation).Value ?? "";  
+            var keyPemLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeyLocation).Value ?? "";  
+            var keyPemPassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeyPassword).Value ?? "";
 
-            var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value ?? "";
-            if (!String.IsNullOrEmpty(caLocation))
-            {
-                certificates.Add(new X509Certificate2(caLocation));
-            }
+            if (!String.IsNullOrEmpty(certificatePemLocation) && !String.IsNullOrEmpty(keyPemLocation))
+            {
+                if (String.IsNullOrEmpty(keyPemPassword))
+                {
+                    certificates.Add(X509Certificate2.CreateFromPemFile(certificatePemLocation, keyPemLocation));
+                }
+                else
+                {
+                    certificates.Add(X509Certificate2.CreateFromEncryptedPemFile(certificatePemLocation, keyPemPassword,
+                        keyPemLocation));
+                }
+            }
+            
+            var certificatePem = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCertificatePem).Value ?? "";  
+            var keyPem = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeyPem).Value ?? "";  
 
-            return certificates;
-        }
+            if (!String.IsNullOrEmpty(certificatePem) && !String.IsNullOrEmpty(keyPem))
+            {
+                if (String.IsNullOrEmpty(keyPemPassword))
+                {
+                    certificates.Add(X509Certificate2.CreateFromPem(certificatePem, keyPem));
+                }
+                else
+                {
+                    certificates.Add(X509Certificate2.CreateFromEncryptedPem(certificatePemLocation, keyPemPassword,
+                        keyPem));
+                }
+            }
+
+            var caPem = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaPem).Value ?? "";
+            if (!String.IsNullOrEmpty(caPem))
+            {
+                certificates.Add(X509Certificate2.CreateFromPem(caPem));
+            }
+
+            #endif
+
+            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
+            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
+            if (!String.IsNullOrEmpty(certificateLocation))
+            {
+                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
+            }
+
+            var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value ?? "";
+            if (!String.IsNullOrEmpty(caLocation))
+            {
+                certificates.Add(new X509Certificate2(caLocation));
+            }
+
+            return certificates;
+        }
 
         /// <inheritdoc/>
         public Task<int> GetSchemaIdAsync(string subject, string avroSchema, bool normalize = false)
