@@ -425,7 +425,7 @@ namespace Confluent.Kafka.Impl
             _Node_id = (_Node_id_delegate)methods.Single(m => m.Name == "rd_kafka_Node_id").CreateDelegate(typeof (_Node_id_delegate));
             _Node_host = (_Node_host_delegate)methods.Single(m => m.Name == "rd_kafka_Node_host").CreateDelegate(typeof (_Node_host_delegate));
             _Node_port = (_Node_port_delegate)methods.Single(m => m.Name == "rd_kafka_Node_port").CreateDelegate(typeof (_Node_port_delegate));
-            _Node_rack = (_Node_rack_delegate)methods.Single(m => m.Name == "rd_kafka_Node_rack_id").CreateDelegate(typeof (_Node_rack_delegate));
+            _Node_rack = (_Node_rack_delegate)methods.Single(m => m.Name == "rd_kafka_Node_rack").CreateDelegate(typeof (_Node_rack_delegate));
 
             _DescribeUserScramCredentials = (_DescribeUserScramCredentials_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeUserScramCredentials").CreateDelegate(typeof (_DescribeUserScramCredentials_delegate));
             _DescribeUserScramCredentials_result_descriptions = (_DescribeUserScramCredentials_result_descriptions_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeUserScramCredentials_result_descriptions").CreateDelegate(typeof(_DescribeUserScramCredentials_result_descriptions_delegate));
@@ -446,7 +446,7 @@ namespace Confluent.Kafka.Impl
 
             _DescribeTopics = (_DescribeTopics_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeTopics").CreateDelegate(typeof (_DescribeTopics_delegate));
             _DescribeTopics_result_topics = (_DescribeTopics_result_topics_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeTopics_result_topics").CreateDelegate(typeof (_DescribeTopics_result_topics_delegate));
-            _TopicCollection_new_from_names = (_TopicCollection_new_from_names_delegate)methods.Single(m => m.Name == "rd_kafka_TopicCollection_new_from_names").CreateDelegate(typeof (_TopicCollection_new_from_names_delegate));
+            _TopicCollection_of_topic_names = (_TopicCollection_of_topic_names_delegate)methods.Single(m => m.Name == "rd_kafka_TopicCollection_of_topic_names").CreateDelegate(typeof (_TopicCollection_of_topic_names_delegate));
             _TopicCollection_destroy = (_TopicCollection_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_TopicCollection_destroy").CreateDelegate(typeof (_TopicCollection_destroy_delegate));
             _TopicDescription_error = (_TopicDescription_error_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_error").CreateDelegate(typeof (_TopicDescription_error_delegate));
             _TopicDescription_name = (_TopicDescription_name_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_name").CreateDelegate(typeof (_TopicDescription_name_delegate));
@@ -2101,13 +2101,13 @@ namespace Confluent.Kafka.Impl
             IntPtr handle, IntPtr topicCollectionPtr, IntPtr optionsPtr, IntPtr resultQueuePtr)
             => _DescribeTopics(handle, topicCollectionPtr, optionsPtr, resultQueuePtr);
 
-        private delegate IntPtr _TopicCollection_new_from_names_delegate(
+        private delegate IntPtr _TopicCollection_of_topic_names_delegate(
             [MarshalAs(UnmanagedType.LPArray)] string[] topics, UIntPtr topicsCnt);
-        private static _TopicCollection_new_from_names_delegate _TopicCollection_new_from_names;
-        internal static IntPtr TopicCollection_new_from_names(
+        private static _TopicCollection_of_topic_names_delegate _TopicCollection_of_topic_names;
+        internal static IntPtr TopicCollection_of_topic_names(
             [MarshalAs(UnmanagedType.LPArray)] string[] topics,
             UIntPtr topicsCnt) =>
-            _TopicCollection_new_from_names(topics, topicsCnt);
+            _TopicCollection_of_topic_names(topics, topicsCnt);
 
         private delegate void _TopicCollection_destroy_delegate(
             IntPtr topic_collection);

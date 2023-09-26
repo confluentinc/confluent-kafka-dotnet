@@ -21,7 +21,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the "AdminClient.DescribeTopicsOptions" method.
+    ///     Options for the "AdminClient.DescribeTopics" method.
     /// </summary>
     public class DescribeTopicsOptions
     {

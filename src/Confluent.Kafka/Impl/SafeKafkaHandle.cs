@@ -2493,7 +2493,7 @@ namespace Confluent.Kafka.Impl
             var topicCollectionPtr = IntPtr.Zero;
             try
             {
-                topicCollectionPtr = Librdkafka.TopicCollection_new_from_names(
+                topicCollectionPtr = Librdkafka.TopicCollection_of_topic_names(
                     topicCollection.Topics.ToArray(),
                     (UIntPtr)topicCollection.Topics.Count());
                 

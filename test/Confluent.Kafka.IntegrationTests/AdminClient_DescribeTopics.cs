@@ -51,11 +51,13 @@ namespace Confluent.Kafka.IntegrationTests
                 SaslPassword = adminSecret
             }).Build())
             {
-                var describeOptionsWithTimeout = new Admin.DescribeTopicsOptions() { 
+                var describeOptionsWithTimeout = new Admin.DescribeTopicsOptions()
+                { 
                     RequestTimeout = TimeSpan.FromSeconds(30), 
                     IncludeAuthorizedOperations = false
                 };
-                var describeOptionsWithAuthOps = new Admin.DescribeTopicsOptions() { 
+                var describeOptionsWithAuthOps = new Admin.DescribeTopicsOptions()
+                { 
                     RequestTimeout = TimeSpan.FromSeconds(30), 
                     IncludeAuthorizedOperations = true
                 };
@@ -77,19 +79,10 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     var resCount = ex.Results.TopicDescriptions.Count;
                     Assert.Equal(2, resCount);
-                    
-                    // TODO: remove after fix
-                    ex.Results.TopicDescriptions.Sort(
-                        (a,b) =>
-                        {
-                            return topicList.IndexOf(a.Name) -
-                                topicList.IndexOf(b.Name);
-                        }
-                    );
-                    Assert.Empty(ex.Results.TopicDescriptions[0].AuthorizedOperations);
-                    Assert.Empty(ex.Results.TopicDescriptions[1].AuthorizedOperations);
+                    Assert.Null(ex.Results.TopicDescriptions[0].AuthorizedOperations);
+                    Assert.Null(ex.Results.TopicDescriptions[1].AuthorizedOperations);
                     Assert.True(ex.Results.TopicDescriptions[0].Error.IsError);
-                    Assert.True(!ex.Results.TopicDescriptions[1].Error.IsError);
+                    Assert.False(ex.Results.TopicDescriptions[1].Error.IsError);
                 }
 
                 var topicListAuthOps = 
@@ -117,7 +110,7 @@ namespace Confluent.Kafka.IntegrationTests
                         },
                         Entry = new AccessControlEntry
                         {
-                            Principal = "User:user",
+                            Principal = $"User:{user}",
                             Host =  "*",
                             Operation = AclOperation.Read,
                             PermissionType = AclPermissionType.Allow
@@ -133,7 +126,7 @@ namespace Confluent.Kafka.IntegrationTests
                         },
                         Entry = new AccessControlEntry
                         {
-                            Principal = "User:user",
+                            Principal = $"User:{user}",
                             Host =  "*",
                             Operation = AclOperation.Alter,
                             PermissionType = AclPermissionType.Allow

@@ -1085,7 +1085,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_Node_port(IntPtr node);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_Node_rack_id(IntPtr node);
+        internal static extern IntPtr rd_kafka_Node_rack(IntPtr node);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_topic_result_error(IntPtr topicres);
@@ -1187,7 +1187,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_DescribeTopics_result_topics(IntPtr result, out UIntPtr cntp);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_TopicCollection_new_from_names([MarshalAs(UnmanagedType.LPArray)] string[] topics,
+        internal static extern IntPtr rd_kafka_TopicCollection_of_topic_names([MarshalAs(UnmanagedType.LPArray)] string[] topics,
                 UIntPtr topicsCnt);
         
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

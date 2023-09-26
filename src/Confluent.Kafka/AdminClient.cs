@@ -264,7 +264,8 @@ namespace Confluent.Kafka
 
         private ListConsumerGroupsReport extractListConsumerGroupsResults(IntPtr resultPtr)
         {
-            var result = new ListConsumerGroupsReport() {
+            var result = new ListConsumerGroupsReport()
+            {
                 Valid = new List<ConsumerGroupListing>(),
                 Errors = new List<Error>(),
             };
@@ -275,7 +276,8 @@ namespace Confluent.Kafka
                 IntPtr[] consumerGroupListingPtrArr = new IntPtr[(int)resultCountPtr];
                 Marshal.Copy(validResultsPtr, consumerGroupListingPtrArr, 0, (int)resultCountPtr);
                 result.Valid = consumerGroupListingPtrArr.Select(cglPtr => {
-                    return new ConsumerGroupListing() {
+                    return new ConsumerGroupListing()
+                    {
                         GroupId = PtrToStringUTF8(Librdkafka.ConsumerGroupListing_group_id(cglPtr)),
                         IsSimpleConsumerGroup =
                             (int)Librdkafka.ConsumerGroupListing_is_simple_consumer_group(cglPtr) == 1,
@@ -296,10 +298,12 @@ namespace Confluent.Kafka
             return result;
         }
 
-        private DescribeConsumerGroupsReport extractDescribeConsumerGroupsResults(IntPtr resultPtr) {
+        private DescribeConsumerGroupsReport extractDescribeConsumerGroupsResults(IntPtr resultPtr)
+        {
             var groupsPtr = Librdkafka.DescribeConsumerGroups_result_groups(resultPtr, out UIntPtr groupsCountPtr);
 
-            var result = new DescribeConsumerGroupsReport() {
+            var result = new DescribeConsumerGroupsReport()
+            {
                 ConsumerGroupDescriptions = new List<ConsumerGroupDescription>()
             };
 
@@ -319,7 +323,8 @@ namespace Confluent.Kafka
                 for (int midx = 0; midx < memberCount; midx++)
                 {
                     var memberPtr = Librdkafka.ConsumerGroupDescription_member(groupPtr, (IntPtr)midx);
-                    var member = new MemberDescription() {
+                    var member = new MemberDescription()
+                    {
                         ClientId =
                             PtrToStringUTF8(Librdkafka.MemberDescription_client_id(memberPtr)),
                         ConsumerId =
@@ -344,7 +349,8 @@ namespace Confluent.Kafka
                         out UIntPtr authorizedOperationCount),
                     (int) authorizedOperationCount);
 
-                var desc = new ConsumerGroupDescription() {
+                var desc = new ConsumerGroupDescription()
+                {
                     GroupId =
                         PtrToStringUTF8(Librdkafka.ConsumerGroupDescription_group_id(groupPtr)),
                     Error =
@@ -365,7 +371,8 @@ namespace Confluent.Kafka
             return result;
         }
 
-        private DescribeUserScramCredentialsReport extractDescribeUserScramCredentialsResult(IntPtr eventPtr){
+        private DescribeUserScramCredentialsReport extractDescribeUserScramCredentialsResult(IntPtr eventPtr)
+        {
             var report = new DescribeUserScramCredentialsReport();
             
             var resultDescriptionsPtr = Librdkafka.DescribeUserScramCredentials_result_descriptions(
@@ -407,7 +414,8 @@ namespace Confluent.Kafka
             return report;
         }
 
-        private List<AlterUserScramCredentialsReport> extractAlterUserScramCredentialsResults(IntPtr eventPtr){
+        private List<AlterUserScramCredentialsReport> extractAlterUserScramCredentialsResults(IntPtr eventPtr)
+        {
             var reports = new List<AlterUserScramCredentialsReport>();
             var resultResponsesPtr = Librdkafka.AlterUserScramCredentials_result_responses(
                 eventPtr,
@@ -459,7 +467,8 @@ namespace Confluent.Kafka
             }).ToList();
         }
 
-        private DescribeTopicsReport extractDescribeTopicsResults(IntPtr resultPtr) {
+        private DescribeTopicsReport extractDescribeTopicsResults(IntPtr resultPtr)
+        {
             var topicsPtr = Librdkafka.DescribeTopics_result_topics(resultPtr, out UIntPtr topicsCountPtr);
 
             var result = new DescribeTopicsReport()
@@ -530,6 +539,11 @@ namespace Confluent.Kafka
 
         private unsafe List<AclOperation> extractAuthorizedOperations(IntPtr authorizedOperationsPtr, int authorizedOperationCount)
         {
+            if (authorizedOperationsPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+            
             List<AclOperation> authorizedOperations = new List<AclOperation>(authorizedOperationCount);
             for (int i = 0; i < authorizedOperationCount; i++)
             {
@@ -540,7 +554,8 @@ namespace Confluent.Kafka
             return authorizedOperations;
         }
 
-        private DescribeClusterResult extractDescribeClusterResult(IntPtr resultPtr) {
+        private DescribeClusterResult extractDescribeClusterResult(IntPtr resultPtr)
+        {
             var clusterId = PtrToStringUTF8(Librdkafka.DescribeCluster_result_cluster_id(resultPtr));
             var controller = extractNode(
                     Librdkafka.DescribeCluster_result_controller(resultPtr));
@@ -942,7 +957,8 @@ namespace Confluent.Kafka
                                             Task.Run(() =>
                                                 ((TaskCompletionSource<List<AlterConsumerGroupOffsetsResult>>)adminClientResult).TrySetResult(
                                                     results
-                                                        .Select(r => new AlterConsumerGroupOffsetsResult() {
+                                                        .Select(r => new AlterConsumerGroupOffsetsResult()
+                                                        {
                                                             Group = r.Group,
                                                             Partitions = r.Partitions
                                                         })
@@ -1592,7 +1608,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListConsumerGroupsAsync(ListConsumerGroupsOptions)" />
         /// </summary>
-        public Task<ListConsumerGroupsResult> ListConsumerGroupsAsync(ListConsumerGroupsOptions options = null) {
+        public Task<ListConsumerGroupsResult> ListConsumerGroupsAsync(ListConsumerGroupsOptions options = null)
+        {
             var completionSource = new TaskCompletionSource<ListConsumerGroupsResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.ListConsumerGroups(
@@ -1605,7 +1622,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeConsumerGroupsAsync(IEnumerable{string}, DescribeConsumerGroupsOptions)" />
         /// </summary>
-        public Task<DescribeConsumerGroupsResult> DescribeConsumerGroupsAsync(IEnumerable<string> groups, DescribeConsumerGroupsOptions options = null) {
+        public Task<DescribeConsumerGroupsResult> DescribeConsumerGroupsAsync(IEnumerable<string> groups, DescribeConsumerGroupsOptions options = null)
+        {
             var completionSource = new TaskCompletionSource<DescribeConsumerGroupsResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.DescribeConsumerGroups(
@@ -1617,7 +1635,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeUserScramCredentialsAsync(IEnumerable{string}, DescribeUserScramCredentialsOptions)" />
         /// </summary>
-        public Task<DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(IEnumerable<string> users, DescribeUserScramCredentialsOptions options = null) {
+        public Task<DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(IEnumerable<string> users, DescribeUserScramCredentialsOptions options = null)
+        {
             var completionSource = new TaskCompletionSource<DescribeUserScramCredentialsResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.DescribeUserScramCredentials(
@@ -1629,7 +1648,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.AlterUserScramCredentialsAsync(IEnumerable{UserScramCredentialAlteration}, AlterUserScramCredentialsOptions)" />
         /// </summary>
-        public Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null) {
+        public Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null)
+        {
             var completionSource = new TaskCompletionSource<Null>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.AlterUserScramCredentials(
@@ -1641,7 +1661,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.DescribeTopicsAsync(IAdminClient, TopicCollection, DescribeTopicsOptions)" />
         /// </summary>
-        public Task<DescribeTopicsResult> DescribeTopicsAsync(TopicCollection topicCollection, DescribeTopicsOptions options = null) {
+        public Task<DescribeTopicsResult> DescribeTopicsAsync(TopicCollection topicCollection, DescribeTopicsOptions options = null)
+        {
             var completionSource = new TaskCompletionSource<DescribeTopicsResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.DescribeTopics(
@@ -1653,7 +1674,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.DescribeClusterAsync(IAdminClient, DescribeClusterOptions)" />
         /// </summary>
-        public Task<DescribeClusterResult> DescribeClusterAsync(DescribeClusterOptions options = null) {
+        public Task<DescribeClusterResult> DescribeClusterAsync(DescribeClusterOptions options = null)
+        {
             var completionSource = new TaskCompletionSource<DescribeClusterResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.DescribeCluster(

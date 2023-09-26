@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var descResult = await adminClient.DescribeClusterAsync(describeOptionsWithTimeout);
 
                 Assert.NotEmpty(descResult.Nodes);
-                Assert.Empty(descResult.AuthorizedOperations);
+                Assert.Null(descResult.AuthorizedOperations);
 
                 descResult = await adminClient.DescribeClusterAsync(describeOptionsWithAuthOps);
                 Assert.Equal(7, descResult.AuthorizedOperations.Count);

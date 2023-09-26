@@ -31,11 +31,14 @@ namespace Confluent.Kafka.UnitTests
                 ClusterId = "cluster",
                 Controller = null,
                 Nodes = new List<Node>(),
-                AuthorizedOperations = new List<AclOperation>(),
+                AuthorizedOperations = new List<AclOperation>()
+                {
+                    AclOperation.Create
+                },
             };
             Assert.Equal(
                 @"{""ClusterId"": ""cluster"", ""Controller"": null, ""Nodes"": []" +
-                @", ""AuthorizedOperations"": []}",
+                @", ""AuthorizedOperations"": [""Create""]}",
                 description.ToString());
 
             description = new DescribeClusterResult
@@ -65,16 +68,13 @@ namespace Confluent.Kafka.UnitTests
                         Rack = null
                     },
                 },
-                AuthorizedOperations = new List<AclOperation>
-                {
-                    AclOperation.Create
-                },
+                AuthorizedOperations = null,
             };
             Assert.Equal(
                 @"{""ClusterId"": ""cluster"", ""Controller"": {""Id"": 3, ""Host"": ""host1""" +
                 @", ""Port"": 9092, ""Rack"": null}, ""Nodes"": [{""Id"": 3, ""Host"": ""host1""" +
                 @", ""Port"": 9092, ""Rack"": null},{""Id"": 2, ""Host"": ""host2""" +
-                @", ""Port"": 9093, ""Rack"": null}], ""AuthorizedOperations"": [""Create""]}",
+                @", ""Port"": 9093, ""Rack"": null}], ""AuthorizedOperations"": null}",
                 description.ToString());
         }
     }

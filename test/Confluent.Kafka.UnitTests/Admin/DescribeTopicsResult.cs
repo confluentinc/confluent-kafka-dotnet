@@ -91,7 +91,7 @@ namespace Confluent.Kafka.UnitTests
                                 }
                             }
                         },
-                        AuthorizedOperations = new List<AclOperation>()
+                        AuthorizedOperations = null
                     }
                 }
             };
@@ -103,7 +103,7 @@ namespace Confluent.Kafka.UnitTests
                 @",{""Name"": ""test2"", ""Error"": ""UnknownTopicOrPart"", ""IsInternal"": false" +
                 @", ""Partitions"": [{""Partition"": 1, ""Leader"": null, ""Replicas"": []" +
                 @", ""ISR"": [{""Id"": 2, ""Host"": ""host1"", ""Port"": 9093, ""Rack"": ""rack1""}]}]" +
-                @", ""AuthorizedOperations"": []}]}";
+                @", ""AuthorizedOperations"": null}]}";
             
             Assert.Equal(
                 expectedString,

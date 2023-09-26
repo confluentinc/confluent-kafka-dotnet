@@ -79,16 +79,21 @@ namespace Confluent.Kafka.Admin
                 Members.Select(member =>
                     member.ToString()
                 ).ToList());
-            var authorizedOperations = string.Join(",",
-                AuthorizedOperations.Select(authorizedOperation =>
-                    authorizedOperation.ToString().Quote()
-                ).ToList());
-            
+            var authorizedOperations = "null";
+            if (AuthorizedOperations != null)
+            {
+                authorizedOperations = string.Join(",",
+                    AuthorizedOperations.Select(authorizedOperation =>
+                        authorizedOperation.ToString().Quote()
+                    ).ToList());
+                authorizedOperations = $"[{authorizedOperations}]";
+            }
+
             result.Append($"{{\"GroupId\": {GroupId.Quote()}");
             result.Append($", \"Error\": \"{Error.Code}\", \"IsSimpleConsumerGroup\": {IsSimpleConsumerGroup.Quote()}");
             result.Append($", \"PartitionAssignor\": {PartitionAssignor.Quote()}, \"State\": {State.ToString().Quote()}");
             result.Append($", \"Coordinator\": {Coordinator?.ToString() ?? "null"}, \"Members\": [{members}]");
-            result.Append($", \"AuthorizedOperations\": [{authorizedOperations}]}}");
+            result.Append($", \"AuthorizedOperations\": {authorizedOperations}}}");
 
             return result.ToString();
         }

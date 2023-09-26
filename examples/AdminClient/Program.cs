@@ -526,7 +526,8 @@ namespace Confluent.Kafka.Examples
             {
                 try
                 {
-                    var result = await adminClient.ListConsumerGroupsAsync(new ListConsumerGroupsOptions() { 
+                    var result = await adminClient.ListConsumerGroupsAsync(new ListConsumerGroupsOptions()
+                    { 
                         RequestTimeout = timeout,
                         MatchStates = statesList,
                     });
@@ -609,7 +610,8 @@ namespace Confluent.Kafka.Examples
                             }
                             Console.WriteLine($"      TopicPartitions: [{topicPartitions}]");
                         }
-                        if(includeAuthorizedOperations){
+                        if(includeAuthorizedOperations)
+                        {
                             string operations = string.Join(" ", group.AuthorizedOperations);
                             Console.WriteLine($"  Authorized operations: {operations}");
                         }
@@ -800,7 +802,8 @@ namespace Confluent.Kafka.Examples
                 foreach (var partition in topic.Partitions)
                 {
                     Console.WriteLine($"    Partition ID: {partition.Partition} with leader: {partition.Leader}");
-                    if(!partition.ISR.Any()){
+                    if(!partition.ISR.Any())
+                    {
                         Console.WriteLine("      There is no In-Sync-Replica broker for the partition");
                     }
                     else{
@@ -808,7 +811,8 @@ namespace Confluent.Kafka.Examples
                         Console.WriteLine($"      The In-Sync-Replica brokers are: {isrs}");
                     }
 
-                    if(!partition.Replicas.Any()){
+                    if(!partition.Replicas.Any())
+                    {
                         Console.WriteLine("      There is no Replica broker for the partition");
                     }
                     else{
@@ -818,14 +822,16 @@ namespace Confluent.Kafka.Examples
                     
                 }
                 Console.WriteLine($"  Is internal: {topic.IsInternal}");
-                if(includeAuthorizedOperations){
+                if(includeAuthorizedOperations)
+                {
                     string operations = string.Join(" ", topic.AuthorizedOperations);
                     Console.WriteLine($"  Authorized operations: {operations}");
                 }
             }
         }
 
-        static async Task DescribeTopicsAsync(string bootstrapServers, string[] commandArgs) {
+        static async Task DescribeTopicsAsync(string bootstrapServers, string[] commandArgs)
+        {
             if (commandArgs.Length < 3)
             {
                 Console.WriteLine("usage: .. <bootstrapServers> describe-topics <username> <password> <include_authorized_operations> <topic1> [<topic2 ... <topicN>]");
@@ -885,7 +891,8 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static async Task DescribeClusterAsync(string bootstrapServers, string[] commandArgs) {
+        static async Task DescribeClusterAsync(string bootstrapServers, string[] commandArgs)
+        {
             if (commandArgs.Length < 3)
             {
                 Console.WriteLine("usage: .. <bootstrapServers> describe-cluster <username> <password> <include_authorized_operations>");
@@ -922,10 +929,12 @@ namespace Confluent.Kafka.Examples
                     
                     Console.WriteLine($"  Cluster Id: {descResult.ClusterId}\n  Controller: {descResult.Controller}");
                     Console.WriteLine("  Nodes:");
-                    foreach(var node in descResult.Nodes){
+                    foreach(var node in descResult.Nodes)
+                    {
                         Console.WriteLine($"    {node}");
                     }
-                    if(includeAuthorizedOperations){
+                    if(includeAuthorizedOperations)
+                    {
                         string operations = string.Join(" ", descResult.AuthorizedOperations);
                         Console.WriteLine($"  Authorized operations: {operations}");
                     }

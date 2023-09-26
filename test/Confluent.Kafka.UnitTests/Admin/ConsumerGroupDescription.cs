@@ -65,7 +65,7 @@ namespace Confluent.Kafka.UnitTests
                 @"{""Topic"": ""test1"", ""Partition"": 1}]}], ""AuthorizedOperations"": [""Create""]}",
                 description.ToString());
 
-            // Coordinator not null, empty lists, GroupInstanceId
+            // Coordinator not null, empty lists, GroupInstanceId, null AuthorizedOperations
             description = new ConsumerGroupDescription
             {
                 GroupId = "test",
@@ -95,8 +95,7 @@ namespace Confluent.Kafka.UnitTests
                         }
                     }
                 },
-                AuthorizedOperations = new List<AclOperation>
-                {}
+                AuthorizedOperations = null
             };
             Assert.Equal(
                 @"{""GroupId"": ""test"", ""Error"": ""NoError"", ""IsSimpleConsumerGroup"": true"+
@@ -104,7 +103,7 @@ namespace Confluent.Kafka.UnitTests
                 @"{""Id"": 1, ""Host"": ""localhost"", ""Port"": 9092, ""Rack"": null}" +
                 @", ""Members"": [{""ClientId"": ""client1"", ""GroupInstanceId"": ""groupInstanceId1""" + 
                 @", ""ConsumerId"": ""consumer1"", ""Host"": ""localhost"", ""Assignment"": [" +
-                @"]}], ""AuthorizedOperations"": []}",
+                @"]}], ""AuthorizedOperations"": null}",
                 description.ToString());
 
         }

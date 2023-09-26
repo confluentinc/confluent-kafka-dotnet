@@ -59,14 +59,20 @@ namespace Confluent.Kafka.Admin
                 Nodes.Select(node =>
                     node?.ToString() ?? "null"
                 ).ToList());
-            var authorizedOperations = string.Join(",",
-                AuthorizedOperations.Select(authorizedOperation =>
-                    authorizedOperation.ToString().Quote()
-                ).ToList());
+
+            var authorizedOperations = "null";
+            if (AuthorizedOperations != null)
+            {
+                authorizedOperations = string.Join(",",
+                    AuthorizedOperations.Select(authorizedOperation =>
+                        authorizedOperation.ToString().Quote()
+                    ).ToList());
+                authorizedOperations = $"[{authorizedOperations}]";
+            }
             
             result.Append($"{{\"ClusterId\": {ClusterId.Quote()}");
             result.Append($", \"Controller\": {Controller?.ToString() ?? "null"}, \"Nodes\": [{nodes}]");
-            result.Append($", \"AuthorizedOperations\": [{authorizedOperations}]}}");
+            result.Append($", \"AuthorizedOperations\": {authorizedOperations}}}");
 
             return result.ToString();
         }

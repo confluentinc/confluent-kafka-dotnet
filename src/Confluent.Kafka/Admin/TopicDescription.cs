@@ -65,14 +65,20 @@ namespace Confluent.Kafka.Admin
             var partitions = string.Join(",",
                 Partitions.Select(partition =>
                     partition.ToString()).ToList());
-            var authorizedOperations = string.Join(",",
-                AuthorizedOperations.Select(authorizedOperation =>
-                    authorizedOperation.ToString().Quote()
-                ).ToList());
-            
+
+            var authorizedOperations = "null";
+            if (AuthorizedOperations != null)
+            {
+                authorizedOperations = string.Join(",",
+                    AuthorizedOperations.Select(authorizedOperation =>
+                        authorizedOperation.ToString().Quote()
+                    ).ToList());
+                authorizedOperations = $"[{authorizedOperations}]";
+            }
+
             result.Append($"{{\"Name\": {Name.Quote()}");
             result.Append($", \"Error\": \"{Error.Code}\", \"IsInternal\": {IsInternal.Quote()}");
-            result.Append($", \"Partitions\": [{partitions}], \"AuthorizedOperations\": [{authorizedOperations}]}}");
+            result.Append($", \"Partitions\": [{partitions}], \"AuthorizedOperations\": {authorizedOperations}}}");
             return result.ToString();
         }
     }
