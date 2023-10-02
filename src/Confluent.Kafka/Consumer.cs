@@ -263,7 +263,7 @@ namespace Confluent.Kafka
                     {
                         try
                         {
-                            assignmentWithPositions.Add(PositionTopicPartitionOffset(tp));
+                            assignmentWithPositions.Add(this.PositionTopicPartitionOffset(tp));
                         }
                         catch
                         {
@@ -510,22 +510,15 @@ namespace Confluent.Kafka
         /// <inheritdoc/>
         public Offset Position(TopicPartition partition)
         {
-            return PositionTopicPartitionOffset(partition).Offset;
-        }
-        
-        /// <inheritdoc/>
-        public TopicPartitionOffset PositionTopicPartitionOffset(TopicPartition partition)
-        {
             try
             {
-                return kafkaHandle.Position(new List<TopicPartition> { partition }).First();
+                return kafkaHandle.Position(new List<TopicPartition> { partition }).First().Offset;
             }
             catch (TopicPartitionOffsetException e)
             {
                 throw new KafkaException(e.Results[0].Error);
             }
         }
-
 
         /// <inheritdoc/>
         public List<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)

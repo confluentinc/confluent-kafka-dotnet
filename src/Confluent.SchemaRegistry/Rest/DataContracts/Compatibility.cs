@@ -50,6 +50,24 @@ namespace Confluent.SchemaRegistry
         ///     Full schema compatibility.
         /// </summary>
         [EnumMember(Value = "FULL")]
-        Full
+        Full,
+        
+        /// <summary>
+        ///     Forward transitive schema compatibility.
+        /// </summary>
+        [EnumMember(Value = "FORWARD_TRANSITIVE")]
+        ForwardTransitive,
+
+        /// <summary>
+        ///     Backward transitive schema compatibility.
+        /// </summary>
+        [EnumMember(Value = "BACKWARD_TRANSITIVE")]
+        BackwardTransitive,
+
+        /// <summary>
+        ///     Full transitive schema compatibility.
+        /// </summary>
+        [EnumMember(Value = "FULL_TRANSITIVE")]
+        FullTransitive
     }
 }
