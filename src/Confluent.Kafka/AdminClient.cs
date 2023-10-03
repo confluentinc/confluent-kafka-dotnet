@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Impl;
 using static Confluent.Kafka.Internal.Util.Marshal;
+using Confluent.Kafka.Internal;
 
 
 namespace Confluent.Kafka
@@ -428,6 +429,33 @@ namespace Confluent.Kafka
             }).ToList();
         }
 
+        private ListOffsetsResult extractListOffsetsResults(IntPtr resultPtr)
+        {
+
+            var ListOffsetsResultInfos = new List<ListOffsetsResultInfo>();
+            var resultResponsesPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resultResponsesCntPtr);
+
+            IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resultResponsesCntPtr];
+            Marshal.Copy(resultResponsesPtr, resultResponsesPtrArr, 0, (int)resultResponsesCntPtr);
+            for(var i=0;i<(int)resultResponsesCntPtr;i++)
+            {
+                long Timestamp = Librdkafka.ListOffsetsResultInfo_timestamp(resultResponsesPtrArr[i]);
+                IntPtr c_topicpartition = Librdkafka.ListOffsetsResultInfo_topic_partition(resultResponsesPtrArr[i]);
+                var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(c_topicpartition);
+                string topic = tp.topic;
+                int partition = tp.partition;
+                long offset = tp.offset;
+                ErrorCode code = tp.err;
+                Error Error = new Error(code);
+                Partition Partition = new Partition(partition);
+                Offset Offset = new Offset(offset);
+                TopicPartitionOffsetError TopicPartitionOffsetError = new TopicPartitionOffsetError(topic,Partition,Offset,Error);
+                ListOffsetsResultInfo ListOffsetsResultInfo = new ListOffsetsResultInfo(){Timestamp = Timestamp, TopicPartitionOffsetError = TopicPartitionOffsetError };
+                ListOffsetsResultInfos.Add(ListOffsetsResultInfo);
+            }
+            var result = new ListOffsetsResult(){ListOffsetsResultInfos = ListOffsetsResultInfos};
+            return result;
+        }
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -981,6 +1009,23 @@ namespace Confluent.Kafka
                                         
                                         break;
                                     }
+                                    case Librdkafka.EventType.ListOffsets_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<Null>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        var results = extractListOffsetsResults(eventPtr);
+                                        Task.Run(() =>
+                                                ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetResult(
+                                                    new ListOffsetsResult() { ListOffsetsResultInfos = results.ListOffsetsResultInfos }
+                                                ));
+                                        break;
+                                    }
+
                                     default:
                                         // Should never happen.
                                         throw new InvalidOperationException($"Unknown result type: {type}");
@@ -1029,6 +1074,7 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.DescribeConsumerGroups_Result, typeof(TaskCompletionSource<DescribeConsumerGroupsResult>) },
             { Librdkafka.EventType.DescribeUserScramCredentials_Result, typeof(TaskCompletionSource<DescribeUserScramCredentialsResult>) },
             { Librdkafka.EventType.AlterUserScramCredentials_Result, typeof(TaskCompletionSource<Null>) },
+            { Librdkafka.EventType.ListOffsets_Result, typeof(TaskCompletionSource<ListOffsetsResult>) },
         };
 
 
@@ -1460,6 +1506,16 @@ namespace Confluent.Kafka
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
-        
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListOffsetsAsync(Dictionary{TopicPartition,OffsetSpec}, ListOffsetsOptions)" />
+        /// </summary>
+        public Task<ListOffsetsResult> ListOffsetsAsync(Dictionary<TopicPartition,OffsetSpec> requests,ListOffsetsOptions options = null) {
+            var completionSource = new TaskCompletionSource<ListOffsetsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.ListOffsets(
+                requests, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
     }
 }
