@@ -20,7 +20,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Represents the result of a list offset request for a single topic partition.
     /// </summary>
-    public class ListOffsetResultInfo
+    public class ListOffsetsResultInfo
     {
         /// <summary>
         ///    TopicPartitionOffsetError of the ListOffset Result Element which is a Topic Partition

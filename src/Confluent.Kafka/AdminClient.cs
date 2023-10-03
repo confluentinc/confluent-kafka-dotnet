@@ -432,15 +432,15 @@ namespace Confluent.Kafka
         private ListOffsetsResult extractListOffsetsResults(IntPtr resultPtr)
         {
 
-            var ListOffsetResultInfos = new List<ListOffsetResultInfo>();
+            var ListOffsetsResultInfos = new List<ListOffsetsResultInfo>();
             var resultResponsesPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resultResponsesCntPtr);
 
             IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resultResponsesCntPtr];
             Marshal.Copy(resultResponsesPtr, resultResponsesPtrArr, 0, (int)resultResponsesCntPtr);
             for(var i=0;i<(int)resultResponsesCntPtr;i++)
             {
-                long Timestamp = Librdkafka.ListOffsetResultInfo_timestamp(resultResponsesPtrArr[i]);
-                IntPtr c_topicpartition = Librdkafka.ListOffsetResultInfo_topic_partition(resultResponsesPtrArr[i]);
+                long Timestamp = Librdkafka.ListOffsetsResultInfo_timestamp(resultResponsesPtrArr[i]);
+                IntPtr c_topicpartition = Librdkafka.ListOffsetsResultInfo_topic_partition(resultResponsesPtrArr[i]);
                 var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(c_topicpartition);
                 string topic = tp.topic;
                 int partition = tp.partition;
@@ -450,10 +450,10 @@ namespace Confluent.Kafka
                 Partition Partition = new Partition(partition);
                 Offset Offset = new Offset(offset);
                 TopicPartitionOffsetError TopicPartitionOffsetError = new TopicPartitionOffsetError(topic,Partition,Offset,Error);
-                ListOffsetResultInfo ListOffsetResultInfo = new ListOffsetResultInfo(){Timestamp = Timestamp, TopicPartitionOffsetError = TopicPartitionOffsetError };
-                ListOffsetResultInfos.Add(ListOffsetResultInfo);
+                ListOffsetsResultInfo ListOffsetsResultInfo = new ListOffsetsResultInfo(){Timestamp = Timestamp, TopicPartitionOffsetError = TopicPartitionOffsetError };
+                ListOffsetsResultInfos.Add(ListOffsetsResultInfo);
             }
-            var result = new ListOffsetsResult(){ListOffsetResultInfos = ListOffsetResultInfos};
+            var result = new ListOffsetsResult(){ListOffsetsResultInfos = ListOffsetsResultInfos};
             return result;
         }
         private Task StartPollTask(CancellationToken ct)
@@ -1021,7 +1021,7 @@ namespace Confluent.Kafka
                                         var results = extractListOffsetsResults(eventPtr);
                                         Task.Run(() =>
                                                 ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetResult(
-                                                    new ListOffsetsResult() { ListOffsetResultInfos = results.ListOffsetResultInfos }
+                                                    new ListOffsetsResult() { ListOffsetsResultInfos = results.ListOffsetsResultInfos }
                                                 ));
                                         break;
                                     }

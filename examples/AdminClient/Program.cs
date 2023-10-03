@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2016-2023 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -788,28 +788,28 @@ namespace Confluent.Kafka.Examples
             {
                 requests[tp] = OffsetSpec.Earliest;
                 var ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
-                foreach(var ListOffsetResultInfo in ListOffsetsResult.ListOffsetResultInfos)
+                foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
                 {
-                    TopicPartitionOffsetError topic_partition = ListOffsetResultInfo.TopicPartitionOffsetError;
-                    long Timestamp = ListOffsetResultInfo.Timestamp;
+                    TopicPartitionOffsetError topic_partition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                    long Timestamp = ListOffsetsResultInfo.Timestamp;
                     Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
                 }
 
                 requests[tp] = OffsetSpec.Latest;
                 ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
-                foreach(var ListOffsetResultInfo in ListOffsetsResult.ListOffsetResultInfos)
+                foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
                 {
-                    TopicPartitionOffsetError topic_partition = ListOffsetResultInfo.TopicPartitionOffsetError;
-                    long Timestamp = ListOffsetResultInfo.Timestamp;
+                    TopicPartitionOffsetError topic_partition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                    long Timestamp = ListOffsetsResultInfo.Timestamp;
                     Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
                 }
 
                 requests[tp] = OffsetSpec.MaxTimestamp;
                 ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
-                foreach(var ListOffsetResultInfo in ListOffsetsResult.ListOffsetResultInfos)
+                foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
                 {
-                    TopicPartitionOffsetError topic_partition = ListOffsetResultInfo.TopicPartitionOffsetError;
-                    long Timestamp = ListOffsetResultInfo.Timestamp;
+                    TopicPartitionOffsetError topic_partition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                    long Timestamp = ListOffsetsResultInfo.Timestamp;
                     Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
                 }
 

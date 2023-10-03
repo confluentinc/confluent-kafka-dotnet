@@ -441,8 +441,8 @@ namespace Confluent.Kafka.Impl
             _ListOffsets = (_ListOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets").CreateDelegate(typeof (_ListOffsets_delegate));
             
             _ListOffsets_result_infos = (_ListOffsets_result_infos_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets_result_infos").CreateDelegate(typeof (_ListOffsets_result_infos_delegate));
-            _ListOffsetResultInfo_timestamp = (_ListOffsetResultInfo_timestamp_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetResultInfo_imestamp").CreateDelegate(typeof (_ListOffsetResultInfo_timestamp_delegate));
-            _ListOffsetResultInfo_topic_partition = (_ListOffsetResultInfo_topic_partition_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetResultInfo_topic_partition").CreateDelegate(typeof (_ListOffsetResultInfo_topic_partition_delegate));
+            _ListOffsetsResultInfo_timestamp = (_ListOffsetsResultInfo_timestamp_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetsResultInfo_imestamp").CreateDelegate(typeof (_ListOffsetsResultInfo_timestamp_delegate));
+            _ListOffsetsResultInfo_topic_partition = (_ListOffsetsResultInfo_topic_partition_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetsResultInfo_topic_partition").CreateDelegate(typeof (_ListOffsetsResultInfo_topic_partition_delegate));
 
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1941,15 +1941,15 @@ namespace Confluent.Kafka.Impl
         internal static int ListOffsets_result_infos(IntPtr resultPtr,out UIntPtr cntp)
             => _ListOffsets_result_infos(resultPtr,cntp);
         
-        private delegate long _ListOffsetResultInfo_timestamp_delegate(IntPtr element);
-        private static _ListOffsetResultInfo_timestamp_delegate _ListOffsetResultInfo_timestamp;
-        internal static long ListOffsetResultInfo_timestamp(IntPtr element)
-            => _ListOffsetResultInfo_timestamp(element);
+        private delegate long _ListOffsetsResultInfo_timestamp_delegate(IntPtr element);
+        private static _ListOffsetsResultInfo_timestamp_delegate _ListOffsetsResultInfo_timestamp;
+        internal static long ListOffsetsResultInfo_timestamp(IntPtr element)
+            => _ListOffsetsResultInfo_timestamp(element);
         
-        private delegate IntPtr _ListOffsetResultInfo_topic_partition_delegate(IntPtr element);
-        private static _ListOffsetResultInfo_topic_partition_delegate _ListOffsetResultInfo_topic_partition;
-        internal static IntPtr ListOffsetResultInfo_topic_partition(IntPtr element)
-            => _ListOffsetResultInfo_topic_partition(element);
+        private delegate IntPtr _ListOffsetsResultInfo_topic_partition_delegate(IntPtr element);
+        private static _ListOffsetsResultInfo_topic_partition_delegate _ListOffsetsResultInfo_topic_partition;
+        internal static IntPtr ListOffsetsResultInfo_topic_partition(IntPtr element)
+            => _ListOffsetsResultInfo_topic_partition(element);
         
         private static Func<IntPtr, ErrorCode> _topic_result_error;
         internal static ErrorCode topic_result_error(IntPtr topicres) => _topic_result_error(topicres);

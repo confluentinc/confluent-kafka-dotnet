@@ -23,19 +23,19 @@ namespace Confluent.Kafka.Admin
     public class ListOffsetsResult
     {
         /// <summary>
-        ///     ListOffsetResultInfo Elements for all the TopicPartitions queried
+        ///     ListOffsetsResultInfo Elements for all the TopicPartitions queried
         ///     for ListOffsets 
         /// </summary>
-        public List<ListOffsetResultInfo> ListOffsetResultInfos { get; set; }
+        public List<ListOffsetsResultInfo> ListOffsetsResultInfos { get; set; }
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
             string res = "ListOffsetsResult:\n";
-            foreach(var listoffsetresultinfo in ListOffsetResultInfos)
+            foreach(var listoffsetsresultinfo in ListOffsetsResultInfos)
             {
-                res += listoffsetresultinfo.ToString();
+                res += listoffsetsresultinfo.ToString();
             }
             return res;
         }
