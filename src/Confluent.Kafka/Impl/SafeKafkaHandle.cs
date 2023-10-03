@@ -2370,6 +2370,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
         }
+
         internal void DescribeUserScramCredentials(IEnumerable<string> users, DescribeUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
@@ -2404,6 +2405,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
         }
+
         internal void AlterUserScramCredentials(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
@@ -2471,6 +2473,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
         }
+
         internal void ListOffsets(Dictionary<TopicPartition,OffsetSpec> requests, ListOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
@@ -2507,6 +2510,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
         }
+
         internal void OAuthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
         {
             if (tokenValue == null) throw new ArgumentNullException(nameof(tokenValue));
