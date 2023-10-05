@@ -798,6 +798,7 @@ namespace Confluent.Kafka.Examples
             foreach (var topic in topicDescriptions)
             {
                 Console.WriteLine($"\n  Topic: {topic.Name} {topic.Error}");
+                Console.WriteLine($"  Topic Id: {topic.TopicId}");
                 Console.WriteLine($"  Partitions:");
                 foreach (var partition in topic.Partitions)
                 {
@@ -862,10 +863,10 @@ namespace Confluent.Kafka.Examples
                 config = new AdminClientConfig
                 {
                     BootstrapServers = bootstrapServers,
-                    SecurityProtocol = SecurityProtocol.SaslPlaintext,
-                    SaslMechanism = SaslMechanism.Plain,
-                    SaslUsername = username,
-                    SaslPassword = password,
+                    // SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                    // SaslMechanism = SaslMechanism.Plain,
+                    // SaslUsername = username,
+                    // SaslPassword = password,
                 };
             }
 
