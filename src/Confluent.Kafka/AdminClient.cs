@@ -1509,7 +1509,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListOffsetsAsync(Dictionary{TopicPartition,OffsetSpec}, ListOffsetsOptions)" />
         /// </summary>
-        public Task<ListOffsetsResult> ListOffsetsAsync(Dictionary<TopicPartition,OffsetSpec> requests,ListOffsetsOptions options = null) {
+        public Task<ListOffsetsResult> ListOffsetsAsync(IEnumerable<ListOffsetsRequest> requests,ListOffsetsOptions options = null) {
             var completionSource = new TaskCompletionSource<ListOffsetsResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.ListOffsets(

@@ -13,24 +13,25 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
+using System;
 using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents the enum for different IsolationLevel.
+    ///     ListOffsetsRequest for making a call to ListOffsets.
     /// </summary>
-    public enum IsolationLevel : int
+    public class ListOffsetsRequest
     {
         /// <summary>
-        ///     ReadUncommitted
+        ///     The TopicPartition for which to ListOffsets for.
         /// </summary>
-        ReadUncommitted = 0,
+        public TopicPartition TopicPartition { get; set; }
 
         /// <summary>
-        ///     ReadCommitted
+        ///      The OffsetSpec corresponding to the Offset requested.
         /// </summary>
-        ReadCommitted = 1,
-
+        public OffsetSpec OffsetSpec { get; set; }
     }
 }

@@ -2474,7 +2474,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void ListOffsets(Dictionary<TopicPartition,OffsetSpec> requests, ListOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        internal void ListOffsets(IEnumerable<ListOffsetsRequest> requests, ListOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
             var optionsPtr = IntPtr.Zero;
@@ -2489,12 +2489,12 @@ namespace Confluent.Kafka.Impl
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
                 topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)requests.Count);
-                foreach(var item in requests){
-                    string Topic = item.Key.Topic;
-                    int Partition = item.Key.Partition;
+                foreach(var request in requests){
+                    string Topic = request.TopicPartition.Topic;
+                    int Partition = request.TopicPartition.Partition;
                     IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list,Topic,Partition);
                     var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
-                    tp.offset = (long)item.Value;
+                    tp.offset = (long)request.OffsetSpec.Value;
                 }  
                 Librdkafka.ListOffsets(handle,topic_partition_list,optionsPtr,resultQueuePtr);
             }

@@ -18,19 +18,31 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents the enum for different IsolationLevel.
+    ///     Represents the result of a list offsets operation.
     /// </summary>
-    public enum IsolationLevel : int
+    public class ListOffsetsReport
     {
         /// <summary>
-        ///     ReadUncommitted
+        ///     ListOffsetsResultInfo Elements for all the TopicPartitions queried
+        ///     for ListOffsets 
         /// </summary>
-        ReadUncommitted = 0,
+        public List<ListOffsetsResultInfo> ListOffsetsResultInfos { get; set; }
 
         /// <summary>
-        ///     ReadCommitted
+        ///   List of non-client level errors encountered while listing groups.
         /// </summary>
-        ReadCommitted = 1,
+        public List<Error> Errors { get; set; }
 
+        /// <summary>
+        ///    Returns a human readable representation of this object.
+        /// </summary>
+        public override string ToString() {
+            string res = "ListOffsetsReport:\n";
+            foreach(var listoffsetsresultinfo in ListOffsetsResultInfos)
+            {
+                res += listoffsetsresultinfo.ToString();
+            }
+            return res;
+        }
     }
 }
