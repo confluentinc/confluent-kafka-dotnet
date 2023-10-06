@@ -429,12 +429,12 @@ namespace Confluent.Kafka
             }).ToList();
         }
 
-        private ListOffsetsResult extractListOffsetsResults(IntPtr resultPtr)
+        private ListOffsetsReport extractListOffsetsReport(IntPtr resultPtr)
         {
 
             var ListOffsetsResultInfos = new List<ListOffsetsResultInfo>();
             var resultResponsesPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resultResponsesCntPtr);
-
+            ErrorCode ReportErrorCode = ErrorCode.NoError; 
             IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resultResponsesCntPtr];
             Marshal.Copy(resultResponsesPtr, resultResponsesPtrArr, 0, (int)resultResponsesCntPtr);
             for(var i=0;i<(int)resultResponsesCntPtr;i++)
@@ -447,15 +447,20 @@ namespace Confluent.Kafka
                 long offset = tp.offset;
                 ErrorCode code = tp.err;
                 Error Error = new Error(code);
+                if ((code != ErrorCode.NoError) && (ReportErrorCode == ErrorCode.NoError))
+                {
+                    ReportErrorCode = code;
+                }
                 Partition Partition = new Partition(partition);
                 Offset Offset = new Offset(offset);
                 TopicPartitionOffsetError TopicPartitionOffsetError = new TopicPartitionOffsetError(topic,Partition,Offset,Error);
                 ListOffsetsResultInfo ListOffsetsResultInfo = new ListOffsetsResultInfo(){Timestamp = Timestamp, TopicPartitionOffsetError = TopicPartitionOffsetError };
                 ListOffsetsResultInfos.Add(ListOffsetsResultInfo);
             }
-            var result = new ListOffsetsResult(){ListOffsetsResultInfos = ListOffsetsResultInfos};
+            var result = new ListOffsetsReport(){ListOffsetsResultInfos = ListOffsetsResultInfos, Error = new Error(ReportErrorCode)};
             return result;
         }
+
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -1018,11 +1023,20 @@ namespace Confluent.Kafka
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
-                                        var results = extractListOffsetsResults(eventPtr);
-                                        Task.Run(() =>
+                                        ListOffsetsReport report = extractListOffsetsReport(eventPtr);
+                                        ListOffsetsResult result = new ListOffsetsResult() { ListOffsetsResultInfos = report.ListOffsetsResultInfos };
+                                        if (report.Error != Error.NoError)
+                                        {
+                                            Task.Run(() => 
+                                                ((TaskCompletionSource<Null>)adminClientResult).TrySetException(
+                                                    new ListOffsetsException(result)));
+                                        }
+                                        else
+                                        {
+                                            Task.Run(() =>
                                                 ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetResult(
-                                                    new ListOffsetsResult() { ListOffsetsResultInfos = results.ListOffsetsResultInfos }
-                                                ));
+                                                    result));
+                                        }
                                         break;
                                     }
 
@@ -1506,6 +1520,7 @@ namespace Confluent.Kafka
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
+
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListOffsetsAsync(Dictionary{TopicPartition,OffsetSpec}, ListOffsetsOptions)" />
         /// </summary>

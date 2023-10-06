@@ -24,20 +24,20 @@ namespace Confluent.Kafka.Admin
     {
         /// <summary>
         ///     ListOffsetsResultInfo Elements for all the TopicPartitions queried
-        ///     for ListOffsets 
+        ///     for ListOffsets.
         /// </summary>
         public List<ListOffsetsResultInfo> ListOffsetsResultInfos { get; set; }
 
         /// <summary>
-        ///   List of non-client level errors encountered while listing groups.
+        ///   List of non-client level errors encountered while listing offsets.
         /// </summary>
-        public List<Error> Errors { get; set; }
+        public Error Error { get; set; }
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
         public override string ToString() {
-            string res = "ListOffsetsReport:\n";
+            string res = "ListOffsetsReport :\n";
             foreach(var listoffsetsresultinfo in ListOffsetsResultInfos)
             {
                 res += listoffsetsresultinfo.ToString();
