@@ -431,34 +431,38 @@ namespace Confluent.Kafka
 
         private ListOffsetsReport extractListOffsetsReport(IntPtr resultPtr)
         {
-
-            var ListOffsetsResultInfos = new List<ListOffsetsResultInfo>();
             var resultResponsesPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resultResponsesCntPtr);
-            ErrorCode ReportErrorCode = ErrorCode.NoError; 
             IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resultResponsesCntPtr];
             Marshal.Copy(resultResponsesPtr, resultResponsesPtrArr, 0, (int)resultResponsesCntPtr);
-            for(var i=0;i<(int)resultResponsesCntPtr;i++)
+            
+            ErrorCode reportErrorCode = ErrorCode.NoError;
+            var listOffsetsResultInfos = resultResponsesPtrArr.Select(resultResponsePtr => 
             {
-                long Timestamp = Librdkafka.ListOffsetsResultInfo_timestamp(resultResponsesPtrArr[i]);
-                IntPtr c_topicpartition = Librdkafka.ListOffsetsResultInfo_topic_partition(resultResponsesPtrArr[i]);
+                long timestamp = Librdkafka.ListOffsetsResultInfo_timestamp(resultResponsePtr);
+                IntPtr c_topicpartition = Librdkafka.ListOffsetsResultInfo_topic_partition(resultResponsePtr);
                 var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(c_topicpartition);
-                string topic = tp.topic;
-                int partition = tp.partition;
-                long offset = tp.offset;
                 ErrorCode code = tp.err;
-                Error Error = new Error(code);
-                if ((code != ErrorCode.NoError) && (ReportErrorCode == ErrorCode.NoError))
+                Error error = new Error(code);
+                if ((code != ErrorCode.NoError) && (reportErrorCode == ErrorCode.NoError))
                 {
-                    ReportErrorCode = code;
+                    reportErrorCode = code;
                 }
-                Partition Partition = new Partition(partition);
-                Offset Offset = new Offset(offset);
-                TopicPartitionOffsetError TopicPartitionOffsetError = new TopicPartitionOffsetError(topic,Partition,Offset,Error);
-                ListOffsetsResultInfo ListOffsetsResultInfo = new ListOffsetsResultInfo(){Timestamp = Timestamp, TopicPartitionOffsetError = TopicPartitionOffsetError };
-                ListOffsetsResultInfos.Add(ListOffsetsResultInfo);
-            }
-            var result = new ListOffsetsReport(){ListOffsetsResultInfos = ListOffsetsResultInfos, Error = new Error(ReportErrorCode)};
-            return result;
+                return new ListOffsetsResultInfo
+                {
+                    Timestamp = timestamp,
+                    TopicPartitionOffsetError = new TopicPartitionOffsetError(
+                        tp.topic,
+                        new Partition(tp.partition),
+                        new Offset(tp.offset),
+                        error)
+                };
+            }).ToList();
+
+            return new ListOffsetsReport
+            {
+                ListOffsetsResultInfos = listOffsetsResultInfos,
+                Error = new Error(reportErrorCode)
+            };
         }
 
         private Task StartPollTask(CancellationToken ct)
@@ -1524,7 +1528,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListOffsetsAsync(Dictionary{TopicPartition,OffsetSpec}, ListOffsetsOptions)" />
         /// </summary>
-        public Task<ListOffsetsResult> ListOffsetsAsync(IEnumerable<ListOffsetsRequest> requests,ListOffsetsOptions options = null) {
+        public Task<ListOffsetsResult> ListOffsetsAsync(IEnumerable<TopicPartitionOffsetSpec> requests,ListOffsetsOptions options = null) {
             var completionSource = new TaskCompletionSource<ListOffsetsResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.ListOffsets(

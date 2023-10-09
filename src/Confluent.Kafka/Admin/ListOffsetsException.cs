@@ -29,11 +29,11 @@ namespace Confluent.Kafka.Admin
         /// <param name="results">
         ///     The result corresponding to all partitions in the request
         ///     (whether or not they were in error). At least one of these
-        ///     results will be in error.
+        ///     topic partiton in result will be in error.
         /// </param>
         public ListOffsetsException(ListOffsetsResult result)
             : base(new Error(ErrorCode.Local_Partial,
-                "An error occurred altering consumer group offsets, check individual result elements"))
+                "An error occurred in list offsets, check individual topic partiton in result."))
         {
             Result = result;
         }

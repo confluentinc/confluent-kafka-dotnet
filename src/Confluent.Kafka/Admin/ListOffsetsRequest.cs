@@ -20,17 +20,17 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     ListOffsetsRequest for making a call to ListOffsets.
+    ///     TopicPartitionOffsetSpec.
     /// </summary>
-    public class ListOffsetsRequest
+    public class TopicPartitionOffsetSpec
     {
         /// <summary>
-        ///     The TopicPartition for which to ListOffsets for.
+        ///     TopicPartition.
         /// </summary>
         public TopicPartition TopicPartition { get; set; }
 
         /// <summary>
-        ///      The OffsetSpec corresponding to the Offset requested.
+        ///      OffsetSpec.
         /// </summary>
         public OffsetSpec OffsetSpec { get; set; }
     }

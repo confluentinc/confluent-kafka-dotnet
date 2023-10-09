@@ -2474,7 +2474,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void ListOffsets(IEnumerable<ListOffsetsRequest> requests, ListOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        internal void ListOffsets(IEnumerable<TopicPartitionOffsetSpec> requests, ListOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
             var optionsPtr = IntPtr.Zero;

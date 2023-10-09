@@ -540,7 +540,7 @@ namespace Confluent.Kafka
         ///     The options to use while List Offsets.
         /// </param>
         Task<ListOffsetsResult> ListOffsetsAsync(
-            IEnumerable<ListOffsetsRequest> requests, ListOffsetsOptions options = null);
+            IEnumerable<TopicPartitionOffsetSpec> requests, ListOffsetsOptions options = null);
     }
 
 }
