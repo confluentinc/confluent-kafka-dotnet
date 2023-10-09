@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2016-2023 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -757,6 +757,74 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static async Task ListOffsetsAsync(string bootstrapServers) {
+            string TopicName = "non-existing-topic";
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    await adminClient.CreateTopicsAsync(new TopicSpecification[] { 
+                        new TopicSpecification { Name = TopicName, ReplicationFactor = 1, NumPartitions = 1 } });
+                }
+                catch (CreateTopicsException e)
+                {
+                    Console.WriteLine($"An error occurred creating topic : {e}");
+                }
+            }
+
+            using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            {   
+                long basetimestamp = 10000000;
+                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 100,TimestampType.CreateTime)});
+                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 400,TimestampType.CreateTime)});
+                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 250,TimestampType.CreateTime)});
+                producer.Flush(new TimeSpan(0,0,10));
+            }
+            var timeout = TimeSpan.FromSeconds(30);
+            ListOffsetsOptions options = new ListOffsetsOptions(){RequestTimeout = timeout, IsolationLevel = Confluent.Kafka.Admin.IsolationLevel.ReadUncommitted};
+            Dictionary<TopicPartition,OffsetSpec> requests = new Dictionary<TopicPartition, OffsetSpec>();
+            TopicPartition tp = new TopicPartition(TopicName,0);
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                requests[tp] = OffsetSpec.Earliest;
+                var ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
+                foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
+                {
+                    TopicPartitionOffsetError topic_partition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                    long Timestamp = ListOffsetsResultInfo.Timestamp;
+                    Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
+                }
+
+                requests[tp] = OffsetSpec.Latest;
+                ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
+                foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
+                {
+                    TopicPartitionOffsetError topic_partition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                    long Timestamp = ListOffsetsResultInfo.Timestamp;
+                    Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
+                }
+
+                requests[tp] = OffsetSpec.MaxTimestamp;
+                ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
+                foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
+                {
+                    TopicPartitionOffsetError topic_partition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                    long Timestamp = ListOffsetsResultInfo.Timestamp;
+                    Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
+                }
+
+                try
+                {
+                    await adminClient.DeleteTopicsAsync(new List<string>{ TopicName });
+                }
+                catch (CreateTopicsException e)
+                {
+                    Console.WriteLine($"An error occurred deleting topic : ${e}");
+                }
+
+            }
+
+        }
         public static async Task Main(string[] args)
         {
             if (args.Length < 2)
@@ -768,8 +836,7 @@ namespace Confluent.Kafka.Examples
                         "list-consumer-groups", "describe-consumer-groups",
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
                         "incremental-alter-configs", "describe-user-scram-credentials", 
-                        "alter-user-scram-credentials"
-
+                        "alter-user-scram-credentials", "list-offsets"
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
@@ -823,6 +890,9 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "alter-user-scram-credentials":
                     await AlterUserScramCredentialsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "list-offsets":
+                    await ListOffsetsAsync(bootstrapServers);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");
