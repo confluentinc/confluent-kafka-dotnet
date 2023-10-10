@@ -486,6 +486,7 @@ namespace Confluent.Kafka
             {
 
                 var topicName = PtrToStringUTF8(Librdkafka.TopicDescription_name(topicPtr));
+                var topicId = Librdkafka.TopicDescription_topic_id(topicPtr);
                 var error = new Error(Librdkafka.TopicDescription_error(topicPtr), false);
                 var isInternal = Librdkafka.TopicDescription_is_internal(topicPtr) != IntPtr.Zero;
                 List<AclOperation> authorizedOperations = extractAuthorizedOperations(
@@ -497,6 +498,7 @@ namespace Confluent.Kafka
                 return new TopicDescription()
                 {
                     Name = topicName,
+                    TopicId = extractUuid(topicId),
                     Error = error,
                     AuthorizedOperations = authorizedOperations,
                     IsInternal = isInternal,
@@ -509,6 +511,19 @@ namespace Confluent.Kafka
             }).ToList();
             return result;
         }
+
+        private Uuid extractUuid(IntPtr uuidPtr)
+        {
+            if(uuidPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            return new Uuid(
+                Librdkafka.uuid_most_significant_bits(uuidPtr),
+                Librdkafka.uuid_least_significant_bits(uuidPtr)
+            );
+        } 
         
         private Node extractNode(IntPtr nodePtr)
         {
