@@ -13,17 +13,29 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
-
 using System.Collections.Generic;
-
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     OffsetSpec.
+    ///     Represents the enum for different OffsetSpec which defines 
+    ///     the offset to be fetched.
     /// </summary>
-    public class OffsetSpec
+    public enum OffsetSpecEnumValue : int
     {
+        /// <summary>
+        ///     MaxTimestamp
+        /// </summary>
+        MaxTimestamp = -3,
 
+        /// <summary>
+        ///     Latest
+        /// </summary>
+        Latest = -2,
+
+        /// <summary>
+        ///     Earliest
+        /// </summary>
+        Earliest = -1,
     }
 }

@@ -20,9 +20,9 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     OffsetSpec.
+    ///     EarliestOffsetSpec.
     /// </summary>
-    public class OffsetSpec
+    public class EarliestOffsetSpec : OffsetSpec
     {
 
     }

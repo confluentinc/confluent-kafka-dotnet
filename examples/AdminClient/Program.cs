@@ -782,37 +782,53 @@ namespace Confluent.Kafka.Examples
             }
             var timeout = TimeSpan.FromSeconds(30);
             ListOffsetsOptions options = new ListOffsetsOptions(){RequestTimeout = timeout, IsolationLevel = Confluent.Kafka.Admin.IsolationLevel.ReadUncommitted};
-            Dictionary<TopicPartition,OffsetSpec> requests = new Dictionary<TopicPartition, OffsetSpec>();
-            TopicPartition tp = new TopicPartition(TopicName,0);
+
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                requests[tp] = OffsetSpec.Earliest;
+                var requests = new List<TopicPartitionOffsetSpec>();
+                requests.Add(new TopicPartitionOffsetSpec {
+                    TopicPartition = new TopicPartition(TopicName,0),
+                    OffsetSpec = new EarliestOffsetSpec()
+                });
                 var ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
                 foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
                 {
-                    TopicPartitionOffsetError topic_partition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                    TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
                     long Timestamp = ListOffsetsResultInfo.Timestamp;
-                    Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
+                    Console.WriteLine($"{topicPartition.Topic} ${topicPartition.Partition} ${topicPartition.Error.Code} ${topicPartition.Offset} ${Timestamp}");
                 }
+            }
 
-                requests[tp] = OffsetSpec.Latest;
-                ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                var requests = new List<TopicPartitionOffsetSpec>();
+                requests.Add(new TopicPartitionOffsetSpec {
+                    TopicPartition = new TopicPartition(TopicName,0),
+                    OffsetSpec = new LatestOffsetSpec()
+                });
+                var ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
                 foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
                 {
-                    TopicPartitionOffsetError topic_partition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                    TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
                     long Timestamp = ListOffsetsResultInfo.Timestamp;
-                    Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
+                    Console.WriteLine($"{topicPartition.Topic} ${topicPartition.Partition} ${topicPartition.Error.Code} ${topicPartition.Offset} ${Timestamp}");
                 }
+            }
 
-                requests[tp] = OffsetSpec.MaxTimestamp;
-                ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                var requests = new List<TopicPartitionOffsetSpec>();
+                requests.Add(new TopicPartitionOffsetSpec {
+                    TopicPartition = new TopicPartition(TopicName,0),
+                    OffsetSpec = new MaxTimestampOffsetSpec()
+                });
+                var ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
                 foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
                 {
-                    TopicPartitionOffsetError topic_partition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                    TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
                     long Timestamp = ListOffsetsResultInfo.Timestamp;
-                    Console.WriteLine($"{topic_partition.Topic} ${topic_partition.Partition} ${topic_partition.Error.Code} ${topic_partition.Offset} ${Timestamp}");
+                    Console.WriteLine($"{topicPartition.Topic} ${topicPartition.Partition} ${topicPartition.Error.Code} ${topicPartition.Offset} ${Timestamp}");
                 }
-
                 try
                 {
                     await adminClient.DeleteTopicsAsync(new List<string>{ TopicName });

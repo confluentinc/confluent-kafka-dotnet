@@ -1462,10 +1462,11 @@ namespace Confluent.Kafka.Impl
 
         private void setOption_IsolationLevel(IntPtr optionsPtr, Confluent.Kafka.Admin.IsolationLevel IsolationLevel)
         {
-            var error = Librdkafka.AdminOptions_set_isolation_level(optionsPtr,(byte)IsolationLevel);
-            if (error != IntPtr.Zero)
+            var rError = Librdkafka.AdminOptions_set_isolation_level(optionsPtr, (byte)IsolationLevel);
+            var error = new Error(rError, true);
+            if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(new Error(error, true));
+                throw new KafkaException(error);
             }
         }
 
@@ -2488,13 +2489,28 @@ namespace Confluent.Kafka.Impl
                 setOption_IsolationLevel(optionsPtr, options.IsolationLevel);
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
-                topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)requests.Count);
+                topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)requests.Count());
                 foreach(var request in requests){
                     string Topic = request.TopicPartition.Topic;
                     int Partition = request.TopicPartition.Partition;
                     IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list,Topic,Partition);
                     var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
-                    tp.offset = (long)request.OffsetSpec.Value;
+                    if (request.OffsetSpec is EarliestOffsetSpec)
+                    {
+                        tp.offset = (long) OffsetSpecEnumValue.Earliest;
+                    }
+                    else if (request.OffsetSpec is LatestOffsetSpec)
+                    {
+                        tp.offset = (long) OffsetSpecEnumValue.Latest;
+                    }
+                    else if (request.OffsetSpec is MaxTimestampOffsetSpec)
+                    {
+                        tp.offset = (long) OffsetSpecEnumValue.MaxTimestamp;
+                    }
+                    else if (request.OffsetSpec is TimestampOffsetSpec)
+                    {
+                        tp.offset = (long) ((TimestampOffsetSpec)request.OffsetSpec).Timestamp;
+                    }    
                 }  
                 Librdkafka.ListOffsets(handle,topic_partition_list,optionsPtr,resultQueuePtr);
             }

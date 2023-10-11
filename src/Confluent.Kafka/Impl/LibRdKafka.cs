@@ -1936,10 +1936,10 @@ namespace Confluent.Kafka.Impl
         internal static void ListOffsets(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr)
             => _ListOffsets(handle,topic_partition_list,options, resultQueuePtr);
         
-        private delegate int _ListOffsets_result_infos_delegate(IntPtr resultPtr,out UIntPtr cntp);
+        private delegate IntPtr _ListOffsets_result_infos_delegate(IntPtr resultPtr,out UIntPtr cntp);
         private static _ListOffsets_result_infos_delegate _ListOffsets_result_infos;
-        internal static int ListOffsets_result_infos(IntPtr resultPtr,out UIntPtr cntp)
-            => _ListOffsets_result_infos(resultPtr,cntp);
+        internal static IntPtr ListOffsets_result_infos(IntPtr resultPtr,out UIntPtr cntp)
+            => _ListOffsets_result_infos(resultPtr, out cntp);
         
         private delegate long _ListOffsetsResultInfo_timestamp_delegate(IntPtr element);
         private static _ListOffsetsResultInfo_timestamp_delegate _ListOffsetsResultInfo_timestamp;

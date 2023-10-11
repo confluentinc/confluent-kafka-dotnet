@@ -1029,7 +1029,7 @@ namespace Confluent.Kafka
                                         }
                                         ListOffsetsReport report = extractListOffsetsReport(eventPtr);
                                         ListOffsetsResult result = new ListOffsetsResult() { ListOffsetsResultInfos = report.ListOffsetsResultInfos };
-                                        if (report.Error != Error.NoError)
+                                        if (report.Error.IsError)
                                         {
                                             Task.Run(() => 
                                                 ((TaskCompletionSource<Null>)adminClientResult).TrySetException(

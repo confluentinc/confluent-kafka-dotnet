@@ -20,10 +20,13 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     OffsetSpec.
+    ///     TimestampOffsetSpec.
     /// </summary>
-    public class OffsetSpec
+    public class TimestampOffsetSpec : OffsetSpec
     {
-
+        /// <summary>
+        ///     Timestamp for the OffsetSpec.
+        /// </summary>
+        public long Timestamp { get; set; }
     }
 }

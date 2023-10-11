@@ -20,9 +20,9 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     OffsetSpec.
+    ///     MaxTimestampOffsetSpec.
     /// </summary>
-    public class OffsetSpec
+    public class MaxTimestampOffsetSpec : OffsetSpec
     {
 
     }
