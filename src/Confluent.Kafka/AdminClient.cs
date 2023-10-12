@@ -1526,13 +1526,13 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListOffsetsAsync(Dictionary{TopicPartition,OffsetSpec}, ListOffsetsOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListOffsetsAsync(IEnumerable{TopicPartitionOffsetSpec}, ListOffsetsOptions)" />
         /// </summary>
-        public Task<ListOffsetsResult> ListOffsetsAsync(IEnumerable<TopicPartitionOffsetSpec> requests,ListOffsetsOptions options = null) {
+        public Task<ListOffsetsResult> ListOffsetsAsync(IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsetSpecs,ListOffsetsOptions options = null) {
             var completionSource = new TaskCompletionSource<ListOffsetsResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.ListOffsets(
-                requests, options, resultQueue,
+                topicPartitionOffsetSpecs, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
