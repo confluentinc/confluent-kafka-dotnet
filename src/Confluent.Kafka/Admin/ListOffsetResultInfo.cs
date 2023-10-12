@@ -30,12 +30,13 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///    Timestamp Corresponding to the Offset, -1 if not set by broker.
         /// </summary>
-        public long Timestamp {get; set; }
+        public long Timestamp { get; set; }
 
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
-        public override string ToString() {
+        public override string ToString()
+        {
             string res = "TopicPartitionOffsetError:\n";
             res += TopicPartitionOffsetError.ToString();
             res += "\n";

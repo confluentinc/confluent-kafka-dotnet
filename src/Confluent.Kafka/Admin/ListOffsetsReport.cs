@@ -36,9 +36,10 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
-        public override string ToString() {
+        public override string ToString()
+        {
             string res = "ListOffsetsReport :\n";
-            foreach(var listoffsetsresultinfo in ListOffsetsResultInfos)
+            foreach (var listoffsetsresultinfo in ListOffsetsResultInfos)
             {
                 res += listoffsetsresultinfo.ToString();
             }
