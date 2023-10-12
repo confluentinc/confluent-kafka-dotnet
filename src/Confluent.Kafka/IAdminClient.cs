@@ -529,6 +529,18 @@ namespace Confluent.Kafka
         ///     A Task with an empty result when successful.
         /// </returns>
         Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
+
+        /// <summary>
+        ///     ListOffsets given the topicPartitionOffsetSpecs.
+        /// </summary>
+        /// <param name="topicPartitionOffsetSpecs">
+        ///     A IEnumerable with topicPartitionOffsetSpecs to List Offsets.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while List Offsets.
+        /// </param>
+        Task<ListOffsetsResult> ListOffsetsAsync(
+            IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsetSpecs, ListOffsetsOptions options = null);
     }
 
 }
