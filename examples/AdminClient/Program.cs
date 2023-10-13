@@ -241,6 +241,61 @@ namespace Confluent.Kafka.Examples
             return alterations;
         }
 
+        static List<TopicPartitionOffsetSpec> ParseTopicPartitionOffsetSpecs(string[] args)
+        {
+            if (args.Length == 0)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> list-offsets " + 
+                    "<topic> <partition> <EARLIEST/LATEST/MAXTIMESTAMP/TIMESTAMP t1> ..");
+                Environment.ExitCode = 1;
+                return null;
+            }
+            
+            var topicPartitionOffsetSpecs = new List<TopicPartitionOffsetSpec>();
+            for (int i = 0; i < args.Length;) {
+                string topic = args[i];
+                var partition = Int32.Parse(args[i + 1]);
+                var offsetSpec = args[i + 2];
+                if (offsetSpec == "TIMESTAMP")
+                {
+                    var timestamp = Int64.Parse(args[i + 3]);
+                    i = i + 1;
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = new TimestampOffsetSpec { Timestamp = timestamp}
+                    });
+                }
+                else if (offsetSpec == "MAXTIMESTAMP")
+                {
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = new MaxTimestampOffsetSpec()
+                    });
+                }
+                else if (offsetSpec == "EARLIEST")
+                {
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = new EarliestOffsetSpec()
+                    });
+                }
+                else if (offsetSpec == "LATEST")
+                {
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = new LatestOffsetSpec()
+                    });
+                }
+                else
+                {
+                    throw new ArgumentException(
+                            "offsetSpec can be EARLIEST, LATEST, MAXTIMESTAMP or TIMESTAMP T1.");
+                }
+                i = i + 3;
+            }
+            return topicPartitionOffsetSpecs;
+        }
+
         static async Task CreateAclsAsync(string bootstrapServers, string[] commandArgs)
         {
             List<AclBinding> aclBindings;
@@ -757,87 +812,21 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static async Task ListOffsetsAsync(string bootstrapServers) {
-            string TopicName = "non-existing-topic";
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
-            {
-                try
-                {
-                    await adminClient.CreateTopicsAsync(new TopicSpecification[] { 
-                        new TopicSpecification { Name = TopicName, ReplicationFactor = 1, NumPartitions = 1 } });
-                }
-                catch (CreateTopicsException e)
-                {
-                    Console.WriteLine($"An error occurred creating topic : {e}");
-                }
-            }
+        static async Task ListOffsetsAsync(string bootstrapServers, string[] commandArgs) {
 
-            using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
-            {   
-                long basetimestamp = 10000000;
-                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 100,TimestampType.CreateTime)});
-                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 400,TimestampType.CreateTime)});
-                await producer.ProduceAsync(TopicName,new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 250,TimestampType.CreateTime)});
-                producer.Flush(new TimeSpan(0,0,10));
-            }
+            var topicPartitionOffsetSpecs = ParseTopicPartitionOffsetSpecs(commandArgs);
             var timeout = TimeSpan.FromSeconds(30);
             ListOffsetsOptions options = new ListOffsetsOptions(){RequestTimeout = timeout, IsolationLevel = Confluent.Kafka.Admin.IsolationLevel.ReadUncommitted};
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                var requests = new List<TopicPartitionOffsetSpec>();
-                requests.Add(new TopicPartitionOffsetSpec {
-                    TopicPartition = new TopicPartition(TopicName,0),
-                    OffsetSpec = new EarliestOffsetSpec()
-                });
-                var ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
+                var ListOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs, options);
                 foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
                 {
                     TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
                     long Timestamp = ListOffsetsResultInfo.Timestamp;
                     Console.WriteLine($"{topicPartition.Topic} ${topicPartition.Partition} ${topicPartition.Error.Code} ${topicPartition.Offset} ${Timestamp}");
                 }
-            }
-
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
-            {
-                var requests = new List<TopicPartitionOffsetSpec>();
-                requests.Add(new TopicPartitionOffsetSpec {
-                    TopicPartition = new TopicPartition(TopicName,0),
-                    OffsetSpec = new LatestOffsetSpec()
-                });
-                var ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
-                foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
-                {
-                    TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
-                    long Timestamp = ListOffsetsResultInfo.Timestamp;
-                    Console.WriteLine($"{topicPartition.Topic} ${topicPartition.Partition} ${topicPartition.Error.Code} ${topicPartition.Offset} ${Timestamp}");
-                }
-            }
-
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
-            {
-                var requests = new List<TopicPartitionOffsetSpec>();
-                requests.Add(new TopicPartitionOffsetSpec {
-                    TopicPartition = new TopicPartition(TopicName,0),
-                    OffsetSpec = new MaxTimestampOffsetSpec()
-                });
-                var ListOffsetsResult = await adminClient.ListOffsetsAsync(requests,options);
-                foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
-                {
-                    TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
-                    long Timestamp = ListOffsetsResultInfo.Timestamp;
-                    Console.WriteLine($"{topicPartition.Topic} ${topicPartition.Partition} ${topicPartition.Error.Code} ${topicPartition.Offset} ${Timestamp}");
-                }
-                try
-                {
-                    await adminClient.DeleteTopicsAsync(new List<string>{ TopicName });
-                }
-                catch (CreateTopicsException e)
-                {
-                    Console.WriteLine($"An error occurred deleting topic : ${e}");
-                }
-
             }
 
         }
@@ -848,7 +837,6 @@ namespace Confluent.Kafka.Examples
                 Console.WriteLine(
                     "usage: .. <bootstrapServers> " + String.Join("|", new string[] {
                         "list-groups", "metadata", "library-version", "create-topic", "create-acls",
-                        "describe-acls", "delete-acls",
                         "list-consumer-groups", "describe-consumer-groups",
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
                         "incremental-alter-configs", "describe-user-scram-credentials", 
@@ -908,7 +896,7 @@ namespace Confluent.Kafka.Examples
                     await AlterUserScramCredentialsAsync(bootstrapServers, commandArgs);
                     break;
                 case "list-offsets":
-                    await ListOffsetsAsync(bootstrapServers);
+                    await ListOffsetsAsync(bootstrapServers, commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");
