@@ -46,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var topicPartitionOffsetSpecs = new List<TopicPartitionOffsetSpec>();
                 topicPartitionOffsetSpecs.Add(new TopicPartitionOffsetSpec {
                     TopicPartition = new TopicPartition(topic.Name, new Partition(0)),
-                    OffsetSpec = new EarliestOffsetSpec()
+                    OffsetSpec = OffsetSpec.Earliest()
                 });
                 var ListOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs,options);
                 foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
@@ -61,7 +61,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var topicPartitionOffsetSpecs = new List<TopicPartitionOffsetSpec>();
                 topicPartitionOffsetSpecs.Add(new TopicPartitionOffsetSpec {
                     TopicPartition = new TopicPartition(topic.Name, new Partition(0)),
-                    OffsetSpec = new LatestOffsetSpec()
+                    OffsetSpec = OffsetSpec.Latest()
                 });
                 var ListOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs,options);
                 foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
@@ -76,7 +76,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var topicPartitionOffsetSpecs = new List<TopicPartitionOffsetSpec>();
                 topicPartitionOffsetSpecs.Add(new TopicPartitionOffsetSpec {
                     TopicPartition = new TopicPartition(topic.Name, new Partition(0)),
-                    OffsetSpec = new MaxTimestampOffsetSpec()
+                    OffsetSpec = OffsetSpec.MaxTimestamp()
                 });
                 var ListOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs,options);
                 foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)

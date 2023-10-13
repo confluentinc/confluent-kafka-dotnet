@@ -262,28 +262,28 @@ namespace Confluent.Kafka.Examples
                     i = i + 1;
                     topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
                         TopicPartition = new TopicPartition(topic, new Partition(partition)),
-                        OffsetSpec = new TimestampOffsetSpec { Timestamp = timestamp}
+                        OffsetSpec = OffsetSpec.ForTimestamp(timestamp)
                     });
                 }
                 else if (offsetSpec == "MAXTIMESTAMP")
                 {
                     topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
                         TopicPartition = new TopicPartition(topic, new Partition(partition)),
-                        OffsetSpec = new MaxTimestampOffsetSpec()
+                        OffsetSpec = OffsetSpec.MaxTimestamp()
                     });
                 }
                 else if (offsetSpec == "EARLIEST")
                 {
                     topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
                         TopicPartition = new TopicPartition(topic, new Partition(partition)),
-                        OffsetSpec = new EarliestOffsetSpec()
+                        OffsetSpec = OffsetSpec.Earliest()
                     });
                 }
                 else if (offsetSpec == "LATEST")
                 {
                     topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
                         TopicPartition = new TopicPartition(topic, new Partition(partition)),
-                        OffsetSpec = new LatestOffsetSpec()
+                        OffsetSpec = OffsetSpec.Latest()
                     });
                 }
                 else

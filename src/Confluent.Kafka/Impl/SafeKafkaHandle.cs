@@ -2495,21 +2495,21 @@ namespace Confluent.Kafka.Impl
                     int Partition = request.TopicPartition.Partition;
                     IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list,Topic,Partition);
                     var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
-                    if (request.OffsetSpec is EarliestOffsetSpec)
+                    if (request.OffsetSpec is OffsetSpec.EarliestSpec)
                     {
                         tp.offset = (long) OffsetSpecEnumValue.Earliest;
                     }
-                    else if (request.OffsetSpec is LatestOffsetSpec)
+                    else if (request.OffsetSpec is OffsetSpec.LatestSpec)
                     {
                         tp.offset = (long) OffsetSpecEnumValue.Latest;
                     }
-                    else if (request.OffsetSpec is MaxTimestampOffsetSpec)
+                    else if (request.OffsetSpec is OffsetSpec.MaxTimestampSpec)
                     {
                         tp.offset = (long) OffsetSpecEnumValue.MaxTimestamp;
                     }
-                    else if (request.OffsetSpec is TimestampOffsetSpec)
+                    else if (request.OffsetSpec is OffsetSpec.TimestampSpec)
                     {
-                        tp.offset = (long) ((TimestampOffsetSpec)request.OffsetSpec).Timestamp;
+                        tp.offset = (long) ((OffsetSpec.TimestampSpec)request.OffsetSpec).Timestamp;
                     }    
                 }  
                 Librdkafka.ListOffsets(handle,topic_partition_list,optionsPtr,resultQueuePtr);
