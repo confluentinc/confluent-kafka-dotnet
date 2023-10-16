@@ -20,16 +20,38 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     OffsetSpec.
+    ///     OffsetSpec used to ListOffsets for a particular TopicPartition.
     /// </summary>
     public abstract class OffsetSpec
     {
+        /// <summary>
+        ///     EarliestSpec : OffsetSpec denotes the EarliestSpec corresponding to the earliest offset produced.
+        /// </summary>
         public class EarliestSpec : OffsetSpec { }
+
+        /// <summary>
+        ///     LatestSpec : OffsetSpec denotes the LatestSpec corresponding to the latest offset produced.
+        /// </summary>
         public class LatestSpec : OffsetSpec { }
+
+        /// <summary>
+        ///     MaxTimestampSpec : OffsetSpec denotes the MaxTimestampSpec as timestamp can be set on the client side which might differ with the LatestSpec.
+        /// </summary>
         public class MaxTimestampSpec : OffsetSpec { }
+
+        /// <summary>
+        ///     TimestampSpec : OffsetSpec denotes the TimestampSpec corresponding to a particular timestamp.
+        /// </summary> 
         public class TimestampSpec : OffsetSpec
         {
+            /// <summary>
+            ///     Timestamp for the OffsetSpec.
+            /// </summary>
             public long Timestamp { get; set; }
+
+            /// <summary>
+            ///     Sets the Timestamp for the TimestampSpec.
+            /// </summary>
             public TimestampSpec(long timestamp)
             {
                 Timestamp = timestamp;

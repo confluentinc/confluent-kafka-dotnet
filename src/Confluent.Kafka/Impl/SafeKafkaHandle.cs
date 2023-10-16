@@ -1462,7 +1462,7 @@ namespace Confluent.Kafka.Impl
 
         private void setOption_IsolationLevel(IntPtr optionsPtr, Confluent.Kafka.Admin.IsolationLevel IsolationLevel)
         {
-            var rError = Librdkafka.AdminOptions_set_isolation_level(optionsPtr, (byte)IsolationLevel);
+            var rError = Librdkafka.AdminOptions_set_isolation_level(optionsPtr, (IntPtr)(int)IsolationLevel);
             var error = new Error(rError, true);
             if (error.Code != ErrorCode.NoError)
             {

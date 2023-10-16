@@ -26,7 +26,7 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     Initializes a new instance of ListOffsetsException.
         /// </summary>
-        /// <param name="results">
+        /// <param name="result">
         ///     The result corresponding to all partitions in the request
         ///     (whether or not they were in error). At least one of these
         ///     topic partiton in result will be in error.
