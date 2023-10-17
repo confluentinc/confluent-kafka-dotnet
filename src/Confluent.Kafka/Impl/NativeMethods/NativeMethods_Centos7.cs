@@ -534,6 +534,11 @@ namespace Confluent.Kafka.Impl.NativeMethods
                         IntPtr options,
                         IntPtr true_or_false);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AdminOptions_set_isolation_level(
+                        IntPtr options,
+                        IntPtr isolation_level);
+
        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_AdminOptions_set_match_consumer_group_states(
                         IntPtr options,
@@ -1164,6 +1169,18 @@ namespace Confluent.Kafka.Impl.NativeMethods
         
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_AlterUserScramCredentials_result_response_error(IntPtr element);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_ListOffsets(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int rd_kafka_ListOffsets_result_infos(IntPtr resultPtr, out UIntPtr cntp);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern long rd_kafka_ListOffsetsResultInfo_timestamp(IntPtr element);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ListOffsetsResultInfo_topic_partition(IntPtr element);
 
         //
         // Queues
