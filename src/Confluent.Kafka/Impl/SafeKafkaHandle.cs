@@ -2490,10 +2490,15 @@ namespace Confluent.Kafka.Impl
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
                 topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)requests.Count());
-                foreach(var request in requests){
+                foreach(var request in requests)
+                {
                     string Topic = request.TopicPartition.Topic;
                     int Partition = request.TopicPartition.Partition;
-                    IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list,Topic,Partition);
+                    IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, Topic, Partition);
+                    if (topic_partition == IntPtr.Zero)
+                    {
+                        throw new Exception("Failed to create topic partition list");
+                    }
                     var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
                     if (request.OffsetSpec is OffsetSpec.EarliestSpec)
                     {
@@ -2512,7 +2517,7 @@ namespace Confluent.Kafka.Impl
                         tp.offset = (long) ((OffsetSpec.TimestampSpec)request.OffsetSpec).Timestamp;
                     }    
                 }  
-                Librdkafka.ListOffsets(handle,topic_partition_list,optionsPtr,resultQueuePtr);
+                Librdkafka.ListOffsets(handle, topic_partition_list, optionsPtr, resultQueuePtr);
             }
             finally
             {
