@@ -1,9 +1,13 @@
-# vNext
+# 2.3.0
 
 ## Enhancements
 
 - Added support for external JSON schemas in `JsonSerializer` and `JsonDeserializer` (#2042).
 - Added compatibility methods to CachedSchemaRegistryClient ([ISBronny](https://github.com/ISBronny), #2097).
+
+## Fixes
+
+- Remove System.Net.Http v4.3.4 security vulnerability ([#2098]).
 
 
 # 2.2.0
