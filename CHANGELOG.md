@@ -9,6 +9,10 @@
 - [KIP-430](https://cwiki.apache.org/confluence/display/KAFKA/KIP-430+-+Return+Authorized+Operations+in+Describe+Responses):
   Return authorized operations in describe responses (#2021, @jainruchir).
 
+## Fixes
+
+- Remove System.Net.Http v4.3.4 security vulnerability ([#2098]).
+
 
 # 2.2.0
 
