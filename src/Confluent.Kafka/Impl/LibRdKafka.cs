@@ -1287,6 +1287,7 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr, IntPtr> _AdminOptions_set_isolation_level;
         internal static IntPtr AdminOptions_set_isolation_level(IntPtr options, IntPtr IsolationLevel)
             => _AdminOptions_set_isolation_level(options, IsolationLevel);
+
         private static Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr> _NewTopic_new;
         internal static IntPtr NewTopic_new(
                         string topic,
