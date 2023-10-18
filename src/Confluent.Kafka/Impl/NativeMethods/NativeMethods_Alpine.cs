@@ -1185,7 +1185,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern void rd_kafka_ListOffsets(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int rd_kafka_ListOffsets_result_infos(IntPtr resultPtr, out UIntPtr cntp);
+        internal static extern IntPtr rd_kafka_ListOffsets_result_infos(IntPtr resultPtr, out UIntPtr cntp);
 
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
