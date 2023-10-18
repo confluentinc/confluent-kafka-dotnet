@@ -33,6 +33,11 @@ namespace Confluent.Kafka.Admin
         public string Name { get; set; }
 
         /// <summary>
+        ///     The topic Id.
+        /// </summary>
+        public Uuid TopicId {get; set; }
+
+        /// <summary>
         ///     Error, if any, of topic reported by the broker
         /// </summary>
         public Error Error { get; set; }
