@@ -42,6 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.Equal(clientIdToToppars.Count(), desc.Members.Count());
             // We will run all our tests on non-simple consumer groups only.
             Assert.False(desc.IsSimpleConsumerGroup);
+            Assert.NotEmpty(desc.AuthorizedOperations);
 
             foreach (var member in desc.Members)
             {
@@ -71,7 +72,11 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers }).Build())
             {
                 var listOptionsWithTimeout = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
-                var describeOptionsWithTimeout = new Admin.DescribeConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
+                var describeOptionsWithTimeout = new Admin.DescribeConsumerGroupsOptions()
+                {
+                    RequestTimeout = TimeSpan.FromSeconds(30),
+                    IncludeAuthorizedOperations = true,
+                };
 
                 // We should not have any group initially.
                 var groups = adminClient.ListConsumerGroupsAsync().Result;
@@ -108,7 +113,8 @@ namespace Confluent.Kafka.IntegrationTests
                     describeOptionsWithTimeout).Result;
                 var groupDesc = descResult.ConsumerGroupDescriptions.Find(group => group.GroupId == groupID);
                 var clientIdToToppars = new Dictionary<string, List<TopicPartition>>();
-                clientIdToToppars[clientID1] = new List<TopicPartition>() {
+                clientIdToToppars[clientID1] = new List<TopicPartition>()
+                {
                     new TopicPartition(partitionedTopic, 0),
                     new TopicPartition(partitionedTopic, 1),
                 };

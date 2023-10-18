@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,48 +18,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents a single consumer group's description in the result of a
-    ///     describe consumer group operation.
+    ///     Represents the result of a describe cluster operation.
     /// </summary>
-    public class ConsumerGroupDescription
+    public class DescribeClusterResult
     {
         /// <summary>
-        ///     The groupID.
+        ///     Current cluster Id (null if not supported).
         /// </summary>
-        public string GroupId { get; set; }
+        public string ClusterId { get; set; }
 
         /// <summary>
-        ///     Error, if any, of result
+        ///     Current controller (null if not known).
         /// </summary>
-        public Error Error { get; set; }
+        public Node Controller { get; set; }
 
         /// <summary>
-        ///     Whether the consumer group is simple or not.
+        ///     Nodes in the cluster.
         /// </summary>
-        public bool IsSimpleConsumerGroup { get; set; }
-
-        /// <summary>
-        ///     Partition assignor identifier.
-        /// </summary>
-        public string PartitionAssignor { get; set; }
-
-        /// <summary>
-        ///     Consumer group state.
-        /// </summary>
-        public ConsumerGroupState State { get; set; }
-
-        /// <summary>
-        ///     Broker that acts as consumer group coordinator (null if not known).
-        /// </summary>
-        public Node Coordinator { get; set; }
-
-        /// <summary>
-        ///    Members list.
-        /// </summary>
-        public List<MemberDescription> Members { get; set; }
+        public List<Node> Nodes { get; set; }
 
         /// <summary>
         ///    AclOperation list (null if not requested or not supported).
@@ -75,10 +55,11 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            var members = string.Join(",",
-                Members.Select(member =>
-                    member.ToString()
+            var nodes = string.Join(",",
+                Nodes.Select(node =>
+                    node?.ToString() ?? "null"
                 ).ToList());
+
             var authorizedOperations = "null";
             if (AuthorizedOperations != null)
             {
@@ -88,15 +69,12 @@ namespace Confluent.Kafka.Admin
                     ).ToList());
                 authorizedOperations = $"[{authorizedOperations}]";
             }
-
-            result.Append($"{{\"GroupId\": {GroupId.Quote()}");
-            result.Append($", \"Error\": \"{Error.Code}\", \"IsSimpleConsumerGroup\": {IsSimpleConsumerGroup.Quote()}");
-            result.Append($", \"PartitionAssignor\": {PartitionAssignor.Quote()}, \"State\": {State.ToString().Quote()}");
-            result.Append($", \"Coordinator\": {Coordinator?.ToString() ?? "null"}, \"Members\": [{members}]");
+            
+            result.Append($"{{\"ClusterId\": {ClusterId.Quote()}");
+            result.Append($", \"Controller\": {Controller?.ToString() ?? "null"}, \"Nodes\": [{nodes}]");
             result.Append($", \"AuthorizedOperations\": {authorizedOperations}}}");
 
             return result.ToString();
         }
-
     }
 }
