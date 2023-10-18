@@ -45,6 +45,9 @@ namespace Confluent.Kafka
             }
         }
 
+        internal static string Quote(this bool b) =>
+                b ? "true" : "false";
+
         internal static string Quote(this string str) =>
                 str == null ? "null" : $"\"{str.Replace("\"","\\\"")}\"";
     }
