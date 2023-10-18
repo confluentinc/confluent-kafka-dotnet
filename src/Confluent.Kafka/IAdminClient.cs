@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2018-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -530,5 +530,78 @@ namespace Confluent.Kafka
         /// </returns>
         Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
     }
+
+    /// <summary>
+    ///     Extension methods for default <see cref="IAdminClient"/> implementations.
+    /// </summary>
+    public static class IAdminClientExtensions
+    {
+        
+        /// <summary>
+        ///    Describes topics in the cluster.
+        /// </summary>
+        /// <param name="adminClient">
+        ///     AdminClient interface.
+        /// </param>
+        /// <param name="topicCollection">
+        ///     A collection of topics to describe.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while describing topics.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.DescribeTopicsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeTopicsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A <see cref="Confluent.Kafka.Admin.DescribeTopicsResult"/>, which contains a List of
+        ///     <see cref="Confluent.Kafka.Admin.TopicDescription"/>.
+        /// </returns>
+        public static Task<DescribeTopicsResult> DescribeTopicsAsync(
+            this IAdminClient adminClient,
+            TopicCollection topicCollection, DescribeTopicsOptions options = null)
+        {
+            if (adminClient is AdminClient)
+            {
+                return ((AdminClient) adminClient).DescribeTopicsAsync(
+                    topicCollection, options);
+            }
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        ///    Describes the cluster.
+        /// </summary>
+        /// <param name="adminClient">
+        ///     AdminClient interface.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while describing cluster.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <returns>
+        ///     A <see cref="Confluent.Kafka.Admin.DescribeClusterResult"/>.
+        /// </returns>
+        public static Task<DescribeClusterResult> DescribeClusterAsync(
+            this IAdminClient adminClient,
+            DescribeClusterOptions options = null)
+        {
+            if (adminClient is AdminClient)
+            {
+                return ((AdminClient) adminClient).DescribeClusterAsync(
+                    options);
+            }
+            throw new NotImplementedException();
+        }
+    }
+
 
 }
