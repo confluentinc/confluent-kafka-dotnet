@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,54 +18,41 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents a single consumer group's description in the result of a
-    ///     describe consumer group operation.
+    ///     Represents a single topic's description in the result of a
+    ///     describe topic operation.
     /// </summary>
-    public class ConsumerGroupDescription
+    public class TopicDescription
     {
         /// <summary>
-        ///     The groupID.
+        ///     The topic name.
         /// </summary>
-        public string GroupId { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
-        ///     Error, if any, of result
+        ///     Error, if any, of topic reported by the broker
         /// </summary>
         public Error Error { get; set; }
+        
+        /// <summary>
+        ///      Whether the topic is internal to Kafka.
+        ///      An example of an internal topic is the offsets and group management topic: __consumer_offsets.
+        /// </summary>
+        public bool IsInternal { get; set; }
 
         /// <summary>
-        ///     Whether the consumer group is simple or not.
+        ///    List of partitions and their information.
         /// </summary>
-        public bool IsSimpleConsumerGroup { get; set; }
-
-        /// <summary>
-        ///     Partition assignor identifier.
-        /// </summary>
-        public string PartitionAssignor { get; set; }
-
-        /// <summary>
-        ///     Consumer group state.
-        /// </summary>
-        public ConsumerGroupState State { get; set; }
-
-        /// <summary>
-        ///     Broker that acts as consumer group coordinator (null if not known).
-        /// </summary>
-        public Node Coordinator { get; set; }
-
-        /// <summary>
-        ///    Members list.
-        /// </summary>
-        public List<MemberDescription> Members { get; set; }
+        public List<TopicPartitionInfo> Partitions { get; set; }
 
         /// <summary>
         ///    AclOperation list (null if not requested or not supported).
         /// </summary>
         public List<AclOperation> AuthorizedOperations { get; set; }
-
+        
         /// <summary>
         ///     Returns a JSON representation of this object.
         /// </summary>
@@ -75,10 +62,10 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            var members = string.Join(",",
-                Members.Select(member =>
-                    member.ToString()
-                ).ToList());
+            var partitions = string.Join(",",
+                Partitions.Select(partition =>
+                    partition.ToString()).ToList());
+
             var authorizedOperations = "null";
             if (AuthorizedOperations != null)
             {
@@ -89,14 +76,10 @@ namespace Confluent.Kafka.Admin
                 authorizedOperations = $"[{authorizedOperations}]";
             }
 
-            result.Append($"{{\"GroupId\": {GroupId.Quote()}");
-            result.Append($", \"Error\": \"{Error.Code}\", \"IsSimpleConsumerGroup\": {IsSimpleConsumerGroup.Quote()}");
-            result.Append($", \"PartitionAssignor\": {PartitionAssignor.Quote()}, \"State\": {State.ToString().Quote()}");
-            result.Append($", \"Coordinator\": {Coordinator?.ToString() ?? "null"}, \"Members\": [{members}]");
-            result.Append($", \"AuthorizedOperations\": {authorizedOperations}}}");
-
+            result.Append($"{{\"Name\": {Name.Quote()}");
+            result.Append($", \"Error\": \"{Error.Code}\", \"IsInternal\": {IsInternal.Quote()}");
+            result.Append($", \"Partitions\": [{partitions}], \"AuthorizedOperations\": {authorizedOperations}}}");
             return result.ToString();
         }
-
     }
 }
