@@ -75,7 +75,7 @@ namespace Confluent.Kafka.IntegrationTests
                         },
                         Entry = new AccessControlEntry
                         {
-                            Principal = "User:user",
+                            Principal = $"User:{user}",
                             Host =  "*",
                             Operation = AclOperation.Alter,
                             PermissionType = AclPermissionType.Allow

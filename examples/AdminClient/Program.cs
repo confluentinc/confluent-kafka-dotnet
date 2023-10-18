@@ -610,7 +610,7 @@ namespace Confluent.Kafka.Examples
                             }
                             Console.WriteLine($"      TopicPartitions: [{topicPartitions}]");
                         }
-                        if(includeAuthorizedOperations)
+                        if (includeAuthorizedOperations)
                         {
                             string operations = string.Join(" ", group.AuthorizedOperations);
                             Console.WriteLine($"  Authorized operations: {operations}");
@@ -807,7 +807,8 @@ namespace Confluent.Kafka.Examples
                     {
                         Console.WriteLine("      There is no In-Sync-Replica broker for the partition");
                     }
-                    else{
+                    else
+                    {
                         string isrs = string.Join("; ", partition.ISR);
                         Console.WriteLine($"      The In-Sync-Replica brokers are: {isrs}");
                     }
@@ -816,14 +817,15 @@ namespace Confluent.Kafka.Examples
                     {
                         Console.WriteLine("      There is no Replica broker for the partition");
                     }
-                    else{
+                    else
+                    {
                         string replicas = string.Join("; ", partition.Replicas);
                         Console.WriteLine($"      The Replica brokers are: {replicas}");
                     }
                     
                 }
                 Console.WriteLine($"  Is internal: {topic.IsInternal}");
-                if(includeAuthorizedOperations)
+                if (includeAuthorizedOperations)
                 {
                     string operations = string.Join(" ", topic.AuthorizedOperations);
                     Console.WriteLine($"  Authorized operations: {operations}");
@@ -934,7 +936,7 @@ namespace Confluent.Kafka.Examples
                     {
                         Console.WriteLine($"    {node}");
                     }
-                    if(includeAuthorizedOperations)
+                    if (includeAuthorizedOperations)
                     {
                         string operations = string.Join(" ", descResult.AuthorizedOperations);
                         Console.WriteLine($"  Authorized operations: {operations}");
