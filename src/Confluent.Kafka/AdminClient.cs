@@ -514,14 +514,14 @@ namespace Confluent.Kafka
 
         private Uuid extractUuid(IntPtr uuidPtr)
         {
-            if(uuidPtr == IntPtr.Zero)
+            if (uuidPtr == IntPtr.Zero)
             {
                 return null;
             }
 
             return new Uuid(
-                Librdkafka.uuid_most_significant_bits(uuidPtr),
-                Librdkafka.uuid_least_significant_bits(uuidPtr)
+                Librdkafka.Uuid_most_significant_bits(uuidPtr),
+                Librdkafka.Uuid_least_significant_bits(uuidPtr)
             );
         } 
         

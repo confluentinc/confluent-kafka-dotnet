@@ -325,9 +325,6 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern /* char * */IntPtr rd_kafka_Uuid_base64str(IntPtr uuid);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_TopicDescription_topic_id(IntPtr topicdesc);
-
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern long rd_kafka_Uuid_most_significant_bits(IntPtr uuid);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1219,6 +1216,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_TopicDescription_name(IntPtr topicdesc);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_TopicDescription_topic_id(IntPtr topicdesc);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_TopicDescription_partitions(IntPtr topicdesc, out UIntPtr cntp);

@@ -40,11 +40,11 @@ namespace Confluent.Kafka
         public Uuid(long mostSignificantBits, long leastSignificantBits)
         {
             MostSignificantBits = mostSignificantBits;
-            LeasttSignificantBits = leastSignificantBits;
-            IntPtr cUuid = Librdkafka.uuid_new(mostSignificantBits, leastSignificantBits);
-            IntPtr cBase64str = Librdkafka.uuid_base64str(cUuid);
+            LeastSignificantBits = leastSignificantBits;
+            IntPtr cUuid = Librdkafka.Uuid_new(mostSignificantBits, leastSignificantBits);
+            IntPtr cBase64str = Librdkafka.Uuid_base64str(cUuid);
             Base64str = PtrToStringUTF8(cBase64str);
-            Librdkafka.uuid_destroy(cUuid);
+            Librdkafka.Uuid_destroy(cUuid);
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Most significant 64 bits of the 128 bits UUID.
         /// </summary>
-        public Offset LeasttSignificantBits { get; }
+        public Offset LeastSignificantBits { get; }
 
         private readonly string Base64str;
 

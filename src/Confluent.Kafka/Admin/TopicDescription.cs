@@ -82,6 +82,7 @@ namespace Confluent.Kafka.Admin
             }
 
             result.Append($"{{\"Name\": {Name.Quote()}");
+            result.Append($", \"TopicId\": {TopicId.ToString().Quote()}");
             result.Append($", \"Error\": \"{Error.Code}\", \"IsInternal\": {IsInternal.Quote()}");
             result.Append($", \"Partitions\": [{partitions}], \"AuthorizedOperations\": {authorizedOperations}}}");
             return result.ToString();

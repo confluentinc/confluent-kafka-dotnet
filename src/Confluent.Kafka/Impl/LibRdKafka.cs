@@ -234,11 +234,11 @@ namespace Confluent.Kafka.Impl
             _new = (Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>)methods.Single(m => m.Name == "rd_kafka_new").CreateDelegate(typeof(Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>));
             _name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _memberid = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_memberid").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
-            _uuid_new = (Func<long, long, IntPtr>)methods.Single(m => m.Name == "rd_kafka_Uuid_new").CreateDelegate(typeof(Func<long, long, IntPtr>));
-            _uuid_base64str = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_Uuid_base64str").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
-            _uuid_most_significant_bits = (Func<IntPtr, long>)methods.Single(m => m.Name == "rd_kafka_Uuid_most_significant_bits").CreateDelegate(typeof(Func<IntPtr, long>));
-            _uuid_least_significant_bits = (Func<IntPtr, long>)methods.Single(m => m.Name == "rd_kafka_Uuid_least_significant_bits").CreateDelegate(typeof(Func<IntPtr, long>));
-            _uuid_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_Uuid_destroy").CreateDelegate(typeof(Action<IntPtr>));
+            _Uuid_new = (Func<long, long, IntPtr>)methods.Single(m => m.Name == "rd_kafka_Uuid_new").CreateDelegate(typeof(Func<long, long, IntPtr>));
+            _Uuid_base64str = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_Uuid_base64str").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _Uuid_most_significant_bits = (Func<IntPtr, long>)methods.Single(m => m.Name == "rd_kafka_Uuid_most_significant_bits").CreateDelegate(typeof(Func<IntPtr, long>));
+            _Uuid_least_significant_bits = (Func<IntPtr, long>)methods.Single(m => m.Name == "rd_kafka_Uuid_least_significant_bits").CreateDelegate(typeof(Func<IntPtr, long>));
+            _Uuid_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_Uuid_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_new = (Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle>)methods.Single(m => m.Name == "rd_kafka_topic_new").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle>));
             _topic_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1035,21 +1035,21 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr> _memberid;
         internal static IntPtr memberid(IntPtr rk) => _memberid(rk);
 
-        private static Func<long, long, IntPtr> _uuid_new;
-        internal static IntPtr uuid_new(long most_significant_bits, long least_significant_bits)
-            => _uuid_new(most_significant_bits, least_significant_bits);
+        private static Func<long, long, IntPtr> _Uuid_new;
+        internal static IntPtr Uuid_new(long most_significant_bits, long least_significant_bits)
+            => _Uuid_new(most_significant_bits, least_significant_bits);
 
-        private static Func<IntPtr, IntPtr> _uuid_base64str;
-        internal static IntPtr uuid_base64str(IntPtr uuid) => _uuid_base64str(uuid);
+        private static Func<IntPtr, IntPtr> _Uuid_base64str;
+        internal static IntPtr Uuid_base64str(IntPtr uuid) => _Uuid_base64str(uuid);
 
-        private static Func<IntPtr, long> _uuid_most_significant_bits;
-        internal static long uuid_most_significant_bits(IntPtr uuid) => _uuid_most_significant_bits(uuid);
+        private static Func<IntPtr, long> _Uuid_most_significant_bits;
+        internal static long Uuid_most_significant_bits(IntPtr uuid) => _Uuid_most_significant_bits(uuid);
 
-        private static Func<IntPtr, long> _uuid_least_significant_bits;
-        internal static long uuid_least_significant_bits(IntPtr uuid) => _uuid_least_significant_bits(uuid);
+        private static Func<IntPtr, long> _Uuid_least_significant_bits;
+        internal static long Uuid_least_significant_bits(IntPtr uuid) => _Uuid_least_significant_bits(uuid);
 
-        private static Action<IntPtr> _uuid_destroy;
-        internal static void uuid_destroy(IntPtr uuid) => _uuid_destroy(uuid);
+        private static Action<IntPtr> _Uuid_destroy;
+        internal static void Uuid_destroy(IntPtr uuid) => _Uuid_destroy(uuid);
 
         private static Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle> _topic_new;
         internal static SafeTopicHandle topic_new(IntPtr rk, IntPtr topic, IntPtr conf)
