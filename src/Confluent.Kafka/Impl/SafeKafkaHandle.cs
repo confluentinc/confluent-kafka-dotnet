@@ -2503,31 +2503,42 @@ namespace Confluent.Kafka.Impl
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
                 topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)requests.Count());
+                if (topic_partition_list == IntPtr.Zero)
+                {
+                    throw new Exception("Failed to create topic partition list");
+                }
                 foreach(var request in requests)
                 {
                     string Topic = request.TopicPartition.Topic;
-                    int Partition = request.TopicPartition.Partition;
+                    Partition Partition = request.TopicPartition.Partition;
                     IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, Topic, Partition);
                     if (topic_partition == IntPtr.Zero)
                     {
-                        throw new Exception("Failed to create topic partition list");
+                        throw new Exception("Failed to add topic partition");
                     }
-                    var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
                     if (request.OffsetSpec is OffsetSpec.EarliestSpec)
                     {
-                        tp.offset = (long) OffsetSpecEnumValue.Earliest;
+                        Marshal.WriteInt64(topic_partition,
+                        (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                        new Offset((long)OffsetSpecEnumValue.Earliest));
                     }
                     else if (request.OffsetSpec is OffsetSpec.LatestSpec)
                     {
-                        tp.offset = (long) OffsetSpecEnumValue.Latest;
+                        Marshal.WriteInt64(topic_partition,
+                        (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                        new Offset((long)OffsetSpecEnumValue.Latest));
                     }
                     else if (request.OffsetSpec is OffsetSpec.MaxTimestampSpec)
                     {
-                        tp.offset = (long) OffsetSpecEnumValue.MaxTimestamp;
+                        Marshal.WriteInt64(topic_partition,
+                        (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                        new Offset((long)OffsetSpecEnumValue.MaxTimestamp));
                     }
                     else if (request.OffsetSpec is OffsetSpec.TimestampSpec)
                     {
-                        tp.offset = (long) ((OffsetSpec.TimestampSpec)request.OffsetSpec).Timestamp;
+                        Marshal.WriteInt64(topic_partition,
+                        (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                        new Offset(((OffsetSpec.TimestampSpec)request.OffsetSpec).Timestamp));
                     }    
                 }  
                 Librdkafka.ListOffsets(handle, topic_partition_list, optionsPtr, resultQueuePtr);
