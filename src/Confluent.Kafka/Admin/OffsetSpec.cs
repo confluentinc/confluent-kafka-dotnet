@@ -92,5 +92,5 @@ namespace Confluent.Kafka.Admin
         {
             return new MaxTimestampSpec();
         }
-}
+    }
 }
