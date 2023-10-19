@@ -449,7 +449,7 @@ namespace Confluent.Kafka.Impl
             _ListOffsets = (_ListOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets").CreateDelegate(typeof (_ListOffsets_delegate));
             
             _ListOffsets_result_infos = (_ListOffsets_result_infos_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets_result_infos").CreateDelegate(typeof (_ListOffsets_result_infos_delegate));
-            _ListOffsetsResultInfo_timestamp = (_ListOffsetsResultInfo_timestamp_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetsResultInfo_imestamp").CreateDelegate(typeof (_ListOffsetsResultInfo_timestamp_delegate));
+            _ListOffsetsResultInfo_timestamp = (_ListOffsetsResultInfo_timestamp_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetsResultInfo_timestamp").CreateDelegate(typeof (_ListOffsetsResultInfo_timestamp_delegate));
             _ListOffsetsResultInfo_topic_partition = (_ListOffsetsResultInfo_topic_partition_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetsResultInfo_topic_partition").CreateDelegate(typeof (_ListOffsetsResultInfo_topic_partition_delegate));
 
             _DescribeTopics = (_DescribeTopics_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeTopics").CreateDelegate(typeof (_DescribeTopics_delegate));
