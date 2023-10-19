@@ -8,6 +8,7 @@
 - Add support for AdminAPI `DescribeCluster()` and `DescribeTopics()` (#2021, @jainruchir).
 - [KIP-430](https://cwiki.apache.org/confluence/display/KAFKA/KIP-430+-+Return+Authorized+Operations+in+Describe+Responses):
   Return authorized operations in describe responses (#2021, @jainruchir).
+- [KIP-396](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=97551484): Added support for ListOffsets Admin API (#2086).
 
 
 # 2.2.0

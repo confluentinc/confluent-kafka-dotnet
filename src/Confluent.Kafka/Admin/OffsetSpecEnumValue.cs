@@ -29,13 +29,13 @@ namespace Confluent.Kafka.Admin
         MaxTimestamp = -3,
 
         /// <summary>
-        ///     Latest
-        /// </summary>
-        Latest = -2,
-
-        /// <summary>
         ///     Earliest
         /// </summary>
-        Earliest = -1,
+        Earliest = -2,
+
+        /// <summary>
+        ///     Latest
+        /// </summary>
+        Latest = -1,
     }
 }
