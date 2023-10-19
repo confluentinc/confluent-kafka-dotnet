@@ -33,6 +33,11 @@ namespace Confluent.Kafka.Admin
         public string Name { get; set; }
 
         /// <summary>
+        ///     The topic Id.
+        /// </summary>
+        public Uuid TopicId {get; set; }
+
+        /// <summary>
         ///     Error, if any, of topic reported by the broker
         /// </summary>
         public Error Error { get; set; }
@@ -77,6 +82,7 @@ namespace Confluent.Kafka.Admin
             }
 
             result.Append($"{{\"Name\": {Name.Quote()}");
+            result.Append($", \"TopicId\": {TopicId.ToString().Quote()}");
             result.Append($", \"Error\": \"{Error.Code}\", \"IsInternal\": {IsInternal.Quote()}");
             result.Append($", \"Partitions\": [{partitions}], \"AuthorizedOperations\": {authorizedOperations}}}");
             return result.ToString();
