@@ -15,7 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Admin
 {
@@ -35,8 +35,8 @@ namespace Confluent.Kafka.Admin
         public TimeSpan? RequestTimeout { get; set; }
 
         /// <summary>
-        ///      Isolation Level to fetch the offset for. This is on the request level 
-        ///      rather than different isolation level for different TopicPartitions
+        ///     Isolation level to fetch the offset with.
+        ///     Applies to the whole request.
         ///
         ///     Default: ReadUncommitted
         /// </summary>

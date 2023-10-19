@@ -618,7 +618,8 @@ namespace Confluent.Kafka
         /// </param>
         public static Task<ListOffsetsResult> ListOffsetsAsync(
             this IAdminClient adminClient,
-            IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsets, ListOffsetsOptions options = null)
+            IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsets,
+            ListOffsetsOptions options = null)
         {
             if (adminClient is AdminClient)
             {

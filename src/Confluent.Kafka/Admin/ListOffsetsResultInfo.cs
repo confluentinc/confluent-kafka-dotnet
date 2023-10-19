@@ -25,12 +25,12 @@ namespace Confluent.Kafka.Admin
     public class ListOffsetsResultInfo
     {
         /// <summary>
-        ///    TopicPartitionOffsetError of the ListOffset Result Element which is a Topic Partition
+        ///    TopicPartitionOffsetError corresponding to the requested TopicPartition.
         /// </summary>
         public TopicPartitionOffsetError TopicPartitionOffsetError { get; set; }
 
         /// <summary>
-        ///    Timestamp Corresponding to the offset, -1 if not set by the broker.
+        ///    Timestamp corresponding to the offset, -1 if not set by the broker.
         /// </summary>
         public long Timestamp { get; set; }
 

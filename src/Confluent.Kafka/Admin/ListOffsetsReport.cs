@@ -13,9 +13,11 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+
 
 namespace Confluent.Kafka.Admin
 {
@@ -32,7 +34,7 @@ namespace Confluent.Kafka.Admin
         public List<ListOffsetsResultInfo> ListOffsetsResultInfos { get; set; }
 
         /// <summary>
-        ///     Operation error status, null if successful.
+        ///     Operation error status.
         /// </summary>
         public Error Error { get; set; }
 

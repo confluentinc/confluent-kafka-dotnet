@@ -14,18 +14,21 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Collections.Generic;
-
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     OffsetSpec used to ListOffsets for a particular TopicPartition.
+    ///     Used in `ListOffsets` to specify the desired offsets
+    ///     of the partition being queried.
     /// </summary>
     public abstract class OffsetSpec
     {
+        private static EarliestSpec EarliestSpecInstance = new EarliestSpec();
+        private static LatestSpec LatestSpecInstance = new LatestSpec();
+        private static MaxTimestampSpec MaxTimestampSpecInstance = new MaxTimestampSpec();
+        
         /// <summary>
-        ///     EarliestSpec : OffsetSpec denotes the EarliestSpec corresponding to the earliest offset produced.
+        ///     Used to retrieve the earliest offset available.
         /// </summary>
         public class EarliestSpec : OffsetSpec
         {
@@ -36,7 +39,7 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     LatestSpec : OffsetSpec denotes the LatestSpec corresponding to the latest offset produced.
+        ///     Used to retrieve the latest offset available.
         /// </summary>
         public class LatestSpec : OffsetSpec
         {
@@ -47,7 +50,9 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     MaxTimestampSpec : OffsetSpec denotes the MaxTimestampSpec as timestamp can be set on the client side which might differ with the LatestSpec.
+        ///     Used to retrieve the offset with the largest timestamp,
+        ///     that could not correspond to the latest one as timestamps
+        ///     can be specified client-side.
         /// </summary>
         public class MaxTimestampSpec : OffsetSpec {
             internal override long Value()
@@ -57,7 +62,9 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     TimestampSpec : OffsetSpec denotes the TimestampSpec corresponding to a particular timestamp.
+        ///      Used to retrieve the earliest offset whose timestamp is
+        ///      greater than or equal to the given timestamp
+        ///      in the corresponding partition.
         /// </summary> 
         public class TimestampSpec : OffsetSpec
         {
@@ -81,24 +88,24 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     Used to retrieve the latest offset of a partition.
+        ///     Returns the LatestSpec instance.
         /// </summary>
         public static OffsetSpec Latest()
         {
-            return new LatestSpec();
+            return LatestSpecInstance;
         }
 
         /// <summary>
-        ///     Used to retrieve the earliest offset of a partition.
+        ///     Returns the EarliestSpec instance.
         /// </summary>
         public static OffsetSpec Earliest()
         {
-            return new EarliestSpec();
+            return EarliestSpecInstance;
         }
 
         /// <summary>
-        ///     Used to retrieve the earliest offset whose timestamp is greater than
-        ///     or equal to the given timestamp in the corresponding partition.
+        ///     Returns a new instance of TimestampSpec with the specified
+        ///     timestamp.
         /// </summary>
         /// <param name="timestamp">Timestamp in milliseconds.</param>
         public static OffsetSpec ForTimestamp(long timestamp)
@@ -107,11 +114,11 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     Used to retrieve the offset with the largest timestamp of a partition.
+        ///     Returns the MaxTimestamp instance.
         /// </summary>
         public static OffsetSpec MaxTimestamp()
         {
-            return new MaxTimestampSpec();
+            return MaxTimestampSpecInstance;
         }
         
         internal abstract long Value();

@@ -13,9 +13,11 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+
 
 namespace Confluent.Kafka.Admin
 {

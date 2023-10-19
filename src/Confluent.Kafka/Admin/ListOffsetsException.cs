@@ -14,12 +14,11 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents an error that occured during list offsets.
+    ///     Represents an error occurred while listing offsets.
     /// </summary>
     public class ListOffsetsException : KafkaException
     {
