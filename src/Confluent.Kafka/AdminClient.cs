@@ -23,7 +23,6 @@ using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Impl;
 using static Confluent.Kafka.Internal.Util.Marshal;
-using Confluent.Kafka.Internal;
 
 
 namespace Confluent.Kafka
@@ -582,16 +581,16 @@ namespace Confluent.Kafka
 
         private ListOffsetsReport extractListOffsetsReport(IntPtr resultPtr)
         {
-            var resultResponsesPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resultResponsesCntPtr);
-            IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resultResponsesCntPtr];
-            Marshal.Copy(resultResponsesPtr, resultResponsesPtrArr, 0, (int)resultResponsesCntPtr);
+            var resultInfosPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resulInfosCntPtr);
+            IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resulInfosCntPtr];
+            Marshal.Copy(resultInfosPtr, resultResponsesPtrArr, 0, (int)resulInfosCntPtr);
             
             ErrorCode reportErrorCode = ErrorCode.NoError;
             var listOffsetsResultInfos = resultResponsesPtrArr.Select(resultResponsePtr => 
             {
                 long timestamp = Librdkafka.ListOffsetsResultInfo_timestamp(resultResponsePtr);
-                IntPtr c_topicpartition = Librdkafka.ListOffsetsResultInfo_topic_partition(resultResponsePtr);
-                var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(c_topicpartition);
+                IntPtr c_topic_partition = Librdkafka.ListOffsetsResultInfo_topic_partition(resultResponsePtr);
+                var tp = Marshal.PtrToStructure<rd_kafka_topic_partition>(c_topic_partition);
                 ErrorCode code = tp.err;
                 Error error = new Error(code);
                 if ((code != ErrorCode.NoError) && (reportErrorCode == ErrorCode.NoError))
@@ -1214,20 +1213,20 @@ namespace Confluent.Kafka
                                         if (errorCode != ErrorCode.NoError)
                                         {
                                             Task.Run(() =>
-                                                    ((TaskCompletionSource<Null>)adminClientResult).TrySetException(
+                                                    ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
                                         ListOffsetsReport report = extractListOffsetsReport(eventPtr);
-                                        ListOffsetsResult result = new ListOffsetsResult() { ListOffsetsResultInfos = report.ListOffsetsResultInfos };
                                         if (report.Error.IsError)
                                         {
                                             Task.Run(() => 
-                                                ((TaskCompletionSource<Null>)adminClientResult).TrySetException(
-                                                    new ListOffsetsException(result)));
+                                                ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetException(
+                                                    new ListOffsetsException(report)));
                                         }
                                         else
                                         {
+                                            var result = new ListOffsetsResult() { ListOffsetsResultInfos = report.ListOffsetsResultInfos };
                                             Task.Run(() =>
                                                 ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetResult(
                                                     result));
@@ -1748,7 +1747,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListOffsetsAsync(IEnumerable{TopicPartitionOffsetSpec}, ListOffsetsOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.ListOffsetsAsync(IAdminClient, IEnumerable{TopicPartitionOffsetSpec}, ListOffsetsOptions)" />
         /// </summary>
         public Task<ListOffsetsResult> ListOffsetsAsync(IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsetSpecs,ListOffsetsOptions options = null) {
             var completionSource = new TaskCompletionSource<ListOffsetsResult>();

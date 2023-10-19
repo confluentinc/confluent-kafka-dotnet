@@ -20,17 +20,18 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     TopicPartitionOffsetSpec.
+    ///     Represents a (TopicPartition, OffsetSpec) tuple.
+    ///     Used by ListOffsets.
     /// </summary>
     public class TopicPartitionOffsetSpec
     {
         /// <summary>
-        ///     TopicPartition.
+        ///     TopicPartition to query.
         /// </summary>
         public TopicPartition TopicPartition { get; set; }
 
         /// <summary>
-        ///      OffsetSpec.
+        ///      OffsetSpec to query in specified partition.
         /// </summary>
         public OffsetSpec OffsetSpec { get; set; }
     }

@@ -31,7 +31,7 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     topic partiton in result will be in error.
         /// </param>
-        public ListOffsetsException(ListOffsetsResult result)
+        public ListOffsetsException(ListOffsetsReport result)
             : base(new Error(ErrorCode.Local_Partial,
                 "An error occurred in list offsets, check individual topic partiton in result."))
         {
@@ -43,6 +43,6 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public ListOffsetsResult Result { get; }
+        public ListOffsetsReport Result { get; }
     }
 }

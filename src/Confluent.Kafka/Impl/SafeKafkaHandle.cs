@@ -1472,7 +1472,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        private void setOption_IsolationLevel(IntPtr optionsPtr, Confluent.Kafka.Admin.IsolationLevel IsolationLevel)
+        private void setOption_IsolationLevel(IntPtr optionsPtr, IsolationLevel IsolationLevel)
         {
             var rError = Librdkafka.AdminOptions_set_isolation_level(optionsPtr, (IntPtr)(int)IsolationLevel);
             var error = new Error(rError, true);
@@ -2488,7 +2488,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void ListOffsets(IEnumerable<TopicPartitionOffsetSpec> requests, ListOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        internal void ListOffsets(IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsets, ListOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
             var optionsPtr = IntPtr.Zero;
@@ -2502,33 +2502,16 @@ namespace Confluent.Kafka.Impl
                 setOption_IsolationLevel(optionsPtr, options.IsolationLevel);
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
-                topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)requests.Count());
-                foreach(var request in requests)
+                topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)topicPartitionOffsets.Count());
+                foreach(var topicPartitionOffset in topicPartitionOffsets)
                 {
-                    string Topic = request.TopicPartition.Topic;
-                    int Partition = request.TopicPartition.Partition;
-                    IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, Topic, Partition);
-                    if (topic_partition == IntPtr.Zero)
-                    {
-                        throw new Exception("Failed to create topic partition list");
-                    }
-                    var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
-                    if (request.OffsetSpec is OffsetSpec.EarliestSpec)
-                    {
-                        tp.offset = (long) OffsetSpecEnumValue.Earliest;
-                    }
-                    else if (request.OffsetSpec is OffsetSpec.LatestSpec)
-                    {
-                        tp.offset = (long) OffsetSpecEnumValue.Latest;
-                    }
-                    else if (request.OffsetSpec is OffsetSpec.MaxTimestampSpec)
-                    {
-                        tp.offset = (long) OffsetSpecEnumValue.MaxTimestamp;
-                    }
-                    else if (request.OffsetSpec is OffsetSpec.TimestampSpec)
-                    {
-                        tp.offset = (long) ((OffsetSpec.TimestampSpec)request.OffsetSpec).Timestamp;
-                    }    
+                    string topic = topicPartitionOffset.TopicPartition.Topic;
+                    Partition partition = topicPartitionOffset.TopicPartition.Partition;
+                    IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topic, partition);
+                    Marshal.WriteInt64(
+                        topic_partition,
+                        (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                        topicPartitionOffset.OffsetSpec.Value());
                 }  
                 Librdkafka.ListOffsets(handle, topic_partition_list, optionsPtr, resultQueuePtr);
             }

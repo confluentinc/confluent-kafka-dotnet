@@ -13,7 +13,9 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
-using System.Collections.Generic;
+
+using System.Text;
+
 
 namespace Confluent.Kafka.Admin
 {
@@ -28,20 +30,23 @@ namespace Confluent.Kafka.Admin
         public TopicPartitionOffsetError TopicPartitionOffsetError { get; set; }
 
         /// <summary>
-        ///    Timestamp Corresponding to the Offset, -1 if not set by broker.
+        ///    Timestamp Corresponding to the offset, -1 if not set by the broker.
         /// </summary>
         public long Timestamp { get; set; }
 
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Returns a JSON representation of the object.
         /// </summary>
+        /// <returns>
+        ///     A JSON representation of the object.
+        /// </returns>
         public override string ToString()
         {
-            string res = "TopicPartitionOffsetError:\n";
-            res += TopicPartitionOffsetError.ToString();
-            res += "\n";
-            res += $"Timestamp : {Timestamp}\n";
-            return res;
+            var result = new StringBuilder();
+            result.Append($"{{\"TopicPartitionOffsetError\": {TopicPartitionOffsetError.ToString().Quote()}");
+            result.Append($", \"Timestamp\": {Timestamp}");
+            result.Append("}");
+            return result.ToString();
         }
     }
 }

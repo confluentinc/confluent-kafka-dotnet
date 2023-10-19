@@ -529,18 +529,6 @@ namespace Confluent.Kafka
         ///     A Task with an empty result when successful.
         /// </returns>
         Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
-
-        /// <summary>
-        ///     ListOffsets given the topicPartitionOffsetSpecs.
-        /// </summary>
-        /// <param name="topicPartitionOffsetSpecs">
-        ///     A IEnumerable with topicPartitionOffsetSpecs to List Offsets.
-        /// </param>
-        /// <param name="options">
-        ///     The options to use while List Offsets.
-        /// </param>
-        Task<ListOffsetsResult> ListOffsetsAsync(
-            IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsetSpecs, ListOffsetsOptions options = null);
     }
 
     /// <summary>
@@ -610,6 +598,33 @@ namespace Confluent.Kafka
             {
                 return ((AdminClient) adminClient).DescribeClusterAsync(
                     options);
+            }
+            throw new NotImplementedException();
+        }
+        
+        /// <summary>
+        ///     Enables to find the beginning offset,
+        ///     end offset as well as the offset matching a timestamp
+        ///     or the offset with max timestamp in partitions.
+        /// </summary>
+        /// <param name="adminClient">
+        ///     AdminClient interface.
+        /// </param>
+        /// <param name="topicPartitionOffsets">
+        ///     A IEnumerable with partition to offset pairs (partitions must be unique).
+        /// </param>
+        /// <param name="options">
+        ///     The options to use for this call.
+        /// </param>
+        public static Task<ListOffsetsResult> ListOffsetsAsync(
+            this IAdminClient adminClient,
+            IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsets, ListOffsetsOptions options = null)
+        {
+            if (adminClient is AdminClient)
+            {
+                return ((AdminClient) adminClient).ListOffsetsAsync(
+                        topicPartitionOffsets,
+                        options);
             }
             throw new NotImplementedException();
         }

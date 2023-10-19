@@ -446,10 +446,10 @@ namespace Confluent.Kafka.Impl
             _AlterUserScramCredentials_result_responses = (_AlterUserScramCredentials_result_responses_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_responses").CreateDelegate(typeof(_AlterUserScramCredentials_result_responses_delegate));
             _AlterUserScramCredentials_result_response_user = (_AlterUserScramCredentials_result_response_user_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_response_user").CreateDelegate(typeof(_AlterUserScramCredentials_result_response_user_delegate));
             _AlterUserScramCredentials_result_response_error = (_AlterUserScramCredentials_result_response_error_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_response_error").CreateDelegate(typeof(_AlterUserScramCredentials_result_response_error_delegate));
-            _ListOffsets = (_ListOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets").CreateDelegate(typeof (_ListOffsets_delegate));
             
+            _ListOffsets = (_ListOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets").CreateDelegate(typeof (_ListOffsets_delegate));
             _ListOffsets_result_infos = (_ListOffsets_result_infos_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets_result_infos").CreateDelegate(typeof (_ListOffsets_result_infos_delegate));
-            _ListOffsetsResultInfo_timestamp = (_ListOffsetsResultInfo_timestamp_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetsResultInfo_imestamp").CreateDelegate(typeof (_ListOffsetsResultInfo_timestamp_delegate));
+            _ListOffsetsResultInfo_timestamp = (_ListOffsetsResultInfo_timestamp_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetsResultInfo_timestamp").CreateDelegate(typeof (_ListOffsetsResultInfo_timestamp_delegate));
             _ListOffsetsResultInfo_topic_partition = (_ListOffsetsResultInfo_topic_partition_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetsResultInfo_topic_partition").CreateDelegate(typeof (_ListOffsetsResultInfo_topic_partition_delegate));
 
             _DescribeTopics = (_DescribeTopics_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeTopics").CreateDelegate(typeof (_DescribeTopics_delegate));

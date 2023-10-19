@@ -3,11 +3,12 @@
 ## Enhancements
 
 - References librdkafka.redist 2.3.0. Refer to the [librdkafka v2.3.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.3.0) for more information.
+- [KIP-430](https://cwiki.apache.org/confluence/display/KAFKA/KIP-430+-+Return+Authorized+Operations+in+Describe+Responses):
+  Return authorized operations in describe responses (#2021, @jainruchir).
+- [KIP-396](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=97551484): Added support for ListOffsets Admin API (#2086).
 - Added support for external JSON schemas in `JsonSerializer` and `JsonDeserializer` (#2042).
 - Added compatibility methods to CachedSchemaRegistryClient ([ISBronny](https://github.com/ISBronny), #2097).
 - Add support for AdminAPI `DescribeCluster()` and `DescribeTopics()` (#2021, @jainruchir).
-- [KIP-430](https://cwiki.apache.org/confluence/display/KAFKA/KIP-430+-+Return+Authorized+Operations+in+Describe+Responses):
-  Return authorized operations in describe responses (#2021, @jainruchir).
 
 
 # 2.2.0

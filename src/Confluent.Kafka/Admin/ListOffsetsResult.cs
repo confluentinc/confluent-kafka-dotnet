@@ -14,31 +14,36 @@
 //
 // Refer to LICENSE for more information.
 using System.Collections.Generic;
+using System.Text;
+using System.Linq;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents the result of a list offsets operation.
+    ///     Represents the result of a ListOffsets request.
     /// </summary>
     public class ListOffsetsResult
     {
         /// <summary>
-        ///     ListOffsetsResultInfo Elements for all the TopicPartitions queried
-        ///     for ListOffsets 
+        ///     Result information for all the partitions queried
+        ///     with ListOffsets.
         /// </summary>
         public List<ListOffsetsResultInfo> ListOffsetsResultInfos { get; set; }
 
+
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Returns a JSON representation of the object.
         /// </summary>
+        /// <returns>
+        ///     A JSON representation of the object.
+        /// </returns>
         public override string ToString()
         {
-            string res = "ListOffsetsResult:\n";
-            foreach (var listoffsetsresultinfo in ListOffsetsResultInfos)
-            {
-                res += listoffsetsresultinfo.ToString();
-            }
-            return res;
+            var result = new StringBuilder();
+            result.Append($"{{\"ListOffsetsResultInfos\": [");
+            result.Append(string.Join(",", ListOffsetsResultInfos.Select(b => $" {b.ToString()}")));
+            result.Append("]}");
+            return result.ToString();
         }
     }
 }

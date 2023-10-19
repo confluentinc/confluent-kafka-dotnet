@@ -14,36 +14,41 @@
 //
 // Refer to LICENSE for more information.
 using System.Collections.Generic;
+using System.Text;
+using System.Linq;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents the result of a list offsets operation.
+    ///     Represents an error that occurred during a ListOffsets request.
     /// </summary>
     public class ListOffsetsReport
     {
         /// <summary>
-        ///     ListOffsetsResultInfo Elements for all the TopicPartitions queried
-        ///     for ListOffsets.
+        ///     Result information for all the partitions queried
+        ///     with ListOffsets. At least one of these
+        ///     results will be in error.
         /// </summary>
         public List<ListOffsetsResultInfo> ListOffsetsResultInfos { get; set; }
 
         /// <summary>
-        ///   List of non-client level errors encountered while listing offsets.
+        ///     Operation error status, null if successful.
         /// </summary>
         public Error Error { get; set; }
 
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Returns a JSON representation of the object.
         /// </summary>
+        /// <returns>
+        ///     A JSON representation of the object.
+        /// </returns>
         public override string ToString()
         {
-            string res = "ListOffsetsReport :\n";
-            foreach (var listoffsetsresultinfo in ListOffsetsResultInfos)
-            {
-                res += listoffsetsresultinfo.ToString();
-            }
-            return res;
+            var result = new StringBuilder();
+            result.Append($"{{\"ListOffsetsResultInfos\": [");
+            result.Append(string.Join(",", ListOffsetsResultInfos.Select(b => $" {b.ToString()}")));
+            result.Append($"], \"Error\": \"{Error.Code}\"}}");
+            return result.ToString();
         }
     }
 }
