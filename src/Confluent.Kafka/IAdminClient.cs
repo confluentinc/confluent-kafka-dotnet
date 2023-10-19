@@ -601,6 +601,33 @@ namespace Confluent.Kafka
             }
             throw new NotImplementedException();
         }
+        
+        /// <summary>
+        ///     Enables to find the beginning offset,
+        ///     end offset as well as the offset matching a timestamp
+        ///     or the offset with max timestamp in partitions.
+        /// </summary>
+        /// <param name="adminClient">
+        ///     AdminClient interface.
+        /// </param>
+        /// <param name="topicPartitionOffsets">
+        ///     A IEnumerable with partition to offset pairs (partitions must be unique).
+        /// </param>
+        /// <param name="options">
+        ///     The options to use for this call.
+        /// </param>
+        public static Task<ListOffsetsResult> ListOffsetsAsync(
+            this IAdminClient adminClient,
+            IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsets, ListOffsetsOptions options = null)
+        {
+            if (adminClient is AdminClient)
+            {
+                return ((AdminClient) adminClient).ListOffsetsAsync(
+                        topicPartitionOffsets,
+                        options);
+            }
+            throw new NotImplementedException();
+        }
     }
 
 
