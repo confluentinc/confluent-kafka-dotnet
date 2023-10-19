@@ -14,7 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Collections.Generic;
+using System;
+using System.Linq;
 
 namespace Confluent.Kafka.Admin
 {

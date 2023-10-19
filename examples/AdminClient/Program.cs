@@ -856,12 +856,30 @@ namespace Confluent.Kafka.Examples
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                var ListOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs, options);
-                foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
+                try
                 {
-                    TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
-                    long Timestamp = ListOffsetsResultInfo.Timestamp;
-                    Console.WriteLine($"{topicPartition.Topic} {topicPartition.Partition.Value} {topicPartition.Error.Code} {topicPartition.Offset.Value} {Timestamp}");
+                    var ListOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs, options);
+                    foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
+                    {
+                        TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                        long Timestamp = ListOffsetsResultInfo.Timestamp;
+                        Console.WriteLine($"{topicPartition.Topic} {topicPartition.Partition.Value} {topicPartition.Error.Code} {topicPartition.Offset.Value} {Timestamp}");
+                    }
+                }
+                catch (ListOffsetsException e)
+                {
+                    Console.WriteLine("An error occurred during the ListOffsets request for some partitions");
+                    foreach(var ListOffsetsResultInfo in e.Result.ListOffsetsResultInfos)
+                    {
+                        TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                        long Timestamp = ListOffsetsResultInfo.Timestamp;
+                        Console.WriteLine($"{topicPartition.Topic} {topicPartition.Partition.Value} {topicPartition.Error.Code} {topicPartition.Offset.Value} {Timestamp}");
+                    }
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred during the ListOffsets request: {e}");
+                    Environment.ExitCode = 1;
                 }
             }
 

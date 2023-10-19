@@ -1210,7 +1210,6 @@ namespace Confluent.Kafka
                                     }
                                     case Librdkafka.EventType.ListOffsets_Result:
                                     {
-                                        Console.WriteLine("here we are");
                                         if (errorCode != ErrorCode.NoError)
                                         {
                                             Task.Run(() =>
@@ -1218,19 +1217,10 @@ namespace Confluent.Kafka
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
-                                        Console.WriteLine("Play with the result");
                                         ListOffsetsReport report = extractListOffsetsReport(eventPtr);
                                         ListOffsetsResult result = new ListOffsetsResult() { ListOffsetsResultInfos = report.ListOffsetsResultInfos };
-                                        foreach(var ListOffsetsResultInfo in result.ListOffsetsResultInfos)
-                                        {
-                                            TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
-                                            long Timestamp = ListOffsetsResultInfo.Timestamp;
-                                            Console.WriteLine($"{topicPartition.Topic} {topicPartition.Partition.Value} {topicPartition.Error.Code} {topicPartition.Offset.Value} {Timestamp}");
-                                        }
-                                        Console.WriteLine("Alright alright");
                                         if (report.Error.IsError)
                                         {
-                                            Console.WriteLine("One error is there");
                                             Task.Run(() => 
                                                 ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetException(
                                                     new ListOffsetsException(result)));
