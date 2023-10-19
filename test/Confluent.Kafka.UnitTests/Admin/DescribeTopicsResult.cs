@@ -33,6 +33,7 @@ namespace Confluent.Kafka.UnitTests
                     new TopicDescription
                     {
                         Name = "test1",
+                        TopicId = new Uuid(2, 3),
                         IsInternal = false,
                         Error = new Error(ErrorCode.NoError),
                         Partitions = new List<TopicPartitionInfo>
@@ -70,6 +71,7 @@ namespace Confluent.Kafka.UnitTests
                     new TopicDescription
                     {
                         Name = "test2",
+                        TopicId = new Uuid(3, 2),
                         IsInternal = false,
                         Error = new Error(ErrorCode.UnknownTopicOrPart),
                         Partitions = new List<TopicPartitionInfo>
@@ -96,11 +98,11 @@ namespace Confluent.Kafka.UnitTests
                 }
             };
             
-            var expectedString = @"{""TopicDescriptions"": [{""Name"": ""test1"", ""Error"": ""NoError"", ""IsInternal"": false" +
+            var expectedString = @"{""TopicDescriptions"": [{""Name"": ""test1"", ""TopicId"": ""AAAAAAAAAAIAAAAAAAAAAw"", ""Error"": ""NoError"", ""IsInternal"": false" +
                 @", ""Partitions"": [{""Partition"": 0, ""Leader"": {""Id"": 0, ""Host"": ""host1"", ""Port"": 9092, ""Rack"": ""rack2""}" +
                 @", ""Replicas"": [{""Id"": 0, ""Host"": ""host2"", ""Port"": 9092, ""Rack"": null}], ""ISR"": []}]" +
                 @", ""AuthorizedOperations"": [""Create"",""Describe""]}" +
-                @",{""Name"": ""test2"", ""Error"": ""UnknownTopicOrPart"", ""IsInternal"": false" +
+                @",{""Name"": ""test2"", ""TopicId"": ""AAAAAAAAAAMAAAAAAAAAAg"", ""Error"": ""UnknownTopicOrPart"", ""IsInternal"": false" +
                 @", ""Partitions"": [{""Partition"": 1, ""Leader"": null, ""Replicas"": []" +
                 @", ""ISR"": [{""Id"": 2, ""Host"": ""host1"", ""Port"": 9093, ""Rack"": ""rack1""}]}]" +
                 @", ""AuthorizedOperations"": null}]}";
