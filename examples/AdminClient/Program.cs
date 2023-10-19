@@ -242,6 +242,61 @@ namespace Confluent.Kafka.Examples
             return alterations;
         }
 
+        static List<TopicPartitionOffsetSpec> ParseTopicPartitionOffsetSpecs(string[] args)
+        {
+            if (args.Length == 0)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> list-offsets " + 
+                    "<topic> <partition> <EARLIEST/LATEST/MAXTIMESTAMP/TIMESTAMP t1> ..");
+                Environment.ExitCode = 1;
+                return null;
+            }
+            
+            var topicPartitionOffsetSpecs = new List<TopicPartitionOffsetSpec>();
+            for (int i = 0; i < args.Length;) {
+                string topic = args[i];
+                var partition = Int32.Parse(args[i + 1]);
+                var offsetSpec = args[i + 2];
+                if (offsetSpec == "TIMESTAMP")
+                {
+                    var timestamp = Int64.Parse(args[i + 3]);
+                    i = i + 1;
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = OffsetSpec.ForTimestamp(timestamp)
+                    });
+                }
+                else if (offsetSpec == "MAXTIMESTAMP")
+                {
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = OffsetSpec.MaxTimestamp()
+                    });
+                }
+                else if (offsetSpec == "EARLIEST")
+                {
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = OffsetSpec.Earliest()
+                    });
+                }
+                else if (offsetSpec == "LATEST")
+                {
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = OffsetSpec.Latest()
+                    });
+                }
+                else
+                {
+                    throw new ArgumentException(
+                            "offsetSpec can be EARLIEST, LATEST, MAXTIMESTAMP or TIMESTAMP T1.");
+                }
+                i = i + 3;
+            }
+            return topicPartitionOffsetSpecs;
+        }
+
         static async Task CreateAclsAsync(string bootstrapServers, string[] commandArgs)
         {
             List<AclBinding> aclBindings;
@@ -793,6 +848,24 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static async Task ListOffsetsAsync(string bootstrapServers, string[] commandArgs) {
+
+            var topicPartitionOffsetSpecs = ParseTopicPartitionOffsetSpecs(commandArgs);
+            var timeout = TimeSpan.FromSeconds(30);
+            ListOffsetsOptions options = new ListOffsetsOptions(){RequestTimeout = timeout, IsolationLevel = Confluent.Kafka.Admin.IsolationLevel.ReadUncommitted};
+
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                var ListOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs, options);
+                foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
+                {
+                    TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                    long Timestamp = ListOffsetsResultInfo.Timestamp;
+                    Console.WriteLine($"{topicPartition.Topic} ${topicPartition.Partition} ${topicPartition.Error.Code} ${topicPartition.Offset} ${Timestamp}");
+                }
+            }
+
+        }
         static void PrintTopicDescriptions(List<TopicDescription> topicDescriptions, bool includeAuthorizedOperations)
         {
             foreach (var topic in topicDescriptions)
@@ -956,12 +1029,11 @@ namespace Confluent.Kafka.Examples
                 Console.WriteLine(
                     "usage: .. <bootstrapServers> " + String.Join("|", new string[] {
                         "list-groups", "metadata", "library-version", "create-topic", "create-acls",
-                        "describe-acls", "delete-acls",
                         "list-consumer-groups", "describe-consumer-groups",
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
                         "incremental-alter-configs", "describe-user-scram-credentials", 
                         "alter-user-scram-credentials", "describe-topics",
-                        "describe-cluster"
+                        "describe-cluster", "list-offsets"
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
@@ -1021,6 +1093,9 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "describe-cluster":
                     await DescribeClusterAsync(bootstrapServers, commandArgs);
+                    break;
+                case "list-offsets":
+                    await ListOffsetsAsync(bootstrapServers, commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");

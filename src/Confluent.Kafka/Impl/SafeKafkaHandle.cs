@@ -1472,6 +1472,16 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        private void setOption_IsolationLevel(IntPtr optionsPtr, Confluent.Kafka.Admin.IsolationLevel IsolationLevel)
+        {
+            var rError = Librdkafka.AdminOptions_set_isolation_level(optionsPtr, (IntPtr)(int)IsolationLevel);
+            var error = new Error(rError, true);
+            if (error.Code != ErrorCode.NoError)
+            {
+                throw new KafkaException(error);
+            }
+        }
+
         private void setOption_completionSource(IntPtr optionsPtr, IntPtr completionSourcePtr)
             => Librdkafka.AdminOptions_set_opaque(optionsPtr, completionSourcePtr);
 
@@ -2374,6 +2384,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
         }
+
         internal void DescribeUserScramCredentials(IEnumerable<string> users, DescribeUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
@@ -2408,6 +2419,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
         }
+
         internal void AlterUserScramCredentials(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
@@ -2473,9 +2485,62 @@ namespace Confluent.Kafka.Impl
                 {
                     Librdkafka.UserScramCredentialAlteration_destroy(c_alterationsPtr[i]);
                 }
+            }
+        }
+
+        internal void ListOffsets(IEnumerable<TopicPartitionOffsetSpec> requests, ListOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+            var optionsPtr = IntPtr.Zero;
+            var topic_partition_list = IntPtr.Zero;
+            try
+            {
+                // set Admin Options if any
+                options = options ?? new ListOffsetsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.ListOffsets);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_IsolationLevel(optionsPtr, options.IsolationLevel);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)requests.Count());
+                foreach(var request in requests)
+                {
+                    string Topic = request.TopicPartition.Topic;
+                    int Partition = request.TopicPartition.Partition;
+                    IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, Topic, Partition);
+                    if (topic_partition == IntPtr.Zero)
+                    {
+                        throw new Exception("Failed to create topic partition list");
+                    }
+                    var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
+                    if (request.OffsetSpec is OffsetSpec.EarliestSpec)
+                    {
+                        tp.offset = (long) OffsetSpecEnumValue.Earliest;
+                    }
+                    else if (request.OffsetSpec is OffsetSpec.LatestSpec)
+                    {
+                        tp.offset = (long) OffsetSpecEnumValue.Latest;
+                    }
+                    else if (request.OffsetSpec is OffsetSpec.MaxTimestampSpec)
+                    {
+                        tp.offset = (long) OffsetSpecEnumValue.MaxTimestamp;
+                    }
+                    else if (request.OffsetSpec is OffsetSpec.TimestampSpec)
+                    {
+                        tp.offset = (long) ((OffsetSpec.TimestampSpec)request.OffsetSpec).Timestamp;
+                    }    
+                }  
+                Librdkafka.ListOffsets(handle, topic_partition_list, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
                 if (optionsPtr != IntPtr.Zero)
                 {
                     Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+                if (topic_partition_list != IntPtr.Zero)
+                {
+                    Librdkafka.topic_partition_list_destroy(topic_partition_list);
                 }
             }
         }
