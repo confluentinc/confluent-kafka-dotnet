@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,35 +14,40 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Node represents a Kafka broker.
+    ///     A class used to represent a collection of topics.
     /// </summary>
-    public class Node
+    public class TopicCollection
     {
         /// <summary>
-        ///     Id represents the Node Id.
+        ///    Avoid direct instantiation.
         /// </summary>
-        public int Id { get; set; }
+        private TopicCollection()
+        {
+        }
+        
+        /// <summary>
+        ///     Topic names.
+        /// </summary>
+        internal IEnumerable<string> Topics { get; set; }
 
         /// <summary>
-        ///     Host represents the host of the broker.
+        ///    Returns a human readable representation of this object.
         /// </summary>
-        public string Host { get; set; }
-
-        /// <summary>
-        ///     Port represents the port of the broker.
-        /// </summary>
-        public int Port { get; set; }
-
-        /// <summary>
-        ///     Rack id (optional).
-        /// </summary>
-        public string Rack { get; set; }
+        public static TopicCollection OfTopicNames(IEnumerable<string> topics)
+        {
+            return new TopicCollection
+            {
+                Topics = topics
+            };
+        }
 
         /// <summary>
         ///     Returns a JSON representation of this object.
@@ -53,9 +58,9 @@ namespace Confluent.Kafka
         public override string ToString()
         {
             var result = new StringBuilder();
-            result.Append($"{{\"Id\": {Id}");
-            result.Append($", \"Host\": {Host.Quote()}, \"Port\": {Port}");
-            result.Append($", \"Rack\": {Rack.Quote()}}}");
+            var topics = string.Join(",",
+                Topics.Select(topic => topic.Quote()).ToList());
+            result.Append($"{{\"Topics\": [{topics}]}}");
             return result.ToString();
         }
     }

@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,14 +15,14 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the "AdminClient.DescribeConsumerGroupsOptions" method.
+    ///     Options for the "IAdminClient.DescribeCluster" method.
     /// </summary>
-    public class DescribeConsumerGroupsOptions
+    public class DescribeClusterOptions
     {
         /// <summary>
         ///     The overall request timeout, including broker lookup, request
@@ -35,7 +35,7 @@ namespace Confluent.Kafka.Admin
         public TimeSpan? RequestTimeout { get; set; }
 
         /// <summary>
-        ///     Decides if the broker should return authorized operations.
+        ///     Decides if the broker should return cluster authorized operations.
         ///
         ///     Default: false
         /// </summary>

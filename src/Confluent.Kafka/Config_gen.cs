@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.2.0 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.3.0-RC3 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -439,9 +439,9 @@ namespace Confluent.Kafka
         public int? MetadataMaxAgeMs { get { return GetInt("metadata.max.age.ms"); } set { this.SetObject("metadata.max.age.ms", value); } }
 
         /// <summary>
-        ///     When a topic loses its leader a new metadata request will be enqueued with this initial interval, exponentially increasing until the topic metadata has been refreshed. This is used to recover quickly from transitioning leader brokers.
+        ///     When a topic loses its leader a new metadata request will be enqueued immediately and then with this initial interval, exponentially increasing upto `retry.backoff.max.ms`, until the topic metadata has been refreshed. If not set explicitly, it will be defaulted to `retry.backoff.ms`. This is used to recover quickly from transitioning leader brokers.
         ///
-        ///     default: 250
+        ///     default: 100
         ///     importance: low
         /// </summary>
         public int? TopicMetadataRefreshFastIntervalMs { get { return GetInt("topic.metadata.refresh.fast.interval.ms"); } set { this.SetObject("topic.metadata.refresh.fast.interval.ms", value); } }
@@ -1181,12 +1181,20 @@ namespace Confluent.Kafka
         public int? MessageSendMaxRetries { get { return GetInt("message.send.max.retries"); } set { this.SetObject("message.send.max.retries", value); } }
 
         /// <summary>
-        ///     The backoff time in milliseconds before retrying a protocol request.
+        ///     The backoff time in milliseconds before retrying a protocol request, this is the first backoff time, and will be backed off exponentially until number of retries is exhausted, and it's capped by retry.backoff.max.ms.
         ///
         ///     default: 100
         ///     importance: medium
         /// </summary>
         public int? RetryBackoffMs { get { return GetInt("retry.backoff.ms"); } set { this.SetObject("retry.backoff.ms", value); } }
+
+        /// <summary>
+        ///     The max backoff time in milliseconds before retrying a protocol request, this is the atmost backoff allowed for exponentially backed off requests.
+        ///
+        ///     default: 1000
+        ///     importance: medium
+        /// </summary>
+        public int? RetryBackoffMaxMs { get { return GetInt("retry.backoff.max.ms"); } set { this.SetObject("retry.backoff.max.ms", value); } }
 
         /// <summary>
         ///     The threshold of outstanding not yet transmitted broker requests needed to backpressure the producer's message accumulator. If the number of not yet transmitted requests equals or exceeds this number, produce request creation that would have otherwise been triggered (for example, in accordance with linger.ms) will be delayed. A lower number yields larger and more effective batches. A higher value can improve latency when using compression on slow machines.
