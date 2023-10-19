@@ -74,7 +74,7 @@ namespace Confluent.Kafka.Admin
             public long Timestamp { get; }
 
             /// <summary>
-            ///     Sets the Timestamp for the TimestampSpec.
+            ///     Creates a new TimestampSpec with specified timestamp.
             /// </summary>
             internal TimestampSpec(long timestamp)
             {

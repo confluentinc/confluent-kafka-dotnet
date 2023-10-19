@@ -64,7 +64,8 @@ namespace Confluent.Kafka.IntegrationTests
                 };
                 
                 var listOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs,options);
-                foreach(var ListOffsetsResultInfo in listOffsetsResult.ListOffsetsResultInfos)
+
+                foreach (var ListOffsetsResultInfo in listOffsetsResult.ListOffsetsResultInfos)
                 {
                     TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
                     Assert.Equal(offset, topicPartition.Offset);

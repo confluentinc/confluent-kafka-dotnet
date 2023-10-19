@@ -22,7 +22,7 @@ using System.Linq;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents an error that occurred during a ListOffsets request.
+    ///     Represents the result of a ListOffsets request (including error status).
     /// </summary>
     public class ListOffsetsReport
     {
