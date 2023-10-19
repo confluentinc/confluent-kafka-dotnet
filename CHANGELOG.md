@@ -8,6 +8,8 @@
 - Add support for AdminAPI `DescribeCluster()` and `DescribeTopics()` (#2021, @jainruchir).
 - [KIP-430](https://cwiki.apache.org/confluence/display/KAFKA/KIP-430+-+Return+Authorized+Operations+in+Describe+Responses):
   Return authorized operations in describe responses (#2021, @jainruchir).
+- Add `Rack` to the `Node` type, so AdminAPI calls can expose racks for brokers (currently, all Describe 
+  Responses) (#2021, @jainruchir).
 
 
 # 2.2.0
