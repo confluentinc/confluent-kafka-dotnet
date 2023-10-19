@@ -861,7 +861,7 @@ namespace Confluent.Kafka.Examples
                 {
                     TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
                     long Timestamp = ListOffsetsResultInfo.Timestamp;
-                    Console.WriteLine($"{topicPartition.Topic} ${topicPartition.Partition} ${topicPartition.Error.Code} ${topicPartition.Offset} ${Timestamp}");
+                    Console.WriteLine($"{topicPartition.Topic} {topicPartition.Partition.Value} {topicPartition.Error.Code} {topicPartition.Offset.Value} {Timestamp}");
                 }
             }
 

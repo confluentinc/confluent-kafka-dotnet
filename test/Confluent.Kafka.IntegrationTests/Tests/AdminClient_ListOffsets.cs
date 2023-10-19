@@ -52,7 +52,7 @@ namespace Confluent.Kafka.IntegrationTests
                 foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
                 {
                     TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
-                    Assert.Equal((int)topicPartition.Offset, 0);
+                    Assert.Equal(topicPartition.Offset.Value, (long)0);
                 }
             }
 
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
                 foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
                 {
                     TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
-                    Assert.Equal((int)topicPartition.Offset, 3);
+                    Assert.Equal((int)topicPartition.Offset.Value, (long)3);
                 }
             }
 
@@ -82,7 +82,7 @@ namespace Confluent.Kafka.IntegrationTests
                 foreach(var ListOffsetsResultInfo in ListOffsetsResult.ListOffsetsResultInfos)
                 {
                     TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
-                    Assert.Equal((int)topicPartition.Offset, 1);
+                    Assert.Equal(topicPartition.Offset.Value, (long)1);
                 }
             }
 

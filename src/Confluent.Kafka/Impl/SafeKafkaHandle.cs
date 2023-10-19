@@ -2554,6 +2554,7 @@ namespace Confluent.Kafka.Impl
                     Librdkafka.topic_partition_list_destroy(topic_partition_list);
                 }
             }
+            Console.WriteLine("We reached here!");
         }
 
         internal void DescribeTopics(TopicCollection topicCollection, DescribeTopicsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)

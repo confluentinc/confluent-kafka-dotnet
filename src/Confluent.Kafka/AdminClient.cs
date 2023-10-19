@@ -593,7 +593,6 @@ namespace Confluent.Kafka
                 IntPtr c_topicpartition = Librdkafka.ListOffsetsResultInfo_topic_partition(resultResponsePtr);
                 var tp = Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(c_topicpartition);
                 ErrorCode code = tp.err;
-                Error error = new Error(code);
                 if ((code != ErrorCode.NoError) && (reportErrorCode == ErrorCode.NoError))
                 {
                     reportErrorCode = code;
@@ -605,7 +604,7 @@ namespace Confluent.Kafka
                         tp.topic,
                         new Partition(tp.partition),
                         new Offset(tp.offset),
-                        error)
+                        new Error(tp.err))
                 };
             }).ToList();
 
@@ -1211,19 +1210,29 @@ namespace Confluent.Kafka
                                     }
                                     case Librdkafka.EventType.ListOffsets_Result:
                                     {
+                                        Console.WriteLine("here we are");
                                         if (errorCode != ErrorCode.NoError)
                                         {
                                             Task.Run(() =>
-                                                    ((TaskCompletionSource<Null>)adminClientResult).TrySetException(
+                                                    ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
+                                        Console.WriteLine("Play with the result");
                                         ListOffsetsReport report = extractListOffsetsReport(eventPtr);
                                         ListOffsetsResult result = new ListOffsetsResult() { ListOffsetsResultInfos = report.ListOffsetsResultInfos };
+                                        foreach(var ListOffsetsResultInfo in result.ListOffsetsResultInfos)
+                                        {
+                                            TopicPartitionOffsetError topicPartition = ListOffsetsResultInfo.TopicPartitionOffsetError;
+                                            long Timestamp = ListOffsetsResultInfo.Timestamp;
+                                            Console.WriteLine($"{topicPartition.Topic} {topicPartition.Partition.Value} {topicPartition.Error.Code} {topicPartition.Offset.Value} {Timestamp}");
+                                        }
+                                        Console.WriteLine("Alright alright");
                                         if (report.Error.IsError)
                                         {
+                                            Console.WriteLine("One error is there");
                                             Task.Run(() => 
-                                                ((TaskCompletionSource<Null>)adminClientResult).TrySetException(
+                                                ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetException(
                                                     new ListOffsetsException(result)));
                                         }
                                         else
