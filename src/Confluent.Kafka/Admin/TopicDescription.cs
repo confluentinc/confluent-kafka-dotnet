@@ -82,7 +82,8 @@ namespace Confluent.Kafka.Admin
             }
 
             result.Append($"{{\"Name\": {Name.Quote()}");
-            if (TopicId != null) {
+            if (TopicId != null)
+            {
                 result.Append($", \"TopicId\": {TopicId.ToString().Quote()}");
             }
             result.Append($", \"Error\": \"{Error.Code}\", \"IsInternal\": {IsInternal.Quote()}");
