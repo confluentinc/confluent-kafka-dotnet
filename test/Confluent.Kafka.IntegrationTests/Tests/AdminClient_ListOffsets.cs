@@ -63,7 +63,7 @@ namespace Confluent.Kafka.IntegrationTests
                     }
                 };
                 
-                var listOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs,options);
+                var listOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs, options);
 
                 foreach (var ListOffsetsResultInfo in listOffsetsResult.ListOffsetsResultInfos)
                 {
