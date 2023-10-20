@@ -39,6 +39,7 @@ namespace Confluent.Kafka
         /// </param>
         public Uuid(long mostSignificantBits, long leastSignificantBits)
         {
+            Librdkafka.Initialize(null);
             MostSignificantBits = mostSignificantBits;
             LeastSignificantBits = leastSignificantBits;
             IntPtr cUuid = Librdkafka.Uuid_new(mostSignificantBits, leastSignificantBits);
