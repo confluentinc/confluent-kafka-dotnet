@@ -30,7 +30,7 @@ namespace Confluent.Kafka.Admin
         ///     Result information for all the partitions queried
         ///     with ListOffsets.
         /// </summary>
-        public List<ListOffsetsResultInfo> ListOffsetsResultInfos { get; set; }
+        public List<ListOffsetsResultInfo> ResultInfos { get; set; }
 
 
         /// <summary>
@@ -42,8 +42,8 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            result.Append($"{{\"ListOffsetsResultInfos\": [");
-            result.Append(string.Join(",", ListOffsetsResultInfos.Select(b => $" {b.ToString()}")));
+            result.Append($"{{\"ResultInfos\": [");
+            result.Append(string.Join(",", ResultInfos.Select(b => $" {b.ToString()}")));
             result.Append("]}");
             return result.ToString();
         }

@@ -2512,7 +2512,7 @@ namespace Confluent.Kafka.Impl
                         topic_partition,
                         (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
                         topicPartitionOffset.OffsetSpec.Value());
-                }  
+                }
                 Librdkafka.ListOffsets(handle, topic_partition_list, optionsPtr, resultQueuePtr);
             }
             finally
