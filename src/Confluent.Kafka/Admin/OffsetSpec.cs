@@ -32,6 +32,10 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         public class EarliestSpec : OffsetSpec
         {
+            internal EarliestSpec()
+            {
+            }
+
             internal override long Value()
             {
                 return -2;
@@ -43,6 +47,10 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         public class LatestSpec : OffsetSpec
         {
+            internal LatestSpec()
+            {
+            }
+
             internal override long Value()
             {
                 return -1;
@@ -55,6 +63,10 @@ namespace Confluent.Kafka.Admin
         ///     can be specified client-side.
         /// </summary>
         public class MaxTimestampSpec : OffsetSpec {
+            internal MaxTimestampSpec()
+            {
+            }
+
             internal override long Value()
             {
                 return -3;
