@@ -2532,11 +2532,6 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            if (topicCollection.Topics.Count() == 0)
-            {
-                throw new ArgumentException("at least one topic should be provided to DescribeTopics");
-            }
-
             var optionsPtr = IntPtr.Zero;
             var topicCollectionPtr = IntPtr.Zero;
             try
