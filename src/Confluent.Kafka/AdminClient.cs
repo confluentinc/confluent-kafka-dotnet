@@ -597,8 +597,12 @@ namespace Confluent.Kafka
         private ListOffsetsReport extractListOffsetsReport(IntPtr resultPtr)
         {
             var resultInfosPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resulInfosCntPtr);
+            
             IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resulInfosCntPtr];
-            Marshal.Copy(resultInfosPtr, resultResponsesPtrArr, 0, (int)resulInfosCntPtr);
+            if ((int)resulInfosCntPtr > 0)
+            {
+                Marshal.Copy(resultInfosPtr, resultResponsesPtrArr, 0, (int)resulInfosCntPtr);
+            }            
             
             ErrorCode reportErrorCode = ErrorCode.NoError;
             var listOffsetsResultInfos = resultResponsesPtrArr.Select(resultResponsePtr => 
@@ -625,7 +629,7 @@ namespace Confluent.Kafka
 
             return new ListOffsetsReport
             {
-                ListOffsetsResultInfos = listOffsetsResultInfos,
+                ResultInfos = listOffsetsResultInfos,
                 Error = new Error(reportErrorCode)
             };
         }
@@ -1241,7 +1245,7 @@ namespace Confluent.Kafka
                                         }
                                         else
                                         {
-                                            var result = new ListOffsetsResult() { ListOffsetsResultInfos = report.ListOffsetsResultInfos };
+                                            var result = new ListOffsetsResult() { ResultInfos = report.ResultInfos };
                                             Task.Run(() =>
                                                 ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetResult(
                                                     result));
