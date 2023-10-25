@@ -31,7 +31,7 @@ namespace Confluent.Kafka.Admin
         ///     with ListOffsets. At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<ListOffsetsResultInfo> ListOffsetsResultInfos { get; set; }
+        public List<ListOffsetsResultInfo> ResultInfos { get; set; }
 
         /// <summary>
         ///     Operation error status.
@@ -47,8 +47,8 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            result.Append($"{{\"ListOffsetsResultInfos\": [");
-            result.Append(string.Join(",", ListOffsetsResultInfos.Select(b => $" {b.ToString()}")));
+            result.Append($"{{\"ResultInfos\": [");
+            result.Append(string.Join(",", ResultInfos.Select(b => $" {b.ToString()}")));
             result.Append($"], \"Error\": \"{Error.Code}\"}}");
             return result.ToString();
         }
