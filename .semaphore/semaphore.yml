@@ -55,6 +55,9 @@ blocks:
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj
+            - wget https://malware-scan-clamav-signatures.s3.us-west-2.amazonaws.com/clamav-signatures.zip
+            - powershell -command "Expand-Archive clamav-signatures.zip C:\clamav-db"
+            - clamscan -d C:\clamav-db --max-scansize=1024M --max-filesize=1024M -ir .
   - name: 'Windows Artifacts on untagged commits'
     run:
       when: "tag !~ '.*'"
@@ -81,6 +84,9 @@ blocks:
             - docfx doc/docfx.json
             - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
             - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
+            - wget https://malware-scan-clamav-signatures.s3.us-west-2.amazonaws.com/clamav-signatures.zip
+            - powershell -command "Expand-Archive clamav-signatures.zip C:\clamav-db"
+            - clamscan -d C:\clamav-db --max-scansize=1024M --max-filesize=1024M -ir .
             - artifact push workflow artifacts
   - name: 'Windows Artifacts on tagged commits'
     run:
