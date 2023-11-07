@@ -57,7 +57,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUrl, int timeoutMs, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
+        public RestService(string schemaRegistryUrl, int timeoutMs, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates, bool enableSslCertificateVerification, IWebProxy proxy = null)
         {
             this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
 
@@ -66,16 +66,9 @@ namespace Confluent.SchemaRegistry
                 .Select(SanitizeUri)// need http or https - use http if not present.
                 .Select(uri =>
                 {
-                    HttpClient client;
-                    if (certificates.Count > 0)
-                    {
-                        client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
-                    }
-                    else
-                    {
-                        client = new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
-                    }
-                    return client;
+                    var httpHandler = CreateHandler(certificates, enableSslCertificateVerification, proxy);
+                    return new HttpClient(httpHandler) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+
                 })
                 .ToList();
         }
@@ -86,9 +79,16 @@ namespace Confluent.SchemaRegistry
             return $"{sanitized.TrimEnd('/')}/";
         }
 
-        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates, bool enableSslCertificateVerification)
+        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates, bool enableSslCertificateVerification, IWebProxy proxy)
         {
-            var handler = new HttpClientHandler();
+            var handler = new HttpClientHandler();
+
+            if (proxy != null)
+                handler.Proxy = proxy;
+
+            if (!certificates.Any())
+                return handler;
+
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 
             if (!enableSslCertificateVerification)
