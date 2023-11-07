@@ -104,7 +104,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (property.Key != AvroSerializerConfig.PropertyNames.AutoRegisterSchemas &&
                     property.Key != AvroSerializerConfig.PropertyNames.UseLatestVersion &&
                     property.Key != AvroSerializerConfig.PropertyNames.BufferBytes &&
-                    property.Key != AvroSerializerConfig.PropertyNames.SubjectNameStrategy)
+                    property.Key != AvroSerializerConfig.PropertyNames.SubjectNameStrategy &&
+                    property.Key != AvroSerializerConfig.PropertyNames.NormalizeSchemas)
                 {
                     throw new ArgumentException($"AvroSerializer: unknown configuration property {property.Key}");
                 }
