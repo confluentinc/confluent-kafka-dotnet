@@ -19,40 +19,34 @@ using Confluent.Kafka;
 
 namespace Confluent.SchemaRegistry
 {
-    /// <summary>
-    ///     Construct the subject name under which a referenced schema
-    ///     should be registered in Schema Registry.
+    ///<summary>
+    /// This interface is used by the serializer to determine the subject name under which
+    /// the referenced schema should be registered in the schema registry.
     /// </summary>
-    /// <param name="context">
-    ///     The serialization context.
-    /// </param>
-    /// <param name="referenceName">
-    ///     The name used to reference the schema.
-    /// </param>
-    public delegate string ReferenceSubjectNameStrategyDelegate(SerializationContext context, string referenceName);
-
-
-    /// <summary>
-    ///     Subject name strategy for referenced schemas.
-    /// </summary>
-    public enum ReferenceSubjectNameStrategy
+    public interface IReferenceSubjectNameStrategy
     {
         /// <summary>
-        ///     (default): Use the reference name as the subject name.
+        /// For a given reference name and serialization context, returns the subject name under which the
+        /// referenced schema should be registered in the schema registry.
         /// </summary>
-        ReferenceName
+        /// <param name="context">Context relevant to the serialization operation.</param>
+        /// <param name="referenceName">The name of the reference.</param>
+        /// <returns></returns>
+        string GetSubjectName(SerializationContext context, string referenceName);
     }
-    
 
     /// <summary>
-    ///     Extension methods for the ReferenceSubjectNameStrategy type.
+    /// The default strategy used by serializer that uses the reference name as the subject name
+    /// under which the referenced schema should be registered in schema registry.
     /// </summary>
-    public static class ReferenceSubjectNameStrategyExtensions
+    public class DefaultReferenceSubjectNameStrategy : IReferenceSubjectNameStrategy
     {
         /// <summary>
-        ///     Provide a functional implementation corresponding to the enum value.
+        /// <inheritdoc />
         /// </summary>
-        public static ReferenceSubjectNameStrategyDelegate ToDelegate(this ReferenceSubjectNameStrategy strategy)
-            => (context, referenceName) => referenceName;
+        public string GetSubjectName(SerializationContext context, string referenceName)
+        {
+            return referenceName;
+        }
     }
 }
