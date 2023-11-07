@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using NJsonSchema;
 using NJsonSchema.Generation;
 using Newtonsoft.Json.Linq;
-
+using Confluent.Kafka;
 
 namespace Confluent.SchemaRegistry.Serdes
 {
@@ -45,7 +45,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             string root_str = root.SchemaString;
             JObject schema = JObject.Parse(root_str);
-            string schemaId = (string)schema["$id"];
+            string schemaId = (string)schema["$id"] ?? throw new Exception("Provided schema does not have $id property.");
             if (!dictSchemaNameToSchema.ContainsKey(schemaId))
                 this.dictSchemaNameToSchema.Add(schemaId, root);
 
