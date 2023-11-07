@@ -256,7 +256,7 @@ namespace Confluent.SchemaRegistry
         {
             var response = await ExecuteOnOneInstanceAsync(() => CreateRequest(endPoint, method, jsonBody)).ConfigureAwait(continueOnCapturedContext: false);
             string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false);
-            T t = JObject.Parse(responseJson).ToObject<T>();
+            T t = JObject.Parse(responseJson).ToObject<T>(JsonSerializer.Create());
             return t;
         }
 
