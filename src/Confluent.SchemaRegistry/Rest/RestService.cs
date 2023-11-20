@@ -22,7 +22,10 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using X509Certificate2 = System.Security.Cryptography.X509Certificates.X509Certificate2;
+
 using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 namespace Confluent.SchemaRegistry
 {
@@ -55,7 +58,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public RestService(string schemaRegistryUrl, int timeoutMs,
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification)
+            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null)
         {
             this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
 
@@ -67,7 +70,7 @@ namespace Confluent.SchemaRegistry
                     HttpClient client;
                     if (certificates.Count > 0)
                     {
-                        client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification))
+                        client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification, sslCaCertificate))
                         {
                             BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs)
                         };
@@ -92,19 +95,54 @@ namespace Confluent.SchemaRegistry
         }
 
         private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification)
+            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate)
         {
             var handler = new HttpClientHandler();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 
+            certificates.ForEach(c => handler.ClientCertificates.Add(c));
+
             if (!enableSslCertificateVerification)
             {
-                handler.ServerCertificateCustomValidationCallback =
-                    (httpRequestMessage, cert, certChain, policyErrors) => { return true; };
-            }
+                handler.ServerCertificateCustomValidationCallback = (_, __, ___, ____) => { return true; };
+            } 
+            else  if(sslCaCertificate != null)
+            {
+                handler.ServerCertificateCustomValidationCallback = (_, __, chain, policyErrors) => { 
+                    
+                    if(policyErrors == SslPolicyErrors.None)
+                    {
+                        return true;
+                    }
 
-            certificates.ForEach(c => handler.ClientCertificates.Add(c));
-            return handler;
+                    
+                    //The second element of the chain should be the issuer of the certificate
+                    if (chain.ChainElements.Count < 2)
+                    {
+                        return false;
+                    }                 
+                    var connectionCertHash = chain.ChainElements[1].Certificate.GetCertHash();
+
+
+                    var expectedCertHash = sslCaCertificate.GetCertHash();
+
+                    if (connectionCertHash.Length != expectedCertHash.Length)
+                    {
+                        return false;
+                    }
+
+                    for (int i = 0; i < connectionCertHash.Length; i++)
+                    {
+                        if (connectionCertHash[i] != expectedCertHash[i])
+                        {
+                            return false;
+                        }
+                    }
+                    return true; 
+                };
+            }
+        
+            return handler;
         }
 
         private RegisteredSchema SanitizeRegisteredSchema(RegisteredSchema schema)
