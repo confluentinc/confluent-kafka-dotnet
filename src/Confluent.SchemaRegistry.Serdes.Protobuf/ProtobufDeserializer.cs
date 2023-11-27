@@ -47,15 +47,15 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class ProtobufDeserializer<T> : IAsyncDeserializer<T> where T : class, IMessage<T>, new()
     {
-        private bool useDeprecatedFormat = false;
-        
-        private MessageParser<T> parser;
+        private readonly bool useDeprecatedFormat = false;
+
+        private readonly MessageParser<T> parser;
 
         /// <summary>
-        ///     Initialize a new ProtobufDeserializer instance.
+        ///     Initialize a new <see cref="ProtobufDeserializer{T}"/> instance.
         /// </summary>
         /// <param name="config">
-        ///     Deserializer configuration properties (refer to 
+        ///     Deserializer configuration properties (refer to
         ///     <see cref="ProtobufDeserializerConfig" />).
         /// </param>
         public ProtobufDeserializer(IEnumerable<KeyValuePair<string, string>> config = null)
@@ -85,13 +85,13 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     The raw byte data to deserialize.
         /// </param>
         /// <param name="isNull">
-        ///     True if this is a null value.
+        ///     True if this is a <see langword="null"/> value.
         /// </param>
         /// <param name="context">
         ///     Context relevant to the deserialize operation.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that completes
+        ///     A <see cref="Task" /> that completes
         ///     with the deserialized value.
         /// </returns>
         public Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
@@ -112,7 +112,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     var magicByte = reader.ReadByte();
                     if (magicByte != Constants.MagicByte)
                     {
-                        throw new InvalidDataException($"Expecting message {context.Component.ToString()} with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
+                        throw new InvalidDataException($"Expecting message {context.Component} with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
                     }
 
                     // A schema is not required to deserialize protobuf messages since the

@@ -14,7 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
-// Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
+// Disable obsolete warnings. ConstructValueSubjectName is still used as an internal implementation detail.
 #pragma warning disable CS0618
 
 using System;
@@ -46,7 +46,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///
     ///     Internally, the serializer uses Newtonsoft.Json for
     ///     serialization and NJsonSchema for schema creation and
-    ///     validation. You can use any property annotations recognised
+    ///     validation. You can use any property annotations recognized
     ///     by these libraries.
     ///
     ///     Note: Off-the-shelf libraries do not yet exist to enable
@@ -62,13 +62,13 @@ namespace Confluent.SchemaRegistry.Serdes
         private bool useLatestVersion = false;
         private bool latestCompatibilityStrict = false;
         private int initialBufferSize = DefaultInitialBufferSize;
-        private SubjectNameStrategyDelegate subjectNameStrategy = null;
+        private SubjectNameStrategyDelegate subjectNameStrategy;
         private ISchemaRegistryClient schemaRegistryClient;
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-        private HashSet<string> subjectsRegistered = new HashSet<string>();
-        private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
+        private readonly HashSet<string> subjectsRegistered = new HashSet<string>();
+        private readonly SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
-        private JsonSchemaValidator validator = new JsonSchemaValidator();
+        private readonly JsonSchemaValidator validator = new JsonSchemaValidator();
 
         /// <remarks>
         ///     A given schema is uniquely identified by a schema id, even when
@@ -76,9 +76,9 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </remarks>
         private int? schemaId;
 
-        private JsonSchema schema;
-        private string schemaText;
-        private string schemaFullname;
+        private readonly JsonSchema schema;
+        private readonly string schemaText;
+        private readonly string schemaFullname;
 
         private void SetConfigUtil(JsonSerializerConfig config)
         {
@@ -97,14 +97,14 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.LatestCompatibilityStrict != null) { this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
 
-            if (this.useLatestVersion && this.autoRegisterSchema)
+            if (useLatestVersion && autoRegisterSchema)
             {
                 throw new ArgumentException($"JsonSerializer: cannot enable both use.latest.version and auto.register.schemas");
             }
         }
 
         /// <summary>
-        ///     Initialize a new instance of the JsonSerializer class.
+        ///     Initialize a new instance of the <see cref="JsonSerializer{T}"/> class.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///     Confluent Schema Registry client instance.
@@ -130,15 +130,15 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <summary>
-        ///     Initialize a new instance of the JsonSerializer class
-        ///     with a given Schema.
+        ///     Initialize a new instance of the <see cref="JsonSerializer{T}"/> class
+        ///     with a given <see cref="Schema"/>.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///     Confluent Schema Registry client instance.
         /// </param>
         /// <param name="schema">
         ///     Schema to use for validation, used when external
-        ///     schema references are present in the schema. 
+        ///     schema references are present in the schema.
         ///     Populate the References list of the schema for
         ///     the same.
         /// </param>
@@ -169,8 +169,8 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <summary>
-        ///     Serialize an instance of type <typeparamref name="T"/> to a UTF8 encoded JSON 
-        ///     represenation. The serialized data is preceeded by:
+        ///     Serialize an instance of type <typeparamref name="T"/> to a UTF8 encoded JSON
+        ///     representation. The serialized data is preceded by:
         ///       1. A "magic byte" (1 byte) that identifies this as a message with
         ///          Confluent Platform framing.
         ///       2. The id of the schema as registered in Confluent's Schema Registry
@@ -185,7 +185,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Context relevant to the serialize operation.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
+        ///     A <see cref="Task" /> that completes with
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
         public async Task<byte[]> SerializeAsync(T value, SerializationContext context)

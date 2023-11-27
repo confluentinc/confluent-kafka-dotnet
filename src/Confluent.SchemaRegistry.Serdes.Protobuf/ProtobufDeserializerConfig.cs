@@ -22,14 +22,14 @@ using Confluent.Kafka;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     <see cref="Confluent.SchemaRegistry.Serdes.ProtobufDeserializer{T}" />
+    ///     <see cref="ProtobufDeserializer{T}" />
     ///     configuration properties.
     /// </summary>
     public class ProtobufDeserializerConfig : Config
     {
         /// <summary>
-        ///     Configuration property names specific to 
-        ///     <see cref="Confluent.SchemaRegistry.Serdes.ProtobufDeserializer{T}" />.
+        ///     Configuration property names specific to
+        ///     <see cref="ProtobufDeserializer{T}" />.
         /// </summary>
         public static class PropertyNames
         {
@@ -37,11 +37,11 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     Specifies whether the Protobuf deserializer should deserialize message indexes
             ///     without zig-zag encoding.
             ///
-            ///     default: false
+            ///     default: <see langword="false"/>
             /// </summary>
             public const string UseDeprecatedFormat = "protobuf.deserializer.use.deprecated.format";
         }
-        
+
         /// <summary>
         ///     Initialize a new <see cref="ProtobufDeserializerConfig" />.
         /// </summary>
@@ -55,12 +55,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public ProtobufDeserializerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config.ToDictionary(v => v.Key, v => v.Value)) { }
 
 
-        /// <summary>
-        ///     Specifies whether the Protobuf deserializer should deserialize message indexes
-        ///     without zig-zag encoding.
-        ///
-        ///     default: false
-        /// </summary>
+        /// <inheritdoc cref="PropertyNames.UseDeprecatedFormat"/>
         public bool? UseDeprecatedFormat
         {
             get { return GetBool(PropertyNames.UseDeprecatedFormat); }

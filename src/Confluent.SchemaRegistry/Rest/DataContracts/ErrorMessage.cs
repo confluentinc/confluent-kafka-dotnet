@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry
             ErrorCode = errorCode;
             Message = message;
         }
-        
+
         public override string ToString()
             => $"{{error_code={ErrorCode}, message={Message}}}";
     }

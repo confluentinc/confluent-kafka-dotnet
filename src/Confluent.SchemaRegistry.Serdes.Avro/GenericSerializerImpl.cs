@@ -26,24 +26,25 @@ using System.Threading.Tasks;
 using Confluent.Kafka;
 using Avro.Generic;
 using Avro.IO;
+using System.Collections.ObjectModel;
 
 
 namespace Confluent.SchemaRegistry.Serdes
 {
     internal class GenericSerializerImpl : IAvroSerializerImpl<GenericRecord>
     {
-        private ISchemaRegistryClient schemaRegistryClient;
-        private bool autoRegisterSchema;
-        private bool normalizeSchemas;
-        private bool useLatestVersion;
-        private int initialBufferSize;
-        private SubjectNameStrategyDelegate subjectNameStrategy;
+        private readonly ISchemaRegistryClient schemaRegistryClient;
+        private readonly bool autoRegisterSchema;
+        private readonly bool normalizeSchemas;
+        private readonly bool useLatestVersion;
+        private readonly int initialBufferSize;
+        private readonly SubjectNameStrategyDelegate subjectNameStrategy;
 
-        private Dictionary<global::Avro.RecordSchema, string> knownSchemas = new Dictionary<global::Avro.RecordSchema, string>();
-        private HashSet<KeyValuePair<string, string>> registeredSchemas = new HashSet<KeyValuePair<string, string>>();
-        private Dictionary<string, int> schemaIds = new Dictionary<string, int>();
+        private readonly Dictionary<Avro.RecordSchema, string> knownSchemas = new Dictionary<Avro.RecordSchema, string>();
+        private readonly HashSet<KeyValuePair<string, string>> registeredSchemas = new HashSet<KeyValuePair<string, string>>();
+        private readonly Dictionary<string, int> schemaIds = new Dictionary<string, int>();
 
-        private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
 
         public GenericSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
@@ -62,9 +63,9 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <summary>
-        ///     Serialize GenericRecord instance to a byte array in Avro format. The serialized
+        ///     Serialize <see cref="GenericRecord"/> instance to a byte array in Avro format. The serialized
         ///     data is preceded by a "magic byte" (1 byte) and the id of the schema as registered
-        ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block or throw 
+        ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block or throw
         ///     on first use for a particular topic during schema registration.
         /// </summary>
         /// <param name="topic">
@@ -84,13 +85,13 @@ namespace Confluent.SchemaRegistry.Serdes
             try
             {
                 int schemaId;
-                global::Avro.RecordSchema writerSchema;
+                Avro.RecordSchema writerSchema;
                 await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
                     // TODO: If any of these caches fills up, this is probably an
-                    // indication of misuse of the serializer. Ideally we would do 
-                    // something more sophisticated than the below + not allow 
+                    // indication of misuse of the serializer. Ideally we would do
+                    // something more sophisticated than the below + not allow
                     // the misuse to keep happening without warning.
                     if (knownSchemas.Count > schemaRegistryClient.MaxCachedSchemas ||
                         registeredSchemas.Count > schemaRegistryClient.MaxCachedSchemas ||
@@ -103,7 +104,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     // Determine a schema string corresponding to the schema object.
                     // TODO: It would be more efficient to use a hash function based
-                    // on the instance reference, not the implementation provided by 
+                    // on the instance reference, not the implementation provided by
                     // Schema.
                     writerSchema = data.Schema;
                     string writerSchemaString = null;
@@ -117,12 +118,12 @@ namespace Confluent.SchemaRegistry.Serdes
                         knownSchemas.Add(writerSchema, writerSchemaString);
                     }
 
-                    // Verify schema compatibility (& register as required) + get the 
+                    // Verify schema compatibility (& register as required) + get the
                     // id corresponding to the schema.
-                    
-                    // TODO: Again, the hash functions in use below are potentially 
+
+                    // TODO: Again, the hash functions in use below are potentially
                     // slow since writerSchemaString is potentially long. It would be
-                    // better to use hash functions based on the writerSchemaString 
+                    // better to use hash functions based on the writerSchemaString
                     // object reference, not value.
 
                     string subject = this.subjectNameStrategy != null

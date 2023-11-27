@@ -14,14 +14,13 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Threading.Tasks;
 
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
+    ///     Defines a serializer for use with <see cref="Producer{TKey,TValue}" />.
     /// </summary>
     public interface IAsyncSerializer<T>
     {
@@ -36,7 +35,7 @@ namespace Confluent.Kafka
         ///     Context relevant to the serialize operation.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that
+        ///     A <see cref="Task" /> that
         ///     completes with the serialized data.
         /// </returns>
         Task<byte[]> SerializeAsync(T data, SerializationContext context);

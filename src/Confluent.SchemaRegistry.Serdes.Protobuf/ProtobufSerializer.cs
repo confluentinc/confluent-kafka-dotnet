@@ -54,26 +54,26 @@ namespace Confluent.SchemaRegistry.Serdes
     {
         private const int DefaultInitialBufferSize = 1024;
 
-        private bool autoRegisterSchema = true;
-        private bool normalizeSchemas = false;
-        private bool useLatestVersion = false;
-        private bool skipKnownTypes = false;
-        private bool useDeprecatedFormat = false;
-        private int initialBufferSize = DefaultInitialBufferSize;
-        private SubjectNameStrategyDelegate subjectNameStrategy = null;
-        private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy = null;
-        private ISchemaRegistryClient schemaRegistryClient;
-        
-        private HashSet<string> subjectsRegistered = new HashSet<string>();
-        private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
+        private readonly bool autoRegisterSchema = true;
+        private readonly bool normalizeSchemas = false;
+        private readonly bool useLatestVersion = false;
+        private readonly bool skipKnownTypes = false;
+        private readonly bool useDeprecatedFormat = false;
+        private readonly int initialBufferSize = DefaultInitialBufferSize;
+        private readonly SubjectNameStrategyDelegate subjectNameStrategy;
+        private readonly ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy;
+        private readonly ISchemaRegistryClient schemaRegistryClient;
+
+        private readonly HashSet<string> subjectsRegistered = new HashSet<string>();
+        private readonly SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
 
         /// <remarks>
         ///     A given schema is uniquely identified by a schema id, even when
         ///     registered against multiple subjects.
         /// </remarks>
-        private int? schemaId = null;
+        private int? schemaId;
 
-        private byte[] indexArray = null;
+        private byte[] indexArray;
 
 
         /// <summary>
@@ -84,8 +84,8 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schemaRegistryClient = schemaRegistryClient;
 
             if (config == null)
-            { 
-                this.referenceSubjectNameStrategy = ReferenceSubjectNameStrategy.ReferenceName.ToDelegate();
+            {
+                referenceSubjectNameStrategy = ReferenceSubjectNameStrategy.ReferenceName.ToDelegate();
                 return;
             }
 
@@ -102,18 +102,18 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.SkipKnownTypes != null) { this.skipKnownTypes = config.SkipKnownTypes.Value; }
             if (config.UseDeprecatedFormat != null) { this.useDeprecatedFormat = config.UseDeprecatedFormat.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-            this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
+            referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
                 ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()
                 : config.ReferenceSubjectNameStrategy.Value.ToDelegate();
 
-            if (this.useLatestVersion && this.autoRegisterSchema)
+            if (useLatestVersion && autoRegisterSchema)
             {
                 throw new ArgumentException($"ProtobufSerializer: cannot enable both use.latest.version and auto.register.schemas");
             }
         }
 
 
-        private static byte[] createIndexArray(MessageDescriptor md, bool useDeprecatedFormat)
+        private static byte[] CreateIndexArray(MessageDescriptor md, bool useDeprecatedFormat)
         {
             var indices = new List<int>();
 
@@ -203,8 +203,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     continue;
                 }
-                
-                Func<FileDescriptor, Task<SchemaReference>> t = async (FileDescriptor dependency) => {
+
+                Func<FileDescriptor, Task<SchemaReference>> t = async (FileDescriptor dependency) =>
+                {
                     var dependencyReferences = await RegisterOrGetReferences(dependency, context, autoRegisterSchema, skipKnownTypes).ConfigureAwait(continueOnCapturedContext: false);
                     var subject = referenceSubjectNameStrategy(context, dependency.Name);
                     var schema = new Schema(dependency.SerializedData.ToBase64(), dependencyReferences, SchemaType.Protobuf);
@@ -224,7 +225,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <summary>
         ///     Serialize an instance of type <typeparamref name="T"/> to a byte array
-        ///     in Protobuf format. The serialized data is preceeded by:
+        ///     in Protobuf format. The serialized data is preceded by:
         ///       1. A "magic byte" (1 byte) that identifies this as a message with
         ///          Confluent Platform framing.
         ///       2. The id of the schema as registered in Confluent's Schema Registry
@@ -245,7 +246,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Context relevant to the serialize operation.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
+        ///     A <see cref="Task" /> that completes with
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
         public async Task<byte[]> SerializeAsync(T value, SerializationContext context)
@@ -256,7 +257,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 if (this.indexArray == null)
                 {
-                    this.indexArray = createIndexArray(value.Descriptor, useDeprecatedFormat);
+                    this.indexArray = CreateIndexArray(value.Descriptor, useDeprecatedFormat);
                 }
 
                 string fullname = value.Descriptor.FullName;
@@ -314,7 +315,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     stream.WriteByte(Constants.MagicByte);
                     writer.Write(IPAddress.HostToNetworkOrder(schemaId.Value));
-                    writer.Write(this.indexArray);
+                    writer.Write(indexArray);
                     value.WriteTo(stream);
                     return stream.ToArray();
                 }
