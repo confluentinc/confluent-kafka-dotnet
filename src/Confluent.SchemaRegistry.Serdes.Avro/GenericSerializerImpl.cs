@@ -17,16 +17,15 @@
 // Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
 #pragma warning disable CS0618
 
+using Avro.Generic;
+using Avro.IO;
+using Confluent.Kafka;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka;
-using Avro.Generic;
-using Avro.IO;
-using System.Collections.ObjectModel;
 
 
 namespace Confluent.SchemaRegistry.Serdes
