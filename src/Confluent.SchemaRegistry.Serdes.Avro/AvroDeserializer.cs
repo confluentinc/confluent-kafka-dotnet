@@ -25,8 +25,8 @@ using System.Linq;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     (async) Avro deserializer. Use this deserializer with GenericRecord,
-    ///     types generated using the avrogen.exe tool or one of the following 
+    ///     (async) Avro deserializer. Use this deserializer with <see cref="GenericRecord"/>,
+    ///     types generated using the avrogen.exe tool or one of the following
     ///     primitive types: int, long, float, double, boolean, string, byte[].
     /// </summary>
     /// <remarks>
@@ -39,17 +39,17 @@ namespace Confluent.SchemaRegistry.Serdes
     {
         private IAvroDeserializerImpl<T> deserializerImpl;
 
-        private ISchemaRegistryClient schemaRegistryClient;
+        private readonly ISchemaRegistryClient schemaRegistryClient;
 
         /// <summary>
-        ///     Initialize a new AvroDeserializer instance.
+        ///     Initialize a new <see cref="AvroDeserializer{T}"/> instance.
         /// </summary>
         /// <param name="schemaRegistryClient">
-        ///     An implementation of ISchemaRegistryClient used for
+        ///     An implementation of <see cref="ISchemaRegistryClient"/> used for
         ///     communication with Confluent Schema Registry.
         /// </param>
         /// <param name="config">
-        ///     Deserializer configuration properties (refer to 
+        ///     Deserializer configuration properties (refer to
         ///     <see cref="AvroDeserializerConfig" />).
         /// </param>
         public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
@@ -79,13 +79,13 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     The raw byte data to deserialize.
         /// </param>
         /// <param name="isNull">
-        ///     True if this is a null value.
+        ///     True if this is a <see langword="null"/> value.
         /// </param>
         /// <param name="context">
         ///     Context relevant to the deserialize operation.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that completes
+        ///     A <see cref="Task" /> that completes
         ///     with the deserialized value.
         /// </returns>
         public async Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)

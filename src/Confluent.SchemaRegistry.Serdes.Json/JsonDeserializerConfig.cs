@@ -20,7 +20,7 @@ using Confluent.Kafka;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     <see cref="Confluent.SchemaRegistry.Serdes.JsonDeserializer{T}" />
+    ///     <see cref="JsonDeserializer{T}" />
     ///     configuration properties.
     /// </summary>
     public class JsonDeserializerConfig : Config {}

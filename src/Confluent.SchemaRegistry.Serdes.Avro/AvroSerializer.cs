@@ -25,8 +25,8 @@ using Confluent.Kafka;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     (async) Avro serializer. Use this serializer with GenericRecord,
-    ///     types generated using the avrogen.exe tool or one of the following 
+    ///     (async) Avro serializer. Use this serializer with <see cref="GenericRecord"/>,
+    ///     types generated using the avrogen.exe tool or one of the following
     ///     primitive types: int, long, float, double, boolean, string, byte[].
     /// </summary>
     /// <remarks>
@@ -37,25 +37,25 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class AvroSerializer<T> : IAsyncSerializer<T>
     {
-        private bool autoRegisterSchema = true;
-        private bool normalizeSchemas = false;
-        private bool useLatestVersion = false;
-        private int initialBufferSize = DefaultInitialBufferSize;
-        private SubjectNameStrategyDelegate subjectNameStrategy = null;
+        private readonly bool autoRegisterSchema = true;
+        private readonly bool normalizeSchemas = false;
+        private readonly bool useLatestVersion = false;
+        private readonly int initialBufferSize = DefaultInitialBufferSize;
+        private readonly SubjectNameStrategyDelegate subjectNameStrategy;
 
         private IAvroSerializerImpl<T> serializerImpl;
 
-        private ISchemaRegistryClient schemaRegistryClient;
+        private readonly ISchemaRegistryClient schemaRegistryClient;
 
         /// <summary>
-        ///     The default initial size (in bytes) of buffers used for message 
+        ///     The default initial size (in bytes) of buffers used for message
         ///     serialization.
         /// </summary>
         public const int DefaultInitialBufferSize = 1024;
 
 
         /// <summary>
-        ///     Initialize a new instance of the AvroSerializer class.
+        ///     Initialize a new instance of the <see cref="AvroSerializer{T}"/> class.
         /// </summary>
         [Obsolete("Superseded by AvroSerializer(ISchemaRegistryClient, AvroSerializerConfig)")]
         public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config)
@@ -63,27 +63,27 @@ namespace Confluent.SchemaRegistry.Serdes
 
 
         /// <summary>
-        ///     Initialize a new instance of the AvroSerializer class.
+        ///     Initialize a new instance of the <see cref="AvroSerializer{T}"/> class.
         ///     When passed as a parameter to the Confluent.Kafka.Producer constructor,
         ///     the following configuration properties will be extracted from the producer's
         ///     configuration property collection:
-        ///     
-        ///     avro.serializer.buffer.bytes (default: 128) - Initial size (in bytes) of the buffer 
-        ///         used for message serialization. Use a value high enough to avoid resizing 
-        ///         the buffer, but small enough to avoid excessive memory use. Inspect the size of 
-        ///         the byte array returned by the Serialize method to estimate an appropriate value. 
+        ///
+        ///     avro.serializer.buffer.bytes (default: 1024) - Initial size (in bytes) of the buffer
+        ///         used for message serialization. Use a value high enough to avoid resizing
+        ///         the buffer, but small enough to avoid excessive memory use. Inspect the size of
+        ///         the byte array returned by the Serialize method to estimate an appropriate value.
         ///         Note: each call to serialize creates a new buffer.
-        ///     
-        ///     avro.serializer.auto.register.schemas (default: true) - true if the serializer should 
-        ///         attempt to auto-register unrecognized schemas with Confluent Schema Registry, 
+        ///
+        ///     avro.serializer.auto.register.schemas (default: true) - true if the serializer should
+        ///         attempt to auto-register unrecognized schemas with Confluent Schema Registry,
         ///         false if not.
         /// </summary>
         /// <param name="schemaRegistryClient">
-        ///     An implementation of ISchemaRegistryClient used for
+        ///     An implementation of <see cref="ISchemaRegistryClient"/> used for
         ///     communication with Confluent Schema Registry.
         /// </param>
         /// <param name="config">
-        ///     Serializer configuration properties (refer to 
+        ///     Serializer configuration properties (refer to
         ///     <see cref="AvroSerializerConfig" />)
         /// </param>
         public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, AvroSerializerConfig config = null)
@@ -126,7 +126,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <summary>
         ///     Serialize an instance of type <typeparamref name="T"/> to a byte array in Avro format. The serialized
         ///     data is preceded by a "magic byte" (1 byte) and the id of the schema as registered
-        ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block or throw 
+        ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block or throw
         ///     on first use for a particular topic during schema registration.
         /// </summary>
         /// <param name="value">
@@ -136,11 +136,11 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Context relevant to the serialize operation.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
+        ///     A <see cref="Task" /> that completes with
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
         public async Task<byte[]> SerializeAsync(T value, SerializationContext context)
-        { 
+        {
             try
             {
                 // null needs to treated specially since the client most likely just wants to send

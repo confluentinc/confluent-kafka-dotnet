@@ -119,23 +119,23 @@ namespace  Confluent.SchemaRegistry
         {
             get
             {
-                switch (SchemaType_String)
+                return SchemaType_String switch
                 {
-                    case "AVRO": return SchemaType.Avro;
-                    case "PROTOBUF": return SchemaType.Protobuf;
-                    case "JSON": return SchemaType.Json;
-                }
-                throw new InvalidOperationException($"Invalid program state: Unknown schema type {SchemaType_String}");
+                    "AVRO" => SchemaType.Avro,
+                    "PROTOBUF" => SchemaType.Protobuf,
+                    "JSON" => SchemaType.Json,
+                    _ => throw new InvalidOperationException($"Invalid program state: Unknown schema type {SchemaType_String}")
+                };
             }
             set
             {
-                switch (value)
+                SchemaType_String = value switch
                 {
-                    case SchemaType.Avro: SchemaType_String = "AVRO"; break;
-                    case SchemaType.Protobuf: SchemaType_String = "PROTOBUF"; break;
-                    case SchemaType.Json: SchemaType_String = "JSON"; break;
-                    default: throw new InvalidOperationException($"Invalid program state: Unknown schema type {SchemaType_String}");
-                }
+                    SchemaType.Avro => "AVRO",
+                    SchemaType.Protobuf => "PROTOBUF",
+                    SchemaType.Json => "JSON",
+                    _ => throw new InvalidOperationException($"Invalid program state: Unknown schema type {SchemaType_String}"),
+                };
             }
         }
 
@@ -209,7 +209,7 @@ namespace  Confluent.SchemaRegistry
         ///     The instance to compare to this instance.
         /// </param>
         /// <returns>
-        ///     true if the value of the other parameter is the same as the value of this instance; 
+        ///     true if the value of the other parameter is the same as the value of this instance;
         ///     otherwise, false. If other is null, the method returns false.
         /// </returns>
         public bool Equals(Schema other)
@@ -241,9 +241,9 @@ namespace  Confluent.SchemaRegistry
         /// </param>
         /// <returns>
         ///     A 32-bit signed integer that indicates whether this instance precedes, follows, or
-        ///     appears in the same position in the sort order as the other parameter. Less than 
+        ///     appears in the same position in the sort order as the other parameter. Less than
         ///     zero: this instance precedes other. Zero: this instance has the same position in
-        ///     the sort order as other. Greater than zero: This instance follows other OR other 
+        ///     the sort order as other. Greater than zero: This instance follows other OR other
         ///     is null.
         /// </returns>
         /// <remarks>

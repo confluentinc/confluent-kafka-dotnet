@@ -25,7 +25,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public static void WriteVarint(this Stream stream, uint value) {
             WriteUnsignedVarint(stream, (value << 1) ^ (value >> 31));
         }
-        
+
         /// <remarks>
         ///     Inspired by: https://github.com/apache/kafka/blob/2.5/clients/src/main/java/org/apache/kafka/common/utils/ByteUtils.java#L284
         /// </remarks>
@@ -42,7 +42,7 @@ namespace Confluent.SchemaRegistry.Serdes
             var value = ReadUnsignedVarint(stream);
             return (int)((value >> 1) ^ -(value & 1));
         }
-        
+
         /// <remarks>
         ///     Inspired by: https://github.com/apache/kafka/blob/2.5/clients/src/main/java/org/apache/kafka/common/utils/ByteUtils.java#L142
         /// </remarks>

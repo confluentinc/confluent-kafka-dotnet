@@ -111,9 +111,9 @@ namespace Confluent.SchemaRegistry
         /// </param>
         /// <returns>
         ///     A 32-bit signed integer that indicates whether this instance precedes, follows, or
-        ///     appears in the same position in the sort order as the other parameter. Less than 
+        ///     appears in the same position in the sort order as the other parameter. Less than
         ///     zero: this instance precedes other. Zero: this instance has the same position in
-        ///     the sort order as other. Greater than zero: This instance follows other OR other 
+        ///     the sort order as other. Greater than zero: This instance follows other OR other
         ///     is null.
         /// </returns>
         public int CompareTo(SchemaReference other)
@@ -163,7 +163,7 @@ namespace Confluent.SchemaRegistry
         ///     The schema reference to compare to this instance.
         /// </param>
         /// <returns>
-        ///     true if the value of the other parameter is the same as the value of this instance; 
+        ///     true if the value of the other parameter is the same as the value of this instance;
         ///     otherwise, false. If other is null, the method returns false.
         /// </returns>
         public bool Equals(SchemaReference other)

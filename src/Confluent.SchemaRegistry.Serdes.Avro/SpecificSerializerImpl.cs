@@ -17,17 +17,15 @@
 // Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
 #pragma warning disable CS0618
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Avro.IO;
 using Avro.Specific;
 using Confluent.Kafka;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -37,7 +35,7 @@ namespace Confluent.SchemaRegistry.Serdes
         internal class SerializerSchemaData
         {
             private string writerSchemaString;
-            private global::Avro.Schema writerSchema;
+            private Avro.Schema writerSchema;
 
             /// <remarks>
             ///     A given schema is uniquely identified by a schema id, even when
@@ -80,21 +78,21 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
-        private ISchemaRegistryClient schemaRegistryClient;
-        private bool autoRegisterSchema;
-        private bool normalizeSchemas;
-        private bool useLatestVersion;
-        private int initialBufferSize;
-        private SubjectNameStrategyDelegate subjectNameStrategy;
+        private readonly ISchemaRegistryClient schemaRegistryClient;
+        private readonly bool autoRegisterSchema;
+        private readonly bool normalizeSchemas;
+        private readonly bool useLatestVersion;
+        private readonly int initialBufferSize;
+        private readonly SubjectNameStrategyDelegate subjectNameStrategy;
 
-        private Dictionary<Type, SerializerSchemaData> multiSchemaData =
+        private readonly Dictionary<Type, SerializerSchemaData> multiSchemaData =
             new Dictionary<Type, SerializerSchemaData>();
 
-        private SerializerSchemaData singleSchemaData = null;
+        private readonly SerializerSchemaData singleSchemaData;
 
 
 
-        private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
 
         public SpecificSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
@@ -127,41 +125,41 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             else if (writerType.Equals(typeof(int)))
             {
-                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("int");
+                serializerSchemaData.WriterSchema = Avro.Schema.Parse("int");
             }
             else if (writerType.Equals(typeof(bool)))
             {
-                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("boolean");
+                serializerSchemaData.WriterSchema = Avro.Schema.Parse("boolean");
             }
             else if (writerType.Equals(typeof(double)))
             {
-                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("double");
+                serializerSchemaData.WriterSchema = Avro.Schema.Parse("double");
             }
             else if (writerType.Equals(typeof(string)))
             {
                 // Note: It would arguably be better to make this a union with null, to
                 // exactly match the .NET string type, however we don't for consistency
                 // with the Java Avro serializer.
-                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("string");
+                serializerSchemaData.WriterSchema = Avro.Schema.Parse("string");
             }
             else if (writerType.Equals(typeof(float)))
             {
-                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("float");
+                serializerSchemaData.WriterSchema = Avro.Schema.Parse("float");
             }
             else if (writerType.Equals(typeof(long)))
             {
-                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("long");
+                serializerSchemaData.WriterSchema = Avro.Schema.Parse("long");
             }
             else if (writerType.Equals(typeof(byte[])))
             {
                 // Note: It would arguably be better to make this a union with null, to
                 // exactly match the .NET byte[] type, however we don't for consistency
                 // with the Java Avro serializer.
-                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("bytes");
+                serializerSchemaData.WriterSchema = Avro.Schema.Parse("bytes");
             }
             else if (writerType.Equals(typeof(Null)))
             {
-                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("null");
+                serializerSchemaData.WriterSchema = Avro.Schema.Parse("null");
             }
             else
             {
@@ -199,9 +197,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
 
                     string fullname = null;
-                    if (data is ISpecificRecord && ((ISpecificRecord)data).Schema is Avro.RecordSchema)
+                    if (data is ISpecificRecord record && record.Schema is Avro.RecordSchema schema)
                     {
-                        fullname = ((Avro.RecordSchema)((ISpecificRecord)data).Schema).Fullname;
+                        fullname = schema.Fullname;
                     }
 
                     string subject = this.subjectNameStrategy != null

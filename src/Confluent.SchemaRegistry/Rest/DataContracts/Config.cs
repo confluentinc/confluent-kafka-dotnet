@@ -24,15 +24,15 @@ namespace Confluent.SchemaRegistry
     {
         [DataMember(Name = "compatibility")]
         public Compatibility CompatibilityLevel { get; }
-        
+
         public Config(Compatibility compatibilityLevel)
         {
             CompatibilityLevel = compatibilityLevel;
         }
 
-        public override string ToString() 
+        public override string ToString()
             => $"{{compatibility={CompatibilityLevel}}}";
-        
+
         public override bool Equals(object obj)
         {
             if (obj == null || GetType() != obj.GetType())
@@ -42,7 +42,7 @@ namespace Confluent.SchemaRegistry
 
             return CompatibilityLevel == ((Config)obj).CompatibilityLevel;
         }
-        
+
         public override int GetHashCode()
             => 31 * CompatibilityLevel.GetHashCode();
     }

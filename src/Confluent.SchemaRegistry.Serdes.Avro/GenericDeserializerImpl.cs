@@ -32,12 +32,12 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A datum reader cache (one corresponding to each write schema that's been seen)
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<int, DatumReader<GenericRecord>> datumReaderBySchemaId 
+        private readonly Dictionary<int, DatumReader<GenericRecord>> datumReaderBySchemaId
             = new Dictionary<int, DatumReader<GenericRecord>>();
-       
-        private SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
 
-        private ISchemaRegistryClient schemaRegistryClient;
+        private readonly SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
+
+        private readonly ISchemaRegistryClient schemaRegistryClient;
 
         public GenericDeserializerImpl(ISchemaRegistryClient schemaRegistryClient)
         {
@@ -48,7 +48,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             try
             {
-                // Note: topic is not necessary for deserialization (or knowing if it's a key 
+                // Note: topic is not necessary for deserialization (or knowing if it's a key
                 // or value) only the schema id is needed.
 
                 if (array.Length < 5)
@@ -74,8 +74,8 @@ namespace Confluent.SchemaRegistry.Serdes
                         if (datumReader == null)
                         {
                             // TODO: If any of this cache fills up, this is probably an
-                            // indication of misuse of the deserializer. Ideally we would do 
-                            // something more sophisticated than the below + not allow 
+                            // indication of misuse of the deserializer. Ideally we would do
+                            // something more sophisticated than the below + not allow
                             // the misuse to keep happening without warning.
                             if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
                             {
@@ -87,7 +87,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             {
                                 throw new InvalidOperationException("Expecting writer schema to have type Avro, not {writerSchemaResult.SchemaType}");
                             }
-                            var writerSchema = global::Avro.Schema.Parse(writerSchemaResult.SchemaString);
+                            var writerSchema = Avro.Schema.Parse(writerSchemaResult.SchemaString);
 
                             datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
                             datumReaderBySchemaId[writerId] = datumReader;
@@ -97,7 +97,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         deserializeMutex.Release();
                     }
-                    
+
                     return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
                 }
             }
@@ -106,6 +106,5 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw e.InnerException;
             }
         }
-
     }
 }

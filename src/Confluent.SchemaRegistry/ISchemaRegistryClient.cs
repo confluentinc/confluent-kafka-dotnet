@@ -33,7 +33,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     Register an Avro schema or get the schema id if it's already 
+        ///     Register an Avro schema or get the schema id if it's already
         ///     registered.
         /// </summary>
         /// <param name="subject">
@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     Register a schema or get the schema id if it's already 
+        ///     Register a schema or get the schema id if it's already
         ///     registered.
         /// </summary>
         /// <param name="subject">
@@ -71,7 +71,7 @@ namespace Confluent.SchemaRegistry
         Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize = false);
 
         /// <summary>
-        ///   Get the unique id of the specified avro schema registered against 
+        ///   Get the unique id of the specified avro schema registered against
         ///   the specified subject.
         /// </summary>
         /// <param name="subject">
@@ -94,7 +94,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///   Get the unique id of the specified schema registered against 
+        ///   Get the unique id of the specified schema registered against
         ///   the specified subject.
         /// </summary>
         /// <param name="subject">
@@ -223,7 +223,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     Check if an avro schema is compatible with latest version registered against a 
+        ///     Check if an avro schema is compatible with latest version registered against a
         ///     specified subject.
         /// </summary>
         /// <param name="subject">
@@ -233,7 +233,7 @@ namespace Confluent.SchemaRegistry
         ///     The schema to check.
         /// </param>
         /// <returns>
-        ///     true if <paramref name="avroSchema" /> is compatible with the latest version 
+        ///     true if <paramref name="avroSchema" /> is compatible with the latest version
         ///     registered against a specified subject, false otherwise.
         /// </returns>
         [Obsolete("Superseded by IsCompatibleAsync(string, Schema)")]
@@ -241,7 +241,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     Check if a schema is compatible with latest version registered against a 
+        ///     Check if a schema is compatible with latest version registered against a
         ///     specified subject.
         /// </summary>
         /// <param name="subject">
@@ -251,7 +251,7 @@ namespace Confluent.SchemaRegistry
         ///     The schema to check.
         /// </param>
         /// <returns>
-        ///     true if <paramref name="schema" /> is compatible with the latest version 
+        ///     true if <paramref name="schema" /> is compatible with the latest version
         ///     registered against a specified subject, false otherwise.
         /// </returns>
         Task<bool> IsCompatibleAsync(string subject, Schema schema);

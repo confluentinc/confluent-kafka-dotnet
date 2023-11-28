@@ -51,7 +51,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         [EnumMember(Value = "FULL")]
         Full,
-        
+
         /// <summary>
         ///     Forward transitive schema compatibility.
         /// </summary>

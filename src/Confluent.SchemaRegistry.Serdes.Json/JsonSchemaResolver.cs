@@ -100,7 +100,7 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <summary>
-        ///     Initialize a new instance of the JsonSerDesSchemaUtils class.
+        ///     Initialize a new instance of the <see cref="JsonSchemaResolver"/> class.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///     Confluent Schema Registry client instance that would be used to fetch
@@ -108,14 +108,15 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </param>
         /// <param name="schema">
         ///     Schema to use for validation, used when external
-        ///     schema references are present in the schema. 
+        ///     schema references are present in the schema.
         ///     Populate the References list of the schema for
         ///     the same.
         /// </param>
         /// <param name="jsonSchemaGeneratorSettings">
         ///     Schema generator setting to use.
         /// </param>
-        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
+        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        {
             this.schemaRegistryClient = schemaRegistryClient;
             this.root = schema;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;

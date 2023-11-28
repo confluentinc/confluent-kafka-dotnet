@@ -23,7 +23,7 @@ namespace Confluent.SchemaRegistry
 {
     /// <remarks>
     ///     It may be useful to expose this publicly, but this is not
-    ///     required by the serializers, so we will keep this internal 
+    ///     required by the serializers, so we will keep this internal
     ///     for now to minimize documentation / risk of API change etc.
     /// </remarks>
     internal interface IRestService : IDisposable

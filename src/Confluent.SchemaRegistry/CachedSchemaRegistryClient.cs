@@ -33,22 +33,22 @@ namespace Confluent.SchemaRegistry
     ///     A caching Schema Registry client.
     ///
     ///     The following method calls cache results:
-    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, Schema, bool)" />
-    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, string, bool)" />
-    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaAsync(int, string)" />
-    ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, Schema, bool)" />
-    ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string, bool)" />
-    ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int)" />
+    ///      - <see cref="GetSchemaIdAsync(string, Schema, bool)" />
+    ///      - <see cref="GetSchemaIdAsync(string, string, bool)" />
+    ///      - <see cref="GetSchemaAsync(int, string)" />
+    ///      - <see cref="RegisterSchemaAsync(string, Schema, bool)" />
+    ///      - <see cref="RegisterSchemaAsync(string, string, bool)" />
+    ///      - <see cref="GetRegisteredSchemaAsync(string, int)" />
     ///
     ///     The following method calls do NOT cache results:
-    ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool, bool)" />
-    ///      - <see cref="CachedSchemaRegistryClient.GetLatestSchemaAsync(string)" />
-    ///      - <see cref="CachedSchemaRegistryClient.GetAllSubjectsAsync" />
-    ///      - <see cref="CachedSchemaRegistryClient.GetSubjectVersionsAsync(string)" />
-    ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, Schema)" />
-    ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, string)" />
-    ///      - <see cref="CachedSchemaRegistryClient.GetCompatibilityAsync(string)" />
-    ///      - <see cref="CachedSchemaRegistryClient.UpdateCompatibilityAsync(Compatibility, string)" />
+    ///      - <see cref="LookupSchemaAsync(string, Schema, bool, bool)" />
+    ///      - <see cref="GetLatestSchemaAsync(string)" />
+    ///      - <see cref="GetAllSubjectsAsync" />
+    ///      - <see cref="GetSubjectVersionsAsync(string)" />
+    ///      - <see cref="IsCompatibleAsync(string, Schema)" />
+    ///      - <see cref="IsCompatibleAsync(string, string)" />
+    ///      - <see cref="GetCompatibilityAsync(string)" />
+    ///      - <see cref="UpdateCompatibilityAsync(Compatibility, string)" />
     /// </summary>
     public class CachedSchemaRegistryClient : ISchemaRegistryClient, IDisposable
     {
@@ -103,7 +103,7 @@ namespace Confluent.SchemaRegistry
             var keySubjectNameStrategyString = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy).Value ?? "";
             SubjectNameStrategy keySubjectNameStrategy = SubjectNameStrategy.Topic;
             if (keySubjectNameStrategyString != "" &&
-                !Enum.TryParse<SubjectNameStrategy>(keySubjectNameStrategyString, out keySubjectNameStrategy))
+                !Enum.TryParse(keySubjectNameStrategyString, out keySubjectNameStrategy))
             {
                 throw new ArgumentException($"Unknown KeySubjectNameStrategy: {keySubjectNameStrategyString}");
             }
@@ -117,7 +117,7 @@ namespace Confluent.SchemaRegistry
             var valueSubjectNameStrategyString = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy).Value ?? "";
             SubjectNameStrategy valueSubjectNameStrategy = SubjectNameStrategy.Topic;
             if (valueSubjectNameStrategyString != "" &&
-                !Enum.TryParse<SubjectNameStrategy>(valueSubjectNameStrategyString, out valueSubjectNameStrategy))
+                !Enum.TryParse(valueSubjectNameStrategyString, out valueSubjectNameStrategy))
             {
                 throw new ArgumentException($"Unknown ValueSubjectNameStrategy: {valueSubjectNameStrategyString}");
             }
@@ -145,7 +145,7 @@ namespace Confluent.SchemaRegistry
 
             var schemaRegistryUrisMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl);
             if (schemaRegistryUrisMaybe.Value == null) { throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl} configuration property must be specified."); }
-            var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
+            var schemaRegistryUris = schemaRegistryUrisMaybe.Value;
 
             var timeoutMsMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs);
             int timeoutMs;
@@ -250,7 +250,7 @@ namespace Confluent.SchemaRegistry
             try { sslVerify = sslVerificationMaybe.Value == null ? DefaultEnableSslCertificateVerification : bool.Parse(sslVerificationMaybe.Value); }
             catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
+            restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
         }
 
         /// <summary>
@@ -269,10 +269,10 @@ namespace Confluent.SchemaRegistry
 
         /// <remarks>
         ///     This is to make sure memory doesn't explode in the case of incorrect usage.
-        /// 
-        ///     It's behavior is pretty extreme - remove everything and start again if the 
+        ///
+        ///     It's behavior is pretty extreme - remove everything and start again if the
         ///     cache gets full. However, in practical situations this is not expected.
-        /// 
+        ///
         ///     TODO: Implement an LRU Cache here or something instead.
         /// </remarks>
         private bool CleanCacheIfFull()
@@ -280,9 +280,9 @@ namespace Confluent.SchemaRegistry
             if (schemaById.Count >= identityMapCapacity)
             {
                 // TODO: maybe log something somehow if this happens. Maybe throwing an exception (fail fast) is better.
-                this.schemaById.Clear();
-                this.idBySchemaBySubject.Clear();
-                this.schemaByVersionBySubject.Clear();
+                schemaById.Clear();
+                idBySchemaBySubject.Clear();
+                schemaByVersionBySubject.Clear();
                 return true;
             }
 
@@ -301,13 +301,13 @@ namespace Confluent.SchemaRegistry
 
             var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
             var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
-            if (!String.IsNullOrEmpty(certificateLocation))
+            if (!string.IsNullOrEmpty(certificateLocation))
             {
                 certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
             }
 
             var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value ?? "";
-            if (!String.IsNullOrEmpty(caLocation))
+            if (!string.IsNullOrEmpty(caLocation))
             {
                 certificates.Add(new X509Certificate2(caLocation));
             }
@@ -319,7 +319,7 @@ namespace Confluent.SchemaRegistry
         public Task<int> GetSchemaIdAsync(string subject, string avroSchema, bool normalize = false)
             => GetSchemaIdAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro), normalize);
 
-        
+
         /// <inheritdoc/>
         public async Task<int> GetSchemaIdAsync(string subject, Schema schema, bool normalize = false)
         {
@@ -392,12 +392,12 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public Task<int> RegisterSchemaAsync(string subject, string avroSchema, bool normalize = false)
             => RegisterSchemaAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro), normalize);
-    
+
 
         /// <summary>
         ///     Check if the given schema string matches a given format name.
         /// </summary>
-        private bool checkSchemaMatchesFormat(string format, string schemaString)
+        private bool CheckSchemaMatchesFormat(string format, string schemaString)
         {
             // if a format isn't specified, then assume text is desired.
             if (format == null)
@@ -438,7 +438,7 @@ namespace Confluent.SchemaRegistry
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.schemaById.TryGetValue(id, out Schema schema) || !checkSchemaMatchesFormat(format, schema.SchemaString))
+                if (!this.schemaById.TryGetValue(id, out Schema schema) || !CheckSchemaMatchesFormat(format, schema.SchemaString))
                 {
                     CleanCacheIfFull();
                     schema = (await restService.GetSchemaAsync(id, format).ConfigureAwait(continueOnCapturedContext: false));
@@ -538,7 +538,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.
+        ///     Releases unmanaged resources owned by this <see cref="CachedSchemaRegistryClient"/> instance.
         /// </summary>
         public void Dispose()
         {
@@ -561,6 +561,5 @@ namespace Confluent.SchemaRegistry
                 restService.Dispose();
             }
         }
-
     }
 }

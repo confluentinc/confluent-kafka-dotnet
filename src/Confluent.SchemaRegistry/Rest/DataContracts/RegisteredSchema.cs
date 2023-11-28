@@ -145,7 +145,7 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Compares this instance with a specified RegisteredSchema object and indicates whether this 
+        ///     Compares this instance with a specified RegisteredSchema object and indicates whether this
         ///     instance precedes, follows, or appears in the same position in the sort order as
         ///     the specified schema.
         /// </summary>
@@ -154,9 +154,9 @@ namespace Confluent.SchemaRegistry
         /// </param>
         /// <returns>
         ///     A 32-bit signed integer that indicates whether this instance precedes, follows, or
-        ///     appears in the same position in the sort order as the other parameter. Less than 
+        ///     appears in the same position in the sort order as the other parameter. Less than
         ///     zero: this instance precedes other. Zero: this instance has the same position in
-        ///     the sort order as other. Greater than zero: This instance follows other OR other 
+        ///     the sort order as other. Greater than zero: This instance follows other OR other
         ///     is null.
         /// </returns>
         public int CompareTo(RegisteredSchema other)
@@ -170,18 +170,18 @@ namespace Confluent.SchemaRegistry
             return result;
 
             // If the schema strings + version are equal and any of the other properties are not,
-            // then this is a logical error. Assume that this prevented/handled elsewhere.   
+            // then this is a logical error. Assume that this prevented/handled elsewhere.
         }
 
         /// <summary>
-        ///     Determines whether this instance and a specified object, which must also be a Schema 
+        ///     Determines whether this instance and a specified object, which must also be a Schema
         ///     object, have the same value (Overrides Object.Equals(Object))
         /// </summary>
         /// <param name="obj">
         ///     The Schema to compare to this instance.
         /// </param>
         /// <returns>
-        ///     true if obj is a Schema and its value is the same as this instance; otherwise, false. 
+        ///     true if obj is a Schema and its value is the same as this instance; otherwise, false.
         ///     If obj is null, the method returns false.
         /// </returns>
         public override bool Equals(object obj)
@@ -202,7 +202,7 @@ namespace Confluent.SchemaRegistry
         ///     The schema to compare to this instance.
         /// </param>
         /// <returns>
-        ///     true if the value of the other parameter is the same as the value of this instance; 
+        ///     true if the value of the other parameter is the same as the value of this instance;
         ///     otherwise, false. If other is null, the method returns false.
         /// </returns>
         public bool Equals(RegisteredSchema other)
