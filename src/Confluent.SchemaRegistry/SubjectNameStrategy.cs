@@ -62,7 +62,7 @@ namespace Confluent.SchemaRegistry
 
 
     /// <summary>
-    ///     Extension methods for the SubjectNameStrategy type.
+    ///     Extension methods for the <see cref="SubjectNameStrategy"/> type.
     /// </summary>
     public static class SubjectNameStrategyExtensions
     {
