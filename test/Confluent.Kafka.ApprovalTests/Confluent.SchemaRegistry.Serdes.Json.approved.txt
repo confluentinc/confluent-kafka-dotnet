@@ -1,0 +1,46 @@
+namespace Confluent.SchemaRegistry.Serdes
+{
+    public class JsonDeserializerConfig : Confluent.Kafka.Config
+    {
+        public JsonDeserializerConfig() { }
+    }
+    public class JsonDeserializer<T> : Confluent.Kafka.IAsyncDeserializer<T>
+        where T :  class
+    {
+        public JsonDeserializer(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config = null, NJsonSchema.Generation.JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) { }
+        public JsonDeserializer(Confluent.SchemaRegistry.ISchemaRegistryClient schemaRegistryClient, Confluent.SchemaRegistry.Schema schema, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config = null, NJsonSchema.Generation.JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) { }
+        public System.Threading.Tasks.Task<T> DeserializeAsync(System.ReadOnlyMemory<byte> data, bool isNull, Confluent.Kafka.SerializationContext context) { }
+    }
+    public class JsonSchemaResolver
+    {
+        public JsonSchemaResolver(Confluent.SchemaRegistry.ISchemaRegistryClient schemaRegistryClient, Confluent.SchemaRegistry.Schema schema, NJsonSchema.Generation.JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) { }
+        public NJsonSchema.JsonSchema GetResolvedSchema() { }
+    }
+    public class JsonSerializerConfig : Confluent.Kafka.Config
+    {
+        public JsonSerializerConfig() { }
+        public JsonSerializerConfig(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config) { }
+        public bool? AutoRegisterSchemas { get; set; }
+        public int? BufferBytes { get; set; }
+        public bool? LatestCompatibilityStrict { get; set; }
+        public bool? NormalizeSchemas { get; set; }
+        public Confluent.SchemaRegistry.SubjectNameStrategy? SubjectNameStrategy { get; set; }
+        public bool? UseLatestVersion { get; set; }
+        public static class PropertyNames
+        {
+            public const string AutoRegisterSchemas = "json.serializer.auto.register.schemas";
+            public const string BufferBytes = "json.serializer.buffer.bytes";
+            public const string LatestCompatibilityStrict = "json.serializer.latest.compatibility.strict";
+            public const string NormalizeSchemas = "json.serializer.normalize.schemas";
+            public const string SubjectNameStrategy = "json.serializer.subject.name.strategy";
+            public const string UseLatestVersion = "json.serializer.use.latest.version";
+        }
+    }
+    public class JsonSerializer<T> : Confluent.Kafka.IAsyncSerializer<T>
+        where T :  class
+    {
+        public JsonSerializer(Confluent.SchemaRegistry.ISchemaRegistryClient schemaRegistryClient, Confluent.SchemaRegistry.Serdes.JsonSerializerConfig config = null, NJsonSchema.Generation.JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) { }
+        public JsonSerializer(Confluent.SchemaRegistry.ISchemaRegistryClient schemaRegistryClient, Confluent.SchemaRegistry.Schema schema, Confluent.SchemaRegistry.Serdes.JsonSerializerConfig config = null, NJsonSchema.Generation.JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) { }
+        public System.Threading.Tasks.Task<byte[]> SerializeAsync(T value, Confluent.Kafka.SerializationContext context) { }
+    }
+}

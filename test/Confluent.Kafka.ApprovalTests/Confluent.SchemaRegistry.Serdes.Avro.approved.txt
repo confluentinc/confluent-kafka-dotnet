@@ -1,0 +1,43 @@
+namespace Confluent.SchemaRegistry.Serdes
+{
+    public class AvroDeserializerConfig : Confluent.Kafka.Config
+    {
+        public AvroDeserializerConfig() { }
+    }
+    public class AvroDeserializer<T> : Confluent.Kafka.IAsyncDeserializer<T>
+    {
+        public AvroDeserializer(Confluent.SchemaRegistry.ISchemaRegistryClient schemaRegistryClient, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config = null) { }
+        public System.Threading.Tasks.Task<T> DeserializeAsync(System.ReadOnlyMemory<byte> data, bool isNull, Confluent.Kafka.SerializationContext context) { }
+    }
+    public class AvroSerializerConfig : Confluent.Kafka.Config
+    {
+        public AvroSerializerConfig() { }
+        public AvroSerializerConfig(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config) { }
+        public bool? AutoRegisterSchemas { get; set; }
+        public int? BufferBytes { get; set; }
+        public bool? NormalizeSchemas { get; set; }
+        public Confluent.SchemaRegistry.SubjectNameStrategy? SubjectNameStrategy { get; set; }
+        public bool? UseLatestVersion { get; set; }
+        public static class PropertyNames
+        {
+            public const string AutoRegisterSchemas = "avro.serializer.auto.register.schemas";
+            public const string BufferBytes = "avro.serializer.buffer.bytes";
+            public const string NormalizeSchemas = "avro.serializer.normalize.schemas";
+            public const string SubjectNameStrategy = "avro.serializer.subject.name.strategy";
+            public const string UseLatestVersion = "avro.serializer.use.latest.version";
+        }
+    }
+    public class AvroSerializer<T> : Confluent.Kafka.IAsyncSerializer<T>
+    {
+        public const int DefaultInitialBufferSize = 1024;
+        public AvroSerializer(Confluent.SchemaRegistry.ISchemaRegistryClient schemaRegistryClient, Confluent.SchemaRegistry.Serdes.AvroSerializerConfig config = null) { }
+        [System.Obsolete("Superseded by AvroSerializer(ISchemaRegistryClient, AvroSerializerConfig)")]
+        public AvroSerializer(Confluent.SchemaRegistry.ISchemaRegistryClient schemaRegistryClient, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config) { }
+        public System.Threading.Tasks.Task<byte[]> SerializeAsync(T value, Confluent.Kafka.SerializationContext context) { }
+    }
+    public enum SerdeType
+    {
+        Regular = 1,
+        Avro = 2,
+    }
+}
