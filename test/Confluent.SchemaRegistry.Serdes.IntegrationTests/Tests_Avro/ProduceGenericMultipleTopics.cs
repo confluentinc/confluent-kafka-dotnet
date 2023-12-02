@@ -48,8 +48,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
-                dr2 = p.ProduceAsync(topic2, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
+                dr = p.ProduceAsync(topic, record).Result;
+                dr2 = p.ProduceAsync(topic2, record).Result;
             }
 
             Assert.Null(dr.Key);

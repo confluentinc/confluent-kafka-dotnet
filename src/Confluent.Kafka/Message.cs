@@ -33,5 +33,57 @@ namespace Confluent.Kafka
         ///     Gets the message value (possibly null).
         /// </summary>
         public TValue Value { get; set; }
+
+        /// <summary>
+        /// Implicit conversion from value to <see cref="Message{TKey, TValue}"/>.
+        /// This conversion may be useful in case when key is <see cref="Null"/>.
+        /// </summary>
+        /// <param name="message">Value.</param>
+        public static implicit operator Message<TKey, TValue>(TValue message)
+        {
+            return new Message<TKey, TValue> { Value = message };
+        }
+
+        /// <summary>
+        /// Implicit conversion from tuple to <see cref="Message{TKey, TValue}"/>.
+        /// </summary>
+        /// <param name="message">Tuple of value and headers.</param>
+        public static implicit operator Message<TKey, TValue>((TValue, Headers) message)
+        {
+            return new Message<TKey, TValue> { Value = message.Item1, Headers = message.Item2 };
+        }
+
+        /// <summary>
+        /// Implicit conversion from tuple to <see cref="Message{TKey, TValue}"/>.
+        /// </summary>
+        /// <param name="message">Tuple of value and timestamp.</param>
+        public static implicit operator Message<TKey, TValue>((TValue, Timestamp) message)
+        {
+            return new Message<TKey, TValue> { Value = message.Item1, Timestamp = message.Item2 };
+        }
+
+        /// <summary>
+        /// Implicit conversion from tuple to <see cref="Message{TKey, TValue}"/>.
+        /// </summary>
+        /// <param name="message">Tuple of key and value.</param>
+        public static implicit operator Message<TKey, TValue>((TKey, TValue) message)
+        {
+            return new Message<TKey, TValue> { Key = message.Item1, Value = message.Item2 };
+        }
+
+        /// <summary>
+        /// Implicit conversion from tuple to <see cref="Message{TKey, TValue}"/>..
+        /// </summary>
+        /// <param name="message">Tuple of key, value, timestamp and headers.</param>
+        public static implicit operator Message<TKey, TValue>((TKey, TValue, Timestamp, Headers) message)
+        {
+            return new Message<TKey, TValue>
+            {
+                Key = message.Item1,
+                Value = message.Item2,
+                Timestamp = message.Item3,
+                Headers = message.Item4
+            };
+        }
     }
 }

@@ -83,9 +83,9 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         favorite_number = i,
                         favorite_color = "blue"
                     };
-                    
+
                     producer
-                        .ProduceAsync(topic, new Message<string, ProduceConsumeUser> { Key = user.name, Value = user })
+                        .ProduceAsync(topic, (user.name, user))
                         .Wait();
                 }
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));

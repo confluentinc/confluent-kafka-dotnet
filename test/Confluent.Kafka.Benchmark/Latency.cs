@@ -167,7 +167,7 @@ namespace Confluent.Kafka.Benchmark
                         {
                             bw.Write(elapsedMilliseconds);
                         }
-                        producer.Produce(topicName, new Message<Null, byte[]> { Value = payload, Headers = headers },
+                        producer.Produce(topicName, (payload, headers),
                             dr => { if (dr.Error.Code != ErrorCode.NoError) Console.WriteLine("Message delivery failed: " + dr.Error.Reason); });
 
                         var desiredProduceCount = (elapsedMilliseconds - startMilliseconds)/1000.0 * messagesPerSecond;

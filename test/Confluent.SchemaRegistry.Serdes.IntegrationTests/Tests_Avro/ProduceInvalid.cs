@@ -51,7 +51,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Exception caught = null;
                 try
                 {
-                    producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }).GetAwaiter().GetResult();
+                    producer.ProduceAsync(topic, ("hello", "world")).GetAwaiter().GetResult();
                 }
                 catch (Exception e)
                 {
@@ -92,7 +92,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Exception caught = null;
                 try
                 {
-                    producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }).GetAwaiter().GetResult();
+                    producer.ProduceAsync(topic, ("hello", "world")).GetAwaiter().GetResult();
                 }
                 catch (Exception e)
                 {
@@ -133,7 +133,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Exception caught = null;
                 try
                 {
-                    producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }).GetAwaiter().GetResult();
+                    producer.ProduceAsync(topic, ("hello", "world")).GetAwaiter().GetResult();
                 }
                 catch (Exception e)
                 {
@@ -174,7 +174,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Exception caught = null;
                 try
                 {
-                    producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }).GetAwaiter().GetResult();
+                    producer.ProduceAsync(topic, ("hello", "world")).GetAwaiter().GetResult();
                 }
                 catch (Exception e)
                 {

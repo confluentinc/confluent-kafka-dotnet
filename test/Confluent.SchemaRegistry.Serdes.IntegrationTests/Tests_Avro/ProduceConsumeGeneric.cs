@@ -72,7 +72,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(topic, new Message<GenericRecord, Null> { Key = record }).Result;
+                dr = p.ProduceAsync(topic, (record, null)).Result;
             }
 
             // produce a specific record (to later consume back as a generic record).
@@ -89,8 +89,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     favorite_number = 47,
                     favorite_color = "orange"
                 };
-                
-                p.ProduceAsync(topic, new Message<ProduceConsumeUser2, Null> { Key = user }).Wait();
+
+                p.ProduceAsync(topic, (user, null)).Wait();
             }
 
             Assert.Null(dr.Message.Value);
@@ -182,7 +182,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 }
             }
         }
-        
+
         /// <summary>
         ///     Test that messages produced with the Avro serializer can be consumed with the
         ///     Avro deserializer (topic name strategy).

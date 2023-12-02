@@ -42,8 +42,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 for (int i=0; i<10; ++i)
                 {
-                    producer.Produce(topic1.Name, new Message<Null, string> { Value = i.ToString() });
-                    producer.Produce(topic2.Name, new Message<Null, string> { Value = i.ToString() });
+                    producer.Produce(topic1.Name, i.ToString());
+                    producer.Produce(topic2.Name, i.ToString());
                 }
                 producer.Flush(TimeSpan.FromSeconds(10));
 

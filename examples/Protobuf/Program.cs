@@ -111,7 +111,7 @@ namespace Confluent.Kafka.Examples.Protobuf
                 {
                     User user = new User { Name = text, FavoriteColor = "green", FavoriteNumber = i++ };
                     await producer
-                        .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user })
+                        .ProduceAsync(topicName, (text,  user))
                         .ContinueWith(task => task.IsFaulted
                             ? $"error producing message: {task.Exception.Message}"
                             : $"produced to: {task.Result.TopicPartitionOffset}");

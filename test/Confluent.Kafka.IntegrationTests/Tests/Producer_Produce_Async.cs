@@ -44,16 +44,16 @@ namespace Confluent.Kafka.IntegrationTests
                 .Build())
             {
                 Assert.Throws<ProduceException<Null, string>>(
-                    () => producer.Produce(testTopic.Name, new Message<Null, string> { Value = "test" }));
+                    () => producer.Produce(testTopic.Name, "test"));
 
                 Assert.Throws<ProduceException<Null, string>>(
-                    () => producer.Produce(testTopic.Name, new Message<Null, string> { Value = "test" }, dr => { Assert.True(false); }));
+                    () => producer.Produce(testTopic.Name, "test", dr => { Assert.True(false); }));
 
                 Assert.Throws<ProduceException<string, Null>>(
-                    () => dProducer.Produce(testTopic.Name, new Message<string, Null> { Key = "test" }));
+                    () => dProducer.Produce(testTopic.Name, ("test", null)));
 
                 Assert.Throws<ProduceException<string, Null>>(
-                    () => dProducer.Produce(testTopic.Name, new Message<string, Null> { Key = "test" }, dr => { Assert.True(false); }));
+                    () => dProducer.Produce(testTopic.Name, ("test", null), dr => { Assert.True(false); }));
             }
 
             Assert.Equal(0, Library.HandleCount);

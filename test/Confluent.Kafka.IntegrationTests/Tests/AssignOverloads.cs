@@ -50,10 +50,10 @@ namespace Confluent.Kafka.IntegrationTests
             DeliveryResult<Null, string> dr, dr3;
             using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
-                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString2 }).Wait();
-                dr3 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString3 }).Result;
-                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString4 }).Wait();
+                dr = producer.ProduceAsync(singlePartitionTopic, testString).Result;
+                producer.ProduceAsync(singlePartitionTopic, testString2).Wait();
+                dr3 = producer.ProduceAsync(singlePartitionTopic, testString3).Result;
+                producer.ProduceAsync(singlePartitionTopic, testString4).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -64,7 +64,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var cr = consumer.Consume(TimeSpan.FromSeconds(10));
                 consumer.Commit();
                 Assert.Equal(cr.Message.Value, testString);
-                
+
                 // Determine offset to consume from automatically.
                 consumer.Assign(new List<TopicPartition>() { dr.TopicPartition });
                 cr = consumer.Consume(TimeSpan.FromSeconds(10));

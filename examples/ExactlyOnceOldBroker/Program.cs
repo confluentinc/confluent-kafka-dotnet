@@ -195,7 +195,7 @@ namespace Confluent.Kafka.Examples.Transactions
                 foreach (var l in lines)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(1), ct);  // slow down the calls to produce to make the output more interesting to watch.
-                    await producer.ProduceAsync(Topic_InputLines, new Message<Null, string> { Value = l }, ct);
+                    await producer.ProduceAsync(Topic_InputLines, l, ct);
                     lCount += 1;
                     if (lCount % 10 == 0)
                     {
@@ -330,7 +330,7 @@ namespace Confluent.Kafka.Examples.Transactions
                             {
                                 try
                                 {
-                                    producerState[cr.TopicPartition].Producer.Produce(Topic_Words, new Message<string, Null> { Key = w });
+                                    producerState[cr.TopicPartition].Producer.Produce(Topic_Words, (w, null));
                                     // Note: when using transactions, there is no need to check for errors of individual
                                     // produce call delivery reports because if the transaction commits successfully, you
                                     // can be sure that all the constituent messages were delivered successfully and in order.
@@ -562,7 +562,7 @@ namespace Confluent.Kafka.Examples.Transactions
                             try
                             {
                                 producerState[cr.TopicPartition].Producer.Produce(
-                                    Topic_Counts, new Message<string, int> { Key = cr.Message.Key, Value = updatedV });
+                                    Topic_Counts, (cr.Message.Key, updatedV));
                             }
                             catch (KafkaException e)
                             {

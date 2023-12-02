@@ -64,7 +64,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         try
                         {
                             producer
-                                .ProduceAsync(guidTopic, new Message<string, int> { Key = "test", Value = 112 })
+                                .ProduceAsync(guidTopic, ("test", 112))
                                 .GetAwaiter()
                                 .GetResult();
                         }
@@ -102,7 +102,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     {
                         try
                         {
-                            producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 })
+                            producer.ProduceAsync(topic.Name, ("test", 112))
                                 .GetAwaiter()
                                 .GetResult();
                         }
@@ -122,7 +122,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                         .Build())
                 {
-                    producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
+                    producer.ProduceAsync(topic.Name, ("test", 112)).Wait();
                 }
 
                 // config with avro.serializer.auto.register.schemas == false should work now.
@@ -133,7 +133,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                         .Build())
                 {
-                    producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
+                    producer.ProduceAsync(topic.Name, ("test", 112)).Wait();
                 }
 
                 // config with avro.serializer.use.latest.version == true should also work now.
@@ -144,7 +144,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                         .Build())
                 {
-                    producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
+                    producer.ProduceAsync(topic.Name, ("test", 112)).Wait();
                 }
             }
         }

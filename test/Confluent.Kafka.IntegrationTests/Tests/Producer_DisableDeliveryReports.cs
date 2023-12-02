@@ -53,29 +53,29 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 Assert.Throws<InvalidOperationException>(() => producer.Produce(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
+                    (TestKey, TestValue),
                     (DeliveryReport<byte[], byte[]> dr) => Console.WriteLine("should not print")));
 
                 Assert.Throws<InvalidOperationException>(() => producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
+                    (TestKey, TestValue),
                     (DeliveryReport<byte[], byte[]> dr) => Console.WriteLine("should not print")));
 
                 producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                    (TestKey, TestValue));
 
                 producer.Produce(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                    (TestKey, TestValue));
 
                 producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                    (TestKey, TestValue));
 
                 var drTask = producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                    (TestKey, TestValue));
                 Assert.True(drTask.IsCompleted); // should complete immediately.
                 Assert.Equal(Offset.Unset, drTask.Result.Offset);
                 Assert.Equal(Partition.Any, drTask.Result.Partition);
@@ -85,7 +85,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 drTask = producer.ProduceAsync(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                    (TestKey, TestValue));
                 Assert.True(drTask.IsCompleted); // should complete immediately.
                 Assert.Equal(Offset.Unset, drTask.Result.Offset);
                 Assert.Equal(0, (int)drTask.Result.Partition);

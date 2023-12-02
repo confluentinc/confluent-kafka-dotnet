@@ -75,12 +75,12 @@ namespace Confluent.Kafka.IntegrationTests
                     }
                 };
 
-                producer.Produce(topic1.Name, new Message<string, Null> { Key = "hello" }, dh);
-                producer.Produce(topic2.Name, new Message<string, Null> { Key = "world" }, dh);
+                producer.Produce(topic1.Name, ("hello", null), dh);
+                producer.Produce(topic2.Name, ("world", null), dh);
                 // both default and topic-specific partitioners return a fixed value > number of partitions
                 // in topic 3. If either of these partitioners is errantly used in producing this message,
                 // this test will fail most of the time.
-                producer.Produce(topic3.Name, new Message<string, Null> { Key = "kafka" }, dh);
+                producer.Produce(topic3.Name, ("kafka", null), dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

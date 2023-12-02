@@ -69,7 +69,7 @@ namespace Confluent.Kafka.Transactions
                 {
                     int val = currentState == ProducerState.MakingMessagesToCommit ? lastMessageValue++ : -1;
                     Thread.Sleep((int)(1000 * conf.MaxPauseSeconds));
-                    producer.Produce(conf.Topic, new Message<int, int> { Key = id, Value = val });
+                    producer.Produce(conf.Topic, (id, val));
                 }
             }
 

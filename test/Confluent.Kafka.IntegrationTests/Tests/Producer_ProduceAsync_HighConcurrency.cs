@@ -58,14 +58,14 @@ namespace Confluent.Kafka.IntegrationTests
                 int N = workerThreads+2;
                 for (int i=0; i<N; ++i)
                 {
-                    tasks.Add(producer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "test" }));
+                    tasks.Add(producer.ProduceAsync(tempTopic.Name, "test"));
                 }
 
                 Task.WaitAll(tasks.ToArray());
 
                 for (int i=0; i<N; ++i)
                 {
-                    tasks.Add(dProducer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "test" }));
+                    tasks.Add(dProducer.ProduceAsync(tempTopic.Name, "test"));
                 }
 
                 Task.WaitAll(tasks.ToArray());

@@ -96,7 +96,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     Assert.Throws<ProduceException<string, PersonPoco>>(() => {
                         try
                         {
-                            producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }).Wait();
+                            producer.ProduceAsync(topic.Name, ("test1", p)).Wait();
                         }
                         catch (AggregateException ax)
                         {
@@ -115,7 +115,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         NumberWithRange = 3
                     };
                     Assert.Throws<AggregateException>(() => {
-                        producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }).Wait();
+                        producer.ProduceAsync(topic.Name, ("test1", p)).Wait();
                     });
                 }
 
@@ -145,7 +145,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             }
                         }
                     };
-                    producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }).Wait();
+                    producer.ProduceAsync(topic.Name, ("test1", p)).Wait();
 
                     var schema = schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructValueSubjectName(topic.Name, null)).Result.SchemaString;
 

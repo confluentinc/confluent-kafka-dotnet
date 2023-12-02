@@ -76,7 +76,7 @@ namespace Confluent.Kafka.IntegrationTests
                                 }
                             };
 
-                            producer.Produce(tempTopic.Name, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
+                            producer.Produce(tempTopic.Name, $"value: {taskNumber}", handler);
 
                             lock (waitObj)
                             {

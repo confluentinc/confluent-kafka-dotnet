@@ -52,44 +52,35 @@ namespace Confluent.Kafka.IntegrationTests
                 // --- ProduceAsync, serializer case.
 
                 drs_task.Add(producer.ProduceAsync(
-                    singlePartitionTopic, 
-                    new Message<Null, string> { Value = "testvalue" }).Result);
-                
+                    singlePartitionTopic,
+                    "testvalue").Result);
+
                 // TimestampType: CreateTime
                 drs_task.Add(producer.ProduceAsync(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<Null, string> 
-                    { 
-                        Value = "test-value", 
-                        Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc))
-                    }).Result);
+                    ("test-value", new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)))
+                    ).Result);
 
                 // TimestampType: CreateTime (default)
                 drs_task.Add(producer.ProduceAsync(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<Null, string> { Value = "test-value" }).Result);
+                    "test-value").Result);
 
                 // TimestampType: LogAppendTime
                 Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         new TopicPartition(singlePartitionTopic, 0),
-                        new Message<Null, string>
-                        {
-                            Value = "test-value", 
-                            Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) 
-                        }).Result);
+                        ("test-value", new Timestamp(DateTime.Now, TimestampType.LogAppendTime))
+                        ).Result);
 
                 // TimestampType: NotAvailable
                 Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         new TopicPartition(singlePartitionTopic, 0),
-                        new Message<Null, string> 
-                        { 
-                            Value = "test-value",
-                            Timestamp = new Timestamp(10, TimestampType.NotAvailable)
-                        }).Result);
+                        ("test-value", new Timestamp(10, TimestampType.NotAvailable))
+                        ).Result);
 
-                Action<DeliveryReport<Null, string>> dh 
+                Action<DeliveryReport<Null, string>> dh
                     = (DeliveryReport<Null, string> dr) => drs_produce.Add(dr);
 
 
@@ -97,42 +88,30 @@ namespace Confluent.Kafka.IntegrationTests
 
                 producer.Produce(
                     singlePartitionTopic,
-                    new Message<Null, string> { Value = "testvalue" }, dh);
+                    "testvalue", dh);
 
                 // TimestampType: CreateTime
                 producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<Null, string> 
-                    { 
-                        Value = "test-value", 
-                        Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc))
-                    },
+                    ("test-value", new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc))),
                     dh);
 
                 // TimestampType: CreateTime (default)
                 producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<Null, string> { Value = "test-value" },
+                    "test-value",
                     dh);
 
                 // TimestampType: LogAppendTime
                 Assert.Throws<ArgumentException>(() => producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<Null, string> 
-                    { 
-                        Value = "test-value", 
-                        Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime)
-                    }, 
+                    ("test-value", new Timestamp(DateTime.Now, TimestampType.LogAppendTime)),
                     dh));
 
                 // TimestampType: NotAvailable
                 Assert.Throws<ArgumentException>(() => producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<Null, string> 
-                    { 
-                        Value = "test-value", 
-                        Timestamp = new Timestamp(10, TimestampType.NotAvailable)
-                    },
+                    ("test-value", new Timestamp(10, TimestampType.NotAvailable)),
                     dh));
 
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
@@ -258,7 +237,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 assertCloseToNow_byte(consumer, drs2_produce[2].TopicPartitionOffset);
             }
-            
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Timestamps");
         }

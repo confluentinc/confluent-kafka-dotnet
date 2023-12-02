@@ -41,9 +41,9 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var keyData = Encoding.UTF8.GetBytes("key");
-                firstProduced = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Key = keyData }).Result.TopicPartitionOffset;
+                firstProduced = producer.ProduceAsync(singlePartitionTopic, (keyData, (byte[])null)).Result.TopicPartitionOffset;
                 var valData = Encoding.UTF8.GetBytes("val");
-                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = valData });
+                producer.ProduceAsync(singlePartitionTopic, valData);
                 Assert.True(producer.Flush(TimeSpan.FromSeconds(10)) == 0);
             }
 

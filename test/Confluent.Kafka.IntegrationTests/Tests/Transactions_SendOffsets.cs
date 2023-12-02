@@ -44,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     producer.InitTransactions(defaultTimeout);
                     producer.BeginTransaction();
-                    producer.Produce(topic.Name, new Message<string, string> { Key = "test key 100", Value = "test val 100" });
+                    producer.Produce(topic.Name, ("test key 100", "test val 100"));
                     producer.SendOffsetsToTransaction(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic.Name, 0, 73) }, consumer.ConsumerGroupMetadata, TimeSpan.FromSeconds(30));
                     producer.CommitTransaction(defaultTimeout);
                 }

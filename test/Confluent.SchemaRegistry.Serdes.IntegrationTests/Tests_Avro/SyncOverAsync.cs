@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         {
             ThreadPool.GetMaxThreads(out int originalWorkerThreads, out int originalCompletionPortThreads);
 
-            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);   
+            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);
             ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
             ThreadPool.GetMaxThreads(out workerThreads, out completionPortThreads);
 
@@ -47,7 +47,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             {
                 BootstrapServers = bootstrapServers
             };
-            
+
             var schemaRegistryConfig = new SchemaRegistryConfig
             {
                 Url = schemaRegistryServers
@@ -61,7 +61,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             {
                 var tasks = new List<Task>();
 
-                // will deadlock if N >= workerThreads. Set to max number that 
+                // will deadlock if N >= workerThreads. Set to max number that
                 // should not deadlock.
                 int N = workerThreads-1;
                 for (int i=0; i<N; ++i)
@@ -72,7 +72,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         {
                             object waitObj = new object();
 
-                            Action<DeliveryReport<Null, string>> handler = dr => 
+                            Action<DeliveryReport<Null, string>> handler = dr =>
                             {
                                 Assert.True(dr.Error.Code == ErrorCode.NoError);
 
@@ -82,7 +82,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                                 }
                             };
 
-                            producer.Produce(topic, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
+                            producer.Produce(topic, $"value: {taskNumber}", handler);
 
                             lock (waitObj)
                             {

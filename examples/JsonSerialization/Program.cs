@@ -26,7 +26,7 @@ using Newtonsoft.Json;
 
 
 /// <summary>
-///     An example of working with JSON data, Apache Kafka and 
+///     An example of working with JSON data, Apache Kafka and
 ///     Confluent Schema Registry (v5.5 or later required for
 ///     JSON schema support).
 /// </summary>
@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Examples.JsonSerialization
 {
     /// <summary>
     ///     A POCO class corresponding to the JSON data written
-    ///     to Kafka, where the schema is implicitly defined through 
+    ///     to Kafka, where the schema is implicitly defined through
     ///     the class properties and their attributes.
     /// </summary>
     /// <remarks>
@@ -83,7 +83,7 @@ namespace Confluent.Kafka.Examples.JsonSerialization
             var schemaRegistryConfig = new SchemaRegistryConfig
             {
                 // Note: you can specify more than one schema registry url using the
-                // schema.registry.url property for redundancy (comma separated list). 
+                // schema.registry.url property for redundancy (comma separated list).
                 // The property name is not plural to follow the convention set by
                 // the Java implementation.
                 Url = schemaRegistryUrl
@@ -149,11 +149,11 @@ namespace Confluent.Kafka.Examples.JsonSerialization
                 while ((text = Console.ReadLine()) != "q")
                 {
                     User user = new User { Name = text, FavoriteColor = "blue", FavoriteNumber = i++ };
-                    try 
+                    try
                     {
-                        await producer.ProduceAsync(topicName, new Message<string, User> { Value = user });
+                        await producer.ProduceAsync(topicName, user);
                     }
-                    catch (Exception e) 
+                    catch (Exception e)
                     {
                         Console.WriteLine($"error producing message: {e.Message}");
                     }

@@ -64,17 +64,17 @@ namespace Confluent.Kafka.IntegrationTests
 
                 producer.InitTransactions(TimeSpan.FromSeconds(30));
                 producer.BeginTransaction();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message_a" }).Wait();
+                producer.ProduceAsync(topic.Name, ("test", "message_a")).Wait();
                 producer.CommitTransaction(TimeSpan.FromSeconds(30));
 
                 producer.BeginTransaction();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message_b" }).Wait();
+                producer.ProduceAsync(topic.Name, ("test", "message_b")).Wait();
                 producer.CommitTransaction(TimeSpan.FromSeconds(30));
 
                 producer.BeginTransaction();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message1" }).Wait();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message2" }).Wait();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message3" }).Wait();
+                producer.ProduceAsync(topic.Name, ("test", "message1")).Wait();
+                producer.ProduceAsync(topic.Name, ("test", "message2")).Wait();
+                producer.ProduceAsync(topic.Name, ("test", "message3")).Wait();
 
                 for (int i=0; i<10; ++i)
                 {

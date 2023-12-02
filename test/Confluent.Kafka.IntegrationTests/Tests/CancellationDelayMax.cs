@@ -88,8 +88,8 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Close();
 
                 // for the producer, make do with just a simple check that this does not throw or hang.
-                var dr = producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 42 }, Value = new byte[] { 255 } }).Result;
-                
+                var dr = producer.ProduceAsync(topic.Name, (new byte[] { 42 }, new byte[] { 255 })).Result;
+
                 // for the admin client, make do with just simple check that this does not throw or hang.
                 var cr = new Confluent.Kafka.Admin.ConfigResource { Type = ResourceType.Topic, Name = topic.Name };
                 var configs = adminClient.DescribeConfigsAsync(new ConfigResource[] { cr }).Result;

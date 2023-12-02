@@ -46,10 +46,10 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 drs.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 1),
-                    new Message<string, string> { Key = "test key 0", Value = "test val 0" }));
+                    ("test key 0", "test val 0")));
                 drs.Add(producer.ProduceAsync(
                     partitionedTopic,
-                    new Message<string, string> { Key = "test key 1", Value = "test val 1" }));
+                    ("test key 1", "test val 1")));
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
@@ -76,10 +76,10 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 drs2.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 1),
-                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 2"), Value = Encoding.UTF8.GetBytes("test val 2") }));
+                    (Encoding.UTF8.GetBytes("test key 2"), Encoding.UTF8.GetBytes("test val 2"))));
                 drs2.Add(producer.ProduceAsync(
                     partitionedTopic,
-                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 3"), Value = Encoding.UTF8.GetBytes("test val 3") }));
+                    (Encoding.UTF8.GetBytes("test key 3"), Encoding.UTF8.GetBytes("test val 3"))));
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 

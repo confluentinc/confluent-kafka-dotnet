@@ -263,7 +263,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 foreach (var l in lines)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(1), ct);  // slow down the calls to produce to make the output more interesting to watch.
-                    await producer.ProduceAsync(Topic_InputLines, new Message<Null, string> { Value = l }, ct);  // Note: producing synchronously is slow and should generally be avoided.
+                    await producer.ProduceAsync(Topic_InputLines, l, ct);  // Note: producing synchronously is slow and should generally be avoided.
                     lCount += 1;
                     if (lCount % 10 == 0)
                     {
@@ -406,7 +406,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                                 {
                                     try
                                     {
-                                        producer.Produce(Topic_Words, new Message<string, Null> { Key = w });
+                                        producer.Produce(Topic_Words, (w, null));
                                         // Note: when using transactions, there is no need to check for errors of individual
                                         // produce call delivery reports because if the transaction commits successfully, you
                                         // can be sure that all the constituent messages were delivered successfully and in order.
@@ -661,7 +661,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                             count += 1;
                             WordCountState[cr.Partition].Session.Upsert(key, count);
 
-                            producer.Produce(Topic_Counts, new Message<string, int> { Key = cr.Message.Key, Value = count });
+                            producer.Produce(Topic_Counts, (cr.Message.Key, count));
 
                             wCount += 1;
                         }

@@ -28,17 +28,17 @@ namespace Confluent.Kafka.IntegrationTests
         public async void AdminClient_ListOffsets(string bootstrapServers)
         {
             LogToFile("start AdminClient_ListOffsets");
-            
+
             using var topic = new TemporaryTopic(bootstrapServers, 1);
             using var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build();
             using var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build();
-            
+
             long basetimestamp = 10000000;
-            await producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 100, TimestampType.CreateTime)});
-            await producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 400, TimestampType.CreateTime)});
-            await producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 250, TimestampType.CreateTime)});
+            await producer.ProduceAsync(topic.Name, ("Producer Message", new Timestamp(basetimestamp + 100, TimestampType.CreateTime)));
+            await producer.ProduceAsync(topic.Name, ("Producer Message", new Timestamp(basetimestamp + 400, TimestampType.CreateTime)));
+            await producer.ProduceAsync(topic.Name, ("Producer Message", new Timestamp(basetimestamp + 250, TimestampType.CreateTime)));
             producer.Flush(new TimeSpan(0, 0, 10));
-            
+
             var timeout = TimeSpan.FromSeconds(30);
             ListOffsetsOptions options = new ListOffsetsOptions(){RequestTimeout = timeout, IsolationLevel = IsolationLevel.ReadUncommitted};
 
@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Tuple.Create(OffsetSpec.MaxTimestamp(), new Offset(1)),
                 Tuple.Create(OffsetSpec.ForTimestamp(basetimestamp + 150), new Offset(1)),
             };
-            
+
             foreach (var fixture in testFixtures)
             {
                 var offsetSpec = fixture.Item1;
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.IntegrationTests
                         OffsetSpec = offsetSpec
                     }
                 };
-                
+
                 var listOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsetSpecs, options);
 
                 foreach (var resultInfo in listOffsetsResult.ResultInfos)

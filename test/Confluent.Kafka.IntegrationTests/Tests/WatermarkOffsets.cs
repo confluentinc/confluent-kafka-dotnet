@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
                 DeliveryResult<Null, string> dr;
                 using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
                 {
-                    dr = producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = testString }).Result;
+                    dr = producer.ProduceAsync(topic.Name, testString).Result;
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10))); // this isn't necessary.
                 }
 

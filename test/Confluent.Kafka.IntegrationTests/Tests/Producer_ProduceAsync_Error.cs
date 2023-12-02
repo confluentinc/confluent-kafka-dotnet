@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 drt = producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 42),
-                    new Message<string, string> { Key = "test key 0", Value = "test val 0" });
+                    ("test key 0", "test val 0"));
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
@@ -78,7 +78,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 drt2 = producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 42),
-                    new Message<byte[], byte[]> { Key = new byte[] { 100 }, Value = new byte[] { 101 } });
+                    (new byte[] { 100 }, new byte[] { 101 }));
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 

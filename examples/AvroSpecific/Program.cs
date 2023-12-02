@@ -113,7 +113,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 {
                     User user = new User { name = text, favorite_color = "green", favorite_number = ++i, hourly_rate = new Avro.AvroDecimal(67.99) };
                     producer
-                        .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user })
+                        .ProduceAsync(topicName, (text, user))
                         .ContinueWith(task =>
                             {
                                 if (!task.IsFaulted)

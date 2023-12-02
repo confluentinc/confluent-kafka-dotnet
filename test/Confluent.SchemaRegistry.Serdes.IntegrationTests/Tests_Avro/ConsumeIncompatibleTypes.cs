@@ -69,7 +69,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 };
 
                 producer
-                    .ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user })
+                    .ProduceAsync(topic, (user.name, user))
                     .Wait();
             }
 

@@ -107,7 +107,7 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
                         var msg = Guid.NewGuid().ToString();
                         try
                         {
-                            var deliveryReport = await producer.ProduceAsync(topicName, new Message<string, string> { Value = msg });
+                            var deliveryReport = await producer.ProduceAsync(topicName, msg);
                             Console.WriteLine($"Produced message to {deliveryReport.TopicPartitionOffset}, {msg}");
                         }
                         catch (ProduceException<string, string> e)

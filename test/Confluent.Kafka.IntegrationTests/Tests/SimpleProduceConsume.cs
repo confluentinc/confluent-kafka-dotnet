@@ -81,7 +81,7 @@ namespace Confluent.Kafka.IntegrationTests
 
         private static DeliveryResult<Null, string> ProduceMessage(string topic, IProducer<Null, string> producer, string testString)
         {
-            var result = producer.ProduceAsync(topic, new Message<Null, string> { Value = testString }).Result;
+            var result = producer.ProduceAsync(topic, testString).Result;
             Assert.NotNull(result?.Message);
             Assert.Equal(topic, result.Topic);
             Assert.NotEqual<long>(result.Offset, Offset.Unset);

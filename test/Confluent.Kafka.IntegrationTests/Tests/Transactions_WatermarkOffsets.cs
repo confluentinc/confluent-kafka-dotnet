@@ -44,9 +44,9 @@ namespace Confluent.Kafka.IntegrationTests
 
                 producer.InitTransactions(TimeSpan.FromSeconds(30));
                 producer.BeginTransaction();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message1" }).Wait();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message2" }).Wait();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message3" }).Wait();
+                producer.ProduceAsync(topic.Name, ("test", "message1")).Wait();
+                producer.ProduceAsync(topic.Name, ("test", "message2")).Wait();
+                producer.ProduceAsync(topic.Name, ("test", "message3")).Wait();
 
                 WatermarkOffsets wo2 = new WatermarkOffsets(Offset.Unset, Offset.Unset);
                 for (int i=0; i<10; ++i)

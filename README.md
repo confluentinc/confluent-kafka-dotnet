@@ -99,6 +99,8 @@ class Program
             try
             {
                 var dr = await p.ProduceAsync("test-topic", new Message<Null, string> { Value="test" });
+                // or simplified syntax
+                var dr = await p.ProduceAsync("test-topic", "test");
                 Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
             }
             catch (ProduceException<Null, string> e)
@@ -136,6 +138,8 @@ class Program
             for (int i=0; i<100; ++i)
             {
                 p.Produce("my-topic", new Message<Null, string> { Value = i.ToString() }, handler);
+                // or simplified syntax
+                p.Produce("my-topic", i.ToString(), handler);
             }
 
             // wait for up to 10 seconds for any inflight messages to be delivered.

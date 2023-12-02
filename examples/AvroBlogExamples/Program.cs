@@ -56,7 +56,7 @@ namespace AvroBlogExample
                 record.Add("Message", "a test log message");
                 record.Add("Severity", new GenericEnum(logLevelSchema, "Error"));
                 await producer
-                    .ProduceAsync("log-messages", new Message<Null, GenericRecord> { Value = record })
+                    .ProduceAsync("log-messages", record)
                     .ContinueWith(task => Console.WriteLine(
                         task.IsFaulted
                             ? $"error producing message: {task.Exception.Message}"
@@ -75,15 +75,12 @@ namespace AvroBlogExample
                     .Build())
             {
                 await producer.ProduceAsync("log-messages",
-                    new Message<Null, MessageTypes.LogMessage>
+                    new MessageTypes.LogMessage
                     {
-                        Value = new MessageTypes.LogMessage
-                        {
-                            IP = "192.168.0.1",
-                            Message = "a test message 2",
-                            Severity = MessageTypes.LogLevel.Info,
-                            Tags = new Dictionary<string, string> { { "location", "CA" } }
-                        }
+                        IP = "192.168.0.1",
+                        Message = "a test message 2",
+                        Severity = MessageTypes.LogLevel.Info,
+                        Tags = new Dictionary<string, string> { { "location", "CA" } }
                     });
 
                 producer.Flush(TimeSpan.FromSeconds(30));
