@@ -1,0 +1,49 @@
+namespace Confluent.SchemaRegistry.Serdes
+{
+    public class ProtobufDeserializerConfig : Confluent.Kafka.Config
+    {
+        public ProtobufDeserializerConfig() { }
+        public ProtobufDeserializerConfig(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config) { }
+        public bool? UseDeprecatedFormat { get; set; }
+        public static class PropertyNames
+        {
+            public const string UseDeprecatedFormat = "protobuf.deserializer.use.deprecated.format";
+        }
+    }
+    public class ProtobufDeserializer<T> : Confluent.Kafka.IAsyncDeserializer<T>
+        where T :  class, Google.Protobuf.IMessage<T>, new ()
+    {
+        public ProtobufDeserializer(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config = null) { }
+        public System.Threading.Tasks.Task<T> DeserializeAsync(System.ReadOnlyMemory<byte> data, bool isNull, Confluent.Kafka.SerializationContext context) { }
+    }
+    public class ProtobufSerializerConfig : Confluent.Kafka.Config
+    {
+        public ProtobufSerializerConfig() { }
+        public ProtobufSerializerConfig(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config) { }
+        public bool? AutoRegisterSchemas { get; set; }
+        public int? BufferBytes { get; set; }
+        public bool? NormalizeSchemas { get; set; }
+        public Confluent.SchemaRegistry.ReferenceSubjectNameStrategy? ReferenceSubjectNameStrategy { get; set; }
+        public bool? SkipKnownTypes { get; set; }
+        public Confluent.SchemaRegistry.SubjectNameStrategy? SubjectNameStrategy { get; set; }
+        public bool? UseDeprecatedFormat { get; set; }
+        public bool? UseLatestVersion { get; set; }
+        public static class PropertyNames
+        {
+            public const string AutoRegisterSchemas = "protobuf.serializer.auto.register.schemas";
+            public const string BufferBytes = "protobuf.serializer.buffer.bytes";
+            public const string NormalizeSchemas = "protobuf.serializer.normalize.schemas";
+            public const string ReferenceSubjectNameStrategy = "protobuf.serializer.reference.subject.name.strategy";
+            public const string SkipKnownTypes = "protobuf.serializer.skip.known.types";
+            public const string SubjectNameStrategy = "protobuf.serializer.subject.name.strategy";
+            public const string UseDeprecatedFormat = "protobuf.serializer.use.deprecated.format";
+            public const string UseLatestVersion = "protobuf.serializer.use.latest.version";
+        }
+    }
+    public class ProtobufSerializer<T> : Confluent.Kafka.IAsyncSerializer<T>
+        where T : Google.Protobuf.IMessage<T>, new ()
+    {
+        public ProtobufSerializer(Confluent.SchemaRegistry.ISchemaRegistryClient schemaRegistryClient, Confluent.SchemaRegistry.Serdes.ProtobufSerializerConfig config = null) { }
+        public System.Threading.Tasks.Task<byte[]> SerializeAsync(T value, Confluent.Kafka.SerializationContext context) { }
+    }
+}
