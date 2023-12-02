@@ -49,7 +49,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var u = new SubjectNameStrategyTestPoco();
                     u.Value = testString;
-                    producer.ProduceAsync(topic.Name, new Message<string, SubjectNameStrategyTestPoco> { Key = "test1", Value = u }).Wait();
+                    producer.ProduceAsync(topic.Name, ("test1", u)).Wait();
 
                     var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
                     Assert.Contains(topic.Name + "-SubjectNameStrategyTestPoco", subjects);
@@ -64,7 +64,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var u = new SubjectNameStrategyTestPoco();
                     u.Value = testString;
-                    producer.ProduceAsync(topic.Name, new Message<string, SubjectNameStrategyTestPoco> { Key = "test1", Value = u }).Wait();
+                    producer.ProduceAsync(topic.Name, ("test1", u)).Wait();
 
                     var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
                     // Note: If this value is in SR by any means (even if not via this test),
@@ -80,7 +80,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var u = new SubjectNameStrategyTestPoco();
                     u.Value = testString;
-                    producer.ProduceAsync(topic.Name, new Message<string, SubjectNameStrategyTestPoco> { Key = "test1", Value = u }).Wait();
+                    producer.ProduceAsync(topic.Name, ("test1", u)).Wait();
 
                     var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
                     Assert.Contains(topic.Name + "-value", subjects);

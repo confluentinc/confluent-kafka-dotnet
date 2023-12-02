@@ -110,7 +110,7 @@ namespace Confluent.Kafka.IntegrationTests
             var dr = new DeliveryResult<string, string>();
             using (var p = new MyProducerBuilder<string, string>(producerConfig).Build())
             {
-                dr = p.ProduceAsync(singlePartitionTopic, new Message<string, string> { Key = "abc", Value = "123" }).Result;
+                dr = p.ProduceAsync(singlePartitionTopic, ("abc", "123")).Result;
             }
             
             var consumerConfig = new ConsumerConfig

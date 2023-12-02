@@ -61,13 +61,13 @@ namespace Confluent.Kafka.IntegrationTests
                 ConsumeResult<byte[], byte[]> record = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
 
-                producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value", SerializationContext.Empty) }).Wait();
+                producer.ProduceAsync(topic.Name, Serializers.Utf8.Serialize("test value", SerializationContext.Empty)).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
                 Assert.Equal(0, record?.Offset);
 
                 consumer.Pause(assignment);
-                producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value 2", SerializationContext.Empty) }).Wait();
+                producer.ProduceAsync(topic.Name, Serializers.Utf8.Serialize("test value 2", SerializationContext.Empty)).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
                 consumer.Resume(assignment);

@@ -128,13 +128,12 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     var message = producer.ProduceAsync(
                         new TopicPartition(topic, partition),
-                        new Message<byte[], byte[]>
-                        { 
-                            Key = Serializers.Utf8.Serialize($"test key {index}", SerializationContext.Empty),
-                            Value = Serializers.Utf8.Serialize($"test val {index}", SerializationContext.Empty),
-                            Timestamp = new Timestamp(baseTime + index*1000, TimestampType.CreateTime),
-                            Headers = null
-                        }
+                        (
+                        Serializers.Utf8.Serialize($"test key {index}", SerializationContext.Empty),
+                        Serializers.Utf8.Serialize($"test val {index}", SerializationContext.Empty),
+                        new Timestamp(baseTime + index*1000, TimestampType.CreateTime),
+                        null
+                        )
                     ).Result;
                     messages[index] = message;
                     Task.Delay(200).Wait();

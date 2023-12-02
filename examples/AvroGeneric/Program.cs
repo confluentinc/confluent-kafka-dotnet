@@ -109,7 +109,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
 
                     try
                     {
-                        var dr = await producer.ProduceAsync(topicName, new Message<string, GenericRecord> { Key = text, Value = record });
+                        var dr = await producer.ProduceAsync(topicName, (text, record));
                         Console.WriteLine($"produced to: {dr.TopicPartitionOffset}");
                     }
                     catch (ProduceException<string, GenericRecord> ex)

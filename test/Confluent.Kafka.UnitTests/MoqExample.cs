@@ -40,14 +40,14 @@ namespace Confluent.Kafka.UnitTests
             // var produceCount = 0;
             // var flushCount = 0;
             // mock.Setup(m => m.Produce(It.IsAny<string>(), It.IsAny<Message<Null, string>>(), It.IsAny<Action<DeliveryReport<Null, string>>>()))
-            //     .Callback<string, Message<Null, string>, Action<DeliveryReport<Null, string>>>((topic, message, action) => 
+            //     .Callback<string, Message<Null, string>, Action<DeliveryReport<Null, string>>>((topic, message, action) =>
             //         {
             //             var result = new DeliveryReport<Null, string>
             //             {
-            //                 Topic = topic, Partition = 0, Offset = 0, Error = new Error(ErrorCode.NoError), 
+            //                 Topic = topic, Partition = 0, Offset = 0, Error = new Error(ErrorCode.NoError),
             //                 Message = message
             //             };
-                        
+
             //             // Note: this is a simplification of the actual Producer implementation -
             //             // A good mock would delay invocation of the callback and invoke it on a
             //             // different thread.
@@ -57,7 +57,7 @@ namespace Confluent.Kafka.UnitTests
             // mock.Setup(m => m.Flush(It.IsAny<TimeSpan>())).Returns(0).Callback(() => flushCount += 1);
 
             // DeliveryReport<Null, string> produced = null;
-            // producer.Produce("my-topic", new Message<Null, string> { Value = "my-value" }, (m) => produced = m);
+            // producer.Produce("my-topic", "my-value", (m) => produced = m);
             // var remaining = producer.Flush(TimeSpan.FromSeconds(10));
 
             // Assert.Equal("my-topic", produced.Topic);

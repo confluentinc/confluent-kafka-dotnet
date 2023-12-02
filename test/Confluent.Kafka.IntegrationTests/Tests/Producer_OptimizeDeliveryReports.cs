@@ -35,24 +35,19 @@ namespace Confluent.Kafka.IntegrationTests
             byte[] TestValue = new byte[] { 5, 6, 7, 8 };
 
             var producerConfig = new ProducerConfig
-            { 
+            {
                 BootstrapServers = bootstrapServers,
                 DeliveryReportFields = "none"
             };
 
 
-            // serializing case. 
+            // serializing case.
 
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var dr = await producer.ProduceAsync(
-                    singlePartitionTopic, 
-                    new Message<byte[], byte[]> 
-                    { 
-                        Key = TestKey, 
-                        Value = TestValue, 
-                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) } 
-                    }
+                    singlePartitionTopic,
+                    (TestKey, TestValue, default, new Headers() { new Header("my-header", new byte[] { 42 }) })
                 );
                 Assert.Equal(TimestampType.NotAvailable, dr.Timestamp.Type);
                 Assert.Equal(0, dr.Timestamp.UnixTimestampMs);
@@ -62,18 +57,13 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
 
-            // byte[] case. 
+            // byte[] case.
 
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var dr = await producer.ProduceAsync(
-                    singlePartitionTopic, 
-                    new Message<byte[], byte[]>
-                    { 
-                        Key = TestKey, 
-                        Value = TestValue, 
-                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) } 
-                    }
+                    singlePartitionTopic,
+                    (TestKey, TestValue, default, new Headers() { new Header("my-header", new byte[] { 42 }) })
                 );
                 Assert.Equal(TimestampType.NotAvailable, dr.Timestamp.Type);
                 Assert.Equal(0, dr.Timestamp.UnixTimestampMs);

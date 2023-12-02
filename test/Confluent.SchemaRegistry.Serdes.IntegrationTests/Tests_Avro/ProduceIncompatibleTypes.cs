@@ -54,7 +54,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .Build())
             {
                 producer
-                    .ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" })
+                    .ProduceAsync(topic, ("hello", "world"))
                     .Wait();
 
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
@@ -72,7 +72,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     try
                     {
                         producer
-                            .ProduceAsync(topic, new Message<int, string> { Key = 42, Value = "world" })
+                            .ProduceAsync(topic, (42, "world"))
                             .GetAwaiter()
                             .GetResult();
                     }
@@ -96,7 +96,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     try
                     {
                         producer
-                            .ProduceAsync(topic, new Message<string, int> { Key = "world", Value = 42 })
+                            .ProduceAsync(topic, ("world", 42))
                             .GetAwaiter()
                             .GetResult();
                     }

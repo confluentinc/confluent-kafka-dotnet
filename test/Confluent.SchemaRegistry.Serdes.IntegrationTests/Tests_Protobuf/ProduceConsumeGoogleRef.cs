@@ -46,7 +46,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 u.ReceivedTime = new Google.Protobuf.WellKnownTypes.Timestamp();
                 u.ReceivedTime.Seconds = 1591364591;
 
-                producer.ProduceAsync(topic.Name, new Message<string, WithGoogleRefs.TheRecord> { Key = "test1", Value = u }).Wait();
+                producer.ProduceAsync(topic.Name, ("test1", u)).Wait();
 
                 var consumerConfig = new ConsumerConfig
                 {

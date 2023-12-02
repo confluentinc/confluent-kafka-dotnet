@@ -192,7 +192,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings))
                         .Build())
                 {
-                    producer.ProduceAsync(topic.Name, new Message<string, Order> { Key = "test1", Value = order }).Wait();
+                    producer.ProduceAsync(topic.Name, ("test1", order)).Wait();
                 }
                 
                 using (var consumer =
@@ -218,7 +218,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings))
                         .Build())
                 {
-                    producer.ProduceAsync(topic.Name, new Message<string, JObject> { Key = "test1", Value = jsonObject }).Wait();
+                    producer.ProduceAsync(topic.Name, ("test1", jsonObject)).Wait();
                 }
                 
                 using (var consumer =
@@ -249,7 +249,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco { StringField = "Test" };
                     // Validation failure when passing TestClasses2.TestPoco
                     Assert.Throws<AggregateException>(
-                        () => producer.ProduceAsync(topic.Name, new Message<string, TestClasses2.TestPoco> { Key = "test1", Value = c }).Wait());
+                        () => producer.ProduceAsync(topic.Name, ("test1", c)).Wait());
                 }
             }
         }

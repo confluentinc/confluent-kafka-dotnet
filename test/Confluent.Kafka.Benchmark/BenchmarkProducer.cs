@@ -72,7 +72,7 @@ namespace Confluent.Kafka.Benchmark
                     var val = new byte[msgSize].Select(a => ++cnt).ToArray();
 
                     // this avoids including connection setup, topic creation time, etc.. in result.
-                    firstDeliveryReport = producer.ProduceAsync(topic, new Message<Null, byte[]> { Value = val, Headers = headers }).Result;
+                    firstDeliveryReport = producer.ProduceAsync(topic, (val, headers)).Result;
 
                     var startTime = DateTime.Now.Ticks;
 
@@ -99,7 +99,7 @@ namespace Confluent.Kafka.Benchmark
                         {
                             try
                             {
-                                producer.Produce(topic, new Message<Null, byte[]> { Value = val, Headers = headers }, deliveryHandler);
+                                producer.Produce(topic, (val, headers), deliveryHandler);
                             }
                             catch (ProduceException<Null, byte[]> ex)
                             {
@@ -131,7 +131,7 @@ namespace Confluent.Kafka.Benchmark
                             var tasks = new Task[nMessages];
                             for (int i = 0; i < nMessages; i += 1)
                             {
-                                tasks[i] = producer.ProduceAsync(topic, new Message<Null, byte[]> { Value = val, Headers = headers });
+                                tasks[i] = producer.ProduceAsync(topic, (val, headers));
                                 if (tasks[i].IsFaulted)
                                 {
                                     if (((ProduceException<Null, byte[]>)tasks[i].Exception.InnerException).Error.Code == ErrorCode.Local_QueueFull)

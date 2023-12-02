@@ -96,7 +96,7 @@ namespace Confluent.Kafka.Examples.ProducerExample
                         // from proceeding until the acknowledgement from the broker is received (at the 
                         // expense of low throughput).
                         var deliveryReport = await producer.ProduceAsync(
-                            topicName, new Message<string, string> { Key = key, Value = val });
+                            topicName, (key, val));
 
                         Console.WriteLine($"delivered to: {deliveryReport.TopicPartitionOffset}");
                     }

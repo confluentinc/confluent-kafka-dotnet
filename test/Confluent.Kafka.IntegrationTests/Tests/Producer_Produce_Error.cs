@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
                     .SetValueSerializer(Serializers.Utf8)
                     .Build())
             {
-                producer.Produce(new TopicPartition(singlePartitionTopic, 1), new Message<Null, String> { Value = "test" }, dh);
+                producer.Produce(new TopicPartition(singlePartitionTopic, 1), "test", dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -82,7 +82,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                producer.Produce(new TopicPartition(singlePartitionTopic, 42), new Message<byte[], byte[]> { Key = new byte[] { 11 }}, dh2);
+                producer.Produce(new TopicPartition(singlePartitionTopic, 42), (new byte[] { 11 }, (byte[])null), dh2);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

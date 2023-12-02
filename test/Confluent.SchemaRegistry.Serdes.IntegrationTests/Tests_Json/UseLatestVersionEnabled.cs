@@ -40,16 +40,16 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test Use Latest Version on when AutoRegister enabled and disabled. 
+        ///     Test Use Latest Version on when AutoRegister enabled and disabled.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void UseLatestVersionCheck(string bootstrapServers, string schemaRegistryServers) 
+        public static void UseLatestVersionCheck(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig)) 
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             {
                 using (var producer =
                     new ProducerBuilder<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco>(producerConfig)
@@ -57,10 +57,10 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco { IntField = 1 };
-                    producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco> { Key = "test1", Value = c }).Wait();
+                    producer.ProduceAsync(topic.Name, ("test1", c)).Wait();
                 }
 
-                using (var producer = 
+                using (var producer =
                     new ProducerBuilder<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(producerConfig)
                         .SetValueSerializer(new JsonSerializer<Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(
                             schemaRegistry, new JsonSerializerConfig { UseLatestVersion = true, AutoRegisterSchemas = false, LatestCompatibilityStrict = true }))
@@ -68,7 +68,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco { StringField = "Test" };
                     Assert.Throws<AggregateException>(
-                        () => producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco> { Key = "test1", Value = c }).Wait());
+                        () => producer.ProduceAsync(topic.Name, ("test1", c)).Wait());
                 }
             }
         }

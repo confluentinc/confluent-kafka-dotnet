@@ -62,7 +62,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     producer
-                        .ProduceAsync(stringTopic, new Message<string, string> { Key = "hello", Value = "world" })
+                        .ProduceAsync(stringTopic, ("hello", "world"))
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
@@ -74,7 +74,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     producer
-                        .ProduceAsync(bytesTopic, new Message<byte[], byte[]> { Key = new byte[] { 1, 4, 11 }, Value = new byte[] {} })
+                        .ProduceAsync(bytesTopic, (new byte[] { 1, 4, 11 }, new byte[] {}))
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
@@ -86,7 +86,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     producer
-                        .ProduceAsync(intTopic, new Message<int, int> { Key = 42, Value = 43 })
+                        .ProduceAsync(intTopic, (42, 43))
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
@@ -98,7 +98,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     producer
-                        .ProduceAsync(longTopic, new Message<long, long> { Key = -32, Value = -33 })
+                        .ProduceAsync(longTopic, (-32, -33))
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
@@ -110,7 +110,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     producer
-                        .ProduceAsync(boolTopic, new Message<bool, bool> { Key = true, Value = false })
+                        .ProduceAsync(boolTopic, (true, false))
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
@@ -122,7 +122,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     producer
-                        .ProduceAsync(floatTopic, new Message<float, float> { Key = 44.0f, Value = 45.0f })
+                        .ProduceAsync(floatTopic, (44.0f, 45.0f))
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
@@ -134,7 +134,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     producer
-                        .ProduceAsync(doubleTopic, new Message<double, double> { Key = 46.0, Value = 47.0 })
+                        .ProduceAsync(doubleTopic, (46.0, 47.0))
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }

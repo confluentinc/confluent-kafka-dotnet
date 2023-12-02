@@ -234,11 +234,7 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                     };
                     try
                     {
-                        await producer.ProduceAsync(topicName, new Message<long, Product>
-                        {
-                            Key = product.ProductId,
-                            Value = product
-                        });
+                        await producer.ProduceAsync(topicName, (product.ProductId, product));
                     }
                     catch (Exception e)
                     {

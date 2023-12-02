@@ -59,7 +59,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     // implicit check that this does not fail.
-                    producer.ProduceAsync(topic1.Name, new Message<string, string> { Key = "hello", Value = "world" }).Wait();
+                    producer.ProduceAsync(topic1.Name, ("hello", "world")).Wait();
 
                     // check that the value type was registered with SR, and the key was not.
                     Assert.Throws<SchemaRegistryException>(() =>
@@ -84,7 +84,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     // implicit check that this does not fail.
-                    producer.ProduceAsync(topic2.Name, new Message<string, string> { Key = "hello", Value = "world" }).Wait();
+                    producer.ProduceAsync(topic2.Name, ("hello", "world")).Wait();
 
                     // check that the key type was registered with SR, and the value was not.
                     Assert.Throws<SchemaRegistryException>(() =>

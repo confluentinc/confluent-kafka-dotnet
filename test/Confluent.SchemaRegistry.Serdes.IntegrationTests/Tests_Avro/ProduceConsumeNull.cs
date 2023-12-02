@@ -78,7 +78,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 for (int i = 0; i < 100; ++i)
                 {
                     producer
-                        .ProduceAsync(topic, new Message<string, ProduceConsumeUser> { Key = null, Value = null })
+                        .ProduceAsync(topic, ((string)null, null))
                         .Wait();
                 }
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));

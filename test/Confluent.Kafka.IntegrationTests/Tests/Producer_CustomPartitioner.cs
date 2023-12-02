@@ -107,7 +107,7 @@ namespace Confluent.Kafka.IntegrationTests
                         {
                             producer.Produce(
                                 topic.Name,
-                                new Message<string, string> { Key = $"test key {i}", Value = $"test val {i}" }, dh);
+                                ($"test key {i}", $"test val {i}"), dh);
                         }
 
                         producer.Flush(TimeSpan.FromSeconds(10));
@@ -134,7 +134,7 @@ namespace Confluent.Kafka.IntegrationTests
                 })
                 .Build())
             {
-                producer.Produce(topic.Name, new Message<Null, string> { Value = "test value" });
+                producer.Produce(topic.Name, "test value");
                 producer.Flush(TimeSpan.FromSeconds(10));
                 Assert.Equal(1, partitionerCalledTimes);
             }

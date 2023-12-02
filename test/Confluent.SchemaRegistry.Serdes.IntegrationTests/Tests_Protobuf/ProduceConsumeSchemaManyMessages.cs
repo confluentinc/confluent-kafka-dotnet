@@ -44,7 +44,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             {
                 var u = new Msg230();
                 u.Value = 41;
-                producer.ProduceAsync(topic.Name, new Message<string, Msg230> { Key = "test1", Value = u }).Wait();
+                producer.ProduceAsync(topic.Name, ("test1", u)).Wait();
 
                 var consumerConfig = new ConsumerConfig
                 {

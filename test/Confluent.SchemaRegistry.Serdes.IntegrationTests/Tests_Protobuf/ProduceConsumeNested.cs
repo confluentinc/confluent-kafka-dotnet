@@ -44,7 +44,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             {
                 var u = new NestedOuter.Types.NestedMid2.Types.NestedLower();
                 u.Field2 = "field_2_value";
-                producer.ProduceAsync(topic.Name, new Message<string, NestedOuter.Types.NestedMid2.Types.NestedLower> { Key = "test1", Value = u }).Wait();
+                producer.ProduceAsync(topic.Name, ("test1", u)).Wait();
 
                 var consumerConfig = new ConsumerConfig
                 {

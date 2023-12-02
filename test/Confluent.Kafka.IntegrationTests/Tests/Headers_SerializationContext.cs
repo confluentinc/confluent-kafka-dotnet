@@ -78,7 +78,7 @@ namespace Confluent.Kafka.IntegrationTests
                 .SetValueDeserializer(new TestDeserializer())
                 .Build())
             {
-                producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "aaa" });
+                producer.ProduceAsync(topic.Name, "aaa");
                 consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 0));
                 var cr = consumer.Consume();
                 Assert.NotNull(cr.Message);
@@ -99,7 +99,7 @@ namespace Confluent.Kafka.IntegrationTests
                 .SetValueDeserializer(new TestDeserializer())
                 .Build())
             {
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Value = "aaa", Headers = new Headers { new Header("original", new byte[] { 32 }) } });
+                producer.ProduceAsync(topic.Name, ("aaa", new Headers { new Header("original", new byte[] { 32 }) }));
                 consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 0));
                 var cr = consumer.Consume();
                 Assert.NotNull(cr.Message);

@@ -37,7 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var tempTopic = new TemporaryTopic(bootstrapServers, 1))
             using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                var r = producer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "a message" }).Result;
+                var r = producer.ProduceAsync(tempTopic.Name, "a message").Result;
                 Assert.True(r.Status == PersistenceStatus.Persisted);
 
                 // should be no events to serve and this should block for 500ms.
@@ -54,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 sw.Reset();
                 sw.Start();
-                producer.Produce(tempTopic.Name, new Message<Null, string> { Value = "a message 2" }, dr => Assert.False(dr.Error.IsError));
+                producer.Produce(tempTopic.Name, "a message 2", dr => Assert.False(dr.Error.IsError));
                 // should block until the callback for the Produce call executes.
                 Assert.Equal(1, producer.Poll(TimeSpan.FromSeconds(4)));
                 Assert.True(sw.ElapsedMilliseconds > 0);

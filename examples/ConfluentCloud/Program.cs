@@ -23,9 +23,9 @@ namespace ConfluentCloudExample
     /// <summary>
     ///     This is a simple example demonstrating how to produce a message to
     ///     Confluent Cloud then read it back again.
-    ///     
+    ///
     ///     https://www.confluent.io/confluent-cloud/
-    /// 
+    ///
     ///     Confluent Cloud does not auto-create topics. You will need to use the ccloud
     ///     cli to create the dotnet-test-topic topic before running this example. The
     ///     <ccloud bootstrap servers>, <ccloud key> and <ccloud secret> parameters are
@@ -51,11 +51,11 @@ namespace ConfluentCloudExample
 
             using (var producer = new ProducerBuilder<Null, string>(pConfig).Build())
             {
-                producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Value = "test value" })
+                producer.ProduceAsync("dotnet-test-topic", "test value")
                     .ContinueWith(task => task.IsFaulted
                         ? $"error producing message: {task.Exception.Message}"
                         : $"produced to: {task.Result.TopicPartitionOffset}");
-                
+
                 // block until all in-flight produce requests have completed (successfully
                 // or otherwise) or 10s has elapsed.
                 producer.Flush(TimeSpan.FromSeconds(10));

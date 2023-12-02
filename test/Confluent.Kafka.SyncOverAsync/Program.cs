@@ -102,7 +102,7 @@ namespace Confluent.Kafka.SyncOverAsync
 
                             try
                             {
-                                producer.Produce(topic, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
+                                producer.Produce(topic, $"value: {taskNumber}", handler);
                                 // will never get to after Produce, because deadlock occurs when running serializers.
                             }
                             catch (Exception ex)

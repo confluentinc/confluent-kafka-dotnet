@@ -46,11 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 dr = producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]>
-                    {
-                        Value = Serializers.Utf8.Serialize("my-value", SerializationContext.Empty),
-                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
-                    }
+                    (Serializers.Utf8.Serialize("my-value", SerializationContext.Empty), new Headers() { new Header("my-header", new byte[] { 42 }) })
                 ).Result;
             }
 

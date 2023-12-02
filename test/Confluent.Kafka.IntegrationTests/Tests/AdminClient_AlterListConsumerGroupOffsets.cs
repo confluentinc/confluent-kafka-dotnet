@@ -55,7 +55,7 @@ namespace Confluent.Kafka.IntegrationTests
                     {
                         producer.Produce(
                             new TopicPartition(topic.Name, 0),
-                            new Message<string, string> { Key = "test key " + i, Value = "test val " + i });
+                            ("test key " + i, "test val " + i));
 
                     }
                     producer.Flush(TimeSpan.FromSeconds(10));

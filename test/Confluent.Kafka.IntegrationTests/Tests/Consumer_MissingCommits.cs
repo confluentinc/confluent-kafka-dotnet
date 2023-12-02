@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                     {
                         for (int j=0; j<numMessagesPerPartition; ++j)
                         {
-                            producer.Produce(new TopicPartition(topic.Name, i), new Message<Null, string> { Value = "test" });
+                            producer.Produce(new TopicPartition(topic.Name, i), "test");
                         }
                     }
                     producer.Flush();

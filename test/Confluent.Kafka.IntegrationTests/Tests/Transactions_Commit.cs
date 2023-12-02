@@ -47,10 +47,10 @@ namespace Confluent.Kafka.IntegrationTests
 
                     producer.InitTransactions(defaultTimeout);
                     producer.BeginTransaction();
-                    producer.Produce(topic.Name, new Message<string, string> { Key = "test key 0", Value = "test val 0" });
+                    producer.Produce(topic.Name, ("test key 0", "test val 0"));
                     producer.CommitTransaction(defaultTimeout);
                     producer.BeginTransaction();
-                    producer.Produce(topic.Name, new Message<string, string> { Key = "test key 1", Value = "test val 1" });
+                    producer.Produce(topic.Name, ("test key 1", "test val 1"));
                     producer.CommitTransaction(defaultTimeout);
 
                     var cr1 = consumer.Consume();

@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 for (int i=0; i<number; ++i)
                 {
-                    var dr = producer.ProduceAsync(topic, new Message<Null, string> { Value = msg }).Result;
+                    var dr = producer.ProduceAsync(topic, msg).Result;
                     Assert.NotNull(dr);
                     Assert.NotNull(dr.Message);
                     if (i == 0)

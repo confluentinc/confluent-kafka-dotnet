@@ -44,7 +44,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 var u = new WithExternalReference();
                 u.Value1 = new RefByAnother { Value = 111 };
                 u.Value2 = 123;
-                producer.ProduceAsync(topic.Name, new Message<string, WithExternalReference> { Key = "test1", Value = u }).Wait();
+                producer.ProduceAsync(topic.Name, ("test1", u)).Wait();
 
                 var consumerConfig = new ConsumerConfig
                 {

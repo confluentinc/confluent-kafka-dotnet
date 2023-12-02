@@ -41,7 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     var dr = await producer.ProduceAsync(
                         singlePartitionTopic,
-                        new Message<Null, string> { Value = "test string" });
+                        "test string");
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                     Assert.NotEqual(Offset.Unset, dr.Offset);
                 }
@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
+                    Encoding.UTF8.GetBytes("test string"));
                 Assert.NotEqual(Offset.Unset, dr.Offset);
             }
 
@@ -91,7 +91,7 @@ namespace Confluent.Kafka.IntegrationTests
                     {
                         await producer.ProduceAsync(
                             new TopicPartition(singlePartitionTopic, 42),
-                            new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
+                            Encoding.UTF8.GetBytes("test string"));
                         throw new Exception("unexpected exception");
                     });
             }
@@ -104,7 +104,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     var dr = await producer.ProduceAsync(
                         new TopicPartition(singlePartitionTopic, 1001),
-                        new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
+                        Encoding.UTF8.GetBytes("test string"));
                     throw new Exception("unexpected exception.");
                 }
             };
