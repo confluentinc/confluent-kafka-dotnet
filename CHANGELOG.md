@@ -1,3 +1,9 @@
+# 2.3.1
+
+## Enhancements
+
+- References Apache.Avro 1.11.1 which resolves primitive schemas losing metadata. Refer to the [release notes](https://github.com/apache/avro/releases/tag/release-1.11.1) for further information ([csplugins](https://github.com/csplugins)).
+
 # 2.3.0
 
 ## Enhancements
