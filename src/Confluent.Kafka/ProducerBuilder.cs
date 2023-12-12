@@ -169,7 +169,7 @@ namespace Confluent.Kafka
         {
             if (this.StatisticsHandler != null)
             {
-                throw new InvalidOperationException("Statistics handler may not be specified more than once.");
+                this.StatisticsHandler += statisticsHandler;
             }
             this.StatisticsHandler = statisticsHandler;
             return this;
@@ -224,7 +224,7 @@ namespace Confluent.Kafka
         {
             if (this.ErrorHandler != null)
             {
-                throw new InvalidOperationException("Error handler may not be specified more than once.");
+                this.ErrorHandler += errorHandler;
             }
             this.ErrorHandler = errorHandler;
             return this;
@@ -253,7 +253,7 @@ namespace Confluent.Kafka
         {
             if (this.LogHandler != null)
             {
-                throw new InvalidOperationException("Log handler may not be specified more than once.");
+                this.LogHandler += logHandler;
             }
             this.LogHandler = logHandler;
             return this;
