@@ -157,11 +157,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder<TKey, TValue> SetStatisticsHandler(
             Action<IConsumer<TKey, TValue>, string> statisticsHandler)
         {
-            if (this.StatisticsHandler != null)
-            {
-                this.StatisticsHandler += statisticsHandler;
-            }
-            this.StatisticsHandler = statisticsHandler;
+            this.StatisticsHandler += statisticsHandler;
             return this;
         }
 
@@ -180,11 +176,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder<TKey, TValue> SetErrorHandler(
             Action<IConsumer<TKey, TValue>, Error> errorHandler)
         {
-            if (this.ErrorHandler != null)
-            {
-                this.ErrorHandler += errorHandler;
-            }
-            this.ErrorHandler = errorHandler;
+            this.ErrorHandler += errorHandler;
             return this;
         }
 
@@ -210,11 +202,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder<TKey, TValue> SetLogHandler(
             Action<IConsumer<TKey, TValue>, LogMessage> logHandler)
         {
-            if (this.LogHandler != null)
-            {
-                this.LogHandler += logHandler;
-            }
-            this.LogHandler = logHandler;
+            this.LogHandler += logHandler;
             return this;
         }
 

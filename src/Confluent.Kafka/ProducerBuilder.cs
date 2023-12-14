@@ -167,11 +167,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetStatisticsHandler(Action<IProducer<TKey, TValue>, string> statisticsHandler)
         {
-            if (this.StatisticsHandler != null)
-            {
-                this.StatisticsHandler += statisticsHandler;
-            }
-            this.StatisticsHandler = statisticsHandler;
+            this.StatisticsHandler += statisticsHandler;
             return this;
         }
 
@@ -222,11 +218,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetErrorHandler(Action<IProducer<TKey, TValue>, Error> errorHandler)
         {
-            if (this.ErrorHandler != null)
-            {
-                this.ErrorHandler += errorHandler;
-            }
-            this.ErrorHandler = errorHandler;
+            this.ErrorHandler += errorHandler;
             return this;
         }
 
@@ -251,11 +243,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetLogHandler(Action<IProducer<TKey, TValue>, LogMessage> logHandler)
         {
-            if (this.LogHandler != null)
-            {
-                this.LogHandler += logHandler;
-            }
-            this.LogHandler = logHandler;
+            this.LogHandler += logHandler;
             return this;
         }
 
