@@ -1,0 +1,144 @@
+version: v1.0
+name: 'confluent-kafka-dotnet build pipeline'
+agent:
+  machine:
+    type: s1-prod-ubuntu20-04-amd64-1
+global_job_config:
+  prologue:
+    commands:
+      - checkout
+  env_vars:
+    - name: CONFIGURATION
+      value: Release
+    - name: DOTNET_CLI_TELEMETRY_OPTOUT
+      value: 'true'
+
+blocks:
+  - name: 'Linux x64'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - dotnet restore
+            - make build
+            - make test
+  - name: 'OSX x64'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-macos-13-5-amd64
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - ulimit -n 1024
+            - dotnet restore
+            - make build
+            - make test
+  - name: 'Windows x64'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-windows
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - $Env:Path += ";C:\dotnet"
+            - dotnet restore
+            - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
+            - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj
+            - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj
+  - name: 'Windows Artifacts on untagged commits'
+    run:
+      when: "tag !~ '.*'"
+    dependencies:
+      - 'Windows x64'
+    task:
+      agent:
+        machine:
+          type: s1-prod-windows
+      jobs:
+        - name: 'Build and push artifacts'
+          commands:
+            - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - $Env:Path += ";C:\dotnet"
+            - dotnet tool update -g docfx
+            - dotnet restore
+            - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
+            - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - docfx doc/docfx.json
+            - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
+            - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
+            - artifact push workflow artifacts
+  - name: 'Windows Artifacts on tagged commits'
+    run:
+      when: "tag =~ '.*'"
+    dependencies:
+      - 'Windows x64'
+    task:
+      agent:
+        machine:
+          type: s1-prod-windows
+      jobs:
+        - name: 'Build and push artifacts'
+          commands:
+            - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - $Env:Path += ";C:\dotnet"
+            - dotnet tool update -g docfx
+            - dotnet restore
+            - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
+            - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - docfx doc/docfx.json
+            - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
+            - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
+            - artifact push workflow artifacts
+  - name: 'Integration tests'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
+      prologue:
+        commands:
+          - docker login --username $DOCKERHUB_USER --password $DOCKERHUB_APIKEY
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
+            - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
+            - dotnet restore
+            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+  - name: 'Schema registry and serdes integration tests'
+    dependencies: [ ]
+    task:
+      agent:
+        machine:
+          type: s1-prod-ubuntu20-04-amd64-2
+      prologue:
+        commands:
+          - docker login --username $DOCKERHUB_USER --password $DOCKERHUB_APIKEY
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - cd test/docker && docker-compose up -d && cd ../..
+            - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
+            - dotnet restore
+            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+            # - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..

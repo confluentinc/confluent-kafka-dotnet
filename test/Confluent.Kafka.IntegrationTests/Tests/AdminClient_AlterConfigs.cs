@@ -34,7 +34,6 @@ namespace Confluent.Kafka.IntegrationTests
         public void AdminClient_AlterConfigs(string bootstrapServers)
         {
             LogToFile("start AdminClient_AlterConfigs");
-
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 // 1. create a new topic to play with.
@@ -96,7 +95,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     { 
                         new ConfigResource { Name = "0", Type = ResourceType.Broker },
-                        new List<ConfigEntry> { new ConfigEntry { Name="num.network.threads", Value="2" } }
+                        new List<ConfigEntry> { new ConfigEntry { Name="num.network.threads", Value="6" } }
                     }
                 };
                 adminClient.AlterConfigsAsync(toUpdate).Wait();

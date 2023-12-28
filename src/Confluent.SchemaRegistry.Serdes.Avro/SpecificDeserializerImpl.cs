@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
             {
-                ReaderSchema = (global::Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                ReaderSchema = ((ISpecificRecord)Activator.CreateInstance<T>()).Schema;
             }
             else if (typeof(T).Equals(typeof(int)))
             {

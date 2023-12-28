@@ -9,12 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="1.9.3" /> -->
+    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="2.3.0" /> -->
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="NJsonSchema" Version="10.8.0" />
   </ItemGroup>
-  
+
 </Project>

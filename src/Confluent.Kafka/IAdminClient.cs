@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2018-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ namespace Confluent.Kafka
     public interface IAdminClient : IClient
     {
         /// <summary>
+        ///     DEPRECATED.
+        ///     Superseded by ListConsumerGroups and DescribeConsumerGroups.
         ///     Get information pertaining to all groups in
         ///     the Kafka cluster (blocking)
         ///
@@ -42,6 +44,8 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     DEPRECATED.
+        ///     Superseded by ListConsumerGroups and DescribeConsumerGroups.
         ///     Get information pertaining to a particular
         ///     group in the Kafka cluster (blocking).
         ///
@@ -191,6 +195,35 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Update the configuration for the specified
+        ///     resources. Updates are transactional so if
+        ///     on of them may fail then all the of them
+        ///     will fail. The configs for a particular
+        ///     resource are updated atomically. This operation
+        ///     is supported by brokers with version 2.3.0
+        ///     or higher. Only specified configuration properties
+        ///     will be updated others will stay same as before,
+        ///     so there is no need to call DescribleConfigsAsync
+        ///     before altering configs.
+        ///     Sensitive non-default values are retained after
+        ///     IncrementalAlterConfigsAsync unlike
+        ///     AlterConfigsAsync.
+        /// </summary>
+        /// <param name="configs">
+        ///     The resources with their configs
+        ///     (topic is the only resource type with configs
+        ///     that can be updated currently).
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when altering configs.
+        /// </param>
+        /// <returns>
+        ///     The results of the alter configs requests.
+        /// </returns>
+        Task<List<IncrementalAlterConfigsResult>> IncrementalAlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, IncrementalAlterConfigsOptions options = null);
+
+
+        /// <summary>
         ///     Get the configuration for the specified
         ///     resources. The returned  configuration includes
         ///     default values and the IsDefault property can be
@@ -237,15 +270,15 @@ namespace Confluent.Kafka
         /// <param name="options">
         ///     The options to use when creating the ACL bindings.
         /// </param>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         ///     Thrown if <paramref name="aclBindings"/> param is null
         ///     or a <see cref="Confluent.Kafka.Admin.AclBinding.Entry"/> is null or
         ///     a <see cref="Confluent.Kafka.Admin.AclBinding.Pattern"/> is null.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown if the <paramref name="aclBindings"/> param is empty.
         /// </exception>
-        /// <exception cref="CreateAclsException">
+        /// <exception cref="Confluent.Kafka.Admin.CreateAclsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
         ///     constituent results that are not in error) is
@@ -273,12 +306,12 @@ namespace Confluent.Kafka
         /// <param name="options">
         ///     The options to use when describing ACL bindings.
         /// </param>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         ///     Thrown if <paramref name="aclBindingFilter"/> param is null
         ///     or any of <see cref="Confluent.Kafka.Admin.AclBindingFilter.EntryFilter"/> and
         ///     <see cref="Confluent.Kafka.Admin.AclBindingFilter.PatternFilter"/> is null.
         /// </exception>
-        /// <exception cref="DescribeAclsException">
+        /// <exception cref="Confluent.Kafka.Admin.DescribeAclsException">
         ///     Thrown if the corresponding result is in
         ///     error. The entire result is
         ///     available via the <see cref="Confluent.Kafka.Admin.DescribeAclsException.Result" />
@@ -304,15 +337,15 @@ namespace Confluent.Kafka
         /// <param name="options">
         ///     The options to use when describing ACL bindings.
         /// </param>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         ///     Thrown if <paramref name="aclBindingFilters"/> param is null
         ///     or any of <see cref="Confluent.Kafka.Admin.AclBindingFilter.EntryFilter"/> and
         ///     <see cref="Confluent.Kafka.Admin.AclBindingFilter.PatternFilter"/> is null.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         ///     Thrown if the <paramref name="aclBindingFilters"/> param is empty.
         /// </exception>
-        /// <exception cref="DeleteAclsException">
+        /// <exception cref="Confluent.Kafka.Admin.DeleteAclsException">
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
         ///     constituent results that are not in error) is
@@ -343,6 +376,260 @@ namespace Confluent.Kafka
         /// </returns>
         Task<DeleteConsumerGroupOffsetsResult> DeleteConsumerGroupOffsetsAsync(String group, IEnumerable<TopicPartition> partitions, DeleteConsumerGroupOffsetsOptions options = null);
 
+        /// <summary>
+        ///     Alters consumer group offsets for a number of topic partitions.
+        /// </summary>
+        /// <param name="groupPartitions">
+        ///    A IEnumerable of ConsumerGroupTopicPartitionOffsets, each denoting the group and the
+        ///    TopicPartitionOffsets associated with that group to alter the offsets for.
+        ///    The Count of the IEnumerable must exactly be 1.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when altering consumer group offsets.
+        /// </param>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if the <paramref name="groupPartitions"/> has a count not equal
+        ///     to 1, or if any of the topic names are null.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.AlterConsumerGroupOffsetsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.AlterConsumerGroupOffsetsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A Task returning a List of <see cref="Confluent.Kafka.Admin.AlterConsumerGroupOffsetsResult"/>.
+        /// </returns>
+        Task<List<AlterConsumerGroupOffsetsResult>> AlterConsumerGroupOffsetsAsync(IEnumerable<ConsumerGroupTopicPartitionOffsets> groupPartitions, AlterConsumerGroupOffsetsOptions options = null);
+
+        /// <summary>
+        ///    Lists consumer group offsets for a number of topic partitions.
+        /// </summary>
+        /// <param name="groupPartitions">
+        ///    A IEnumerable of ConsumerGroupTopicPartitions, each denoting the group and the
+        ///    TopicPartitions associated with that group to fetch the offsets for.
+        ///    The Count of the IEnumerable must exactly be 1.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when listing consumer group offsets.
+        /// </param>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if the <paramref name="groupPartitions"/> has a count not equal
+        ///     to 1, or if any of the topic names are null.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.ListConsumerGroupOffsetsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.ListConsumerGroupOffsetsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A Task returning a List of <see cref="Confluent.Kafka.Admin.ListConsumerGroupOffsetsResult"/>.
+        /// </returns>
+        Task<List<ListConsumerGroupOffsetsResult>> ListConsumerGroupOffsetsAsync(IEnumerable<ConsumerGroupTopicPartitions> groupPartitions, ListConsumerGroupOffsetsOptions options = null);
+
+        /// <summary>
+        ///    Lists consumer groups in the cluster.
+        /// </summary>
+        /// <param name="options">
+        ///     The options to use while listing consumer groups.
+        /// </param>
+        /// <exception cref="KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.ListConsumerGroupsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.ListConsumerGroupsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A ListConsumerGroupsResult, which contains a List of
+        ///     <see cref="Confluent.Kafka.Admin.ConsumerGroupListing"/>.
+        /// </returns>
+        Task<ListConsumerGroupsResult> ListConsumerGroupsAsync(ListConsumerGroupsOptions options = null);
+
+        /// <summary>
+        ///    Describes consumer groups in the cluster.
+        /// </summary>
+        /// <param name="groups">
+        ///     The list of groups to describe. This can be set
+        ///     to null to describe all groups.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while describing consumer groups.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.DescribeConsumerGroupsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeConsumerGroupsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A List of <see cref="Confluent.Kafka.Admin.ConsumerGroupDescription"/>.
+        /// </returns>
+        Task<DescribeConsumerGroupsResult> DescribeConsumerGroupsAsync(
+            IEnumerable<string> groups, DescribeConsumerGroupsOptions options = null);
+
+        /// <summary>
+        ///    Describes user SASL/SCRAM credentials.
+        /// </summary>
+        /// <param name="users">
+        ///     The list of users to describe for. This can be set
+        ///     to null to describe all users. Individual users
+        ///     cannot be empty strings.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while describing user scram credentials.
+        /// </param>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if any requested user is a null or empty string.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.DescribeUserScramCredentialsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeUserScramCredentialsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A <see cref="Confluent.Kafka.Admin.DescribeUserScramCredentialsResult"/>, which contains a List of
+        ///     <see cref="Confluent.Kafka.Admin.UserScramCredentialsDescription"/>.
+        /// </returns>
+        Task<DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(IEnumerable<string> users, DescribeUserScramCredentialsOptions options = null);
+
+        /// <summary>
+        ///     Alter user SASL/SCRAM credentials.
+        /// </summary>
+        /// <param name="alterations">
+        ///     A IEnumerable with alterations to execute.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when alter user scram credentials.
+        /// </param>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if any alteration isn't an instance of
+        ///     UserScramCredentialUpsertion or UserScramCredentialDeletion.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.AlterUserScramCredentialsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.AlterUserScramCredentialsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A Task with an empty result when successful.
+        /// </returns>
+        Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null);
     }
+
+    /// <summary>
+    ///     Extension methods for default <see cref="IAdminClient"/> implementations.
+    /// </summary>
+    public static class IAdminClientExtensions
+    {
+        
+        /// <summary>
+        ///    Describes topics in the cluster.
+        /// </summary>
+        /// <param name="adminClient">
+        ///     AdminClient interface.
+        /// </param>
+        /// <param name="topicCollection">
+        ///     A collection of topics to describe.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while describing topics.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.Admin.DescribeTopicsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeTopicsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A <see cref="Confluent.Kafka.Admin.DescribeTopicsResult"/>, which contains a List of
+        ///     <see cref="Confluent.Kafka.Admin.TopicDescription"/>.
+        /// </returns>
+        public static Task<DescribeTopicsResult> DescribeTopicsAsync(
+            this IAdminClient adminClient,
+            TopicCollection topicCollection, DescribeTopicsOptions options = null)
+        {
+            if (adminClient is AdminClient)
+            {
+                return ((AdminClient) adminClient).DescribeTopicsAsync(
+                    topicCollection, options);
+            }
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        ///    Describes the cluster.
+        /// </summary>
+        /// <param name="adminClient">
+        ///     AdminClient interface.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use while describing cluster.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <returns>
+        ///     A <see cref="Confluent.Kafka.Admin.DescribeClusterResult"/>.
+        /// </returns>
+        public static Task<DescribeClusterResult> DescribeClusterAsync(
+            this IAdminClient adminClient,
+            DescribeClusterOptions options = null)
+        {
+            if (adminClient is AdminClient)
+            {
+                return ((AdminClient) adminClient).DescribeClusterAsync(
+                    options);
+            }
+            throw new NotImplementedException();
+        }
+        
+        /// <summary>
+        ///     Enables to find the beginning offset,
+        ///     end offset as well as the offset matching a timestamp
+        ///     or the offset with max timestamp in partitions.
+        /// </summary>
+        /// <param name="adminClient">
+        ///     AdminClient interface.
+        /// </param>
+        /// <param name="topicPartitionOffsets">
+        ///     A IEnumerable with partition to offset pairs (partitions must be unique).
+        /// </param>
+        /// <param name="options">
+        ///     The options to use for this call.
+        /// </param>
+        public static Task<ListOffsetsResult> ListOffsetsAsync(
+            this IAdminClient adminClient,
+            IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsets,
+            ListOffsetsOptions options = null)
+        {
+            if (adminClient is AdminClient)
+            {
+                return ((AdminClient) adminClient).ListOffsetsAsync(
+                        topicPartitionOffsets,
+                        options);
+            }
+            throw new NotImplementedException();
+        }
+    }
+
 
 }

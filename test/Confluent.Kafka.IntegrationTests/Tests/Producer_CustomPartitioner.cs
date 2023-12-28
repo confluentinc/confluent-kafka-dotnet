@@ -117,18 +117,26 @@ namespace Confluent.Kafka.IntegrationTests
 
 
             // Null key
+            var partitionerCalledTimes = 0;
+            producerConfig = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers,
+                StickyPartitioningLingerMs = 0 // disable sticky partitioning and run the default partitioner for null keys.
+            };
 
             using (var topic = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
             using (var producer = new ProducerBuilder<Null, string>(producerConfig)
                 .SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
                 {
                     Assert.True(keyIsNull);
+                    partitionerCalledTimes++;
                     return 0;
                 })
                 .Build())
             {
                 producer.Produce(topic.Name, new Message<Null, string> { Value = "test value" });
                 producer.Flush(TimeSpan.FromSeconds(10));
+                Assert.Equal(1, partitionerCalledTimes);
             }
 
             Assert.Equal(0, Library.HandleCount);

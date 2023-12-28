@@ -1,23 +1,92 @@
-# 2.0.0 
+# 2.3.0
 
 ## Enhancements
 
+- References librdkafka.redist 2.3.0. Refer to the [librdkafka v2.3.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.3.0) for more information.
+- [KIP-430](https://cwiki.apache.org/confluence/display/KAFKA/KIP-430+-+Return+Authorized+Operations+in+Describe+Responses):
+  Return authorized operations in describe responses (#2021, @jainruchir).
+- [KIP-396](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=97551484): Added support for ListOffsets Admin API (#2086).
+- Add `Rack` to the `Node` type, so AdminAPI calls can expose racks for brokers (currently, all Describe 
+  Responses) (#2021, @jainruchir).
+- Added support for external JSON schemas in `JsonSerializer` and `JsonDeserializer` (#2042).
+- Added compatibility methods to CachedSchemaRegistryClient ([ISBronny](https://github.com/ISBronny), #2097).
+- Add support for AdminAPI `DescribeCluster()` and `DescribeTopics()` (#2021, @jainruchir).
+
+
+# 2.2.0
+
+## Enhancements
+
+- References librdkafka.redist 2.2.0. Refer to the [librdkafka v2.2.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.2.0) for more information.
+- [KIP-339](https://cwiki.apache.org/confluence/display/KAFKA/KIP-339%3A+Create+a+new+IncrementalAlterConfigs+API)
+  IncrementalAlterConfigs API (#2005).
+- [KIP-554](https://cwiki.apache.org/confluence/display/KAFKA/KIP-554%3A+Add+Broker-side+SCRAM+Config+API):
+    User SASL/SCRAM credentials alteration and description (#2070).
+
+
+## Fixes
+
+- Fix backwards compatability of TopicPartitionOffset constructor. ([drinehimer](https://github.com/drinehimer), #2066)
+- Fix IConsumer breaking change. ([ttd2089](https://github.com/ttd2089), #2071)
+
+
+# 2.1.1
+
+## Enhancements
+
+- References librdkafka.redist 2.1.1. Refer to the [librdkafka v2.1.1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.1.1) for more information.
+- Less heap allocations when calling Produce ([bjornbouetsmith](https://github.com/bjornbouetsmith), #2020)
+
+# 2.1.0
+
+## Enhancements
+
+- References librdkafka.redist 2.1.0. Refer to the [librdkafka v2.1.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.1.0) for more information.
+- Added SetSaslCredentials. This new method (on the Producer, Consumer, and AdminClient) allows modifying the stored
+  SASL PLAIN/SCRAM credentials that will be used for subsequent (new) connections to a broker (#1980).
+- Changed the way the `_SCHEMA` filed is accessed internally from reflecting the static field to accessing it from the instance ([AlexeyRaga](https://github.com/AlexeyRaga)).
+- [KIP-320](https://cwiki.apache.org/confluence/display/KAFKA/KIP-320%3A+Allow+fetchers+to+detect+and+handle+log+truncation): add offset leader epoch fields to the TopicPartitionOffset,
+  TopicPartitionOffsetError and ConsumeResult classes (#2027).
+
+## Fixes
+
+- Fixed `OverflowException` thrown intermittently when using the `ListGroup` method (#2003).
+
+
+# 2.0.2
+
+## Upgrade considerations
+
+OpenSSL 3.0.x upgrade in librdkafka requires a major version bump, as some legacy ciphers need to be explicitly configured to continue working, but it is highly recommended NOT to use them. The rest of the API remains backward compatible.
+
+## Enhancements
+
+- References librdkafka.redist 2.0.2. Refer to the [librdkafka v2.0.0 release notes](https://github.com/edenhill/librdkafka/releases/tag/v2.0.0) and later ones for more information.
 - Upgraded `NJsonSchema` to v10.6.3
 - Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
   when `UseLatestVersion` is set to true.
 - Added DeleteConsumerGroupOffset to AdminClient.
+- [KIP-222](https://cwiki.apache.org/confluence/display/KAFKA/KIP-222+-+Add+Consumer+Group+operations+to+Admin+API)
+   Finish remaining implementation: Add Consumer Group operations to Admin API (`DeleteGroups` is already present).
+- [KIP-518](https://cwiki.apache.org/confluence/display/KAFKA/KIP-518%3A+Allow+listing+consumer+groups+per+state)
+   Allow listing consumer groups per state.
+- [KIP-396](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=97551484)
+   Partially implemented: support for AlterConsumerGroupOffsets.
+- As result of the above KIPs, added (#1981)
+   - `ListConsumerGroups` Admin operation. Supports listing by state.
+   - `DescribeConsumerGroups` Admin operation. Supports multiple groups.
+   - `ListConsumerGroupOffsets` Admin operation. Currently, only supports
+      1 group with multiple partitions. Supports the `requireStable` option.
+   - `AlterConsumerGroupOffsets` Admin operation. Currently, only supports
+      1 group with multiple offsets.
 
 ## Fixes
 
 - During a group rebalance, partitions are now always revoked as a side effect of a call to Consume, whether or not a partitions revoked handler has been specified. Previously, if no handler was specified, the timing of when the consumer lost ownership of partitions during a rebalance was arbitrarily, frequently resulting in an erroneous state exception when committing or storing offsets.
-- Fixed 100% CPU usage with `DependentAdminClientBuilder`. 
+- Fixed 100% CPU usage with `DependentAdminClientBuilder`.
 
 
-# 1.9.4
-
-## Fixes
-
-- References librdkafka.redist 1.9.3-RC2 which resolves a transaction related issue. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.9.3-RC2) for more information.
+**Note: There were no 2.0.0 and 2.0.1 releases.**
 
 
 # 1.9.3 

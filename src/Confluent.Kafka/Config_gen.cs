@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.9.2 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.3.0 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -224,6 +224,22 @@ namespace Confluent.Kafka
     }
 
     /// <summary>
+    ///     ClientDnsLookup enum values
+    /// </summary>
+    public enum ClientDnsLookup
+    {
+        /// <summary>
+        ///     UseAllDnsIps
+        /// </summary>
+        UseAllDnsIps,
+
+        /// <summary>
+        ///     ResolveCanonicalBootstrapServersOnly
+        /// </summary>
+        ResolveCanonicalBootstrapServersOnly
+    }
+
+    /// <summary>
     ///     SaslMechanism enum values
     /// </summary>
     public enum SaslMechanism
@@ -423,9 +439,9 @@ namespace Confluent.Kafka
         public int? MetadataMaxAgeMs { get { return GetInt("metadata.max.age.ms"); } set { this.SetObject("metadata.max.age.ms", value); } }
 
         /// <summary>
-        ///     When a topic loses its leader a new metadata request will be enqueued with this initial interval, exponentially increasing until the topic metadata has been refreshed. This is used to recover quickly from transitioning leader brokers.
+        ///     When a topic loses its leader a new metadata request will be enqueued immediately and then with this initial interval, exponentially increasing upto `retry.backoff.max.ms`, until the topic metadata has been refreshed. If not set explicitly, it will be defaulted to `retry.backoff.ms`. This is used to recover quickly from transitioning leader brokers.
         ///
-        ///     default: 250
+        ///     default: 100
         ///     importance: low
         /// </summary>
         public int? TopicMetadataRefreshFastIntervalMs { get { return GetInt("topic.metadata.refresh.fast.interval.ms"); } set { this.SetObject("topic.metadata.refresh.fast.interval.ms", value); } }
@@ -639,6 +655,14 @@ namespace Confluent.Kafka
         public string BrokerVersionFallback { get { return Get("broker.version.fallback"); } set { this.SetObject("broker.version.fallback", value); } }
 
         /// <summary>
+        ///     Allow automatic topic creation on the broker when subscribing to or assigning non-existent topics. The broker must also be configured with `auto.create.topics.enable=true` for this configuration to take effect. Note: the default value (true) for the producer is different from the default value (false) for the consumer. Further, the consumer default value is different from the Java consumer (true), and this property is not supported by the Java producer. Requires broker version >= 0.11.0.0, for older broker versions only the broker configuration applies.
+        ///
+        ///     default: false
+        ///     importance: low
+        /// </summary>
+        public bool? AllowAutoCreateTopics { get { return GetBool("allow.auto.create.topics"); } set { this.SetObject("allow.auto.create.topics", value); } }
+
+        /// <summary>
         ///     Protocol used to communicate with brokers.
         ///
         ///     default: plaintext
@@ -759,7 +783,15 @@ namespace Confluent.Kafka
         public string SslKeystorePassword { get { return Get("ssl.keystore.password"); } set { this.SetObject("ssl.keystore.password", value); } }
 
         /// <summary>
-        ///     Path to OpenSSL engine library. OpenSSL >= 1.1.0 required.
+        ///     Comma-separated list of OpenSSL 3.0.x implementation providers. E.g., "default,legacy".
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslProviders { get { return Get("ssl.providers"); } set { this.SetObject("ssl.providers", value); } }
+
+        /// <summary>
+        ///     **DEPRECATED** Path to OpenSSL engine library. OpenSSL >= 1.1.x required. DEPRECATED: OpenSSL engine support is deprecated and should be replaced by OpenSSL 3 providers.
         ///
         ///     default: ''
         ///     importance: low
@@ -785,7 +817,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Endpoint identification algorithm to validate broker hostname using broker certificate. https - Server (broker) hostname verification as specified in RFC2818. none - No endpoint verification. OpenSSL >= 1.0.2 required.
         ///
-        ///     default: none
+        ///     default: https
         ///     importance: low
         /// </summary>
         public SslEndpointIdentificationAlgorithm? SslEndpointIdentificationAlgorithm { get { return (SslEndpointIdentificationAlgorithm?)GetEnum(typeof(SslEndpointIdentificationAlgorithm), "ssl.endpoint.identification.algorithm"); } set { this.SetObject("ssl.endpoint.identification.algorithm", value); } }
@@ -925,6 +957,14 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public string ClientRack { get { return Get("client.rack"); } set { this.SetObject("client.rack", value); } }
+
+        /// <summary>
+        ///     Controls how the client uses DNS lookups. By default, when the lookup returns multiple IP addresses for a hostname, they will all be attempted for connection before the connection is considered failed. This applies to both bootstrap and advertised servers. If the value is set to `resolve_canonical_bootstrap_servers_only`, each entry will be resolved and expanded into a list of canonical names. NOTE: Default here is different from the Java client's default behavior, which connects only to the first IP address returned for a hostname.
+        ///
+        ///     default: use_all_dns_ips
+        ///     importance: low
+        /// </summary>
+        public ClientDnsLookup? ClientDnsLookup { get { return (ClientDnsLookup?)GetEnum(typeof(ClientDnsLookup), "client.dns.lookup"); } set { this.SetObject("client.dns.lookup", value); } }
 
     }
 
@@ -1109,7 +1149,7 @@ namespace Confluent.Kafka
         public bool? EnableGaplessGuarantee { get { return GetBool("enable.gapless.guarantee"); } set { this.SetObject("enable.gapless.guarantee", value); } }
 
         /// <summary>
-        ///     Maximum number of messages allowed on the producer queue. This queue is shared by all topics and partitions.
+        ///     Maximum number of messages allowed on the producer queue. This queue is shared by all topics and partitions. A value of 0 disables this limit.
         ///
         ///     default: 100000
         ///     importance: high
@@ -1141,12 +1181,20 @@ namespace Confluent.Kafka
         public int? MessageSendMaxRetries { get { return GetInt("message.send.max.retries"); } set { this.SetObject("message.send.max.retries", value); } }
 
         /// <summary>
-        ///     The backoff time in milliseconds before retrying a protocol request.
+        ///     The backoff time in milliseconds before retrying a protocol request, this is the first backoff time, and will be backed off exponentially until number of retries is exhausted, and it's capped by retry.backoff.max.ms.
         ///
         ///     default: 100
         ///     importance: medium
         /// </summary>
         public int? RetryBackoffMs { get { return GetInt("retry.backoff.ms"); } set { this.SetObject("retry.backoff.ms", value); } }
+
+        /// <summary>
+        ///     The max backoff time in milliseconds before retrying a protocol request, this is the atmost backoff allowed for exponentially backed off requests.
+        ///
+        ///     default: 1000
+        ///     importance: medium
+        /// </summary>
+        public int? RetryBackoffMaxMs { get { return GetInt("retry.backoff.max.ms"); } set { this.SetObject("retry.backoff.max.ms", value); } }
 
         /// <summary>
         ///     The threshold of outstanding not yet transmitted broker requests needed to backpressure the producer's message accumulator. If the number of not yet transmitted requests equals or exceeds this number, produce request creation that would have otherwise been triggered (for example, in accordance with linger.ms) will be delayed. A lower number yields larger and more effective batches. A higher value can improve latency when using compression on slow machines.
@@ -1365,6 +1413,14 @@ namespace Confluent.Kafka
         public int? FetchWaitMaxMs { get { return GetInt("fetch.wait.max.ms"); } set { this.SetObject("fetch.wait.max.ms", value); } }
 
         /// <summary>
+        ///     How long to postpone the next fetch request for a topic+partition in case the current fetch queue thresholds (queued.min.messages or queued.max.messages.kbytes) have been exceded. This property may need to be decreased if the queue thresholds are set low and the application is experiencing long (~1s) delays between messages. Low values may increase CPU utilization.
+        ///
+        ///     default: 1000
+        ///     importance: medium
+        /// </summary>
+        public int? FetchQueueBackoffMs { get { return GetInt("fetch.queue.backoff.ms"); } set { this.SetObject("fetch.queue.backoff.ms", value); } }
+
+        /// <summary>
         ///     Initial maximum number of bytes per topic+partition to request when fetching messages from the broker. If the client encounters a message larger than this value it will gradually try to increase it until the entire message can be fetched.
         ///
         ///     default: 1048576
@@ -1419,14 +1475,6 @@ namespace Confluent.Kafka
         ///     importance: medium
         /// </summary>
         public bool? CheckCrcs { get { return GetBool("check.crcs"); } set { this.SetObject("check.crcs", value); } }
-
-        /// <summary>
-        ///     Allow automatic topic creation on the broker when subscribing to or assigning non-existent topics. The broker must also be configured with `auto.create.topics.enable=true` for this configuraiton to take effect. Note: The default value (false) is different from the Java consumer (true). Requires broker version >= 0.11.0.0, for older broker versions only the broker configuration applies.
-        ///
-        ///     default: false
-        ///     importance: low
-        /// </summary>
-        public bool? AllowAutoCreateTopics { get { return GetBool("allow.auto.create.topics"); } set { this.SetObject("allow.auto.create.topics", value); } }
 
     }
 

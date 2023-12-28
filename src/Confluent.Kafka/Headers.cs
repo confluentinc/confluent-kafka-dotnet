@@ -32,6 +32,11 @@ namespace Confluent.Kafka
         private readonly List<IHeader> headers = new List<IHeader>();
 
         /// <summary>
+        /// Gets the underlying list of headers
+        /// </summary>
+        public IReadOnlyList<IHeader> BackingList => headers;
+
+        /// <summary>
         ///     Append a new header to the collection.
         /// </summary>
         /// <param name="key">
@@ -72,7 +77,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The value of the latest element in the collection with the specified key.
         /// </returns>
-        /// <exception cref="KeyNotFoundException">
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">
         ///     The key <paramref name="key" /> was not present in the collection.
         /// </exception>
         public byte[] GetLastBytes(string key)
