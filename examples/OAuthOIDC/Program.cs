@@ -1,4 +1,4 @@
-﻿// Copyright 2022 Confluent Inc.
+// Copyright 2022 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,22 +31,45 @@ using Newtonsoft.Json;
 /// </summary>
 namespace Confluent.Kafka.Examples.OAuthOIDC
 {
+    class OAuthBearerToken
+    {
+        public string TokenValue { get; set; }
+        public long Expiration { get; set; }
+        public String Principal { get; set; }
+        public Dictionary<String, String> Extensions { get; set; }
+    }
+
     public class Program
     {
         private const String OAuthBearerClientId = "<oauthbearer_client_id>";
         private const String OAuthBearerClientSecret = "<oauthbearer_client_secret>";
         private const String OAuthBearerTokenEndpointURL = "<token_endpoint_url>";
         private const String OAuthBearerScope = "<scope>";
+
+        private const String OauthConfigRegexPattern = "^(\\s*(\\w+)\\s*=\\s*(\\w+))+\\s*$"; // 1 or more name=value pairs with optional ignored whitespace
+        private const String OauthConfigKeyValueRegexPattern = "(\\w+)\\s*=\\s*(\\w+)"; // Extract key=value pairs from OAuth Config
+        private const String PrincipalClaimNameKey = "principalClaimName";
+        private const String PrincipalKey = "principal";
+        private const String ScopeKey = "scope";
+
         public static async Task Main(string[] args)
         {
-            if (args.Length != 2)
+            args = new string[] { "testValue", "testBootstrapServersValue", "testOAuthConfiguration" };
+            if (args.Length != 3)
             {
                 Console.WriteLine("Usage: .. brokerList");
                 return;
             }
             var bootstrapServers = args[1];
+            string oauthConf = args[2];
             var topicName = Guid.NewGuid().ToString();
             var groupId = Guid.NewGuid().ToString();
+
+            if (!Regex.IsMatch(oauthConf, OauthConfigRegexPattern))
+            {
+                Console.WriteLine("Invalid OAuth config passed.");
+                Environment.Exit(1);
+            }
 
             var commonConfig = new ClientConfig
             {
@@ -57,7 +80,8 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
                 SaslOauthbearerClientId = OAuthBearerClientId,
                 SaslOauthbearerClientSecret = OAuthBearerClientSecret,
                 SaslOauthbearerTokenEndpointUrl = OAuthBearerTokenEndpointURL,
-                SaslOauthbearerScope = OAuthBearerScope
+                SaslOauthbearerScope = OAuthBearerScope,
+                SaslOauthbearerConfig = oauthConf
             };
 
             var consumerConfig = new ConsumerConfig
@@ -85,9 +109,32 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
                 Environment.Exit(1);
             }
 
-            using (var producer = new ProducerBuilder<String, String>(commonConfig).Build())
+            // Callback to handle OAuth bearer token refresh. It creates an unsecured JWT based on the configuration defined
+            // in OAuth Config and sets the token on the client for use in any future authentication attempt.
+            // It must be invoked whenever the client requires a token (i.e. when it first starts and when the
+            // previously-received token is 80% of the way to its expiration time).
+            void OauthCallback(IClient client, string cfg)
+            {
+                try
+                {
+                    var token = retrieveUnsecuredToken(cfg);
+                    client.OAuthBearerSetToken(token.TokenValue, token.Expiration, token.Principal);
+                }
+                catch (Exception e)
+                {
+                    client.OAuthBearerSetTokenFailure(e.ToString());
+                }
+            }
+
+            using (var producer = new ProducerBuilder<String, String>(commonConfig)
+                .SetOAuthBearerTokenRefreshHandler(OauthCallback)
+                .Build())
             using (var consumer = new ConsumerBuilder<String, String>(consumerConfig).Build())
             {
+                Console.WriteLine("\n-----------------------------------------------------------------------");
+                Console.WriteLine($"Producer {producer.Name} producing on topic {topicName}.");
+                Console.WriteLine("-----------------------------------------------------------------------");
+
                 consumer.Subscribe(topicName);
 
                 var cancelled = false;
@@ -150,6 +197,58 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
                             new TopicSpecification { Name = topicName, ReplicationFactor = 3, NumPartitions = 1 } }).Wait(); ;
             }
         }
-    }
 
+
+        private static string ToUnpaddedBase64(string s)
+            => Convert.ToBase64String(Encoding.UTF8.GetBytes(s)).TrimEnd('=');
+
+        private static OAuthBearerToken retrieveUnsecuredToken(String oauthConfig)
+        {
+            Console.WriteLine("Refreshing the token");
+
+            var parsedConfig = new Dictionary<String, String>();
+            foreach (Match match in Regex.Matches(oauthConfig, OauthConfigKeyValueRegexPattern))
+            {
+                parsedConfig[match.Groups[1].ToString()] = match.Groups[2].ToString();
+            }
+
+            if (!parsedConfig.ContainsKey(PrincipalKey) || !parsedConfig.ContainsKey(ScopeKey) || parsedConfig.Count > 2)
+            {
+                throw new Exception($"Invalid OAuth config {oauthConfig} passed.");
+            }
+
+            var principalClaimName = parsedConfig.ContainsKey(PrincipalClaimNameKey) ? parsedConfig[PrincipalClaimNameKey] : "sub";
+            var principal = parsedConfig[PrincipalKey];
+            var scopeValue = parsedConfig[ScopeKey];
+
+            var issuedAt = DateTimeOffset.UtcNow;
+            var expiresAt = issuedAt.AddSeconds(15); // setting a low value to show the token refresh in action.
+
+            var header = new
+            {
+                alg = "none",
+                typ = "JWT"
+            };
+
+            var payload = new Dictionary<String, Object>
+            {
+                {principalClaimName, principal},
+                {"iat", issuedAt.ToUnixTimeSeconds()},
+                {"exp", expiresAt.ToUnixTimeSeconds()},
+                {ScopeKey, scopeValue}
+            };
+
+            var headerJson = JsonConvert.SerializeObject(header);
+            var payloadJson = JsonConvert.SerializeObject(payload);
+
+            return new OAuthBearerToken
+            {
+                TokenValue = $"{ToUnpaddedBase64(headerJson)}.{ToUnpaddedBase64(payloadJson)}.",
+                Expiration = expiresAt.ToUnixTimeMilliseconds(),
+                Principal = principal,
+                Extensions = new Dictionary<string, string>()
+            };
+        }
+
+    }
 }
