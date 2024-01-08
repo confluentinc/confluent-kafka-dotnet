@@ -171,13 +171,11 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
                 
-                int msgCnt = 0;
                 while (true)
                 {
                     var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
                     if (record == null) { continue; }
                     if (record.IsPartitionEOF) { break; }
-                    msgCnt += 1;
                 }
 
                 Assert.True(mres1.Wait(TimeSpan.FromSeconds(5)));
@@ -218,12 +216,9 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
                 
-                int msgCnt = 0;
                 while (!errorHandler1Called && !errorHandler2Called)
                 {
-                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                    if (record == null) { continue; }
-                    msgCnt += 1;
+                    consumer.Consume(TimeSpan.FromMilliseconds(100));
                 }
 
                 consumer.Close();
