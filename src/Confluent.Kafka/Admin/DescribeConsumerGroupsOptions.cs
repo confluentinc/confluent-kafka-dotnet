@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2022-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,5 +33,12 @@ namespace Confluent.Kafka.Admin
         ///     Default: null
         /// </summary>
         public TimeSpan? RequestTimeout { get; set; }
+
+        /// <summary>
+        ///     Decides if the broker should return authorized operations.
+        ///
+        ///     Default: false
+        /// </summary>
+        public bool IncludeAuthorizedOperations { get; set; } = false;
     }
 }
