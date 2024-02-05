@@ -28,6 +28,7 @@ using NJsonSchema;
 using NJsonSchema.Generation;
 using NJsonSchema.Validation;
 using Confluent.Kafka;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -64,7 +65,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private int initialBufferSize = DefaultInitialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
-        private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
+        private readonly NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private HashSet<string> subjectsRegistered = new HashSet<string>();
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
@@ -115,7 +116,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
@@ -148,7 +149,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
@@ -170,7 +171,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <summary>
         ///     Serialize an instance of type <typeparamref name="T"/> to a UTF8 encoded JSON 
-        ///     represenation. The serialized data is preceeded by:
+        ///     representation. The serialized data is preceded by:
         ///       1. A "magic byte" (1 byte) that identifies this as a message with
         ///          Confluent Platform framing.
         ///       2. The id of the schema as registered in Confluent's Schema Registry
@@ -192,7 +193,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             if (value == null) { return null; }
 
-            var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
+            var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.SerializerSettings);
             var validationResult = validator.Validate(serializedString, this.schema);
             if (validationResult.Count > 0)
             {

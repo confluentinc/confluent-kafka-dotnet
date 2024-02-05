@@ -20,3 +20,6 @@ UpgradeLog*.htm
 *~
 \#*
 core
+
+# JetBrains Rider
+.idea/
