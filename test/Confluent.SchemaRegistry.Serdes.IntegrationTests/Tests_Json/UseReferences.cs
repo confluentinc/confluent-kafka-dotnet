@@ -23,6 +23,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
 using NJsonSchema.Generation;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 
 namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
@@ -139,7 +140,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
             var sr = new CachedSchemaRegistryClient(schemaRegistryConfig);
 
-            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
             {
                 SerializerSettings = new JsonSerializerSettings
                 {
@@ -209,7 +210,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 // Test producing and consuming directly a JObject
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(order,
-                    jsonSchemaGeneratorSettings.ActualSerializerSettings);
+                    jsonSchemaGeneratorSettings.SerializerSettings);
                 var jsonObject = JObject.Parse(serializedString);
                 
                 using (var producer =

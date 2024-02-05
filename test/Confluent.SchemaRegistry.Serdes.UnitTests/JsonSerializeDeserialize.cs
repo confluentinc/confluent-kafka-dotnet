@@ -22,6 +22,7 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NJsonSchema.Generation;
+using NJsonSchema.NewtonsoftJson.Generation;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -205,7 +206,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         {
             const int value = 1234;
             var expectedJson = $"{{\"Value\":{value * 2}}}";
-            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
             {
                 SerializerSettings = new JsonSerializerSettings
                 {
@@ -249,7 +250,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
             
-            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
             {
                 SerializerSettings = new JsonSerializerSettings
                 {
@@ -284,7 +285,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [InlineData(EnumHandling.Integer, EnumType.OtherValue, "{\"Value\":5678}")]
         public async Task WithJsonSchemaGeneratorSettingsSerDe(EnumHandling enumHandling, EnumType value, string expectedJson)
         {
-            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
             {
                 DefaultEnumHandling = enumHandling
             };

@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using Confluent.Kafka;
 using NJsonSchema;
 using NJsonSchema.Generation;
+using NJsonSchema.NewtonsoftJson.Generation;
 using NJsonSchema.Validation;
 
 
@@ -52,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes
     {
         private readonly int headerSize = sizeof(int) + sizeof(byte);
 
-        private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
+        private readonly NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private JsonSchema schema = null;
         private ISchemaRegistryClient schemaRegistryClient;
         
@@ -78,7 +79,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     JSON schema generator settings.
         /// </param>
         public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, IEnumerable<KeyValuePair<string, string>> config = null,
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
@@ -106,7 +107,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        public JsonDeserializer(IEnumerable<KeyValuePair<string, string>> config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        public JsonDeserializer(IEnumerable<KeyValuePair<string, string>> config = null, NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
@@ -169,7 +170,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
                         }
                     }
-                    return Task.FromResult(Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings));
+                    return Task.FromResult(Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString, this.jsonSchemaGeneratorSettings?.SerializerSettings));
                 }
             }
             catch (AggregateException e)
