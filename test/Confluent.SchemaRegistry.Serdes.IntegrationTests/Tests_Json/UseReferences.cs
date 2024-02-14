@@ -22,7 +22,6 @@ using Confluent.Kafka.SyncOverAsync;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
-using NJsonSchema.Generation;
 using NJsonSchema.NewtonsoftJson.Generation;
 
 

@@ -22,7 +22,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using NJsonSchema.Generation;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NJsonSchema.NewtonsoftJson.Generation;

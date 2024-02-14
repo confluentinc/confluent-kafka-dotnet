@@ -22,7 +22,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using NJsonSchema;
-using NJsonSchema.Generation;
 using NJsonSchema.NewtonsoftJson.Generation;
 using NJsonSchema.Validation;
 
