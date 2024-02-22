@@ -6,8 +6,10 @@
     <Description>Provides a JSON Serializer and Deserializer for use with Confluent.Kafka with Confluent Schema Registry integration</Description>
     <Copyright>Copyright 2020-2022 Confluent Inc.</Copyright>
     <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
+	<PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+	<RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</RepositoryUrl>
+	<RepositoryType>Git</RepositoryType>
+	<PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
     <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;Schema Registry;JSON</PackageTags>
     <PackageId>Confluent.SchemaRegistry.Serdes.Json</PackageId>
@@ -31,8 +33,8 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
-    <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
+	<PackageReference Include="System.Net.Sockets" Version="4.3.0" />
+	<PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
   </ItemGroup>
 
 </Project>
