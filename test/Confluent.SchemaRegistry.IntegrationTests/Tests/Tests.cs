@@ -65,5 +65,14 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             }
             return false;
         }
+
+        public static bool semaphoreSkipKnownFailingTests(){
+            string onSemaphore = Environment.GetEnvironmentVariable("SEMAPHORE_SKIP_KNOWN_FAILING_TESTS");
+            if (onSemaphore != null)
+            {
+                return true;
+            }
+            return false;
+        }
     }
 }
