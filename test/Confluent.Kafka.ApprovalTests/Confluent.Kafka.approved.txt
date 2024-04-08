@@ -1,0 +1,1921 @@
+namespace Confluent.Kafka
+{
+    public enum Acks
+    {
+        None = 0,
+        Leader = 1,
+        All = -1,
+    }
+    public class AdminClientBuilder
+    {
+        public AdminClientBuilder(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config) { }
+        protected System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> Config { get; set; }
+        protected System.Action<Confluent.Kafka.IAdminClient, Confluent.Kafka.Error> ErrorHandler { get; set; }
+        protected System.Action<Confluent.Kafka.IAdminClient, Confluent.Kafka.LogMessage> LogHandler { get; set; }
+        public System.Action<Confluent.Kafka.IProducer<Confluent.Kafka.Null, Confluent.Kafka.Null>, string> OAuthBearerTokenRefreshHandler { get; set; }
+        protected System.Action<Confluent.Kafka.IAdminClient, string> StatisticsHandler { get; set; }
+        public virtual Confluent.Kafka.IAdminClient Build() { }
+        public Confluent.Kafka.AdminClientBuilder SetErrorHandler(System.Action<Confluent.Kafka.IAdminClient, Confluent.Kafka.Error> errorHandler) { }
+        public Confluent.Kafka.AdminClientBuilder SetLogHandler(System.Action<Confluent.Kafka.IAdminClient, Confluent.Kafka.LogMessage> logHandler) { }
+        public Confluent.Kafka.AdminClientBuilder SetOAuthBearerTokenRefreshHandler(System.Action<Confluent.Kafka.IProducer<Confluent.Kafka.Null, Confluent.Kafka.Null>, string> oAuthBearerTokenRefreshHandler) { }
+        public Confluent.Kafka.AdminClientBuilder SetStatisticsHandler(System.Action<Confluent.Kafka.IAdminClient, string> statisticsHandler) { }
+    }
+    public class AdminClientConfig : Confluent.Kafka.ClientConfig
+    {
+        public AdminClientConfig() { }
+        public AdminClientConfig(Confluent.Kafka.ClientConfig config) { }
+        public AdminClientConfig(System.Collections.Generic.IDictionary<string, string> config) { }
+        public Confluent.Kafka.AdminClientConfig ThrowIfContainsNonUserConfigurable() { }
+    }
+    public enum AutoOffsetReset
+    {
+        Latest = 0,
+        Earliest = 1,
+        Error = 2,
+    }
+    public enum BrokerAddressFamily
+    {
+        Any = 0,
+        V4 = 1,
+        V6 = 2,
+    }
+    public class BrokerMetadata
+    {
+        public BrokerMetadata(int brokerId, string host, int port) { }
+        public int BrokerId { get; }
+        public string Host { get; }
+        public int Port { get; }
+        public override string ToString() { }
+    }
+    public class ClientConfig : Confluent.Kafka.Config
+    {
+        public ClientConfig() { }
+        public ClientConfig(Confluent.Kafka.ClientConfig config) { }
+        public ClientConfig(System.Collections.Generic.IDictionary<string, string> config) { }
+        public Confluent.Kafka.Acks? Acks { get; set; }
+        public bool? AllowAutoCreateTopics { get; set; }
+        public int? ApiVersionFallbackMs { get; set; }
+        public bool? ApiVersionRequest { get; set; }
+        public int? ApiVersionRequestTimeoutMs { get; set; }
+        public string BootstrapServers { get; set; }
+        public Confluent.Kafka.BrokerAddressFamily? BrokerAddressFamily { get; set; }
+        public int? BrokerAddressTtl { get; set; }
+        public string BrokerVersionFallback { get; set; }
+        public Confluent.Kafka.ClientDnsLookup? ClientDnsLookup { get; set; }
+        public string ClientId { get; set; }
+        public string ClientRack { get; set; }
+        public int? ConnectionsMaxIdleMs { get; set; }
+        public string Debug { get; set; }
+        public bool? EnableRandomSeed { get; set; }
+        public bool? EnableSaslOauthbearerUnsecureJwt { get; set; }
+        public bool? EnableSslCertificateVerification { get; set; }
+        public int? InternalTerminationSignal { get; set; }
+        public bool? LogConnectionClose { get; set; }
+        public bool? LogQueue { get; set; }
+        public bool? LogThreadName { get; set; }
+        public int? MaxInFlight { get; set; }
+        public int? MessageCopyMaxBytes { get; set; }
+        public int? MessageMaxBytes { get; set; }
+        public int? MetadataMaxAgeMs { get; set; }
+        public string PluginLibraryPaths { get; set; }
+        public int? ReceiveMessageMaxBytes { get; set; }
+        public int? ReconnectBackoffMaxMs { get; set; }
+        public int? ReconnectBackoffMs { get; set; }
+        public string SaslKerberosKeytab { get; set; }
+        public string SaslKerberosKinitCmd { get; set; }
+        public int? SaslKerberosMinTimeBeforeRelogin { get; set; }
+        public string SaslKerberosPrincipal { get; set; }
+        public string SaslKerberosServiceName { get; set; }
+        public Confluent.Kafka.SaslMechanism? SaslMechanism { get; set; }
+        public string SaslOauthbearerClientId { get; set; }
+        public string SaslOauthbearerClientSecret { get; set; }
+        public string SaslOauthbearerConfig { get; set; }
+        public string SaslOauthbearerExtensions { get; set; }
+        public Confluent.Kafka.SaslOauthbearerMethod? SaslOauthbearerMethod { get; set; }
+        public string SaslOauthbearerScope { get; set; }
+        public string SaslOauthbearerTokenEndpointUrl { get; set; }
+        public string SaslPassword { get; set; }
+        public string SaslUsername { get; set; }
+        public Confluent.Kafka.SecurityProtocol? SecurityProtocol { get; set; }
+        public int? SocketConnectionSetupTimeoutMs { get; set; }
+        public bool? SocketKeepaliveEnable { get; set; }
+        public int? SocketMaxFails { get; set; }
+        public bool? SocketNagleDisable { get; set; }
+        public int? SocketReceiveBufferBytes { get; set; }
+        public int? SocketSendBufferBytes { get; set; }
+        public int? SocketTimeoutMs { get; set; }
+        public string SslCaCertificateStores { get; set; }
+        public string SslCaLocation { get; set; }
+        public string SslCaPem { get; set; }
+        public string SslCertificateLocation { get; set; }
+        public string SslCertificatePem { get; set; }
+        public string SslCipherSuites { get; set; }
+        public string SslCrlLocation { get; set; }
+        public string SslCurvesList { get; set; }
+        public Confluent.Kafka.SslEndpointIdentificationAlgorithm? SslEndpointIdentificationAlgorithm { get; set; }
+        public string SslEngineId { get; set; }
+        public string SslEngineLocation { get; set; }
+        public string SslKeyLocation { get; set; }
+        public string SslKeyPassword { get; set; }
+        public string SslKeyPem { get; set; }
+        public string SslKeystoreLocation { get; set; }
+        public string SslKeystorePassword { get; set; }
+        public string SslProviders { get; set; }
+        public string SslSigalgsList { get; set; }
+        public int? StatisticsIntervalMs { get; set; }
+        public string TopicBlacklist { get; set; }
+        public int? TopicMetadataPropagationMaxMs { get; set; }
+        public int? TopicMetadataRefreshFastIntervalMs { get; set; }
+        public int? TopicMetadataRefreshIntervalMs { get; set; }
+        public bool? TopicMetadataRefreshSparse { get; set; }
+    }
+    public enum ClientDnsLookup
+    {
+        UseAllDnsIps = 0,
+        ResolveCanonicalBootstrapServersOnly = 1,
+    }
+    public static class ClientExtensions
+    {
+        public static void OAuthBearerSetToken(this Confluent.Kafka.IClient client, string tokenValue, long lifetimeMs, string principalName, System.Collections.Generic.IDictionary<string, string> extensions = null) { }
+        public static void OAuthBearerSetTokenFailure(this Confluent.Kafka.IClient client, string error) { }
+    }
+    public class CommittedOffsets
+    {
+        public CommittedOffsets(System.Collections.Generic.IList<Confluent.Kafka.TopicPartitionOffsetError> offsets, Confluent.Kafka.Error error) { }
+        public Confluent.Kafka.Error Error { get; }
+        public System.Collections.Generic.IList<Confluent.Kafka.TopicPartitionOffsetError> Offsets { get; }
+    }
+    public enum CompressionType
+    {
+        None = 0,
+        Gzip = 1,
+        Snappy = 2,
+        Lz4 = 3,
+        Zstd = 4,
+    }
+    public class Config : System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.IEnumerable
+    {
+        protected System.Collections.Generic.IDictionary<string, string> properties;
+        public Config() { }
+        public Config(Confluent.Kafka.Config config) { }
+        public Config(System.Collections.Generic.IDictionary<string, string> config) { }
+        public int CancellationDelayMaxMs { set; }
+        public string Get(string key) { }
+        protected bool? GetBool(string key) { }
+        protected double? GetDouble(string key) { }
+        protected object GetEnum(System.Type type, string key) { }
+        public System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<string, string>> GetEnumerator() { }
+        protected int? GetInt(string key) { }
+        public void Set(string key, string val) { }
+        protected void SetObject(string name, object val) { }
+    }
+    public static class ConfigPropertyNames
+    {
+        public const string CancellationDelayMaxMs = "dotnet.cancellation.delay.max.ms";
+        public static class Consumer
+        {
+            public const string ConsumeResultFields = "dotnet.consumer.consume.result.fields";
+        }
+        public static class Producer
+        {
+            public const string DeliveryReportFields = "dotnet.producer.delivery.report.fields";
+            public const string EnableBackgroundPoll = "dotnet.producer.enable.background.poll";
+            public const string EnableDeliveryReports = "dotnet.producer.enable.delivery.reports";
+        }
+    }
+    public class ConsumeException : Confluent.Kafka.KafkaException
+    {
+        public ConsumeException(Confluent.Kafka.ConsumeResult<byte[], byte[]> consumerRecord, Confluent.Kafka.Error error) { }
+        public ConsumeException(Confluent.Kafka.ConsumeResult<byte[], byte[]> consumerRecord, Confluent.Kafka.Error error, System.Exception innerException) { }
+        public Confluent.Kafka.ConsumeResult<byte[], byte[]> ConsumerRecord { get; }
+    }
+    public class ConsumeResult<TKey, TValue>
+    {
+        public ConsumeResult() { }
+        [System.Obsolete("Please access the message Headers via .Message.Headers.")]
+        public Confluent.Kafka.Headers Headers { get; }
+        public bool IsPartitionEOF { get; set; }
+        [System.Obsolete("Please access the message Key via .Message.Key.")]
+        public TKey Key { get; }
+        public int? LeaderEpoch { get; set; }
+        public Confluent.Kafka.Message<TKey, TValue> Message { get; set; }
+        public Confluent.Kafka.Offset Offset { get; set; }
+        public Confluent.Kafka.Partition Partition { get; set; }
+        [System.Obsolete("Please access the message Timestamp via .Message.Timestamp.")]
+        public Confluent.Kafka.Timestamp Timestamp { get; }
+        public string Topic { get; set; }
+        public Confluent.Kafka.TopicPartition TopicPartition { get; }
+        public Confluent.Kafka.TopicPartitionOffset TopicPartitionOffset { get; set; }
+        [System.Obsolete("Please access the message Value via .Message.Value.")]
+        public TValue Value { get; }
+    }
+    public class ConsumerBuilder<TKey, TValue>
+    {
+        protected bool RevokedOrLostHandlerIsFunc;
+        public ConsumerBuilder(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config) { }
+        protected System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> Config { get; set; }
+        protected System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, Confluent.Kafka.Error> ErrorHandler { get; set; }
+        protected Confluent.Kafka.IDeserializer<TKey> KeyDeserializer { get; set; }
+        protected System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, Confluent.Kafka.LogMessage> LogHandler { get; set; }
+        protected System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, string> OAuthBearerTokenRefreshHandler { get; set; }
+        protected System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, Confluent.Kafka.CommittedOffsets> OffsetsCommittedHandler { get; set; }
+        protected System.Func<Confluent.Kafka.IConsumer<TKey, TValue>, System.Collections.Generic.List<Confluent.Kafka.TopicPartition>, System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset>> PartitionsAssignedHandler { get; set; }
+        protected System.Func<Confluent.Kafka.IConsumer<TKey, TValue>, System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset>, System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset>> PartitionsLostHandler { get; set; }
+        protected System.Func<Confluent.Kafka.IConsumer<TKey, TValue>, System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset>, System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset>> PartitionsRevokedHandler { get; set; }
+        protected System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, string> StatisticsHandler { get; set; }
+        protected Confluent.Kafka.IDeserializer<TValue> ValueDeserializer { get; set; }
+        public virtual Confluent.Kafka.IConsumer<TKey, TValue> Build() { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetErrorHandler(System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, Confluent.Kafka.Error> errorHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetKeyDeserializer(Confluent.Kafka.IDeserializer<TKey> deserializer) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetLogHandler(System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, Confluent.Kafka.LogMessage> logHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetOAuthBearerTokenRefreshHandler(System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, string> oAuthBearerTokenRefreshHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetOffsetsCommittedHandler(System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, Confluent.Kafka.CommittedOffsets> offsetsCommittedHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, System.Collections.Generic.List<Confluent.Kafka.TopicPartition>> partitionAssignmentHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(System.Func<Confluent.Kafka.IConsumer<TKey, TValue>, System.Collections.Generic.List<Confluent.Kafka.TopicPartition>, System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset>> partitionsAssignedHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetPartitionsLostHandler(System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset>> partitionsLostHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetPartitionsLostHandler(System.Func<Confluent.Kafka.IConsumer<TKey, TValue>, System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset>, System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset>> partitionsLostHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset>> partitionsRevokedHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(System.Func<Confluent.Kafka.IConsumer<TKey, TValue>, System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset>, System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset>> partitionsRevokedHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetStatisticsHandler(System.Action<Confluent.Kafka.IConsumer<TKey, TValue>, string> statisticsHandler) { }
+        public Confluent.Kafka.ConsumerBuilder<TKey, TValue> SetValueDeserializer(Confluent.Kafka.IDeserializer<TValue> deserializer) { }
+    }
+    public class ConsumerConfig : Confluent.Kafka.ClientConfig
+    {
+        public ConsumerConfig() { }
+        public ConsumerConfig(Confluent.Kafka.ClientConfig config) { }
+        public ConsumerConfig(System.Collections.Generic.IDictionary<string, string> config) { }
+        public int? AutoCommitIntervalMs { get; set; }
+        public Confluent.Kafka.AutoOffsetReset? AutoOffsetReset { get; set; }
+        public bool? CheckCrcs { get; set; }
+        public string ConsumeResultFields { set; }
+        public int? CoordinatorQueryIntervalMs { get; set; }
+        public bool? EnableAutoCommit { get; set; }
+        public bool? EnableAutoOffsetStore { get; set; }
+        public bool? EnablePartitionEof { get; set; }
+        public int? FetchErrorBackoffMs { get; set; }
+        public int? FetchMaxBytes { get; set; }
+        public int? FetchMinBytes { get; set; }
+        public int? FetchQueueBackoffMs { get; set; }
+        public int? FetchWaitMaxMs { get; set; }
+        public string GroupId { get; set; }
+        public string GroupInstanceId { get; set; }
+        public string GroupProtocolType { get; set; }
+        public int? HeartbeatIntervalMs { get; set; }
+        public Confluent.Kafka.IsolationLevel? IsolationLevel { get; set; }
+        public int? MaxPartitionFetchBytes { get; set; }
+        public int? MaxPollIntervalMs { get; set; }
+        public Confluent.Kafka.PartitionAssignmentStrategy? PartitionAssignmentStrategy { get; set; }
+        public int? QueuedMaxMessagesKbytes { get; set; }
+        public int? QueuedMinMessages { get; set; }
+        public int? SessionTimeoutMs { get; set; }
+        public Confluent.Kafka.ConsumerConfig ThrowIfContainsNonUserConfigurable() { }
+    }
+    public enum ConsumerGroupState
+    {
+        Unknown = 0,
+        PreparingRebalance = 1,
+        CompletingRebalance = 2,
+        Stable = 3,
+        Dead = 4,
+        Empty = 5,
+    }
+    public class ConsumerGroupTopicPartitionOffsets
+    {
+        public ConsumerGroupTopicPartitionOffsets(string group, System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset> topicPartitionOffsets) { }
+        public string Group { get; }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset> TopicPartitionOffsets { get; }
+        public override string ToString() { }
+    }
+    public class ConsumerGroupTopicPartitions
+    {
+        public ConsumerGroupTopicPartitions(string group, System.Collections.Generic.List<Confluent.Kafka.TopicPartition> topicPartitions) { }
+        public string Group { get; }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartition> TopicPartitions { get; }
+        public override string ToString() { }
+    }
+    public class DeliveryReport<TKey, TValue> : Confluent.Kafka.DeliveryResult<TKey, TValue>
+    {
+        public DeliveryReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public Confluent.Kafka.TopicPartitionOffsetError TopicPartitionOffsetError { get; set; }
+    }
+    public class DeliveryResult<TKey, TValue>
+    {
+        public DeliveryResult() { }
+        public Confluent.Kafka.Headers Headers { get; set; }
+        public TKey Key { get; set; }
+        public Confluent.Kafka.Message<TKey, TValue> Message { get; set; }
+        public Confluent.Kafka.Offset Offset { get; set; }
+        public Confluent.Kafka.Partition Partition { get; set; }
+        public Confluent.Kafka.PersistenceStatus Status { get; set; }
+        public Confluent.Kafka.Timestamp Timestamp { get; set; }
+        public string Topic { get; set; }
+        public Confluent.Kafka.TopicPartition TopicPartition { get; }
+        public Confluent.Kafka.TopicPartitionOffset TopicPartitionOffset { get; set; }
+        public TValue Value { get; set; }
+    }
+    public class DependentAdminClientBuilder
+    {
+        public DependentAdminClientBuilder(Confluent.Kafka.Handle handle) { }
+        public Confluent.Kafka.Handle Handle { get; set; }
+        public virtual Confluent.Kafka.IAdminClient Build() { }
+    }
+    public class DependentProducerBuilder<TKey, TValue>
+    {
+        public DependentProducerBuilder(Confluent.Kafka.Handle handle) { }
+        public Confluent.Kafka.IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
+        public Confluent.Kafka.IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
+        public Confluent.Kafka.Handle Handle { get; set; }
+        public Confluent.Kafka.ISerializer<TKey> KeySerializer { get; set; }
+        public Confluent.Kafka.ISerializer<TValue> ValueSerializer { get; set; }
+        public virtual Confluent.Kafka.IProducer<TKey, TValue> Build() { }
+        public Confluent.Kafka.DependentProducerBuilder<TKey, TValue> SetKeySerializer(Confluent.Kafka.IAsyncSerializer<TKey> serializer) { }
+        public Confluent.Kafka.DependentProducerBuilder<TKey, TValue> SetKeySerializer(Confluent.Kafka.ISerializer<TKey> serializer) { }
+        public Confluent.Kafka.DependentProducerBuilder<TKey, TValue> SetValueSerializer(Confluent.Kafka.IAsyncSerializer<TValue> serializer) { }
+        public Confluent.Kafka.DependentProducerBuilder<TKey, TValue> SetValueSerializer(Confluent.Kafka.ISerializer<TValue> serializer) { }
+    }
+    public static class Deserializers
+    {
+        public static Confluent.Kafka.IDeserializer<byte[]> ByteArray;
+        public static Confluent.Kafka.IDeserializer<double> Double;
+        public static Confluent.Kafka.IDeserializer<Confluent.Kafka.Ignore> Ignore;
+        public static Confluent.Kafka.IDeserializer<int> Int32;
+        public static Confluent.Kafka.IDeserializer<long> Int64;
+        public static Confluent.Kafka.IDeserializer<Confluent.Kafka.Null> Null;
+        public static Confluent.Kafka.IDeserializer<float> Single;
+        public static Confluent.Kafka.IDeserializer<string> Utf8;
+    }
+    public class Error
+    {
+        public Error(Confluent.Kafka.Error error) { }
+        public Error(Confluent.Kafka.ErrorCode code) { }
+        public Error(Confluent.Kafka.ErrorCode code, string reason) { }
+        public Error(Confluent.Kafka.ErrorCode code, string reason, bool isFatal) { }
+        public Confluent.Kafka.ErrorCode Code { get; }
+        public bool IsBrokerError { get; }
+        public bool IsError { get; }
+        public bool IsFatal { get; }
+        public bool IsLocalError { get; }
+        public string Reason { get; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static Confluent.Kafka.ErrorCode op_Implicit(Confluent.Kafka.Error e) { }
+        public static Confluent.Kafka.Error op_Implicit(Confluent.Kafka.ErrorCode c) { }
+        public static bool operator !=(Confluent.Kafka.Error a, Confluent.Kafka.Error b) { }
+        public static bool operator ==(Confluent.Kafka.Error a, Confluent.Kafka.Error b) { }
+    }
+    public enum ErrorCode
+    {
+        Local_BadMsg = -199,
+        Local_BadCompression = -198,
+        Local_Destroy = -197,
+        Local_Fail = -196,
+        Local_Transport = -195,
+        Local_CritSysResource = -194,
+        Local_Resolve = -193,
+        Local_MsgTimedOut = -192,
+        Local_PartitionEOF = -191,
+        Local_UnknownPartition = -190,
+        Local_FS = -189,
+        Local_UnknownTopic = -188,
+        Local_AllBrokersDown = -187,
+        Local_InvalidArg = -186,
+        Local_TimedOut = -185,
+        Local_QueueFull = -184,
+        Local_IsrInsuff = -183,
+        Local_NodeUpdate = -182,
+        Local_Ssl = -181,
+        Local_WaitCoord = -180,
+        Local_UnknownGroup = -179,
+        Local_InProgress = -178,
+        Local_PrevInProgress = -177,
+        Local_ExistingSubscription = -176,
+        Local_AssignPartitions = -175,
+        Local_RevokePartitions = -174,
+        Local_Conflict = -173,
+        Local_State = -172,
+        Local_UnknownProtocol = -171,
+        Local_NotImplemented = -170,
+        Local_Authentication = -169,
+        Local_NoOffset = -168,
+        Local_Outdated = -167,
+        Local_TimedOutQueue = -166,
+        Local_UnsupportedFeature = -165,
+        Local_WaitCache = -164,
+        Local_Intr = -163,
+        Local_KeySerialization = -162,
+        Local_ValueSerialization = -161,
+        Local_KeyDeserialization = -160,
+        Local_ValueDeserialization = -159,
+        Local_Partial = -158,
+        Local_ReadOnly = -157,
+        Local_NoEnt = -156,
+        Local_Underflow = -155,
+        Local_InvalidType = -154,
+        Local_Retry = -153,
+        Local_PurgeQueue = -152,
+        Local_PurgeInflight = -151,
+        Local_Fatal = -150,
+        Local_Inconsistent = -149,
+        Local_GaplessGuarantee = -148,
+        Local_MaxPollExceeded = -147,
+        Local_UnknownBroker = -146,
+        Local_NotConfigured = -145,
+        Local_Fenced = -144,
+        Local_Application = -143,
+        Local_AssignmentLost = -142,
+        Local_Noop = -141,
+        Local_AutoOffsetReset = -140,
+        Local_LogTruncation = -139,
+        Unknown = -1,
+        NoError = 0,
+        OffsetOutOfRange = 1,
+        InvalidMsg = 2,
+        UnknownTopicOrPart = 3,
+        InvalidMsgSize = 4,
+        LeaderNotAvailable = 5,
+        NotLeaderForPartition = 6,
+        RequestTimedOut = 7,
+        BrokerNotAvailable = 8,
+        ReplicaNotAvailable = 9,
+        MsgSizeTooLarge = 10,
+        StaleCtrlEpoch = 11,
+        OffsetMetadataTooLarge = 12,
+        NetworkException = 13,
+        [System.Obsolete("Superseded by GroupLoadInProgress")]
+        GroupLoadInProress = 14,
+        GroupLoadInProgress = 14,
+        GroupCoordinatorNotAvailable = 15,
+        NotCoordinatorForGroup = 16,
+        TopicException = 17,
+        RecordListTooLarge = 18,
+        NotEnoughReplicas = 19,
+        NotEnoughReplicasAfterAppend = 20,
+        InvalidRequiredAcks = 21,
+        IllegalGeneration = 22,
+        InconsistentGroupProtocol = 23,
+        InvalidGroupId = 24,
+        UnknownMemberId = 25,
+        InvalidSessionTimeout = 26,
+        RebalanceInProgress = 27,
+        InvalidCommitOffsetSize = 28,
+        TopicAuthorizationFailed = 29,
+        GroupAuthorizationFailed = 30,
+        ClusterAuthorizationFailed = 31,
+        InvalidTimestamp = 32,
+        UnsupportedSaslMechanism = 33,
+        IllegalSaslState = 34,
+        UnsupportedVersion = 35,
+        TopicAlreadyExists = 36,
+        InvalidPartitions = 37,
+        InvalidReplicationFactor = 38,
+        InvalidReplicaAssignment = 39,
+        InvalidConfig = 40,
+        NotController = 41,
+        InvalidRequest = 42,
+        UnsupportedForMessageFormat = 43,
+        PolicyViolation = 44,
+        OutOfOrderSequenceNumber = 45,
+        DuplicateSequenceNumber = 46,
+        InvalidProducerEpoch = 47,
+        InvalidTxnState = 48,
+        InvalidProducerIdMapping = 49,
+        InvalidTransactionTimeout = 50,
+        ConcurrentTransactions = 51,
+        TransactionCoordinatorFenced = 52,
+        TransactionalIdAuthorizationFailed = 53,
+        SecurityDisabled = 54,
+        OperationNotAttempted = 55,
+        KafkaStorageError = 56,
+        LogDirNotFound = 57,
+        SaslAuthenticationFailed = 58,
+        UnknownProducerId = 59,
+        ReassignmentInProgress = 60,
+        DelegationTokenAuthDisabled = 61,
+        DelegationTokenNotFound = 62,
+        DelegationTokenOwnerMismatch = 63,
+        DelegationTokenRequestNotAllowed = 64,
+        DelegationTokenAuthorizationFailed = 65,
+        DelegationTokenExpired = 66,
+        InvalidPrincipalType = 67,
+        NonEmptyGroup = 68,
+        GroupIdNotFound = 69,
+        FetchSessionIdNotFound = 70,
+        InvalidFetchSessionEpoch = 71,
+        ListenerNotFound = 72,
+        TopicDeletionDisabled = 73,
+        FencedLeaderEpoch = 74,
+        UnknownLeaderEpoch = 75,
+        UnsupportedCompressionType = 76,
+        StaleBrokerEpoch = 77,
+        OffsetNotAvailable = 78,
+        MemberIdRequired = 79,
+        PreferredLeaderNotAvailable = 80,
+        GroupMaxSizeReached = 81,
+        FencedInstanceId = 82,
+        EligibleLeadersNotAvailable = 83,
+        ElectionNotNeeded = 84,
+        NoReassignmentInProgress = 85,
+        GroupSubscribedToTopic = 86,
+        InvalidRecord = 87,
+        UnstableOffsetCommit = 88,
+        ThrottlingQuotaExceeded = 89,
+        ProducerFenced = 90,
+        ResourceNotFound = 91,
+        DuplicateResource = 92,
+        UnacceptableCredential = 93,
+        InconsistentVoterSet = 94,
+        InvalidUpdateVersion = 95,
+        FeatureUpdateFailed = 96,
+        PrincipalDeserializationFailure = 97,
+    }
+    public static class ErrorCodeExtensions
+    {
+        public static string GetReason(this Confluent.Kafka.ErrorCode code) { }
+    }
+    public class GroupInfo
+    {
+        public GroupInfo(Confluent.Kafka.BrokerMetadata broker, string group, Confluent.Kafka.Error error, string state, string protocolType, string protocol, System.Collections.Generic.List<Confluent.Kafka.GroupMemberInfo> members) { }
+        public Confluent.Kafka.BrokerMetadata Broker { get; }
+        public Confluent.Kafka.Error Error { get; }
+        public string Group { get; }
+        public System.Collections.Generic.List<Confluent.Kafka.GroupMemberInfo> Members { get; }
+        public string Protocol { get; }
+        public string ProtocolType { get; }
+        public string State { get; }
+    }
+    public class GroupMemberInfo
+    {
+        public GroupMemberInfo(string memberId, string clientId, string clientHost, byte[] memberMetadata, byte[] memberAssignment) { }
+        public string ClientHost { get; }
+        public string ClientId { get; }
+        public byte[] MemberAssignment { get; }
+        public string MemberId { get; }
+        public byte[] MemberMetadata { get; }
+    }
+    public class Handle
+    {
+        public Handle() { }
+        public bool IsInvalid { get; }
+    }
+    public class Header : Confluent.Kafka.IHeader
+    {
+        public Header(string key, byte[] value) { }
+        public string Key { get; }
+        public byte[] GetValueBytes() { }
+    }
+    public class Headers : System.Collections.Generic.IEnumerable<Confluent.Kafka.IHeader>, System.Collections.IEnumerable
+    {
+        public Headers() { }
+        public System.Collections.Generic.IReadOnlyList<Confluent.Kafka.IHeader> BackingList { get; }
+        public int Count { get; }
+        public Confluent.Kafka.IHeader this[int index] { get; }
+        public void Add(Confluent.Kafka.Header header) { }
+        public void Add(string key, byte[] val) { }
+        public System.Collections.Generic.IEnumerator<Confluent.Kafka.IHeader> GetEnumerator() { }
+        public byte[] GetLastBytes(string key) { }
+        public void Remove(string key) { }
+        public bool TryGetLastBytes(string key, out byte[] lastHeader) { }
+    }
+    public interface IAdminClient : Confluent.Kafka.IClient, System.IDisposable
+    {
+        System.Threading.Tasks.Task AlterConfigsAsync(System.Collections.Generic.Dictionary<Confluent.Kafka.Admin.ConfigResource, System.Collections.Generic.List<Confluent.Kafka.Admin.ConfigEntry>> configs, Confluent.Kafka.Admin.AlterConfigsOptions options = null);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Confluent.Kafka.Admin.AlterConsumerGroupOffsetsResult>> AlterConsumerGroupOffsetsAsync(System.Collections.Generic.IEnumerable<Confluent.Kafka.ConsumerGroupTopicPartitionOffsets> groupPartitions, Confluent.Kafka.Admin.AlterConsumerGroupOffsetsOptions options = null);
+        System.Threading.Tasks.Task AlterUserScramCredentialsAsync(System.Collections.Generic.IEnumerable<Confluent.Kafka.Admin.UserScramCredentialAlteration> alterations, Confluent.Kafka.Admin.AlterUserScramCredentialsOptions options = null);
+        System.Threading.Tasks.Task CreateAclsAsync(System.Collections.Generic.IEnumerable<Confluent.Kafka.Admin.AclBinding> aclBindings, Confluent.Kafka.Admin.CreateAclsOptions options = null);
+        System.Threading.Tasks.Task CreatePartitionsAsync(System.Collections.Generic.IEnumerable<Confluent.Kafka.Admin.PartitionsSpecification> partitionsSpecifications, Confluent.Kafka.Admin.CreatePartitionsOptions options = null);
+        System.Threading.Tasks.Task CreateTopicsAsync(System.Collections.Generic.IEnumerable<Confluent.Kafka.Admin.TopicSpecification> topics, Confluent.Kafka.Admin.CreateTopicsOptions options = null);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Confluent.Kafka.Admin.DeleteAclsResult>> DeleteAclsAsync(System.Collections.Generic.IEnumerable<Confluent.Kafka.Admin.AclBindingFilter> aclBindingFilters, Confluent.Kafka.Admin.DeleteAclsOptions options = null);
+        System.Threading.Tasks.Task<Confluent.Kafka.Admin.DeleteConsumerGroupOffsetsResult> DeleteConsumerGroupOffsetsAsync(string group, System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartition> partitions, Confluent.Kafka.Admin.DeleteConsumerGroupOffsetsOptions options = null);
+        System.Threading.Tasks.Task DeleteGroupsAsync(System.Collections.Generic.IList<string> groups, Confluent.Kafka.Admin.DeleteGroupsOptions options = null);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Confluent.Kafka.Admin.DeleteRecordsResult>> DeleteRecordsAsync(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset> topicPartitionOffsets, Confluent.Kafka.Admin.DeleteRecordsOptions options = null);
+        System.Threading.Tasks.Task DeleteTopicsAsync(System.Collections.Generic.IEnumerable<string> topics, Confluent.Kafka.Admin.DeleteTopicsOptions options = null);
+        System.Threading.Tasks.Task<Confluent.Kafka.Admin.DescribeAclsResult> DescribeAclsAsync(Confluent.Kafka.Admin.AclBindingFilter aclBindingFilter, Confluent.Kafka.Admin.DescribeAclsOptions options = null);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Confluent.Kafka.Admin.DescribeConfigsResult>> DescribeConfigsAsync(System.Collections.Generic.IEnumerable<Confluent.Kafka.Admin.ConfigResource> resources, Confluent.Kafka.Admin.DescribeConfigsOptions options = null);
+        System.Threading.Tasks.Task<Confluent.Kafka.Admin.DescribeConsumerGroupsResult> DescribeConsumerGroupsAsync(System.Collections.Generic.IEnumerable<string> groups, Confluent.Kafka.Admin.DescribeConsumerGroupsOptions options = null);
+        System.Threading.Tasks.Task<Confluent.Kafka.Admin.DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(System.Collections.Generic.IEnumerable<string> users, Confluent.Kafka.Admin.DescribeUserScramCredentialsOptions options = null);
+        Confluent.Kafka.Metadata GetMetadata(System.TimeSpan timeout);
+        Confluent.Kafka.Metadata GetMetadata(string topic, System.TimeSpan timeout);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Confluent.Kafka.Admin.IncrementalAlterConfigsResult>> IncrementalAlterConfigsAsync(System.Collections.Generic.Dictionary<Confluent.Kafka.Admin.ConfigResource, System.Collections.Generic.List<Confluent.Kafka.Admin.ConfigEntry>> configs, Confluent.Kafka.Admin.IncrementalAlterConfigsOptions options = null);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Confluent.Kafka.Admin.ListConsumerGroupOffsetsResult>> ListConsumerGroupOffsetsAsync(System.Collections.Generic.IEnumerable<Confluent.Kafka.ConsumerGroupTopicPartitions> groupPartitions, Confluent.Kafka.Admin.ListConsumerGroupOffsetsOptions options = null);
+        System.Threading.Tasks.Task<Confluent.Kafka.Admin.ListConsumerGroupsResult> ListConsumerGroupsAsync(Confluent.Kafka.Admin.ListConsumerGroupsOptions options = null);
+        Confluent.Kafka.GroupInfo ListGroup(string group, System.TimeSpan timeout);
+        System.Collections.Generic.List<Confluent.Kafka.GroupInfo> ListGroups(System.TimeSpan timeout);
+    }
+    public static class IAdminClientExtensions
+    {
+        public static System.Threading.Tasks.Task<Confluent.Kafka.Admin.DescribeClusterResult> DescribeClusterAsync(this Confluent.Kafka.IAdminClient adminClient, Confluent.Kafka.Admin.DescribeClusterOptions options = null) { }
+        public static System.Threading.Tasks.Task<Confluent.Kafka.Admin.DescribeTopicsResult> DescribeTopicsAsync(this Confluent.Kafka.IAdminClient adminClient, Confluent.Kafka.TopicCollection topicCollection, Confluent.Kafka.Admin.DescribeTopicsOptions options = null) { }
+        public static System.Threading.Tasks.Task<Confluent.Kafka.Admin.ListOffsetsResult> ListOffsetsAsync(this Confluent.Kafka.IAdminClient adminClient, System.Collections.Generic.IEnumerable<Confluent.Kafka.Admin.TopicPartitionOffsetSpec> topicPartitionOffsets, Confluent.Kafka.Admin.ListOffsetsOptions options = null) { }
+    }
+    public interface IAsyncDeserializer<T>
+    {
+        System.Threading.Tasks.Task<T> DeserializeAsync(System.ReadOnlyMemory<byte> data, bool isNull, Confluent.Kafka.SerializationContext context);
+    }
+    public interface IAsyncSerializer<T>
+    {
+        System.Threading.Tasks.Task<byte[]> SerializeAsync(T data, Confluent.Kafka.SerializationContext context);
+    }
+    public interface IClient : System.IDisposable
+    {
+        Confluent.Kafka.Handle Handle { get; }
+        string Name { get; }
+        int AddBrokers(string brokers);
+        void SetSaslCredentials(string username, string password);
+    }
+    public static class IConsumerExtensions
+    {
+        public static Confluent.Kafka.TopicPartitionOffset PositionTopicPartitionOffset<TKey, TValue>(this Confluent.Kafka.IConsumer<TKey, TValue> consumer, Confluent.Kafka.TopicPartition partition) { }
+    }
+    public interface IConsumerGroupMetadata { }
+    public interface IConsumer<TKey, TValue> : Confluent.Kafka.IClient, System.IDisposable
+    {
+        System.Collections.Generic.List<Confluent.Kafka.TopicPartition> Assignment { get; }
+        Confluent.Kafka.IConsumerGroupMetadata ConsumerGroupMetadata { get; }
+        string MemberId { get; }
+        System.Collections.Generic.List<string> Subscription { get; }
+        void Assign(Confluent.Kafka.TopicPartition partition);
+        void Assign(Confluent.Kafka.TopicPartitionOffset partition);
+        void Assign(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartition> partitions);
+        void Assign(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset> partitions);
+        void Close();
+        System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset> Commit();
+        void Commit(Confluent.Kafka.ConsumeResult<TKey, TValue> result);
+        void Commit(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset> offsets);
+        System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset> Committed(System.TimeSpan timeout);
+        System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset> Committed(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartition> partitions, System.TimeSpan timeout);
+        Confluent.Kafka.ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout);
+        Confluent.Kafka.ConsumeResult<TKey, TValue> Consume(System.Threading.CancellationToken cancellationToken = default);
+        Confluent.Kafka.ConsumeResult<TKey, TValue> Consume(System.TimeSpan timeout);
+        Confluent.Kafka.WatermarkOffsets GetWatermarkOffsets(Confluent.Kafka.TopicPartition topicPartition);
+        void IncrementalAssign(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartition> partitions);
+        void IncrementalAssign(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset> partitions);
+        void IncrementalUnassign(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartition> partitions);
+        System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffset> OffsetsForTimes(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionTimestamp> timestampsToSearch, System.TimeSpan timeout);
+        void Pause(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartition> partitions);
+        Confluent.Kafka.Offset Position(Confluent.Kafka.TopicPartition partition);
+        Confluent.Kafka.WatermarkOffsets QueryWatermarkOffsets(Confluent.Kafka.TopicPartition topicPartition, System.TimeSpan timeout);
+        void Resume(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartition> partitions);
+        void Seek(Confluent.Kafka.TopicPartitionOffset tpo);
+        void StoreOffset(Confluent.Kafka.ConsumeResult<TKey, TValue> result);
+        void StoreOffset(Confluent.Kafka.TopicPartitionOffset offset);
+        void Subscribe(System.Collections.Generic.IEnumerable<string> topics);
+        void Subscribe(string topic);
+        void Unassign();
+        void Unsubscribe();
+    }
+    public interface IDeserializer<T>
+    {
+        T Deserialize(System.ReadOnlySpan<byte> data, bool isNull, Confluent.Kafka.SerializationContext context);
+    }
+    public interface IHeader
+    {
+        string Key { get; }
+        byte[] GetValueBytes();
+    }
+    public interface IProducer<TKey, TValue> : Confluent.Kafka.IClient, System.IDisposable
+    {
+        void AbortTransaction();
+        void AbortTransaction(System.TimeSpan timeout);
+        void BeginTransaction();
+        void CommitTransaction();
+        void CommitTransaction(System.TimeSpan timeout);
+        void Flush(System.Threading.CancellationToken cancellationToken = default);
+        int Flush(System.TimeSpan timeout);
+        void InitTransactions(System.TimeSpan timeout);
+        int Poll(System.TimeSpan timeout);
+        void Produce(Confluent.Kafka.TopicPartition topicPartition, Confluent.Kafka.Message<TKey, TValue> message, System.Action<Confluent.Kafka.DeliveryReport<TKey, TValue>> deliveryHandler = null);
+        void Produce(string topic, Confluent.Kafka.Message<TKey, TValue> message, System.Action<Confluent.Kafka.DeliveryReport<TKey, TValue>> deliveryHandler = null);
+        System.Threading.Tasks.Task<Confluent.Kafka.DeliveryResult<TKey, TValue>> ProduceAsync(Confluent.Kafka.TopicPartition topicPartition, Confluent.Kafka.Message<TKey, TValue> message, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<Confluent.Kafka.DeliveryResult<TKey, TValue>> ProduceAsync(string topic, Confluent.Kafka.Message<TKey, TValue> message, System.Threading.CancellationToken cancellationToken = default);
+        void SendOffsetsToTransaction(System.Collections.Generic.IEnumerable<Confluent.Kafka.TopicPartitionOffset> offsets, Confluent.Kafka.IConsumerGroupMetadata groupMetadata, System.TimeSpan timeout);
+    }
+    public interface ISerializer<T>
+    {
+        byte[] Serialize(T data, Confluent.Kafka.SerializationContext context);
+    }
+    public sealed class Ignore { }
+    public enum IsolationLevel
+    {
+        ReadUncommitted = 0,
+        ReadCommitted = 1,
+    }
+    public class KafkaException : System.Exception
+    {
+        public KafkaException(Confluent.Kafka.Error error) { }
+        public KafkaException(Confluent.Kafka.ErrorCode code) { }
+        public KafkaException(Confluent.Kafka.Error error, System.Exception innerException) { }
+        public Confluent.Kafka.Error Error { get; }
+    }
+    public class KafkaRetriableException : Confluent.Kafka.KafkaException
+    {
+        public KafkaRetriableException(Confluent.Kafka.Error error) { }
+    }
+    public class KafkaTxnRequiresAbortException : Confluent.Kafka.KafkaException
+    {
+        public KafkaTxnRequiresAbortException(Confluent.Kafka.Error error) { }
+    }
+    public static class Library
+    {
+        public static string[] DebugContexts { get; }
+        public static int HandleCount { get; }
+        public static bool IsLoaded { get; }
+        public static int Version { get; }
+        public static string VersionString { get; }
+        public static bool Load() { }
+        public static bool Load(string path) { }
+    }
+    public enum LogLevelType
+    {
+        SysLogLevel = 1,
+        MicrosoftExtensionsLogging = 2,
+        SystemDiagnostics = 3,
+    }
+    public class LogMessage
+    {
+        public LogMessage(string name, Confluent.Kafka.SyslogLevel level, string facility, string message) { }
+        public string Facility { get; }
+        public Confluent.Kafka.SyslogLevel Level { get; }
+        public string Message { get; }
+        public string Name { get; }
+        public int LevelAs(Confluent.Kafka.LogLevelType type) { }
+    }
+    public static class Loggers
+    {
+        public static void ConsoleLogger(Confluent.Kafka.LogMessage logInfo) { }
+    }
+    public enum MessageComponentType
+    {
+        Key = 1,
+        Value = 2,
+    }
+    public class MessageMetadata
+    {
+        public MessageMetadata() { }
+        public Confluent.Kafka.Headers Headers { get; set; }
+        public Confluent.Kafka.Timestamp Timestamp { get; set; }
+    }
+    public class MessageNullException : System.NullReferenceException
+    {
+        public MessageNullException() { }
+    }
+    public class Message<TKey, TValue> : Confluent.Kafka.MessageMetadata
+    {
+        public Message() { }
+        public TKey Key { get; set; }
+        public TValue Value { get; set; }
+    }
+    public class Metadata
+    {
+        public Metadata(System.Collections.Generic.List<Confluent.Kafka.BrokerMetadata> brokers, System.Collections.Generic.List<Confluent.Kafka.TopicMetadata> topics, int originatingBrokerId, string originatingBrokerName) { }
+        public System.Collections.Generic.List<Confluent.Kafka.BrokerMetadata> Brokers { get; }
+        public int OriginatingBrokerId { get; }
+        public string OriginatingBrokerName { get; }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicMetadata> Topics { get; }
+        public override string ToString() { }
+    }
+    public class Node
+    {
+        public Node() { }
+        public string Host { get; set; }
+        public int Id { get; set; }
+        public int Port { get; set; }
+        public string Rack { get; set; }
+        public override string ToString() { }
+    }
+    public sealed class Null { }
+    public struct Offset : System.IEquatable<Confluent.Kafka.Offset>
+    {
+        public static readonly Confluent.Kafka.Offset Beginning;
+        public static readonly Confluent.Kafka.Offset End;
+        public static readonly Confluent.Kafka.Offset Stored;
+        public static readonly Confluent.Kafka.Offset Unset;
+        public Offset(long offset) { }
+        public bool IsSpecial { get; }
+        public long Value { get; }
+        public bool Equals(Confluent.Kafka.Offset other) { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static long op_Implicit(Confluent.Kafka.Offset o) { }
+        public static Confluent.Kafka.Offset op_Implicit(long v) { }
+        public static bool operator !=(Confluent.Kafka.Offset a, Confluent.Kafka.Offset b) { }
+        public static Confluent.Kafka.Offset operator +(Confluent.Kafka.Offset a, int b) { }
+        public static Confluent.Kafka.Offset operator +(Confluent.Kafka.Offset a, long b) { }
+        public static bool operator <(Confluent.Kafka.Offset a, Confluent.Kafka.Offset b) { }
+        public static bool operator <=(Confluent.Kafka.Offset a, Confluent.Kafka.Offset b) { }
+        public static bool operator ==(Confluent.Kafka.Offset a, Confluent.Kafka.Offset b) { }
+        public static bool operator >(Confluent.Kafka.Offset a, Confluent.Kafka.Offset b) { }
+        public static bool operator >=(Confluent.Kafka.Offset a, Confluent.Kafka.Offset b) { }
+    }
+    public struct Partition : System.IEquatable<Confluent.Kafka.Partition>
+    {
+        public static readonly Confluent.Kafka.Partition Any;
+        public Partition(int partition) { }
+        public bool IsSpecial { get; }
+        public int Value { get; }
+        public bool Equals(Confluent.Kafka.Partition other) { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static int op_Implicit(Confluent.Kafka.Partition o) { }
+        public static Confluent.Kafka.Partition op_Implicit(int v) { }
+        public static bool operator !=(Confluent.Kafka.Partition a, Confluent.Kafka.Partition b) { }
+        public static bool operator <(Confluent.Kafka.Partition a, Confluent.Kafka.Partition b) { }
+        public static bool operator <=(Confluent.Kafka.Partition a, Confluent.Kafka.Partition b) { }
+        public static bool operator ==(Confluent.Kafka.Partition a, Confluent.Kafka.Partition b) { }
+        public static bool operator >(Confluent.Kafka.Partition a, Confluent.Kafka.Partition b) { }
+        public static bool operator >=(Confluent.Kafka.Partition a, Confluent.Kafka.Partition b) { }
+    }
+    public enum PartitionAssignmentStrategy
+    {
+        Range = 0,
+        RoundRobin = 1,
+        CooperativeSticky = 2,
+    }
+    public class PartitionMetadata
+    {
+        public PartitionMetadata(int partitionId, int leader, int[] replicas, int[] inSyncReplicas, Confluent.Kafka.Error error) { }
+        public Confluent.Kafka.Error Error { get; }
+        public int[] InSyncReplicas { get; }
+        public int Leader { get; }
+        public int PartitionId { get; }
+        public int[] Replicas { get; }
+        public override string ToString() { }
+    }
+    public enum Partitioner
+    {
+        Random = 0,
+        Consistent = 1,
+        ConsistentRandom = 2,
+        Murmur2 = 3,
+        Murmur2Random = 4,
+    }
+    public delegate Confluent.Kafka.Partition PartitionerDelegate(string topic, int partitionCount, System.ReadOnlySpan<byte> keyData, bool keyIsNull);
+    public enum PersistenceStatus
+    {
+        NotPersisted = 0,
+        PossiblyPersisted = 1,
+        Persisted = 2,
+    }
+    public class ProduceException<TKey, TValue> : Confluent.Kafka.KafkaException
+    {
+        public ProduceException(Confluent.Kafka.Error error, Confluent.Kafka.DeliveryResult<TKey, TValue> deliveryResult) { }
+        public ProduceException(Confluent.Kafka.Error error, Confluent.Kafka.DeliveryResult<TKey, TValue> deliveryResult, System.Exception innerException) { }
+        public Confluent.Kafka.DeliveryResult<TKey, TValue> DeliveryResult { get; }
+    }
+    public class ProducerBuilder<TKey, TValue>
+    {
+        public ProducerBuilder(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config) { }
+        protected Confluent.Kafka.IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
+        protected Confluent.Kafka.IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
+        protected System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> Config { get; set; }
+        protected Confluent.Kafka.PartitionerDelegate DefaultPartitioner { get; set; }
+        protected System.Action<Confluent.Kafka.IProducer<TKey, TValue>, Confluent.Kafka.Error> ErrorHandler { get; set; }
+        protected Confluent.Kafka.ISerializer<TKey> KeySerializer { get; set; }
+        protected System.Action<Confluent.Kafka.IProducer<TKey, TValue>, Confluent.Kafka.LogMessage> LogHandler { get; set; }
+        protected System.Action<Confluent.Kafka.IProducer<TKey, TValue>, string> OAuthBearerTokenRefreshHandler { get; set; }
+        protected System.Collections.Generic.Dictionary<string, Confluent.Kafka.PartitionerDelegate> Partitioners { get; set; }
+        protected System.Action<Confluent.Kafka.IProducer<TKey, TValue>, string> StatisticsHandler { get; set; }
+        protected Confluent.Kafka.ISerializer<TValue> ValueSerializer { get; set; }
+        public virtual Confluent.Kafka.IProducer<TKey, TValue> Build() { }
+        public Confluent.Kafka.ProducerBuilder<TKey, TValue> SetDefaultPartitioner(Confluent.Kafka.PartitionerDelegate partitioner) { }
+        public Confluent.Kafka.ProducerBuilder<TKey, TValue> SetErrorHandler(System.Action<Confluent.Kafka.IProducer<TKey, TValue>, Confluent.Kafka.Error> errorHandler) { }
+        public Confluent.Kafka.ProducerBuilder<TKey, TValue> SetKeySerializer(Confluent.Kafka.IAsyncSerializer<TKey> serializer) { }
+        public Confluent.Kafka.ProducerBuilder<TKey, TValue> SetKeySerializer(Confluent.Kafka.ISerializer<TKey> serializer) { }
+        public Confluent.Kafka.ProducerBuilder<TKey, TValue> SetLogHandler(System.Action<Confluent.Kafka.IProducer<TKey, TValue>, Confluent.Kafka.LogMessage> logHandler) { }
+        public Confluent.Kafka.ProducerBuilder<TKey, TValue> SetOAuthBearerTokenRefreshHandler(System.Action<Confluent.Kafka.IProducer<TKey, TValue>, string> oAuthBearerTokenRefreshHandler) { }
+        public Confluent.Kafka.ProducerBuilder<TKey, TValue> SetPartitioner(string topic, Confluent.Kafka.PartitionerDelegate partitioner) { }
+        public Confluent.Kafka.ProducerBuilder<TKey, TValue> SetStatisticsHandler(System.Action<Confluent.Kafka.IProducer<TKey, TValue>, string> statisticsHandler) { }
+        public Confluent.Kafka.ProducerBuilder<TKey, TValue> SetValueSerializer(Confluent.Kafka.IAsyncSerializer<TValue> serializer) { }
+        public Confluent.Kafka.ProducerBuilder<TKey, TValue> SetValueSerializer(Confluent.Kafka.ISerializer<TValue> serializer) { }
+    }
+    public class ProducerConfig : Confluent.Kafka.ClientConfig
+    {
+        public ProducerConfig() { }
+        public ProducerConfig(Confluent.Kafka.ClientConfig config) { }
+        public ProducerConfig(System.Collections.Generic.IDictionary<string, string> config) { }
+        public int? BatchNumMessages { get; set; }
+        public int? BatchSize { get; set; }
+        public int? CompressionLevel { get; set; }
+        public Confluent.Kafka.CompressionType? CompressionType { get; set; }
+        public string DeliveryReportFields { get; set; }
+        public bool? EnableBackgroundPoll { get; set; }
+        public bool? EnableDeliveryReports { get; set; }
+        public bool? EnableGaplessGuarantee { get; set; }
+        public bool? EnableIdempotence { get; set; }
+        public double? LingerMs { get; set; }
+        public int? MessageSendMaxRetries { get; set; }
+        public int? MessageTimeoutMs { get; set; }
+        public Confluent.Kafka.Partitioner? Partitioner { get; set; }
+        public int? QueueBufferingBackpressureThreshold { get; set; }
+        public int? QueueBufferingMaxKbytes { get; set; }
+        public int? QueueBufferingMaxMessages { get; set; }
+        public int? RequestTimeoutMs { get; set; }
+        public int? RetryBackoffMaxMs { get; set; }
+        public int? RetryBackoffMs { get; set; }
+        public int? StickyPartitioningLingerMs { get; set; }
+        public int? TransactionTimeoutMs { get; set; }
+        public string TransactionalId { get; set; }
+        public Confluent.Kafka.ProducerConfig ThrowIfContainsNonUserConfigurable() { }
+    }
+    public enum SaslMechanism
+    {
+        Gssapi = 0,
+        Plain = 1,
+        ScramSha256 = 2,
+        ScramSha512 = 3,
+        OAuthBearer = 4,
+    }
+    public enum SaslOauthbearerMethod
+    {
+        Default = 0,
+        Oidc = 1,
+    }
+    public enum SecurityProtocol
+    {
+        Plaintext = 0,
+        Ssl = 1,
+        SaslPlaintext = 2,
+        SaslSsl = 3,
+    }
+    public struct SerializationContext
+    {
+        public SerializationContext(Confluent.Kafka.MessageComponentType component, string topic, Confluent.Kafka.Headers headers = null) { }
+        public Confluent.Kafka.MessageComponentType Component { get; }
+        public Confluent.Kafka.Headers Headers { get; }
+        public string Topic { get; }
+        public static Confluent.Kafka.SerializationContext Empty { get; }
+    }
+    public static class Serializers
+    {
+        public static Confluent.Kafka.ISerializer<byte[]> ByteArray;
+        public static Confluent.Kafka.ISerializer<double> Double;
+        public static Confluent.Kafka.ISerializer<int> Int32;
+        public static Confluent.Kafka.ISerializer<long> Int64;
+        public static Confluent.Kafka.ISerializer<Confluent.Kafka.Null> Null;
+        public static Confluent.Kafka.ISerializer<float> Single;
+        public static Confluent.Kafka.ISerializer<string> Utf8;
+    }
+    public enum SslEndpointIdentificationAlgorithm
+    {
+        None = 0,
+        Https = 1,
+    }
+    public enum SyslogLevel
+    {
+        Emergency = 0,
+        Alert = 1,
+        Critical = 2,
+        Error = 3,
+        Warning = 4,
+        Notice = 5,
+        Info = 6,
+        Debug = 7,
+    }
+    public struct Timestamp : System.IEquatable<Confluent.Kafka.Timestamp>
+    {
+        public static readonly System.DateTime UnixTimeEpoch;
+        public Timestamp(System.DateTime dateTime) { }
+        public Timestamp(System.DateTimeOffset dateTimeOffset) { }
+        public Timestamp(System.DateTime dateTime, Confluent.Kafka.TimestampType type) { }
+        public Timestamp(long unixTimestampMs, Confluent.Kafka.TimestampType type) { }
+        public Confluent.Kafka.TimestampType Type { get; }
+        public long UnixTimestampMs { get; }
+        public System.DateTime UtcDateTime { get; }
+        public static Confluent.Kafka.Timestamp Default { get; }
+        public bool Equals(Confluent.Kafka.Timestamp other) { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public static long DateTimeToUnixTimestampMs(System.DateTime dateTime) { }
+        public static System.DateTime UnixTimestampMsToDateTime(long unixMillisecondsTimestamp) { }
+        public static bool operator !=(Confluent.Kafka.Timestamp a, Confluent.Kafka.Timestamp b) { }
+        public static bool operator ==(Confluent.Kafka.Timestamp a, Confluent.Kafka.Timestamp b) { }
+    }
+    public enum TimestampType
+    {
+        NotAvailable = 0,
+        CreateTime = 1,
+        LogAppendTime = 2,
+    }
+    public class TopicCollection
+    {
+        public override string ToString() { }
+        public static Confluent.Kafka.TopicCollection OfTopicNames(System.Collections.Generic.IEnumerable<string> topics) { }
+    }
+    public class TopicMetadata
+    {
+        public TopicMetadata(string topic, System.Collections.Generic.List<Confluent.Kafka.PartitionMetadata> partitions, Confluent.Kafka.Error error) { }
+        public Confluent.Kafka.Error Error { get; }
+        public System.Collections.Generic.List<Confluent.Kafka.PartitionMetadata> Partitions { get; }
+        public string Topic { get; }
+        public override string ToString() { }
+    }
+    public class TopicPartition : System.IComparable
+    {
+        public TopicPartition(string topic, Confluent.Kafka.Partition partition) { }
+        public Confluent.Kafka.Partition Partition { get; }
+        public string Topic { get; }
+        public int CompareTo(object obj) { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.TopicPartition a, Confluent.Kafka.TopicPartition b) { }
+        public static bool operator ==(Confluent.Kafka.TopicPartition a, Confluent.Kafka.TopicPartition b) { }
+    }
+    public class TopicPartitionError
+    {
+        public TopicPartitionError(Confluent.Kafka.TopicPartition tp, Confluent.Kafka.Error error) { }
+        public TopicPartitionError(string topic, Confluent.Kafka.Partition partition, Confluent.Kafka.Error error) { }
+        public Confluent.Kafka.Error Error { get; }
+        public Confluent.Kafka.Partition Partition { get; }
+        public string Topic { get; }
+        public Confluent.Kafka.TopicPartition TopicPartition { get; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.TopicPartitionError a, Confluent.Kafka.TopicPartitionError b) { }
+        public static bool operator ==(Confluent.Kafka.TopicPartitionError a, Confluent.Kafka.TopicPartitionError b) { }
+    }
+    public class TopicPartitionException : Confluent.Kafka.KafkaException
+    {
+        public TopicPartitionException(System.Collections.Generic.List<Confluent.Kafka.TopicPartitionError> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartitionError> Results { get; }
+    }
+    public class TopicPartitionInfo
+    {
+        public TopicPartitionInfo() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Node> ISR { get; set; }
+        public Confluent.Kafka.Node Leader { get; set; }
+        public int Partition { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.Node> Replicas { get; set; }
+        public override string ToString() { }
+    }
+    public class TopicPartitionOffset
+    {
+        public TopicPartitionOffset(Confluent.Kafka.TopicPartition tp, Confluent.Kafka.Offset offset) { }
+        public TopicPartitionOffset(Confluent.Kafka.TopicPartition tp, Confluent.Kafka.Offset offset, int? leaderEpoch) { }
+        public TopicPartitionOffset(string topic, Confluent.Kafka.Partition partition, Confluent.Kafka.Offset offset) { }
+        public TopicPartitionOffset(string topic, Confluent.Kafka.Partition partition, Confluent.Kafka.Offset offset, int? leaderEpoch) { }
+        public int? LeaderEpoch { get; }
+        public Confluent.Kafka.Offset Offset { get; }
+        public Confluent.Kafka.Partition Partition { get; }
+        public string Topic { get; }
+        public Confluent.Kafka.TopicPartition TopicPartition { get; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.TopicPartitionOffset a, Confluent.Kafka.TopicPartitionOffset b) { }
+        public static bool operator ==(Confluent.Kafka.TopicPartitionOffset a, Confluent.Kafka.TopicPartitionOffset b) { }
+    }
+    public class TopicPartitionOffsetError
+    {
+        public TopicPartitionOffsetError(Confluent.Kafka.TopicPartitionOffset tpo, Confluent.Kafka.Error error) { }
+        public TopicPartitionOffsetError(Confluent.Kafka.TopicPartition tp, Confluent.Kafka.Offset offset, Confluent.Kafka.Error error, int? leaderEpoch = default) { }
+        public TopicPartitionOffsetError(string topic, Confluent.Kafka.Partition partition, Confluent.Kafka.Offset offset, Confluent.Kafka.Error error, int? leaderEpoch = default) { }
+        public Confluent.Kafka.Error Error { get; }
+        public int? LeaderEpoch { get; }
+        public Confluent.Kafka.Offset Offset { get; }
+        public Confluent.Kafka.Partition Partition { get; }
+        public string Topic { get; }
+        public Confluent.Kafka.TopicPartition TopicPartition { get; }
+        public Confluent.Kafka.TopicPartitionOffset TopicPartitionOffset { get; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static Confluent.Kafka.TopicPartitionOffset op_Explicit(Confluent.Kafka.TopicPartitionOffsetError tpoe) { }
+        public static bool operator !=(Confluent.Kafka.TopicPartitionOffsetError a, Confluent.Kafka.TopicPartitionOffsetError b) { }
+        public static bool operator ==(Confluent.Kafka.TopicPartitionOffsetError a, Confluent.Kafka.TopicPartitionOffsetError b) { }
+    }
+    public class TopicPartitionOffsetException : Confluent.Kafka.KafkaException
+    {
+        public TopicPartitionOffsetException(System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffsetError> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffsetError> Results { get; }
+    }
+    public class TopicPartitionTimestamp
+    {
+        public TopicPartitionTimestamp(Confluent.Kafka.TopicPartition tp, Confluent.Kafka.Timestamp timestamp) { }
+        public TopicPartitionTimestamp(string topic, Confluent.Kafka.Partition partition, Confluent.Kafka.Timestamp timestamp) { }
+        public Confluent.Kafka.Partition Partition { get; }
+        public Confluent.Kafka.Timestamp Timestamp { get; }
+        public string Topic { get; }
+        public Confluent.Kafka.TopicPartition TopicPartition { get; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.TopicPartitionTimestamp a, Confluent.Kafka.TopicPartitionTimestamp b) { }
+        public static bool operator ==(Confluent.Kafka.TopicPartitionTimestamp a, Confluent.Kafka.TopicPartitionTimestamp b) { }
+    }
+    public class Uuid
+    {
+        public Uuid(long mostSignificantBits, long leastSignificantBits) { }
+        public Confluent.Kafka.Offset LeastSignificantBits { get; }
+        public Confluent.Kafka.Offset MostSignificantBits { get; }
+        public override string ToString() { }
+    }
+    public class WatermarkOffsets
+    {
+        public WatermarkOffsets(Confluent.Kafka.Offset low, Confluent.Kafka.Offset high) { }
+        public Confluent.Kafka.Offset High { get; }
+        public Confluent.Kafka.Offset Low { get; }
+        public override string ToString() { }
+    }
+}
+namespace Confluent.Kafka.Admin
+{
+    public class AccessControlEntry
+    {
+        public AccessControlEntry() { }
+        public string Host { get; set; }
+        public Confluent.Kafka.Admin.AclOperation Operation { get; set; }
+        public Confluent.Kafka.Admin.AclPermissionType PermissionType { get; set; }
+        public string Principal { get; set; }
+        public Confluent.Kafka.Admin.AccessControlEntry Clone() { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public Confluent.Kafka.Admin.AccessControlEntryFilter ToFilter() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.Admin.AccessControlEntry a, Confluent.Kafka.Admin.AccessControlEntry b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.AccessControlEntry a, Confluent.Kafka.Admin.AccessControlEntry b) { }
+    }
+    public class AccessControlEntryFilter
+    {
+        public AccessControlEntryFilter() { }
+        public string Host { get; set; }
+        public Confluent.Kafka.Admin.AclOperation Operation { get; set; }
+        public Confluent.Kafka.Admin.AclPermissionType PermissionType { get; set; }
+        public string Principal { get; set; }
+        public Confluent.Kafka.Admin.AccessControlEntryFilter Clone() { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.Admin.AccessControlEntryFilter a, Confluent.Kafka.Admin.AccessControlEntryFilter b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.AccessControlEntryFilter a, Confluent.Kafka.Admin.AccessControlEntryFilter b) { }
+    }
+    public class AclBinding
+    {
+        public AclBinding() { }
+        public Confluent.Kafka.Admin.AccessControlEntry Entry { get; set; }
+        public Confluent.Kafka.Admin.ResourcePattern Pattern { get; set; }
+        public Confluent.Kafka.Admin.AclBinding Clone() { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public Confluent.Kafka.Admin.AclBindingFilter ToFilter() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.Admin.AclBinding a, Confluent.Kafka.Admin.AclBinding b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.AclBinding a, Confluent.Kafka.Admin.AclBinding b) { }
+    }
+    public class AclBindingFilter
+    {
+        public AclBindingFilter() { }
+        public Confluent.Kafka.Admin.AccessControlEntryFilter EntryFilter { get; set; }
+        public Confluent.Kafka.Admin.ResourcePatternFilter PatternFilter { get; set; }
+        public Confluent.Kafka.Admin.AclBindingFilter Clone() { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.Admin.AclBindingFilter a, Confluent.Kafka.Admin.AclBindingFilter b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.AclBindingFilter a, Confluent.Kafka.Admin.AclBindingFilter b) { }
+    }
+    public enum AclOperation
+    {
+        Unknown = 0,
+        Any = 1,
+        All = 2,
+        Read = 3,
+        Write = 4,
+        Create = 5,
+        Delete = 6,
+        Alter = 7,
+        Describe = 8,
+        ClusterAction = 9,
+        DescribeConfigs = 10,
+        AlterConfigs = 11,
+        IdempotentWrite = 12,
+    }
+    public enum AclPermissionType
+    {
+        Unknown = 0,
+        Any = 1,
+        Deny = 2,
+        Allow = 3,
+    }
+    public enum AlterConfigOpType
+    {
+        Set = 0,
+        Delete = 1,
+        Append = 2,
+        Subtract = 3,
+    }
+    public class AlterConfigsException : Confluent.Kafka.KafkaException
+    {
+        public AlterConfigsException(System.Collections.Generic.List<Confluent.Kafka.Admin.AlterConfigsReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.AlterConfigsReport> Results { get; }
+    }
+    public class AlterConfigsOptions
+    {
+        public AlterConfigsOptions() { }
+        public System.TimeSpan? RequestTimeout { get; set; }
+        public bool ValidateOnly { get; set; }
+    }
+    public class AlterConfigsReport
+    {
+        public Confluent.Kafka.Admin.ConfigResource ConfigResource;
+        public AlterConfigsReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+    }
+    public class AlterConsumerGroupOffsetsException : Confluent.Kafka.KafkaException
+    {
+        public AlterConsumerGroupOffsetsException(System.Collections.Generic.List<Confluent.Kafka.Admin.AlterConsumerGroupOffsetsReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.AlterConsumerGroupOffsetsReport> Results { get; }
+    }
+    public class AlterConsumerGroupOffsetsOptions
+    {
+        public AlterConsumerGroupOffsetsOptions() { }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class AlterConsumerGroupOffsetsReport
+    {
+        public AlterConsumerGroupOffsetsReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public string Group { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffsetError> Partitions { get; set; }
+        public override string ToString() { }
+    }
+    public class AlterConsumerGroupOffsetsResult
+    {
+        public AlterConsumerGroupOffsetsResult() { }
+        public string Group { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffsetError> Partitions { get; set; }
+        public override string ToString() { }
+    }
+    public class AlterUserScramCredentialsException : Confluent.Kafka.KafkaException
+    {
+        public AlterUserScramCredentialsException(System.Collections.Generic.List<Confluent.Kafka.Admin.AlterUserScramCredentialsReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.AlterUserScramCredentialsReport> Results { get; }
+    }
+    public class AlterUserScramCredentialsOptions
+    {
+        public AlterUserScramCredentialsOptions() { }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class AlterUserScramCredentialsReport
+    {
+        public AlterUserScramCredentialsReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public string User { get; set; }
+        public override string ToString() { }
+    }
+    public class ConfigEntry
+    {
+        public ConfigEntry() { }
+        public Confluent.Kafka.Admin.AlterConfigOpType IncrementalOperation { get; set; }
+        public string Name { get; set; }
+        public string Value { get; set; }
+    }
+    public class ConfigEntryResult
+    {
+        public ConfigEntryResult() { }
+        public bool IsDefault { get; set; }
+        public bool IsReadOnly { get; set; }
+        public bool IsSensitive { get; set; }
+        public string Name { get; set; }
+        public Confluent.Kafka.Admin.ConfigSource Source { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.ConfigSynonym> Synonyms { get; set; }
+        public string Value { get; set; }
+    }
+    public class ConfigResource
+    {
+        public ConfigResource() { }
+        public string Name { get; set; }
+        public Confluent.Kafka.Admin.ResourceType Type { get; set; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.Admin.ConfigResource a, Confluent.Kafka.Admin.ConfigResource b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.ConfigResource a, Confluent.Kafka.Admin.ConfigResource b) { }
+    }
+    public enum ConfigSource
+    {
+        UnknownConfig = 0,
+        DynamicTopicConfig = 1,
+        DynamicBrokerConfig = 2,
+        DynamicDefaultBrokerConfig = 3,
+        StaticBrokerConfig = 4,
+        DefaultConfig = 5,
+    }
+    public class ConfigSynonym
+    {
+        public ConfigSynonym() { }
+        public string Name { get; set; }
+        public Confluent.Kafka.Admin.ConfigSource Source { get; set; }
+        public string Value { get; set; }
+    }
+    public class ConsumerGroupDescription
+    {
+        public ConsumerGroupDescription() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.AclOperation> AuthorizedOperations { get; set; }
+        public Confluent.Kafka.Node Coordinator { get; set; }
+        public Confluent.Kafka.Error Error { get; set; }
+        public string GroupId { get; set; }
+        public bool IsSimpleConsumerGroup { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.MemberDescription> Members { get; set; }
+        public string PartitionAssignor { get; set; }
+        public Confluent.Kafka.ConsumerGroupState State { get; set; }
+        public override string ToString() { }
+    }
+    public class ConsumerGroupListing
+    {
+        public ConsumerGroupListing() { }
+        public string GroupId { get; set; }
+        public bool IsSimpleConsumerGroup { get; set; }
+        public Confluent.Kafka.ConsumerGroupState State { get; set; }
+        public override string ToString() { }
+    }
+    public class CreateAclReport
+    {
+        public CreateAclReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public static bool operator !=(Confluent.Kafka.Admin.CreateAclReport a, Confluent.Kafka.Admin.CreateAclReport b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.CreateAclReport a, Confluent.Kafka.Admin.CreateAclReport b) { }
+    }
+    public class CreateAclsException : Confluent.Kafka.KafkaException
+    {
+        public CreateAclsException(System.Collections.Generic.List<Confluent.Kafka.Admin.CreateAclReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.CreateAclReport> Results { get; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public static bool operator !=(Confluent.Kafka.Admin.CreateAclsException a, Confluent.Kafka.Admin.CreateAclsException b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.CreateAclsException a, Confluent.Kafka.Admin.CreateAclsException b) { }
+    }
+    public class CreateAclsOptions
+    {
+        public CreateAclsOptions() { }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class CreatePartitionsException : Confluent.Kafka.KafkaException
+    {
+        public CreatePartitionsException(System.Collections.Generic.List<Confluent.Kafka.Admin.CreatePartitionsReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.CreatePartitionsReport> Results { get; }
+    }
+    public class CreatePartitionsOptions
+    {
+        public CreatePartitionsOptions() { }
+        public System.TimeSpan? OperationTimeout { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+        public bool ValidateOnly { get; set; }
+    }
+    public class CreatePartitionsReport
+    {
+        public CreatePartitionsReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public string Topic { get; set; }
+    }
+    public class CreateTopicReport
+    {
+        public CreateTopicReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public string Topic { get; set; }
+    }
+    public class CreateTopicsException : Confluent.Kafka.KafkaException
+    {
+        public CreateTopicsException(System.Collections.Generic.List<Confluent.Kafka.Admin.CreateTopicReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.CreateTopicReport> Results { get; }
+    }
+    public class CreateTopicsOptions
+    {
+        public CreateTopicsOptions() { }
+        public System.TimeSpan? OperationTimeout { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+        public bool ValidateOnly { get; set; }
+    }
+    public class DeleteAclsException : Confluent.Kafka.KafkaException
+    {
+        public DeleteAclsException(System.Collections.Generic.List<Confluent.Kafka.Admin.DeleteAclsReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.DeleteAclsReport> Results { get; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public static bool operator !=(Confluent.Kafka.Admin.DeleteAclsException a, Confluent.Kafka.Admin.DeleteAclsException b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.DeleteAclsException a, Confluent.Kafka.Admin.DeleteAclsException b) { }
+    }
+    public class DeleteAclsOptions
+    {
+        public DeleteAclsOptions() { }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DeleteAclsReport
+    {
+        public DeleteAclsReport() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.AclBinding> AclBindings { get; set; }
+        public Confluent.Kafka.Error Error { get; set; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public static bool operator !=(Confluent.Kafka.Admin.DeleteAclsReport a, Confluent.Kafka.Admin.DeleteAclsReport b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.DeleteAclsReport a, Confluent.Kafka.Admin.DeleteAclsReport b) { }
+    }
+    public class DeleteAclsResult
+    {
+        public DeleteAclsResult() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.AclBinding> AclBindings { get; set; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public static bool operator !=(Confluent.Kafka.Admin.DeleteAclsResult a, Confluent.Kafka.Admin.DeleteAclsResult b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.DeleteAclsResult a, Confluent.Kafka.Admin.DeleteAclsResult b) { }
+    }
+    public class DeleteConsumerGroupOffsetsException : Confluent.Kafka.KafkaException
+    {
+        public DeleteConsumerGroupOffsetsException(Confluent.Kafka.Admin.DeleteConsumerGroupOffsetsReport result) { }
+        public Confluent.Kafka.Admin.DeleteConsumerGroupOffsetsReport Result { get; }
+    }
+    public class DeleteConsumerGroupOffsetsOptions
+    {
+        public DeleteConsumerGroupOffsetsOptions() { }
+        public System.TimeSpan? OperationTimeout { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DeleteConsumerGroupOffsetsReport
+    {
+        public DeleteConsumerGroupOffsetsReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public string Group { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffsetError> Partitions { get; set; }
+    }
+    public class DeleteConsumerGroupOffsetsResult
+    {
+        public DeleteConsumerGroupOffsetsResult() { }
+        public string Group { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartition> Partitions { get; set; }
+    }
+    public class DeleteGroupReport
+    {
+        public DeleteGroupReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public string Group { get; set; }
+    }
+    public class DeleteGroupsException : Confluent.Kafka.KafkaException
+    {
+        public DeleteGroupsException(System.Collections.Generic.List<Confluent.Kafka.Admin.DeleteGroupReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.DeleteGroupReport> Results { get; }
+    }
+    public class DeleteGroupsOptions
+    {
+        public DeleteGroupsOptions() { }
+        public System.TimeSpan? OperationTimeout { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DeleteRecordsException : Confluent.Kafka.KafkaException
+    {
+        public DeleteRecordsException(System.Collections.Generic.List<Confluent.Kafka.Admin.DeleteRecordsReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.DeleteRecordsReport> Results { get; }
+    }
+    public class DeleteRecordsOptions
+    {
+        public DeleteRecordsOptions() { }
+        public System.TimeSpan? OperationTimeout { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DeleteRecordsReport
+    {
+        public DeleteRecordsReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public Confluent.Kafka.Offset Offset { get; set; }
+        public Confluent.Kafka.Partition Partition { get; set; }
+        public string Topic { get; set; }
+    }
+    public class DeleteRecordsResult
+    {
+        public DeleteRecordsResult() { }
+        public Confluent.Kafka.Offset Offset { get; set; }
+        public Confluent.Kafka.Partition Partition { get; set; }
+        public string Topic { get; set; }
+    }
+    public class DeleteTopicReport
+    {
+        public DeleteTopicReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public string Topic { get; set; }
+    }
+    public class DeleteTopicsException : Confluent.Kafka.KafkaException
+    {
+        public DeleteTopicsException(System.Collections.Generic.List<Confluent.Kafka.Admin.DeleteTopicReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.DeleteTopicReport> Results { get; }
+    }
+    public class DeleteTopicsOptions
+    {
+        public DeleteTopicsOptions() { }
+        public System.TimeSpan? OperationTimeout { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DescribeAclsException : Confluent.Kafka.KafkaException
+    {
+        public DescribeAclsException(Confluent.Kafka.Admin.DescribeAclsReport result) { }
+        public Confluent.Kafka.Admin.DescribeAclsReport Result { get; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public static bool operator !=(Confluent.Kafka.Admin.DescribeAclsException a, Confluent.Kafka.Admin.DescribeAclsException b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.DescribeAclsException a, Confluent.Kafka.Admin.DescribeAclsException b) { }
+    }
+    public class DescribeAclsOptions
+    {
+        public DescribeAclsOptions() { }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DescribeAclsReport
+    {
+        public DescribeAclsReport() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.AclBinding> AclBindings { get; set; }
+        public Confluent.Kafka.Error Error { get; set; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public static bool operator !=(Confluent.Kafka.Admin.DescribeAclsReport a, Confluent.Kafka.Admin.DescribeAclsReport b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.DescribeAclsReport a, Confluent.Kafka.Admin.DescribeAclsReport b) { }
+    }
+    public class DescribeAclsResult
+    {
+        public DescribeAclsResult() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.AclBinding> AclBindings { get; set; }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public static bool operator !=(Confluent.Kafka.Admin.DescribeAclsResult a, Confluent.Kafka.Admin.DescribeAclsResult b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.DescribeAclsResult a, Confluent.Kafka.Admin.DescribeAclsResult b) { }
+    }
+    public class DescribeClusterOptions
+    {
+        public DescribeClusterOptions() { }
+        public bool IncludeAuthorizedOperations { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DescribeClusterResult
+    {
+        public DescribeClusterResult() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.AclOperation> AuthorizedOperations { get; set; }
+        public string ClusterId { get; set; }
+        public Confluent.Kafka.Node Controller { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.Node> Nodes { get; set; }
+        public override string ToString() { }
+    }
+    public class DescribeConfigsException : Confluent.Kafka.KafkaException
+    {
+        public DescribeConfigsException(System.Collections.Generic.List<Confluent.Kafka.Admin.DescribeConfigsReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.DescribeConfigsReport> Results { get; }
+    }
+    public class DescribeConfigsOptions
+    {
+        public DescribeConfigsOptions() { }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DescribeConfigsReport
+    {
+        public Confluent.Kafka.Admin.ConfigResource ConfigResource;
+        public DescribeConfigsReport() { }
+        public System.Collections.Generic.Dictionary<string, Confluent.Kafka.Admin.ConfigEntryResult> Entries { get; set; }
+        public Confluent.Kafka.Error Error { get; set; }
+    }
+    public class DescribeConfigsResult
+    {
+        public Confluent.Kafka.Admin.ConfigResource ConfigResource;
+        public DescribeConfigsResult() { }
+        public System.Collections.Generic.Dictionary<string, Confluent.Kafka.Admin.ConfigEntryResult> Entries { get; set; }
+    }
+    public class DescribeConsumerGroupsException : Confluent.Kafka.KafkaException
+    {
+        public DescribeConsumerGroupsException(Confluent.Kafka.Admin.DescribeConsumerGroupsReport results) { }
+        public Confluent.Kafka.Admin.DescribeConsumerGroupsReport Results { get; }
+    }
+    public class DescribeConsumerGroupsOptions
+    {
+        public DescribeConsumerGroupsOptions() { }
+        public bool IncludeAuthorizedOperations { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DescribeConsumerGroupsReport
+    {
+        public DescribeConsumerGroupsReport() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.ConsumerGroupDescription> ConsumerGroupDescriptions { get; set; }
+        public override string ToString() { }
+    }
+    public class DescribeConsumerGroupsResult
+    {
+        public DescribeConsumerGroupsResult() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.ConsumerGroupDescription> ConsumerGroupDescriptions { get; set; }
+        public override string ToString() { }
+    }
+    public class DescribeTopicsException : Confluent.Kafka.KafkaException
+    {
+        public DescribeTopicsException(Confluent.Kafka.Admin.DescribeTopicsReport results) { }
+        public Confluent.Kafka.Admin.DescribeTopicsReport Results { get; }
+    }
+    public class DescribeTopicsOptions
+    {
+        public DescribeTopicsOptions() { }
+        public bool IncludeAuthorizedOperations { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DescribeTopicsReport
+    {
+        public DescribeTopicsReport() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.TopicDescription> TopicDescriptions { get; set; }
+        public override string ToString() { }
+    }
+    public class DescribeTopicsResult
+    {
+        public DescribeTopicsResult() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.TopicDescription> TopicDescriptions { get; set; }
+        public override string ToString() { }
+    }
+    public class DescribeUserScramCredentialsException : Confluent.Kafka.KafkaException
+    {
+        public DescribeUserScramCredentialsException(Confluent.Kafka.Admin.DescribeUserScramCredentialsReport results) { }
+        public Confluent.Kafka.Admin.DescribeUserScramCredentialsReport Results { get; }
+    }
+    public class DescribeUserScramCredentialsOptions
+    {
+        public DescribeUserScramCredentialsOptions() { }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class DescribeUserScramCredentialsReport
+    {
+        public DescribeUserScramCredentialsReport() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.UserScramCredentialsDescription> UserScramCredentialsDescriptions { get; set; }
+        public override string ToString() { }
+    }
+    public class DescribeUserScramCredentialsResult
+    {
+        public DescribeUserScramCredentialsResult() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.UserScramCredentialsDescription> UserScramCredentialsDescriptions { get; set; }
+        public override string ToString() { }
+    }
+    public class IncrementalAlterConfigsException : Confluent.Kafka.KafkaException
+    {
+        public IncrementalAlterConfigsException(System.Collections.Generic.List<Confluent.Kafka.Admin.IncrementalAlterConfigsReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.IncrementalAlterConfigsReport> Results { get; }
+    }
+    public class IncrementalAlterConfigsOptions
+    {
+        public IncrementalAlterConfigsOptions() { }
+        public System.TimeSpan? RequestTimeout { get; set; }
+        public bool ValidateOnly { get; set; }
+    }
+    public class IncrementalAlterConfigsReport
+    {
+        public Confluent.Kafka.Admin.ConfigResource ConfigResource;
+        public IncrementalAlterConfigsReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+    }
+    public class IncrementalAlterConfigsResult
+    {
+        public Confluent.Kafka.Admin.ConfigResource ConfigResource;
+        public IncrementalAlterConfigsResult() { }
+    }
+    public class ListConsumerGroupOffsetsException : Confluent.Kafka.KafkaException
+    {
+        public ListConsumerGroupOffsetsException(System.Collections.Generic.List<Confluent.Kafka.Admin.ListConsumerGroupOffsetsReport> results) { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.ListConsumerGroupOffsetsReport> Results { get; }
+    }
+    public class ListConsumerGroupOffsetsOptions
+    {
+        public ListConsumerGroupOffsetsOptions() { }
+        public System.TimeSpan? RequestTimeout { get; set; }
+        public bool RequireStableOffsets { get; set; }
+    }
+    public class ListConsumerGroupOffsetsReport
+    {
+        public ListConsumerGroupOffsetsReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public string Group { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffsetError> Partitions { get; set; }
+        public override string ToString() { }
+    }
+    public class ListConsumerGroupOffsetsResult
+    {
+        public ListConsumerGroupOffsetsResult() { }
+        public string Group { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartitionOffsetError> Partitions { get; set; }
+        public override string ToString() { }
+    }
+    public class ListConsumerGroupsException : Confluent.Kafka.KafkaException
+    {
+        public ListConsumerGroupsException(Confluent.Kafka.Admin.ListConsumerGroupsReport report) { }
+        public Confluent.Kafka.Admin.ListConsumerGroupsReport Results { get; }
+    }
+    public class ListConsumerGroupsOptions
+    {
+        public ListConsumerGroupsOptions() { }
+        public System.Collections.Generic.IEnumerable<Confluent.Kafka.ConsumerGroupState> MatchStates { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class ListConsumerGroupsReport
+    {
+        public ListConsumerGroupsReport() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Error> Errors { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.ConsumerGroupListing> Valid { get; set; }
+        public override string ToString() { }
+    }
+    public class ListConsumerGroupsResult
+    {
+        public ListConsumerGroupsResult() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.ConsumerGroupListing> Valid { get; set; }
+        public override string ToString() { }
+    }
+    public class ListOffsetsException : Confluent.Kafka.KafkaException
+    {
+        public ListOffsetsException(Confluent.Kafka.Admin.ListOffsetsReport result) { }
+        public Confluent.Kafka.Admin.ListOffsetsReport Result { get; }
+    }
+    public class ListOffsetsOptions
+    {
+        public ListOffsetsOptions() { }
+        public Confluent.Kafka.IsolationLevel IsolationLevel { get; set; }
+        public System.TimeSpan? RequestTimeout { get; set; }
+    }
+    public class ListOffsetsReport
+    {
+        public ListOffsetsReport() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.ListOffsetsResultInfo> ResultInfos { get; set; }
+        public override string ToString() { }
+    }
+    public class ListOffsetsResult
+    {
+        public ListOffsetsResult() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.ListOffsetsResultInfo> ResultInfos { get; set; }
+        public override string ToString() { }
+    }
+    public class ListOffsetsResultInfo
+    {
+        public ListOffsetsResultInfo() { }
+        public long Timestamp { get; set; }
+        public Confluent.Kafka.TopicPartitionOffsetError TopicPartitionOffsetError { get; set; }
+        public override string ToString() { }
+    }
+    public class MemberAssignment
+    {
+        public MemberAssignment() { }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartition> TopicPartitions { get; set; }
+    }
+    public class MemberDescription
+    {
+        public MemberDescription() { }
+        public Confluent.Kafka.Admin.MemberAssignment Assignment { get; set; }
+        public string ClientId { get; set; }
+        public string ConsumerId { get; set; }
+        public string GroupInstanceId { get; set; }
+        public string Host { get; set; }
+        public override string ToString() { }
+    }
+    public abstract class OffsetSpec
+    {
+        protected OffsetSpec() { }
+        public static Confluent.Kafka.Admin.OffsetSpec Earliest() { }
+        public static Confluent.Kafka.Admin.OffsetSpec ForTimestamp(long timestamp) { }
+        public static Confluent.Kafka.Admin.OffsetSpec Latest() { }
+        public static Confluent.Kafka.Admin.OffsetSpec MaxTimestamp() { }
+        public class EarliestSpec : Confluent.Kafka.Admin.OffsetSpec { }
+        public class LatestSpec : Confluent.Kafka.Admin.OffsetSpec { }
+        public class MaxTimestampSpec : Confluent.Kafka.Admin.OffsetSpec { }
+        public class TimestampSpec : Confluent.Kafka.Admin.OffsetSpec
+        {
+            public long Timestamp { get; }
+        }
+    }
+    public class PartitionsSpecification
+    {
+        public PartitionsSpecification() { }
+        public int IncreaseTo { get; set; }
+        public System.Collections.Generic.List<System.Collections.Generic.List<int>> ReplicaAssignments { get; set; }
+        public string Topic { get; set; }
+    }
+    public class ResourcePattern
+    {
+        public ResourcePattern() { }
+        public string Name { get; set; }
+        public Confluent.Kafka.Admin.ResourcePatternType ResourcePatternType { get; set; }
+        public Confluent.Kafka.Admin.ResourceType Type { get; set; }
+        public Confluent.Kafka.Admin.ResourcePattern Clone() { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public Confluent.Kafka.Admin.ResourcePatternFilter ToFilter() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.Admin.ResourcePattern a, Confluent.Kafka.Admin.ResourcePattern b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.ResourcePattern a, Confluent.Kafka.Admin.ResourcePattern b) { }
+    }
+    public class ResourcePatternFilter
+    {
+        public ResourcePatternFilter() { }
+        public string Name { get; set; }
+        public Confluent.Kafka.Admin.ResourcePatternType ResourcePatternType { get; set; }
+        public Confluent.Kafka.Admin.ResourceType Type { get; set; }
+        public Confluent.Kafka.Admin.ResourcePatternFilter Clone() { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        public static bool operator !=(Confluent.Kafka.Admin.ResourcePatternFilter a, Confluent.Kafka.Admin.ResourcePatternFilter b) { }
+        public static bool operator ==(Confluent.Kafka.Admin.ResourcePatternFilter a, Confluent.Kafka.Admin.ResourcePatternFilter b) { }
+    }
+    public enum ResourcePatternType
+    {
+        Unknown = 0,
+        Any = 1,
+        Match = 2,
+        Literal = 3,
+        Prefixed = 4,
+    }
+    public enum ResourceType
+    {
+        Unknown = 0,
+        Any = 1,
+        Topic = 2,
+        Group = 3,
+        Broker = 4,
+    }
+    public class ScramCredentialInfo
+    {
+        public ScramCredentialInfo() { }
+        public int Iterations { get; set; }
+        public Confluent.Kafka.Admin.ScramMechanism Mechanism { get; set; }
+        public override string ToString() { }
+    }
+    public enum ScramMechanism
+    {
+        Unknown = 0,
+        ScramSha256 = 1,
+        ScramSha512 = 2,
+    }
+    public class TopicDescription
+    {
+        public TopicDescription() { }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.AclOperation> AuthorizedOperations { get; set; }
+        public Confluent.Kafka.Error Error { get; set; }
+        public bool IsInternal { get; set; }
+        public string Name { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.TopicPartitionInfo> Partitions { get; set; }
+        public Confluent.Kafka.Uuid TopicId { get; set; }
+        public override string ToString() { }
+    }
+    public class TopicPartitionOffsetSpec
+    {
+        public TopicPartitionOffsetSpec() { }
+        public Confluent.Kafka.Admin.OffsetSpec OffsetSpec { get; set; }
+        public Confluent.Kafka.TopicPartition TopicPartition { get; set; }
+    }
+    public class TopicSpecification
+    {
+        public TopicSpecification() { }
+        public System.Collections.Generic.Dictionary<string, string> Configs { get; set; }
+        public string Name { get; set; }
+        public int NumPartitions { get; set; }
+        public System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<int>> ReplicasAssignments { get; set; }
+        public short ReplicationFactor { get; set; }
+    }
+    public class UserScramCredentialAlteration
+    {
+        public UserScramCredentialAlteration() { }
+        public string User { get; set; }
+    }
+    public class UserScramCredentialDeletion : Confluent.Kafka.Admin.UserScramCredentialAlteration
+    {
+        public UserScramCredentialDeletion() { }
+        public Confluent.Kafka.Admin.ScramMechanism Mechanism { get; set; }
+        public override string ToString() { }
+    }
+    public class UserScramCredentialUpsertion : Confluent.Kafka.Admin.UserScramCredentialAlteration
+    {
+        public UserScramCredentialUpsertion() { }
+        public byte[] Password { get; set; }
+        public byte[] Salt { get; set; }
+        public Confluent.Kafka.Admin.ScramCredentialInfo ScramCredentialInfo { get; set; }
+        public override string ToString() { }
+    }
+    public class UserScramCredentialsDescription
+    {
+        public UserScramCredentialsDescription() { }
+        public Confluent.Kafka.Error Error { get; set; }
+        public System.Collections.Generic.List<Confluent.Kafka.Admin.ScramCredentialInfo> ScramCredentialInfos { get; set; }
+        public string User { get; set; }
+        public override string ToString() { }
+    }
+}
+namespace Confluent.Kafka.SyncOverAsync
+{
+    public static class SyncOverAsyncDeserializerExtensionMethods
+    {
+        public static Confluent.Kafka.IDeserializer<T> AsSyncOverAsync<T>(this Confluent.Kafka.IAsyncDeserializer<T> asyncDeserializer) { }
+    }
+    public class SyncOverAsyncDeserializer<T> : Confluent.Kafka.IDeserializer<T>
+    {
+        public SyncOverAsyncDeserializer(Confluent.Kafka.IAsyncDeserializer<T> asyncDeserializer) { }
+        public T Deserialize(System.ReadOnlySpan<byte> data, bool isNull, Confluent.Kafka.SerializationContext context) { }
+    }
+    public static class SyncOverAsyncSerializerExtensionMethods
+    {
+        public static Confluent.Kafka.ISerializer<T> AsSyncOverAsync<T>(this Confluent.Kafka.IAsyncSerializer<T> asyncSerializer) { }
+    }
+    public class SyncOverAsyncSerializer<T> : Confluent.Kafka.ISerializer<T>
+    {
+        public SyncOverAsyncSerializer(Confluent.Kafka.IAsyncSerializer<T> asyncSerializer) { }
+        public byte[] Serialize(T data, Confluent.Kafka.SerializationContext context) { }
+    }
+}

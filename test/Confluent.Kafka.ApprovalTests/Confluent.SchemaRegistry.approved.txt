@@ -1,0 +1,252 @@
+namespace Confluent.SchemaRegistry
+{
+    public enum AuthCredentialsSource
+    {
+        UserInfo = 0,
+        SaslInherit = 1,
+    }
+    public class BasicAuthenticationHeaderValueProvider : Confluent.SchemaRegistry.IAuthenticationHeaderValueProvider
+    {
+        public BasicAuthenticationHeaderValueProvider(string username, string password) { }
+        public System.Net.Http.Headers.AuthenticationHeaderValue GetAuthenticationHeader() { }
+    }
+    public class CachedSchemaRegistryClient : Confluent.SchemaRegistry.ISchemaRegistryClient, System.IDisposable
+    {
+        public const bool DefaultEnableSslCertificateVerification = true;
+        public const Confluent.SchemaRegistry.SubjectNameStrategy DefaultKeySubjectNameStrategy = 0;
+        public const int DefaultMaxCachedSchemas = 1000;
+        public const int DefaultTimeout = 30000;
+        public const Confluent.SchemaRegistry.SubjectNameStrategy DefaultValueSubjectNameStrategy = 0;
+        public CachedSchemaRegistryClient(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config) { }
+        public CachedSchemaRegistryClient(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> config, Confluent.SchemaRegistry.IAuthenticationHeaderValueProvider authenticationHeaderValueProvider) { }
+        public int MaxCachedSchemas { get; }
+        [System.Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This me" +
+            "thod will be removed in a future release.")]
+        public string ConstructKeySubjectName(string topic, string recordType = null) { }
+        [System.Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This me" +
+            "thod will be removed in a future release.")]
+        public string ConstructValueSubjectName(string topic, string recordType = null) { }
+        public void Dispose() { }
+        protected virtual void Dispose(bool disposing) { }
+        public System.Threading.Tasks.Task<System.Collections.Generic.List<string>> GetAllSubjectsAsync() { }
+        public System.Threading.Tasks.Task<Confluent.SchemaRegistry.Compatibility> GetCompatibilityAsync(string subject = null) { }
+        public System.Threading.Tasks.Task<Confluent.SchemaRegistry.RegisteredSchema> GetLatestSchemaAsync(string subject) { }
+        public System.Threading.Tasks.Task<Confluent.SchemaRegistry.RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version) { }
+        public System.Threading.Tasks.Task<Confluent.SchemaRegistry.Schema> GetSchemaAsync(int id, string format = null) { }
+        [System.Obsolete("Superseded by GetRegisteredSchemaAsync(string subject, int version). This method " +
+            "will be removed in a future release.")]
+        public System.Threading.Tasks.Task<string> GetSchemaAsync(string subject, int version) { }
+        public System.Threading.Tasks.Task<int> GetSchemaIdAsync(string subject, Confluent.SchemaRegistry.Schema schema, bool normalize = false) { }
+        public System.Threading.Tasks.Task<int> GetSchemaIdAsync(string subject, string avroSchema, bool normalize = false) { }
+        public System.Threading.Tasks.Task<System.Collections.Generic.List<int>> GetSubjectVersionsAsync(string subject) { }
+        public System.Threading.Tasks.Task<bool> IsCompatibleAsync(string subject, Confluent.SchemaRegistry.Schema schema) { }
+        public System.Threading.Tasks.Task<bool> IsCompatibleAsync(string subject, string avroSchema) { }
+        public System.Threading.Tasks.Task<Confluent.SchemaRegistry.RegisteredSchema> LookupSchemaAsync(string subject, Confluent.SchemaRegistry.Schema schema, bool ignoreDeletedSchemas, bool normalize = false) { }
+        public System.Threading.Tasks.Task<int> RegisterSchemaAsync(string subject, Confluent.SchemaRegistry.Schema schema, bool normalize = false) { }
+        public System.Threading.Tasks.Task<int> RegisterSchemaAsync(string subject, string avroSchema, bool normalize = false) { }
+        public System.Threading.Tasks.Task<Confluent.SchemaRegistry.Compatibility> UpdateCompatibilityAsync(Confluent.SchemaRegistry.Compatibility compatibility, string subject = null) { }
+    }
+    [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+    [System.Runtime.Serialization.DataContract(Name="compatibility")]
+    public enum Compatibility
+    {
+        [System.Runtime.Serialization.EnumMember(Value="NONE")]
+        None = 0,
+        [System.Runtime.Serialization.EnumMember(Value="FORWARD")]
+        Forward = 1,
+        [System.Runtime.Serialization.EnumMember(Value="BACKWARD")]
+        Backward = 2,
+        [System.Runtime.Serialization.EnumMember(Value="FULL")]
+        Full = 3,
+        [System.Runtime.Serialization.EnumMember(Value="FORWARD_TRANSITIVE")]
+        ForwardTransitive = 4,
+        [System.Runtime.Serialization.EnumMember(Value="BACKWARD_TRANSITIVE")]
+        BackwardTransitive = 5,
+        [System.Runtime.Serialization.EnumMember(Value="FULL_TRANSITIVE")]
+        FullTransitive = 6,
+    }
+    public interface IAuthenticationHeaderValueProvider
+    {
+        System.Net.Http.Headers.AuthenticationHeaderValue GetAuthenticationHeader();
+    }
+    public interface ISchemaRegistryClient : System.IDisposable
+    {
+        int MaxCachedSchemas { get; }
+        [System.Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This me" +
+            "thod will be removed in a future release.")]
+        string ConstructKeySubjectName(string topic, string recordType = null);
+        [System.Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This me" +
+            "thod will be removed in a future release.")]
+        string ConstructValueSubjectName(string topic, string recordType = null);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<string>> GetAllSubjectsAsync();
+        System.Threading.Tasks.Task<Confluent.SchemaRegistry.Compatibility> GetCompatibilityAsync(string subject = null);
+        System.Threading.Tasks.Task<Confluent.SchemaRegistry.RegisteredSchema> GetLatestSchemaAsync(string subject);
+        System.Threading.Tasks.Task<Confluent.SchemaRegistry.RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version);
+        System.Threading.Tasks.Task<Confluent.SchemaRegistry.Schema> GetSchemaAsync(int id, string format = null);
+        [System.Obsolete("Superseded by GetRegisteredSchemaAsync(string subject, int version). This method " +
+            "will be removed in a future release.")]
+        System.Threading.Tasks.Task<string> GetSchemaAsync(string subject, int version);
+        System.Threading.Tasks.Task<int> GetSchemaIdAsync(string subject, Confluent.SchemaRegistry.Schema schema, bool normalize = false);
+        [System.Obsolete("Superseded by GetSchemaIdAsync(string, Schema, bool)")]
+        System.Threading.Tasks.Task<int> GetSchemaIdAsync(string subject, string avroSchema, bool normalize = false);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<int>> GetSubjectVersionsAsync(string subject);
+        System.Threading.Tasks.Task<bool> IsCompatibleAsync(string subject, Confluent.SchemaRegistry.Schema schema);
+        [System.Obsolete("Superseded by IsCompatibleAsync(string, Schema)")]
+        System.Threading.Tasks.Task<bool> IsCompatibleAsync(string subject, string avroSchema);
+        System.Threading.Tasks.Task<Confluent.SchemaRegistry.RegisteredSchema> LookupSchemaAsync(string subject, Confluent.SchemaRegistry.Schema schema, bool ignoreDeletedSchemas, bool normalize = false);
+        System.Threading.Tasks.Task<int> RegisterSchemaAsync(string subject, Confluent.SchemaRegistry.Schema schema, bool normalize = false);
+        [System.Obsolete("Superseded by RegisterSchemaAsync(string, Schema, bool)")]
+        System.Threading.Tasks.Task<int> RegisterSchemaAsync(string subject, string avroSchema, bool normalize = false);
+        System.Threading.Tasks.Task<Confluent.SchemaRegistry.Compatibility> UpdateCompatibilityAsync(Confluent.SchemaRegistry.Compatibility compatibility, string subject = null);
+    }
+    public enum ReferenceSubjectNameStrategy
+    {
+        ReferenceName = 0,
+    }
+    public delegate string ReferenceSubjectNameStrategyDelegate(Confluent.Kafka.SerializationContext context, string referenceName);
+    public static class ReferenceSubjectNameStrategyExtensions
+    {
+        public static Confluent.SchemaRegistry.ReferenceSubjectNameStrategyDelegate ToDelegate(this Confluent.SchemaRegistry.ReferenceSubjectNameStrategy strategy) { }
+    }
+    [System.Runtime.Serialization.DataContract]
+    public class RegisteredSchema : Confluent.SchemaRegistry.Schema, System.IComparable<Confluent.SchemaRegistry.RegisteredSchema>, System.IEquatable<Confluent.SchemaRegistry.RegisteredSchema>
+    {
+        [System.Obsolete("Included to enable API backwards compatibility. This will be removed in a future " +
+            "release.")]
+        protected RegisteredSchema() { }
+        public RegisteredSchema(string subject, int version, int id, string schemaString, Confluent.SchemaRegistry.SchemaType schemaType, System.Collections.Generic.List<Confluent.SchemaRegistry.SchemaReference> references) { }
+        public Confluent.SchemaRegistry.Schema Schema { get; }
+        [System.Runtime.Serialization.DataMember(Name="id")]
+        public new int Id { get; set; }
+        [System.Runtime.Serialization.DataMember(Name="subject")]
+        public new string Subject { get; set; }
+        [System.Runtime.Serialization.DataMember(Name="version")]
+        public new int Version { get; set; }
+        public int CompareTo(Confluent.SchemaRegistry.RegisteredSchema other) { }
+        public bool Equals(Confluent.SchemaRegistry.RegisteredSchema other) { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+    }
+    [System.Runtime.Serialization.DataContract]
+    public class Schema : System.IComparable<Confluent.SchemaRegistry.Schema>, System.IEquatable<Confluent.SchemaRegistry.Schema>
+    {
+        protected Schema() { }
+        public Schema(string schemaString, Confluent.SchemaRegistry.SchemaType schemaType) { }
+        public Schema(string schemaString, System.Collections.Generic.List<Confluent.SchemaRegistry.SchemaReference> references, Confluent.SchemaRegistry.SchemaType schemaType) { }
+        [System.Obsolete("Included to maintain API backwards compatibility only. Use RegisteredSchema inste" +
+            "ad. This property will be removed in a future version of the library.")]
+        public Schema(string subject, int version, int id, string schemaString) { }
+        [System.Obsolete("Included to maintain API backwards compatibility only. Use RegisteredSchema inste" +
+            "ad. This property will be removed in a future version of the library.")]
+        public int Id { get; set; }
+        [System.Runtime.Serialization.DataMember(Name="references")]
+        public System.Collections.Generic.List<Confluent.SchemaRegistry.SchemaReference> References { get; set; }
+        [System.Runtime.Serialization.DataMember(Name="schema")]
+        public string SchemaString { get; set; }
+        public Confluent.SchemaRegistry.SchemaType SchemaType { get; set; }
+        [System.Obsolete("Included to maintain API backwards compatibility only. Use RegisteredSchema inste" +
+            "ad. This property will be removed in a future version of the library.")]
+        public string Subject { get; set; }
+        [System.Obsolete("Included to maintain API backwards compatibility only. Use RegisteredSchema inste" +
+            "ad. This property will be removed in a future version of the library.")]
+        public int Version { get; set; }
+        public int CompareTo(Confluent.SchemaRegistry.Schema other) { }
+        public bool Equals(Confluent.SchemaRegistry.Schema other) { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+        [System.Obsolete("Included to maintain API backwards compatibility only. This method will be remove" +
+            "d in a future release.")]
+        public static string op_Implicit(Confluent.SchemaRegistry.Schema s) { }
+    }
+    [System.Runtime.Serialization.DataContract]
+    public class SchemaReference : System.IComparable<Confluent.SchemaRegistry.SchemaReference>, System.IEquatable<Confluent.SchemaRegistry.SchemaReference>
+    {
+        public SchemaReference(string name, string subject, int version) { }
+        [System.Runtime.Serialization.DataMember(Name="name")]
+        public string Name { get; set; }
+        [System.Runtime.Serialization.DataMember(Name="subject")]
+        public string Subject { get; set; }
+        [System.Runtime.Serialization.DataMember(Name="version")]
+        public int Version { get; set; }
+        public int CompareTo(Confluent.SchemaRegistry.SchemaReference other) { }
+        public bool Equals(Confluent.SchemaRegistry.SchemaReference other) { }
+        public override bool Equals(object obj) { }
+        public override int GetHashCode() { }
+        public override string ToString() { }
+    }
+    public class SchemaRegistryConfig : System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.IEnumerable
+    {
+        protected System.Collections.Generic.Dictionary<string, string> properties;
+        public SchemaRegistryConfig() { }
+        public Confluent.SchemaRegistry.AuthCredentialsSource? BasicAuthCredentialsSource { get; set; }
+        public string BasicAuthUserInfo { get; set; }
+        public bool? EnableSslCertificateVerification { get; set; }
+        [System.Obsolete("Subject name strategies should now be configured using the serializer\'s configura" +
+            "tion. In the future, this configuration property will be removed from SchemaRegi" +
+            "stryConfig")]
+        public Confluent.SchemaRegistry.SubjectNameStrategy? KeySubjectNameStrategy { get; set; }
+        public int? MaxCachedSchemas { get; set; }
+        public int? RequestTimeoutMs { get; set; }
+        public string SslCaLocation { get; set; }
+        public string SslKeystoreLocation { get; set; }
+        public string SslKeystorePassword { get; set; }
+        public string Url { get; set; }
+        [System.Obsolete("Subject name strategies should now be configured using the serializer\'s configura" +
+            "tion. In the future, this configuration property will be removed from SchemaRegi" +
+            "stryConfig")]
+        public Confluent.SchemaRegistry.SubjectNameStrategy? ValueSubjectNameStrategy { get; set; }
+        public string Get(string key) { }
+        protected bool? GetBool(string key) { }
+        public System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<string, string>> GetEnumerator() { }
+        protected int? GetInt(string key) { }
+        public void Set(string key, string val) { }
+        protected void SetObject(string name, object val) { }
+        public static class PropertyNames
+        {
+            public const string EnableSslCertificateVerification = "schema.registry.enable.ssl.certificate.verification";
+            public const string SchemaRegistryBasicAuthCredentialsSource = "schema.registry.basic.auth.credentials.source";
+            public const string SchemaRegistryBasicAuthUserInfo = "schema.registry.basic.auth.user.info";
+            [System.Obsolete("Subject name strategies should now be configured using the serializer\'s configura" +
+                "tion. In the future, this configuration property will be removed from SchemaRegi" +
+                "stryConfig")]
+            public const string SchemaRegistryKeySubjectNameStrategy = "schema.registry.key.subject.name.strategy";
+            public const string SchemaRegistryMaxCachedSchemas = "schema.registry.max.cached.schemas";
+            public const string SchemaRegistryRequestTimeoutMs = "schema.registry.request.timeout.ms";
+            public const string SchemaRegistryUrl = "schema.registry.url";
+            [System.Obsolete("Subject name strategies should now be configured using the serializer\'s configura" +
+                "tion. In the future, this configuration property will be removed from SchemaRegi" +
+                "stryConfig")]
+            public const string SchemaRegistryValueSubjectNameStrategy = "schema.registry.value.subject.name.strategy";
+            public const string SslCaLocation = "schema.registry.ssl.ca.location";
+            public const string SslKeystoreLocation = "schema.registry.ssl.keystore.location";
+            public const string SslKeystorePassword = "schema.registry.ssl.keystore.password";
+        }
+    }
+    public class SchemaRegistryException : System.Net.Http.HttpRequestException
+    {
+        public SchemaRegistryException(string message, System.Net.HttpStatusCode status, int errorCode) { }
+        public int ErrorCode { get; }
+        public System.Net.HttpStatusCode Status { get; }
+    }
+    public enum SchemaType
+    {
+        Avro = 0,
+        Protobuf = 1,
+        Json = 2,
+    }
+    public enum SubjectNameStrategy
+    {
+        Topic = 0,
+        Record = 1,
+        TopicRecord = 2,
+    }
+    public delegate string SubjectNameStrategyDelegate(Confluent.Kafka.SerializationContext context, string recordType);
+    public static class SubjectNameStrategyExtensions
+    {
+        public static string ConstructKeySubjectName(this Confluent.SchemaRegistry.SubjectNameStrategy strategy, string topic, string recordType = null) { }
+        public static string ConstructValueSubjectName(this Confluent.SchemaRegistry.SubjectNameStrategy strategy, string topic, string recordType = null) { }
+        public static Confluent.SchemaRegistry.SubjectNameStrategyDelegate ToDelegate(this Confluent.SchemaRegistry.SubjectNameStrategy strategy) { }
+    }
+}
