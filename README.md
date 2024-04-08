@@ -98,7 +98,7 @@ class Program
         {
             try
             {
-                var dr = await p.ProduceAsync("test-topic", new Message<Null, string> { Value="test" });
+                var dr = await p.ProduceAsync("test-topic", new Message<Null, string> { Value = "test" });
                 Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
             }
             catch (ProduceException<Null, string> e)
@@ -133,7 +133,7 @@ class Program
 
         using (var p = new ProducerBuilder<Null, string>(conf).Build())
         {
-            for (int i=0; i<100; ++i)
+            for (int i = 0; i < 100; ++i)
             {
                 p.Produce("my-topic", new Message<Null, string> { Value = i.ToString() }, handler);
             }
@@ -174,7 +174,8 @@ class Program
 
             CancellationTokenSource cts = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) => {
-                e.Cancel = true; // prevent the process from terminating.
+                // Prevent the process from terminating.
+                e.Cancel = true;
                 cts.Cancel();
             };
 
