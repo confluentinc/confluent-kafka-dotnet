@@ -8,8 +8,8 @@
 	<PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
 	<RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
-	<PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
-    <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+	<PackageIcon>confluent-logo.png</PackageIcon>
+	<PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;librdkafka</PackageTags>
     <PackageId>Confluent.Kafka</PackageId>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -39,6 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\" />
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
