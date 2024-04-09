@@ -6,11 +6,12 @@
     <Description>A .NET Client for Confluent Schema Registry</Description>
     <Copyright>Copyright 2017-2022 Confluent Inc.</Copyright>
     <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
-	<PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
-	<RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
-	<RepositoryType>Git</RepositoryType>
-	<PackageIcon>confluent-logo.png</PackageIcon>
-	<PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+    <PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+    <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>confluent-logo.png</PackageIcon>
+    <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
+    <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;Schema Registry</PackageTags>
     <PackageId>Confluent.SchemaRegistry</PackageId>
     <Title>Confluent.SchemaRegistry</Title>
@@ -24,7 +25,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<ProjectReference Include="..\Confluent.Kafka\Confluent.Kafka.csproj" />
+    <ProjectReference Include="..\Confluent.Kafka\Confluent.Kafka.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,7 +35,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\" />
+    <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
 </Project>

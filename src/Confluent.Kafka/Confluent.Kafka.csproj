@@ -5,11 +5,12 @@
     <Description>Confluent's .NET Client for Apache Kafka</Description>
     <Copyright>Copyright 2016-2020 Confluent Inc., Andreas Heider</Copyright>
     <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
-	<PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
-	<RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
-	<RepositoryType>git</RepositoryType>
-	<PackageIcon>confluent-logo.png</PackageIcon>
-	<PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+    <PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+    <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>confluent-logo.png</PackageIcon>
+    <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
+    <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;librdkafka</PackageTags>
     <PackageId>Confluent.Kafka</PackageId>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -23,19 +24,19 @@
     <AssemblyOriginatorKeyFile>Confluent.Kafka.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="librdkafka.redist" Version="2.5.0-RC3">
-        <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="System.Memory" Version="4.5.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="librdkafka.redist" Version="2.5.0-RC3">
+            <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="System.Memory" Version="4.5.0" />
+    </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
-	<PackageReference Include="System.Console" Version="4.3.0" />
-	<PackageReference Include="System.Linq" Version="4.3.0" />
-	<PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
-	<PackageReference Include="System.Runtime.Extensions" Version="4.3.0" />
-	<PackageReference Include="System.Threading" Version="4.3.0" />
+    <PackageReference Include="System.Console" Version="4.3.0" />
+    <PackageReference Include="System.Linq" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.Extensions" Version="4.3.0" />
+    <PackageReference Include="System.Threading" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
