@@ -486,6 +486,7 @@ namespace Confluent.Kafka
             {
 
                 var topicName = PtrToStringUTF8(Librdkafka.TopicDescription_name(topicPtr));
+                var topicId = Librdkafka.TopicDescription_topic_id(topicPtr);
                 var error = new Error(Librdkafka.TopicDescription_error(topicPtr), false);
                 var isInternal = Librdkafka.TopicDescription_is_internal(topicPtr) != IntPtr.Zero;
                 List<AclOperation> authorizedOperations = extractAuthorizedOperations(
@@ -497,6 +498,7 @@ namespace Confluent.Kafka
                 return new TopicDescription()
                 {
                     Name = topicName,
+                    TopicId = extractUuid(topicId),
                     Error = error,
                     AuthorizedOperations = authorizedOperations,
                     IsInternal = isInternal,
@@ -509,6 +511,19 @@ namespace Confluent.Kafka
             }).ToList();
             return result;
         }
+
+        private Uuid extractUuid(IntPtr uuidPtr)
+        {
+            if (uuidPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            return new Uuid(
+                Librdkafka.Uuid_most_significant_bits(uuidPtr),
+                Librdkafka.Uuid_least_significant_bits(uuidPtr)
+            );
+        } 
         
         private Node extractNode(IntPtr nodePtr)
         {
@@ -582,8 +597,12 @@ namespace Confluent.Kafka
         private ListOffsetsReport extractListOffsetsReport(IntPtr resultPtr)
         {
             var resultInfosPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resulInfosCntPtr);
+            
             IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resulInfosCntPtr];
-            Marshal.Copy(resultInfosPtr, resultResponsesPtrArr, 0, (int)resulInfosCntPtr);
+            if ((int)resulInfosCntPtr > 0)
+            {
+                Marshal.Copy(resultInfosPtr, resultResponsesPtrArr, 0, (int)resulInfosCntPtr);
+            }            
             
             ErrorCode reportErrorCode = ErrorCode.NoError;
             var listOffsetsResultInfos = resultResponsesPtrArr.Select(resultResponsePtr => 
@@ -610,7 +629,7 @@ namespace Confluent.Kafka
 
             return new ListOffsetsReport
             {
-                ListOffsetsResultInfos = listOffsetsResultInfos,
+                ResultInfos = listOffsetsResultInfos,
                 Error = new Error(reportErrorCode)
             };
         }
@@ -1226,7 +1245,7 @@ namespace Confluent.Kafka
                                         }
                                         else
                                         {
-                                            var result = new ListOffsetsResult() { ListOffsetsResultInfos = report.ListOffsetsResultInfos };
+                                            var result = new ListOffsetsResult() { ResultInfos = report.ResultInfos };
                                             Task.Run(() =>
                                                 ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetResult(
                                                     result));

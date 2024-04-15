@@ -891,13 +891,13 @@ namespace Confluent.Kafka.Examples
                 {
                     var listOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsets, options);
                     Console.WriteLine("ListOffsetsResult:");
-                    PrintListOffsetsResultInfos(listOffsetsResult.ListOffsetsResultInfos);
+                    PrintListOffsetsResultInfos(listOffsetsResult.ResultInfos);
                 }
                 catch (ListOffsetsException e)
                 {
                     Console.WriteLine("ListOffsetsReport:");
                     Console.WriteLine($"  Error: {e.Error}");
-                    PrintListOffsetsResultInfos(e.Result.ListOffsetsResultInfos);
+                    PrintListOffsetsResultInfos(e.Result.ResultInfos);
                 }
                 catch (KafkaException e)
                 {
@@ -911,6 +911,7 @@ namespace Confluent.Kafka.Examples
             foreach (var topic in topicDescriptions)
             {
                 Console.WriteLine($"\n  Topic: {topic.Name} {topic.Error}");
+                Console.WriteLine($"  Topic Id: {topic.TopicId}");
                 Console.WriteLine($"  Partitions:");
                 foreach (var partition in topic.Partitions)
                 {
