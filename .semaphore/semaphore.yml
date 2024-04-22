@@ -72,6 +72,9 @@ blocks:
             - $Env:Path += ";C:\dotnet"
             - dotnet tool update -g docfx
             - dotnet restore
+            - $drive = Get-PSDrive C
+            - Write-Host "Available space on C drive $($drive.Free) bytes"
+            - Get-ChildItem -Path C:\ -Recurse | Sort-Object -Property Length -Descending | Select-Object FullName, @{Name="Size (MB)";Expression={$_.Length / 1MB}} | Format-Table -AutoSize
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
