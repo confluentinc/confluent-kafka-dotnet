@@ -72,16 +72,44 @@ blocks:
             - $Env:Path += ";C:\dotnet"
             - dotnet tool update -g docfx
             - dotnet restore
-            - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
-            - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
-            - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
-            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
-            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
-            - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
-            - docfx doc/docfx.json
-            - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
-            - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
-            - artifact push workflow artifacts
+
+            # Check available disk space and list large files/directories for all drives
+            - Get-PSDrive -PSProvider FileSystem | ForEach-Object {
+              $drive = $_
+              Write-Host "Available space on $($drive.Root) drive: $($drive.Free) bytes"
+              
+              try {
+              Write-Host "Large files/directories on $($drive.Root) drive:"
+              Get-ChildItem -Path $drive.Root -Recurse -ErrorAction SilentlyContinue | Sort-Object -Property Length -Descending | Select-Object FullName, @{Name="Size (MB)";Expression={$_.Length / 1MB}} | Format-Table -AutoSize
+          }
+            catch [UnauthorizedAccessException] {
+            Write-Host "Access denied for $($drive.Root) drive. Skipping..."
+          }
+            catch {
+            Write-Host "An error occurred: $_"
+          }
+        }
+          
+          # Clean up previous build outputs
+          - dotnet clean Confluent.Kafka.sln
+          
+          # Build the solution
+          - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
+          
+          # Pack the projects
+          - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --output artifacts
+          - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --output artifacts
+          - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --output artifacts
+          - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --output artifacts
+          - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --output artifacts
+          
+          # Generate documentation
+          - docfx doc/docfx.json
+          - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
+          - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
+          
+          # Push artifacts
+          - artifact push workflow artifacts
   - name: 'Windows Artifacts on tagged commits'
     run:
       when: "tag =~ '.*'"
