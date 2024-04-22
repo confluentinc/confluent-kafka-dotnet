@@ -72,6 +72,12 @@ blocks:
             - $Env:Path += ";C:\dotnet"
             - dotnet tool update -g docfx
             - dotnet restore
+            - dotnet clean Confluent.Kafka.sln
+            - |
+              $path = "C:\semaphore-agent\confluent-kafka-dotnet\test\Confluent.Kafka.IntegrationTests\bin\Release\net6.0\librdkafka"
+              $drive = (Get-Item $path).PSDrive.Root
+              $freeSpace = (Get-PSDrive $drive).Free
+              Write-Host "Available space on $drive drive: $($freeSpace/1GB) GB"
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
