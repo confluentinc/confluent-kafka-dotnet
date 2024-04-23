@@ -20,6 +20,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -52,13 +53,13 @@ namespace Confluent.Kafka.IntegrationTests
 
             DeliveryResult<Null, string> produceResult1;
             DeliveryResult<Null, string> produceResult2;
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
             {
                 produceResult1 = ProduceMessage(singlePartitionTopic, producer, testString1);
                 produceResult2 = ProduceMessage(singlePartitionTopic, producer, testString2);
             }
 
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 ConsumeMessage(consumer, produceResult1, testString1);
                 ConsumeMessage(consumer, produceResult2, testString2);
