@@ -72,7 +72,6 @@ blocks:
             - $Env:Path += ";C:\dotnet"
             - dotnet tool update -g docfx
             - dotnet restore
-            - dotnet clean Confluent.Kafka.sln
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
