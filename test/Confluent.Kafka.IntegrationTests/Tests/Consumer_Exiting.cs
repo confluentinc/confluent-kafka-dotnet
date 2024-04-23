@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -39,8 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
-                SessionTimeoutMs = 6000,
-                Debug = "all"
+                SessionTimeoutMs = 6000
             };
 
             for (int i=0; i<4; ++i)
@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumerConfig.Set("group.id", Guid.NewGuid().ToString());
 
                 using (var consumer =
-                    new ConsumerBuilder<byte[], byte[]>(consumerConfig)
+                    new TestConsumerBuilder<byte[], byte[]>(consumerConfig)
                         .SetPartitionsAssignedHandler((c, partitions) =>
                         {
                             return partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset));

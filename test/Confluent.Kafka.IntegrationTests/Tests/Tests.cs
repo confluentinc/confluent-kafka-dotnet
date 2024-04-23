@@ -94,7 +94,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 // Uncomment to enable logging to a file. Useful for debugging,
                 // for example, which test caused librdkafka to segfault.
-                // File.AppendAllLines("/tmp/test.txt", new [] { msg });
+                File.AppendAllLines("/tmp/test.txt", new [] { msg });
             }
         }
 
@@ -175,7 +175,7 @@ namespace Confluent.Kafka.IntegrationTests
             return oAuthBearerKafkaParameters;
         }
         public static bool semaphoreSkipFlakyTests(){
-            string onSemaphore = Environment.GetEnvironmentVariable("SEMAPHORE_SKIP_FLAKY_TETSTS");
+            string onSemaphore = Environment.GetEnvironmentVariable("SEMAPHORE_SKIP_FLAKY_TESTS");
             if (onSemaphore != null)
             {
                 return true;
