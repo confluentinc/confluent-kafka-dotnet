@@ -18,6 +18,7 @@
 
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -42,8 +43,8 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             using (var topic = new TemporaryTopic(bootstrapServers, 2))
-            using (var consumer1 = new ConsumerBuilder<Null, string>(consumerConfig).Build())
-            using (var consumer2 = new ConsumerBuilder<Null, string>(consumerConfig).Build())
+            using (var consumer1 = new TestConsumerBuilder<Null, string>(consumerConfig).Build())
+            using (var consumer2 = new TestConsumerBuilder<Null, string>(consumerConfig).Build())
             {
                 Util.ProduceNullStringMessages(bootstrapServers, topic.Name, 100, 1000);
 
