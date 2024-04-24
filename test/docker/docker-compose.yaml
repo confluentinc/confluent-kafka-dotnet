@@ -76,17 +76,6 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
       KAFKA_SUPER_USERS: "User:ANONYMOUS"
-  kafka_4:
-    build: ./kraft
-    restart: always
-    ports:
-      - 9092:29092
-      - 9093:29093
-    volumes:
-      - ./kraft/server.properties:/etc/kafka/server.properties
-      - ./kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
-    environment:
-      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
   schema-registry:
     image: confluentinc/cp-schema-registry
     restart: always
