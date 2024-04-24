@@ -21,6 +21,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -49,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
                     LingerMs = 1.5
                 };
 
-                using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
+                using (var producer = new TestProducerBuilder<string, string>(producerConfig).Build())
                 {
                     for (int i = 0; i < numMessages; i++)
                     {
@@ -80,7 +81,7 @@ namespace Confluent.Kafka.IntegrationTests
                 };
 
                 using (var consumer =
-                    new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                    new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
                 {
                     consumer.Subscribe(topic.Name);
 
