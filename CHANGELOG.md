@@ -3,6 +3,8 @@
 ## Enhancements
 
 - References librdkafka.redist 2.4.0. Refer to the [librdkafka v2.4.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.4.0) for more information.
+- [KIP-848 EA](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol):
+  Integration tests running with the new consumer group protocol. The feature is an Early Availability: not production ready, still not supported. (#2212).
 
 
 # 2.3.0
