@@ -21,6 +21,8 @@ using System.Linq;
 using System.Collections.Generic;
 using Xunit;
 using Confluent.Kafka.Admin;
+using Confluent.Kafka.TestsCommon;
+
 
 namespace Confluent.Kafka.IntegrationTests
 {
@@ -61,6 +63,13 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AdminClient_ListDescribeConsumerGroups(string bootstrapServers)
         {
+            if (!TestConsumerGroupProtocol.IsClassic())
+            {
+                LogToFile("KIP 848 Admin operations changes still aren't " +
+                          "available");
+                return;
+            }
+
             LogToFile("start AdminClient_ListDescribeConsumerGroups");
             var groupID = Guid.NewGuid().ToString();
             var nonExistentGroupID = Guid.NewGuid().ToString();
@@ -96,7 +105,7 @@ namespace Confluent.Kafka.IntegrationTests
                     ClientId = clientID1,
 
                 };
-                var consumer1 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build();
+                var consumer1 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build();
                 consumer1.Subscribe(new string[] { partitionedTopic });
                 // Wait for rebalance.
                 consumer1.Consume(TimeSpan.FromSeconds(10));
@@ -123,7 +132,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // 2. One consumer group with two clients.
                 consumerConfig.ClientId = clientID2;
-                var consumer2 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build();
+                var consumer2 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build();
                 consumer2.Subscribe(new string[] { partitionedTopic });
 
                 // Wait for rebalance.
