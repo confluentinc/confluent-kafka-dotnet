@@ -19,6 +19,7 @@
 using System;
 using System.Threading;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -36,7 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
             var defaultTimeout = TimeSpan.FromSeconds(30);
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
+            using (var producer = new TestProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
             {
                 producer.InitTransactions(defaultTimeout);
                 producer.BeginTransaction();
@@ -52,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
                 });
                 producer.CommitTransaction(defaultTimeout);
 
-                using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadCommitted, BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, Debug="all" }).Build())
+                using (var consumer = new TestConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadCommitted, BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false }).Build())
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 0));
 
@@ -63,7 +64,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Null(cr2); // control message should not be exposed to application.
                 }
 
-                using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadUncommitted, BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, Debug="all" }).Build())
+                using (var consumer = new TestConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadUncommitted, BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false }).Build())
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 0));
 

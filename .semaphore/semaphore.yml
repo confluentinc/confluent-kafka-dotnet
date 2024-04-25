@@ -72,6 +72,7 @@ blocks:
             - $Env:Path += ";C:\dotnet"
             - dotnet tool update -g docfx
             - dotnet restore
+            - dotnet clean Confluent.Kafka.sln
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
@@ -119,12 +120,20 @@ blocks:
         commands:
           - docker login --username $DOCKERHUB_USER --password $DOCKERHUB_APIKEY
       jobs:
-        - name: 'Build and test'
+        - name: 'Build and test with "classic" protocol'
           commands:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
-            - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
+            - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - dotnet restore
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+        - name: 'Build and test with "consumer" protocol'
+          commands:
+            - cd test/docker && docker-compose -f docker-compose-kraft.yaml up -d && sleep 300 && cd ../..
+            - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
+            - export TEST_CONSUMER_GROUP_PROTOCOL=consumer
+            - dotnet restore
+            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+
   - name: 'Schema registry and serdes integration tests'
     dependencies: [ ]
     task:
@@ -138,7 +147,7 @@ blocks:
         - name: 'Build and test'
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
-            - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
+            - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - dotnet restore
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
             # - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
