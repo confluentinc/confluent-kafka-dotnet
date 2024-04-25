@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -49,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             using (var consumer =
-                new ConsumerBuilder<Null, string>(consumerConfig)
+                new TestConsumerBuilder<Null, string>(consumerConfig)
                     .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
