@@ -19,6 +19,7 @@
 using System;
 using System.Threading;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -49,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
                 Util.ProduceNullStringMessages(bootstrapServers, topic.Name, 100, N);
-                using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
                 {
                     var offsets = consumer.QueryWatermarkOffsets(new TopicPartition(topic.Name, 0), TimeSpan.FromSeconds(10));
                     Assert.Equal(0, offsets.Low);

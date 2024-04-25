@@ -21,6 +21,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -59,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
             //  - construction of admin client from a producer handle
             //  - creation of topic 
             //  - producing to created topics works.
-            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient2 = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 adminClient2.CreateTopicsAsync(

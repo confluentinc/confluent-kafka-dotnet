@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using Xunit;
 using Confluent.Kafka.Admin;
 using Newtonsoft.Json;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -45,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
             var msg = sb.ToString();
 
             DeliveryResult<Null, string> firstDeliveryReport = null;
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
             {
                 for (int i=0; i<number; ++i)
                 {
