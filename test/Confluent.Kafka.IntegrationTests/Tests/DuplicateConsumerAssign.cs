@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -50,15 +51,15 @@ namespace Confluent.Kafka.IntegrationTests
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
                 DeliveryResult<byte[], byte[]> dr;
-                using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+                using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
                 {
                     dr = producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize(testString, SerializationContext.Empty) }).Result;
                     Assert.NotNull(dr);
                     producer.Flush(TimeSpan.FromSeconds(10));
                 }
 
-                using (var consumer1 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-                using (var consumer2 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                using (var consumer1 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                using (var consumer2 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
                 {
                     consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic.Name, dr.Partition, 0) });
                     consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic.Name, dr.Partition, 0) });
