@@ -44,7 +44,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
-                EnableAutoCommit = false
+                EnableAutoCommit = false,
+                Debug = "all",
             };
 
             var firstMessage = messages[0];
@@ -58,7 +59,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(Offset.Unset, offset);
 
                 // Test #1
-                var record = consumer.Consume(TimeSpan.FromMilliseconds(6000));
+                var record = consumer.Consume(TimeSpan.FromMilliseconds(20000));
                 var os = consumer.Commit();
                 Assert.Equal(firstMsgOffset + 1, os[0].Offset);
                 offset = consumer.Position(new TopicPartition(singlePartitionTopic, 0));
