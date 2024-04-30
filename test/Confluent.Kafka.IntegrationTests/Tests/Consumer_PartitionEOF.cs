@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -45,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // no eof, non generic consumer case.
             using (var consumer =
-                new ConsumerBuilder<byte[], byte[]>(consumerConfig)
+                new TestConsumerBuilder<byte[], byte[]>(consumerConfig)
                     .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
@@ -70,7 +71,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // no eof, generic consumer case.
             using (var consumer =
-                new ConsumerBuilder<Null, string>(consumerConfig)
+                new TestConsumerBuilder<Null, string>(consumerConfig)
                     .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
@@ -102,7 +103,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // eof, non-generic consumer case.
             using (var consumer =
-                new ConsumerBuilder<byte[], byte[]>(consumerConfig)
+                new TestConsumerBuilder<byte[], byte[]>(consumerConfig)
                     .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
@@ -130,7 +131,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // eof, generic consumer case.
             using (var consumer =
-                new ConsumerBuilder<Null, string>(consumerConfig)
+                new TestConsumerBuilder<Null, string>(consumerConfig)
                     .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);

@@ -20,6 +20,7 @@ using System;
 using System.Linq;
 using System.Text;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -33,6 +34,14 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_Poll_MessageError(string bootstrapServers)
         {
+            if (!TestConsumerGroupProtocol.IsClassic())
+            {
+                LogToFile("KIP 848 subscribe " +
+                          "doesn't return UnknownTopicOrPart " +
+                          "for topics not in local cache");
+                return;
+            }
+            
             LogToFile("start Consumer_Poll_MessageError");
 
             var consumerConfig = new ConsumerConfig
@@ -41,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers,
             };
 
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 var nonExistantTopic = Guid.NewGuid().ToString();
                 ErrorCode code = ErrorCode.NoError;
