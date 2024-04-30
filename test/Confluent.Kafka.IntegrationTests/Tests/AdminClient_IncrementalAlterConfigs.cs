@@ -64,7 +64,8 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.True(e.InnerException.GetType() == typeof(IncrementalAlterConfigsException));
                     var ace = (IncrementalAlterConfigsException)e.InnerException;
                     Assert.Single(ace.Results);
-                    Assert.Contains("not allowed", ace.Results[0].Error.Reason);
+                    Assert.True(ace.Results[0].Error.Reason.Contains("not allowed") ||
+                        ace.Results[0].Error.Reason.Contains("Can't APPEND"));
                 }
 
                 // 3. test that in the failed alter configs call for the specified config resource, the 

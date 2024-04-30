@@ -19,6 +19,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
+
 
 namespace Confluent.Kafka.IntegrationTests
 {
@@ -30,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start AdminClient_ListOffsets");
             
             using var topic = new TemporaryTopic(bootstrapServers, 1);
-            using var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build();
+            using var producer = new TestProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build();
             using var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build();
             
             long basetimestamp = 10000000;
