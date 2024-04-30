@@ -20,6 +20,7 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -71,10 +72,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             // Test Headers property is not null in Serializer, and that header added there is produced.
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig)
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig)
                 .SetValueSerializer(new TestSerializer())
                 .Build())
-            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig)
+            using (var consumer = new TestConsumerBuilder<Null, string>(consumerConfig)
                 .SetValueDeserializer(new TestDeserializer())
                 .Build())
             {
@@ -90,11 +91,11 @@ namespace Confluent.Kafka.IntegrationTests
             
             // Test accumulation of headers
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<string, string>(producerConfig)
+            using (var producer = new TestProducerBuilder<string, string>(producerConfig)
                 .SetKeySerializer(new TestSerializer())
                 .SetValueSerializer(new TestSerializer())
                 .Build())
-            using (var consumer = new ConsumerBuilder<string, string>(consumerConfig)
+            using (var consumer = new TestConsumerBuilder<string, string>(consumerConfig)
                 .SetKeyDeserializer(new TestDeserializer())
                 .SetValueDeserializer(new TestDeserializer())
                 .Build())
