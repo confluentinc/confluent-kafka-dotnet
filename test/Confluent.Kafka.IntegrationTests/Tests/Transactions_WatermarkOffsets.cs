@@ -17,6 +17,7 @@
 using System;
 using System.Threading;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -33,8 +34,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             var groupName = Guid.NewGuid().ToString();
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString(), LingerMs = 0 }).Build())
-            using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadCommitted, BootstrapServers = bootstrapServers, GroupId = groupName, EnableAutoCommit = false }).Build())
+            using (var producer = new TestProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString(), LingerMs = 0 }).Build())
+            using (var consumer = new TestConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadCommitted, BootstrapServers = bootstrapServers, GroupId = groupName, EnableAutoCommit = false }).Build())
             {
                 var wo1 = consumer.GetWatermarkOffsets(new TopicPartition(topic.Name, 0));
                 Assert.Equal(Offset.Unset, wo1.Low);

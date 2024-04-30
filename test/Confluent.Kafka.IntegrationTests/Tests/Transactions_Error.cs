@@ -18,6 +18,7 @@
 
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -36,7 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
-                using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
+                using (var producer = new TestProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
                 {
                     producer.InitTransactions(defaultTimeout);
                     producer.BeginTransaction();

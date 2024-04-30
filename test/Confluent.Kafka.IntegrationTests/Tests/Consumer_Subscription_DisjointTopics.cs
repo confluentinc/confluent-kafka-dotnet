@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -40,12 +41,12 @@ namespace Confluent.Kafka.IntegrationTests
             using (var topic2 = new TemporaryTopic(bootstrapServers, 4))
             using (var topic3 = new TemporaryTopic(bootstrapServers, 4))
             using (var topic4 = new TemporaryTopic(bootstrapServers, 4))
-            using (var consumer1 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            using (var consumer2 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            using (var consumer3 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            using (var consumer4 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            using (var consumer5 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            using (var consumer6 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer1 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer2 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer3 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer4 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer5 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer6 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 Util.ProduceNullStringMessages(bootstrapServers, topic1.Name, 100, 1000);
                 Util.ProduceNullStringMessages(bootstrapServers, topic2.Name, 100, 1000);

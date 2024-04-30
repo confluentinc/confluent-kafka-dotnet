@@ -1,5 +1,7 @@
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
+
 
 namespace Confluent.Kafka.IntegrationTests
 {
@@ -33,7 +35,7 @@ namespace Confluent.Kafka.IntegrationTests
                 GroupId = $"{Guid.NewGuid()}"
             };
             var consumerCallsCount = 0;
-            var consumer = new ConsumerBuilder<string, string>(consumerConfig)
+            var consumer = new TestConsumerBuilder<string, string>(consumerConfig)
                 .SetOAuthBearerTokenRefreshHandler((client, cfg) =>
                 {
                     Assert.Equal(config.SaslOauthbearerConfig, cfg);
@@ -47,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             // test Producer
             var producerConfig = new ProducerConfig(config);
             var producerCallsCount = 0;
-            var producer = new ProducerBuilder<string, string>(producerConfig)
+            var producer = new TestProducerBuilder<string, string>(producerConfig)
                 .SetOAuthBearerTokenRefreshHandler((client, cfg) =>
                 {
                     Assert.Equal(config.SaslOauthbearerConfig, cfg);

@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -52,8 +53,8 @@ namespace Confluent.Kafka.IntegrationTests
             consumerConfig.Set("client.software.version", "1.0");
 
 
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             { }
 
             Assert.Equal(0, Library.HandleCount);
