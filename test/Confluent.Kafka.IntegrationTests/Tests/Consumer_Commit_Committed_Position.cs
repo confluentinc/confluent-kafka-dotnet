@@ -19,6 +19,8 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
+
 
 namespace Confluent.Kafka.IntegrationTests
 {
@@ -42,21 +44,27 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
-                EnableAutoCommit = false
+                EnableAutoCommit = false,
+                Debug = "all",
             };
 
             var firstMessage = messages[0];
             var lastMessage = messages[N - 1];
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
-                consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
-                
+                if (TestConsumerGroupProtocol.IsClassic())
+                    consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
+                else
+                    // FIXME: There are problems with new coordinator when
+                    // manually assigning and committing offsets for a group
+                    // id it's returning NotCoordinatorForGroup
+                    consumer.Subscribe(singlePartitionTopic);
                 // Test #0.5 (invalid cases)
                 var offset = consumer.Position(new TopicPartition("invalid-topic", 0));
                 Assert.Equal(Offset.Unset, offset);
 
                 // Test #1
-                var record = consumer.Consume(TimeSpan.FromMilliseconds(6000));
+                var record = consumer.Consume(TimeSpan.FromMilliseconds(30000));
                 var os = consumer.Commit();
                 Assert.Equal(firstMsgOffset + 1, os[0].Offset);
                 offset = consumer.Position(new TopicPartition(singlePartitionTopic, 0));
@@ -75,13 +83,13 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // Test #3
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset + 5) });
                 var co = consumer.Committed(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
                 Assert.Equal(firstMsgOffset + 5, co[0].Offset);
             }
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
 
@@ -93,14 +101,14 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // Test #4
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
                 consumer.Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset + 3) });
                 var co = consumer.Committed(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
             }
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
                 var record = consumer.Consume(TimeSpan.FromMilliseconds(6000));
@@ -111,7 +119,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // Test #5
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
                 var record = consumer.Consume(TimeSpan.FromMilliseconds(6000));
@@ -122,7 +130,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var co = consumer.Committed(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
             }
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
                 var record = consumer.Consume(TimeSpan.FromMilliseconds(6000));
@@ -132,7 +140,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // Test #6
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
                 var record = consumer.Consume(TimeSpan.FromMilliseconds(6000));
@@ -143,7 +151,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var co = consumer.Committed(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
             }
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
                 var record = consumer.Consume(TimeSpan.FromMilliseconds(6000));

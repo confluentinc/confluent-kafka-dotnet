@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -45,9 +46,9 @@ namespace Confluent.Kafka.IntegrationTests
             IEnumerable<TopicPartition> assignment = null;
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var consumer =
-                new ConsumerBuilder<byte[], byte[]>(consumerConfig)
+                new TestConsumerBuilder<byte[], byte[]>(consumerConfig)
                     .SetPartitionsAssignedHandler((c, partitions) => { assignment = partitions; })
                     .Build())
             {

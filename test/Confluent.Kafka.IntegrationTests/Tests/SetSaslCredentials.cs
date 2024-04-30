@@ -18,6 +18,7 @@
 
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -35,13 +36,13 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start SetSaslCredentials");
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
                 CheckSetSaslCredentials(producer);
 
             var consumerConfig = new ConsumerConfig {
                 BootstrapServers = bootstrapServers,
                 GroupId = Guid.NewGuid().ToString() };
-            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<Null, string>(consumerConfig).Build())
                 CheckSetSaslCredentials(consumer);
 
             var adminClientConfig = new AdminClientConfig { BootstrapServers = bootstrapServers };
