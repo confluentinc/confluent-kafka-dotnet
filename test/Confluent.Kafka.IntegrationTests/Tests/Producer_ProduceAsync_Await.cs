@@ -20,6 +20,7 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -37,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             Func<Task> mthd = async () => 
             {
-                using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+                using (var producer = new TestProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
                 {
                     var dr = await producer.ProduceAsync(
                         singlePartitionTopic,
@@ -62,7 +63,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_ProduceAsync_Await_NonSerializing");
 
-            using (var producer = new ProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic,
@@ -84,7 +85,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_ProduceAsync_Await_Throws");
 
-            using (var producer = new ProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 await Assert.ThrowsAsync<ProduceException<byte[], byte[]>>(
                     async () => 
@@ -100,7 +101,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             Func<Task> mthd = async () =>
             {
-                using (var producer = new ProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+                using (var producer = new TestProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
                 {
                     var dr = await producer.ProduceAsync(
                         new TopicPartition(singlePartitionTopic, 1001),
