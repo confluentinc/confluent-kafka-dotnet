@@ -85,6 +85,7 @@ namespace Confluent.Kafka.IntegrationTests
                     } 
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate);
+                Thread.Sleep(TimeSpan.FromMilliseconds(200));
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
                 Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
                 Assert.Equal("delete,compact", describeConfigsResult[0].Entries["cleanup.policy"].Value);
@@ -95,6 +96,7 @@ namespace Confluent.Kafka.IntegrationTests
                     { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "20002" , IncrementalOperation = AlterConfigOpType.Set } } } 
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate, new IncrementalAlterConfigsOptions { ValidateOnly = true }).Wait();
+                Thread.Sleep(TimeSpan.FromMilliseconds(200));
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
                 Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
 
@@ -116,6 +118,7 @@ namespace Confluent.Kafka.IntegrationTests
                     { configResource2, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "333" , IncrementalOperation = AlterConfigOpType.Set } } }
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
+                Thread.Sleep(TimeSpan.FromMilliseconds(200));
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource, configResource2 }).Result;
                 Assert.Equal(2, describeConfigsResult.Count);
                 Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
