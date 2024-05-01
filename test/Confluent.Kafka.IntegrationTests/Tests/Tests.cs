@@ -175,7 +175,7 @@ namespace Confluent.Kafka.IntegrationTests
             return oAuthBearerKafkaParameters;
         }
         public static bool semaphoreSkipFlakyTests(){
-            string onSemaphore = Environment.GetEnvironmentVariable("SEMAPHORE_SKIP_FLAKY_TETSTS");
+            string onSemaphore = Environment.GetEnvironmentVariable("SEMAPHORE_SKIP_FLAKY_TESTS");
             if (onSemaphore != null)
             {
                 return true;

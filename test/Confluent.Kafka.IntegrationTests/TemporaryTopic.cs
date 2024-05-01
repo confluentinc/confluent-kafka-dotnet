@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 
@@ -39,6 +40,9 @@ namespace Confluent.Kafka
             adminClient.CreateTopicsAsync(new List<TopicSpecification> {
                 new TopicSpecification { Name = Name, NumPartitions = numPartitions, ReplicationFactor = 1 } }).Wait();
             adminClient.Dispose();
+
+            // Wait for propagation (KRaft mainly)
+            Thread.Sleep(1000);
         }
 
         public void Dispose()
