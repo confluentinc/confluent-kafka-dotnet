@@ -1,5 +1,7 @@
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
+
 
 namespace Confluent.Kafka.IntegrationTests
 {
@@ -45,10 +47,10 @@ namespace Confluent.Kafka.IntegrationTests
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
-            var producer = new ProducerBuilder<string, string>(producerConfig)
+            var producer = new TestProducerBuilder<string, string>(producerConfig)
                 .SetOAuthBearerTokenRefreshHandler(Callback)
                 .Build();
-            var consumer = new ConsumerBuilder<string, string>(consumerConfig)
+            var consumer = new TestConsumerBuilder<string, string>(consumerConfig)
                 .SetOAuthBearerTokenRefreshHandler(Callback)
                 .Build();
 
@@ -107,12 +109,12 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             Error producerError = null;
-            var producer = new ProducerBuilder<string, string>(producerConfig)
+            var producer = new TestProducerBuilder<string, string>(producerConfig)
                 .SetOAuthBearerTokenRefreshHandler(Callback)
                 .SetErrorHandler((p, e) => producerError = e)
                 .Build();
             Error consumerError = null;
-            var consumer = new ConsumerBuilder<string, string>(consumerConfig)
+            var consumer = new TestConsumerBuilder<string, string>(consumerConfig)
                 .SetOAuthBearerTokenRefreshHandler(Callback)
                 .SetErrorHandler((c, e) => consumerError = e)
                 .Build();
@@ -173,7 +175,7 @@ namespace Confluent.Kafka.IntegrationTests
             // test Producer
             var producerConfig = new ProducerConfig(config);
             Error producerError = null;
-            var producer = new ProducerBuilder<string, string>(producerConfig)
+            var producer = new TestProducerBuilder<string, string>(producerConfig)
                 .SetOAuthBearerTokenRefreshHandler(TokenCallback)
                 .SetErrorHandler((p, e) => producerError = e)
                 .Build();
@@ -187,7 +189,7 @@ namespace Confluent.Kafka.IntegrationTests
                 GroupId = $"{Guid.NewGuid()}"
             };
             Error consumerError = null;
-            var consumer = new ConsumerBuilder<string, string>(consumerConfig)
+            var consumer = new TestConsumerBuilder<string, string>(consumerConfig)
                 .SetOAuthBearerTokenRefreshHandler(TokenCallback)
                 .SetErrorHandler((c, e) => consumerError = e)
                 .Build();
