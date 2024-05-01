@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -50,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var firstMessage = messages[0];
                 var lastMessage = messages[N - 1];
-                using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
                 {
                     var timeout = TimeSpan.FromSeconds(10);
 
@@ -102,7 +103,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // Empty topic case
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 var result = consumer.OffsetsForTimes(
                     new List<TopicPartitionTimestamp> { new TopicPartitionTimestamp(topic.Name, 0, new Timestamp(10000, TimestampType.CreateTime)) },
@@ -122,7 +123,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var baseTime = 100000;
             var messages = new DeliveryResult<byte[], byte[]>[count];
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 for (var index = 0; index < count; ++index)
                 {
