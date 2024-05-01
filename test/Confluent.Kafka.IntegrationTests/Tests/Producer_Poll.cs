@@ -20,6 +20,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -35,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start Producer_Poll");
 
             using (var tempTopic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 var r = producer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "a message" }).Result;
                 Assert.True(r.Status == PersistenceStatus.Persisted);

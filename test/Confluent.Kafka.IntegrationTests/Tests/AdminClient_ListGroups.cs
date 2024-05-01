@@ -17,6 +17,8 @@
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
+
 
 namespace Confluent.Kafka.IntegrationTests
 {
@@ -25,6 +27,13 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AdminClient_ListGroups(string bootstrapServers)
         {
+            if (!TestConsumerGroupProtocol.IsClassic())
+            {
+                LogToFile("KIP 848 Admin operations changes still aren't " +
+                          "available");
+                return;
+            }
+
             LogToFile("start AdminClient_ListGroups");
 
             var groupId = Guid.NewGuid().ToString();
@@ -41,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
                 .Build();
             for (var i = 0; i < 10; i++)
             {
-                using var consumer = new ConsumerBuilder<Ignore, Ignore>(consumerConfig).Build();
+                using var consumer = new TestConsumerBuilder<Ignore, Ignore>(consumerConfig).Build();
                 
                 consumer.Subscribe(topic.Name);
                 Task.Delay(TimeSpan.FromSeconds(1)).Wait();
