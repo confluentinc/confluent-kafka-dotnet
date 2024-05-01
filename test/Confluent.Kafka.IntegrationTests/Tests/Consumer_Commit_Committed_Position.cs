@@ -51,15 +51,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             var firstMessage = messages[0];
             var lastMessage = messages[N - 1];
+
             using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
-                if (TestConsumerGroupProtocol.IsClassic())
-                    consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
-                else
-                    // FIXME: There are problems with new coordinator when
-                    // manually assigning and committing offsets for a group
-                    // id it's returning NotCoordinatorForGroup
-                    consumer.Subscribe(singlePartitionTopic);
+                consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
                 // Test #0.5 (invalid cases)
                 var offset = consumer.Position(new TopicPartition("invalid-topic", 0));
                 Assert.Equal(Offset.Unset, offset);
