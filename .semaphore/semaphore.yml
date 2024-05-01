@@ -127,7 +127,8 @@ blocks:
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
         - name: 'Build and test with "consumer" protocol'
           commands:
-            - cd test/docker && docker-compose -f docker-compose-kraft.yaml up -d && sleep 300 && cd ../..
+            - cd test/docker && docker-compose -f docker-compose-kraft.yaml up -d && cd ../..
+            - sleep 300
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - export TEST_CONSUMER_GROUP_PROTOCOL=consumer
             - dotnet restore
