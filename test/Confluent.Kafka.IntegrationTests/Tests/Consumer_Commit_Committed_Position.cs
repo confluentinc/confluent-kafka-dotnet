@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
@@ -52,14 +53,37 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
-                
                 // Test #0.5 (invalid cases)
                 var offset = consumer.Position(new TopicPartition("invalid-topic", 0));
                 Assert.Equal(Offset.Unset, offset);
 
                 // Test #1
-                var record = consumer.Consume(TimeSpan.FromMilliseconds(6000));
-                var os = consumer.Commit();
+                // This is one of the first tests, it seems with KRaft
+                // group coordinator is loaded on demand.
+                var record = consumer.Consume(TimeSpan.FromMilliseconds(30000));
+                List<TopicPartitionOffset> os = null;
+                while (os == null)
+                {
+                    try
+                    {
+                        os = consumer.Commit();
+                    }
+                    catch (KafkaException e)
+                    {
+                        Console.WriteLine(e.Error);
+                        if (e.Error == ErrorCode.GroupLoadInProgress ||
+                            e.Error == ErrorCode.NotCoordinatorForGroup)
+                        {
+                            Thread.Sleep(1000);
+                            continue;
+                        }
+                        else
+                        {
+                           throw;
+                        }
+                    }
+                }
+
                 Assert.Equal(firstMsgOffset + 1, os[0].Offset);
                 offset = consumer.Position(new TopicPartition(singlePartitionTopic, 0));
                 var co = consumer.Committed(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
