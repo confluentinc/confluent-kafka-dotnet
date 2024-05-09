@@ -19,7 +19,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
-using System.Net;
 
 
 namespace Confluent.Kafka
