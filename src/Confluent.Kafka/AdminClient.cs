@@ -1843,7 +1843,10 @@ namespace Confluent.Kafka
             return completionSource.Task;
         }
         
-        public Task<ElectLeadersResult> ElectLeadersAsync(ElectLeadersRequest electLeadersRequest, ElectLeadersOptions options = null)
+        /// <summary>
+        ///  Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.ElectLeadersAsync(IAdminClient, ElectLeadersRequest, ElectLeadersOptions)" />
+        /// </summary>
+         public Task<ElectLeadersResult> ElectLeadersAsync(ElectLeadersRequest electLeadersRequest, ElectLeadersOptions options = null)
         {
             var completionSource = new TaskCompletionSource<ElectLeadersResult>();
             var gch = GCHandle.Alloc(completionSource);
