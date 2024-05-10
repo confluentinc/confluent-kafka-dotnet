@@ -942,22 +942,21 @@ namespace Confluent.Kafka.Examples
 
         static async Task ElectLeadersAsync(string bootstrapServers, string[] commandArgs)
         {
-            if (commandArgs.Length < 1)
+            if (commandArgs.Length < 3 && (commandArgs.Length - 1) % 2 != 0)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders <topic1> [<topic2 ... <topicN>]");
+                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders electionType(0/1) <topic1> <partition1> ..");
                 Environment.ExitCode = 1;
                 return;
             }
 
-            var electLeadersRequest = ParseElectLeadersArgs(commandArgs);
-
+            var electLeadersRequest = ParseElectLeadersArgs(commandArgs);        
             var timeout = TimeSpan.FromSeconds(30);
             ElectLeadersOptions options = new ElectLeadersOptions() { RequestTimeout = timeout };
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 try
                 {
-                    var result = await adminClient.ElectLeadersAsync(electLeadersRequest, new ElectLeadersOptions() { RequestTimeout = timeout });
+                    var result = await adminClient.ElectLeadersAsync(electLeadersRequest, options);
                     PrintElectLeaderResults(result);
                     
                 }

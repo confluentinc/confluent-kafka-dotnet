@@ -477,8 +477,7 @@ namespace Confluent.Kafka.Impl
             _ElectLeaderRequest_new = (_ElectLeaderRequest_new_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeader_new").CreateDelegate(typeof(_ElectLeaderRequest_new_delegate));
             _ElectLeaderRequest_destroy = (_ElectLeaderRequest_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeader_destroy").CreateDelegate(typeof(_ElectLeaderRequest_destroy_delegate));
             _ElectLeader = (_ElectLeader_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeader").CreateDelegate(typeof(_ElectLeader_delegate));
-            _ElectionResult_partitions = (_ElectionResult_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_ElectionResult_partitions").CreateDelegate(typeof(_ElectionResult_partitions_delegate));
-            _ElectionResult_partitions_by_idx = (_ElectionResult_partitions_by_idx_delegate)methods.Single(m => m.Name == "rd_kafka_ElectionResult_partitions_by_idx").CreateDelegate(typeof(_ElectionResult_partitions_by_idx_delegate));
+            _ElectionResult_partition = (_ElectionResult_partition_delegate)methods.Single(m => m.Name == "rd_kafka_ElectionResult_partition").CreateDelegate(typeof(_ElectionResult_partition_delegate));
             _ElectionResult_error = (_ElectionResult_error_delegate)methods.Single(m => m.Name == "rd_kafka_ElectionResult_error").CreateDelegate(typeof(_ElectionResult_error_delegate));
 
             _DescribeCluster = (_DescribeCluster_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster").CreateDelegate(typeof (_DescribeCluster_delegate));
@@ -2281,15 +2280,10 @@ namespace Confluent.Kafka.Impl
         internal static void ElectLeader(IntPtr handle, IntPtr electLeaderRequest, IntPtr options, IntPtr resultQueuePtr)
               => _ElectLeader(handle, electLeaderRequest, options, resultQueuePtr);
 
-        private delegate IntPtr _ElectionResult_partitions_delegate(IntPtr result, out UIntPtr cntp);
-        private static _ElectionResult_partitions_delegate _ElectionResult_partitions;
-        internal static IntPtr ElectionResult_partitions(IntPtr result, out UIntPtr cntp)
-              => _ElectionResult_partitions(result, out cntp);
-        
-        private delegate IntPtr _ElectionResult_partitions_by_idx_delegate(IntPtr result, UIntPtr idx);
-        private static _ElectionResult_partitions_by_idx_delegate _ElectionResult_partitions_by_idx;
-        internal static IntPtr ElectionResult_partitions_by_idx(IntPtr result, UIntPtr idx)
-              => _ElectionResult_partitions_by_idx(result, idx);
+        private delegate IntPtr _ElectionResult_partition_delegate(IntPtr result, out UIntPtr cntp);
+        private static _ElectionResult_partition_delegate _ElectionResult_partition;
+        internal static IntPtr ElectionResult_partition(IntPtr result, out UIntPtr cntp)
+              => _ElectionResult_partition(result, out cntp);
 
         private delegate ErrorCode _ElectionResult_error_delegate(IntPtr result);
         private static _ElectionResult_error_delegate _ElectionResult_error;

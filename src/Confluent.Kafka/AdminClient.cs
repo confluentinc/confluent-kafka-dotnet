@@ -634,16 +634,12 @@ namespace Confluent.Kafka
             };
         }
 
-        private Tuple<ErrorCode,List<TopicPartitionError>> extractTopicPartitionErrors(IntPtr topicPartitionErrorsPtr, int topicPartitionErrorsCount)
+        private Tuple<ErrorCode,List<TopicPartitionError>> extractTopicPartitionErrors(IntPtr[] topicPartitionErrorsPtr, int topicPartitionErrorsCount)
         {
             ErrorCode err = ErrorCode.NoError;
-            if(topicPartitionErrorsPtr == IntPtr.Zero){
-                return null;
-            }
             List<TopicPartitionError> topicPartitionErrors = new List<TopicPartitionError>(topicPartitionErrorsCount);
             for(int i=0;i<topicPartitionErrorsCount;i++){
-                IntPtr topicPartitionErrorPtr = Librdkafka.ElectionResult_partitions_by_idx(topicPartitionErrorsPtr, (UIntPtr)i);
-                var tpe = Marshal.PtrToStructure<rd_kafka_topic_partition_result>(topicPartitionErrorPtr);
+                var tpe = Marshal.PtrToStructure<rd_kafka_topic_partition_result>(topicPartitionErrorsPtr[i]);
                 if(tpe.errCode != ErrorCode.NoError){
                     err = tpe.errCode;
                 }
@@ -658,8 +654,10 @@ namespace Confluent.Kafka
 
         private ElectLeadersReport extractElectLeadersResults(IntPtr resultPtr)
         {
-            var partitionsPtr = Librdkafka.ElectionResult_partitions(resultPtr, out UIntPtr partitionsCountPtr);
-            var result = extractTopicPartitionErrors(partitionsPtr, (int)partitionsCountPtr);
+            IntPtr partitionsPtr = Librdkafka.ElectionResult_partition(resultPtr, out UIntPtr partitionsCountPtr);
+            IntPtr[] partitionsPtrArr = new IntPtr[(int)partitionsCountPtr];
+            Marshal.Copy(partitionsPtr, partitionsPtrArr, 0, (int)partitionsCountPtr);
+            var result = extractTopicPartitionErrors(partitionsPtrArr, (int)partitionsCountPtr);
             return new ElectLeadersReport{
                 ErrorCode = result.Item1,
                 PartitionResults = result.Item2
@@ -682,9 +680,7 @@ namespace Confluent.Kafka
                                 {
                                     continue;
                                 }
-
                                 var type = Librdkafka.event_type(eventPtr);
-
                                 var ptr = (IntPtr)Librdkafka.event_opaque(eventPtr);
                                 var gch = GCHandle.FromIntPtr(ptr);
                                 var adminClientResult = gch.Target;
@@ -1369,6 +1365,7 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.DescribeTopics_Result, typeof(TaskCompletionSource<DescribeTopicsResult>) },
             { Librdkafka.EventType.DescribeCluster_Result, typeof(TaskCompletionSource<DescribeClusterResult>) },
             { Librdkafka.EventType.ListOffsets_Result, typeof(TaskCompletionSource<ListOffsetsResult>) },
+            { Librdkafka.EventType.ElectLeaders_Result, typeof(TaskCompletionSource<ElectLeadersResult>) },
         };
 
 
