@@ -631,14 +631,14 @@ namespace Confluent.Kafka
         }
         
         /// <summary>
-        ///    Perform Preffered or Unclean leader election for partitions.
+        ///    Perform Preferred or Unclean leader election for partitions.
         /// </summary>
         /// <param name="adminClient">
         ///     AdminClient interface.
         /// </param>
         /// <param name="electLeadersRequest">
         ///      Contains :
-        ///         ElectionType : The type of election to trigger(Preffered or Uncklean).
+        ///         ElectionType : The type of election to trigger(Preferred or Uncklean).
         ///         partitions: The partitions for which election has to be performed.
         /// </param>
         /// <param name="options">
