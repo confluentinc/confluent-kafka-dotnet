@@ -638,16 +638,12 @@ namespace Confluent.Kafka
         /// </param>
         /// <param name="electLeadersRequest">
         ///      Contains :
-        ///         ElectionType : The type of election to trigger(Preferred or Uncklean).
+        ///         ElectionType : The type of election to trigger(Preferred or Unclean).
         ///         partitions: The partitions for which election has to be performed.
         /// </param>
         /// <param name="options">
         ///      The options to use for this call.
         /// </param>
-        /// <returns>
-        ///    A <see cref="Confluent.Kafka.Admin.ElectLeadersResult"/>
-        /// </returns>
-        /// <exception cref="NotImplementedException"></exception>
         public static Task<ElectLeadersResult> ElectLeadersAsync(
             this IAdminClient adminClient,
             ElectLeadersRequest electLeadersRequest,
