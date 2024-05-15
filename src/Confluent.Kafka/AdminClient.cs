@@ -682,7 +682,7 @@ namespace Confluent.Kafka
                                 }
 
                                 var type = Librdkafka.event_type(eventPtr);
-                                
+
                                 var ptr = (IntPtr)Librdkafka.event_opaque(eventPtr);
                                 var gch = GCHandle.FromIntPtr(ptr);
                                 var adminClientResult = gch.Target;
