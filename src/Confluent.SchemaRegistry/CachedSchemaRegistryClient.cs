@@ -251,7 +251,7 @@ namespace Confluent.SchemaRegistry
             catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
 
             var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
-            if(string.IsNullOrEmpty(sslCaLocation))
+            if (string.IsNullOrEmpty(sslCaLocation))
             {
                 this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
             } else
