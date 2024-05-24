@@ -106,11 +106,11 @@ namespace Confluent.SchemaRegistry
             {
                 handler.ServerCertificateCustomValidationCallback = (_, __, ___, ____) => { return true; };
             } 
-            else  if(sslCaCertificate != null)
+            else  if (sslCaCertificate != null)
             {
                 handler.ServerCertificateCustomValidationCallback = (_, __, chain, policyErrors) => { 
                     
-                    if(policyErrors == SslPolicyErrors.None)
+                    if (policyErrors == SslPolicyErrors.None)
                     {
                         return true;
                     }
