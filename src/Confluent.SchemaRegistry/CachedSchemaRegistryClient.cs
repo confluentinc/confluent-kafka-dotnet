@@ -352,7 +352,7 @@ namespace Confluent.SchemaRegistry
             }
 
             var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
-            if(string.IsNullOrEmpty(sslCaLocation))
+            if (string.IsNullOrEmpty(sslCaLocation))
             {
                 this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
             } else
