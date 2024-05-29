@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using NJsonSchema;
 using NJsonSchema.Generation;
@@ -53,21 +52,11 @@ namespace Confluent.SchemaRegistry.Serdes
     ///     integration of System.Text.Json and JSON Schema, so this
     ///     is not yet supported by the serializer.
     /// </remarks>
-    public class JsonSerializer<T> : IAsyncSerializer<T> where T : class
+    public class JsonSerializer<T> : AsyncSerializer<T, JsonSchema> where T : class
     {
-        private const int DefaultInitialBufferSize = 1024;
-
-        private bool autoRegisterSchema = true;
-        private bool normalizeSchemas = false;
-        private bool useLatestVersion = false;
-        private bool latestCompatibilityStrict = false;
-        private int initialBufferSize = DefaultInitialBufferSize;
-        private SubjectNameStrategyDelegate subjectNameStrategy = null;
-        private ISchemaRegistryClient schemaRegistryClient;
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-        private HashSet<string> subjectsRegistered = new HashSet<string>();
-        private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
+        
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
         /// <remarks>
@@ -79,29 +68,6 @@ namespace Confluent.SchemaRegistry.Serdes
         private JsonSchema schema;
         private string schemaText;
         private string schemaFullname;
-
-        private void SetConfigUtil(JsonSerializerConfig config)
-        {
-            if (config == null) { return; }
-
-            var nonJsonConfig = config.Where(item => !item.Key.StartsWith("json."));
-            if (nonJsonConfig.Count() > 0)
-            {
-                throw new ArgumentException($"JsonSerializer: unknown configuration parameter {nonJsonConfig.First().Key}");
-            }
-
-            if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
-            if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
-            if (config.NormalizeSchemas != null) { this.normalizeSchemas = config.NormalizeSchemas.Value; }
-            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
-            if (config.LatestCompatibilityStrict != null) { this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-
-            if (this.useLatestVersion && this.autoRegisterSchema)
-            {
-                throw new ArgumentException($"JsonSerializer: cannot enable both use.latest.version and auto.register.schemas");
-            }
-        }
 
         /// <summary>
         ///     Initialize a new instance of the JsonSerializer class.
@@ -115,18 +81,38 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, 
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
+            : base(schemaRegistryClient, config, ruleExecutors)
         {
-            this.schemaRegistryClient = schemaRegistryClient;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
             this.schema = this.jsonSchemaGeneratorSettings == null
                 ? JsonSchema.FromType<T>()
                 : JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
-            this.schemaFullname = schema.Title;
             this.schemaText = schema.ToJson();
+            this.schemaFullname = schema.Title;
+            
+            if (config == null) { return; }
 
-            SetConfigUtil(config);
+            var nonJsonConfig = config
+                .Where(item => !item.Key.StartsWith("json.") && !item.Key.StartsWith("rules."));
+            if (nonJsonConfig.Count() > 0)
+            {
+                throw new ArgumentException($"JsonSerializer: unknown configuration parameter {nonJsonConfig.First().Key}");
+            }
+
+            if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
+            if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
+            if (config.NormalizeSchemas != null) { this.normalizeSchemas = config.NormalizeSchemas.Value; }
+            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
+            if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
+            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+
+            if (this.useLatestVersion && this.autoRegisterSchema)
+            {
+                throw new ArgumentException($"JsonSerializer: cannot enable both use.latest.version and auto.register.schemas");
+            }
         }
 
         /// <summary>
@@ -148,10 +134,10 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, 
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null) 
+            : this(schemaRegistryClient, config, jsonSchemaGeneratorSettings, ruleExecutors)
         {
-            this.schemaRegistryClient = schemaRegistryClient;
-            this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
             foreach (var reference in schema.References)
             {
                 ReferenceList.Add(reference);
@@ -159,13 +145,10 @@ namespace Confluent.SchemaRegistry.Serdes
 
             JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
-            JsonSchema jsonSchema = utils.GetResolvedSchema();
+            JsonSchema jsonSchema = utils.GetResolvedSchema().Result;
             this.schema = jsonSchema;
-
             this.schemaText = schema.SchemaString;
             this.schemaFullname = jsonSchema.Title;
-
-            SetConfigUtil(config);
         }
 
         /// <summary>
@@ -188,23 +171,18 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> SerializeAsync(T value, SerializationContext context)
+        public override async Task<byte[]> SerializeAsync(T value, SerializationContext context)
         {
             if (value == null) { return null; }
 
-            var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
-            var validationResult = validator.Validate(serializedString, this.schema);
-            if (validationResult.Count > 0)
-            {
-                throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
-            }
-
             try
             {
-                await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+                string subject;
+                RegisteredSchema latestSchema = null;
+                await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    string subject = this.subjectNameStrategy != null
+                    subject = this.subjectNameStrategy != null
                         // use the subject name strategy specified in the serializer config if available.
                         ? this.subjectNameStrategy(context, this.schemaFullname)
                         // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
@@ -214,30 +192,20 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (!subjectsRegistered.Contains(subject))
                     {
-                        if (autoRegisterSchema)
+                        latestSchema = await GetReaderSchema(subject, new Schema(schemaText, ReferenceList, SchemaType.Json))
+                            .ConfigureAwait(continueOnCapturedContext: false);
+                        if (latestSchema != null)
                         {
-                            schemaId = await schemaRegistryClient.RegisterSchemaAsync(subject,
-                                        new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
-                        }
-                        else if (useLatestVersion)
-                        {
-                            var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
-                                .ConfigureAwait(continueOnCapturedContext: false);
-                            if (latestCompatibilityStrict)
-                            {
-                                var isCompatible = await schemaRegistryClient.IsCompatibleAsync(subject, new Schema(this.schemaText, ReferenceList, SchemaType.Json))
-                                    .ConfigureAwait(continueOnCapturedContext: false);
-                                if (!isCompatible)
-                                {
-                                    throw new InvalidDataException("Schema not compatible with latest schema : " + latestSchema.SchemaString);
-                                }
-                            }
                             schemaId = latestSchema.Id;
                         }
                         else
                         {
-                            schemaId = await schemaRegistryClient.GetSchemaIdAsync(subject,
+                            // first usage: register/get schema to check compatibility
+                            schemaId = autoRegisterSchema
+                                ? await schemaRegistryClient.RegisterSchemaAsync(subject,
+                                        new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
+                                    .ConfigureAwait(continueOnCapturedContext: false)
+                                : await schemaRegistryClient.GetSchemaIdAsync(subject,
                                         new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
                         }
@@ -246,7 +214,28 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
                 finally
                 {
-                    serializeMutex.Release();
+                    serdeMutex.Release();
+                }
+                
+                if (latestSchema != null)
+                {
+                    var laterSchemaJson = await GetParsedSchema(latestSchema).ConfigureAwait(false);
+                    FieldTransformer fieldTransformer = async (ctx, transform, message) =>
+                    {
+                        return await JsonUtils.Transform(ctx, laterSchemaJson, "$", message, transform).ConfigureAwait(false);
+                    };
+                    value = await ExecuteRules(context.Component == MessageComponentType.Key, subject,
+                            context.Topic, context.Headers, RuleMode.Write, null,
+                            latestSchema, value, fieldTransformer)
+                        .ContinueWith(t => (T)t.Result)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                }
+
+                var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
+                var validationResult = validator.Validate(serializedString, this.schema);
+                if (validationResult.Count > 0)
+                {
+                    throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
                 }
 
                 using (var stream = new MemoryStream(initialBufferSize))
@@ -262,6 +251,13 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 throw e.InnerException;
             }
+        }
+
+        protected override async Task<JsonSchema> ParseSchema(Schema schema)
+        {
+            JsonSchemaResolver utils = new JsonSchemaResolver(
+                schemaRegistryClient, schema, jsonSchemaGeneratorSettings);
+            return await utils.GetResolvedSchema();
         }
     }
 }
