@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -36,6 +37,9 @@ namespace Confluent.Kafka
             public IEnumerable<KeyValuePair<string, string>> config;
             public Action<Error> errorHandler;
             public Action<LogMessage> logHandler;
+#if NET6_0_OR_GREATER
+            internal ReadOnlySpanAction<byte, object> statisticsUtf8Handler;
+#endif
             public Action<string> statisticsHandler;
             public Action<string> oAuthBearerTokenRefreshHandler;
             public Dictionary<string, PartitionerDelegate> partitioners;
@@ -139,23 +143,38 @@ namespace Confluent.Kafka
         }
 
 
+#if NET6_0_OR_GREATER
+        private ReadOnlySpanAction<byte, object> statisticsUtf8Handler;
+#endif
         private Action<string> statisticsHandler;
         private Librdkafka.StatsDelegate statisticsCallbackDelegate;
         private int StatisticsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (ownedKafkaHandle.IsClosed) { return 0; }
-
             try
             {
-                statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
+                // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+#if NET6_0_OR_GREATER
+                if (statisticsUtf8Handler != null)
+                {
+                    unsafe
+                    {
+                        statisticsUtf8Handler.Invoke(new ReadOnlySpan<byte>(json.ToPointer(), (int)json_len), null);
+                    }
+                }
+#endif
+
+                if (statisticsHandler != null)
+                {
+                    statisticsHandler.Invoke(Util.Marshal.PtrToStringUTF8(json, json_len));
+                }
             }
             catch (Exception e)
             {
                 handlerException = e;
             }
 
-            return 0; // instruct librdkafka to immediately free the json ptr.
+            return 0; // instruct librdkafka to immediately free the json ptr
         }
 
         private Action<string> oAuthBearerTokenRefreshHandler;
@@ -576,6 +595,9 @@ namespace Confluent.Kafka
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
             //       that never complete are never created when this is set to true.
 
+#if NET6_0_OR_GREATER
+            this.statisticsUtf8Handler = baseConfig.statisticsUtf8Handler;
+#endif
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
@@ -675,7 +697,11 @@ namespace Confluent.Kafka
             {
                 Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
             }
+#if NET6_0_OR_GREATER
+            if (statisticsUtf8Handler != null || statisticsHandler != null)
+#else
             if (statisticsHandler != null)
+#endif
             {
                 Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
             }
