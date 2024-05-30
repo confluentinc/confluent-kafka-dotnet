@@ -45,7 +45,7 @@ namespace Confluent.SchemaRegistry.Encryption
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Equals(KmsProps, other.KmsProps) && Doc == other.Doc && Shared == other.Shared;
+            return Utils.DictEquals(KmsProps, other.KmsProps) && Doc == other.Doc && Shared == other.Shared;
         }
 
         public override bool Equals(object obj)

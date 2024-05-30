@@ -50,9 +50,10 @@ namespace Confluent.SchemaRegistry
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Equals(Tags, other.Tags) && Equals(Properties, other.Properties) && Equals(Sensitive, other.Sensitive);
+            return Utils.DictEquals(Tags, other.Tags) && Utils.DictEquals(Properties, other.Properties) && 
+                Utils.SetEquals(Sensitive, other.Sensitive);
         }
-
+        
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;

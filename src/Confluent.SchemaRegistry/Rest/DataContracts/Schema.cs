@@ -252,7 +252,7 @@ namespace  Confluent.SchemaRegistry
         ///     otherwise, false. If other is null, the method returns false.
         /// </returns>
         public bool Equals(Schema other)
-            => SchemaString == other.SchemaString && Equals(References, other.References) &&
+            => SchemaString == other.SchemaString && Utils.ListEquals(References, other.References) &&
                Equals(Metadata, other.Metadata) && Equals(RuleSet, other.RuleSet);
 
         /// <summary>

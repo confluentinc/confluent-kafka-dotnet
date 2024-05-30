@@ -93,8 +93,9 @@ namespace Confluent.SchemaRegistry
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
             return Name == other.Name && Doc == other.Doc && Kind == other.Kind && Mode == other.Mode &&
-                   Type == other.Type && Equals(Tags, other.Tags) && Equals(Params, other.Params) &&
-                   Expr == other.Expr && OnSuccess == other.OnSuccess && OnFailure == other.OnFailure &&
+                   Type == other.Type && Utils.SetEquals(Tags, other.Tags) && 
+                   Utils.DictEquals(Params, other.Params) && Expr == other.Expr && 
+                   OnSuccess == other.OnSuccess && OnFailure == other.OnFailure &&
                    Disabled == other.Disabled;
         }
 

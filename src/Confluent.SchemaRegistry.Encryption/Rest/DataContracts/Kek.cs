@@ -70,10 +70,11 @@ namespace Confluent.SchemaRegistry.Encryption
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
             return Name == other.Name && KmsType == other.KmsType && 
-                   KmsKeyId == other.KmsKeyId && Equals(KmsProps, other.KmsProps) && 
+                   KmsKeyId == other.KmsKeyId && 
+                   Utils.DictEquals(KmsProps, other.KmsProps) && 
                    Doc == other.Doc && Shared == other.Shared && Deleted == other.Deleted;
         }
-
+        
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
