@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A deserializer for use with <see cref="Confluent.Kafka.Consumer{TKey,TValue}" />.
+    ///     A deserializer for use with <see cref="Consumer{TKey,TValue}" />.
     /// </summary>
     public interface IAsyncDeserializer<T>
     {
@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         ///     The raw byte data to deserialize.
         /// </param>
         /// <param name="isNull">
-        ///     True if this is a null value.
+        ///     True if this is a <see langword="null"/> value.
         /// </param>
         /// <param name="context">
         ///     Context relevant to the deserialize operation.

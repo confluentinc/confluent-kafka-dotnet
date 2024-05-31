@@ -14,17 +14,16 @@
 //
 // Refer to LICENSE for more information.
 
+using Avro.Generic;
+using Avro.IO;
+using Avro.Specific;
+using Confluent.Kafka;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Avro.Specific;
-using Avro.IO;
-using Avro.Generic;
-using Confluent.Kafka;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -32,20 +31,20 @@ namespace Confluent.SchemaRegistry.Serdes
     internal class SpecificDeserializerImpl<T> : IAvroDeserializerImpl<T>
     {
         /// <remarks>
-        ///     A datum reader cache (one corresponding to each write schema that's been seen) 
+        ///     A datum reader cache (one corresponding to each write schema that's been seen)
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId 
+        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId
             = new Dictionary<int, DatumReader<T>>();
 
-        private SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
 
         /// <summary>
         ///     The Avro schema used to read values of type <typeparamref name="T"/>
         /// </summary>
-        public global::Avro.Schema ReaderSchema { get; private set; }
+        public Avro.Schema ReaderSchema { get; private set; }
 
-        private ISchemaRegistryClient schemaRegistryClient;
+        private readonly ISchemaRegistryClient schemaRegistryClient;
 
         public SpecificDeserializerImpl(ISchemaRegistryClient schemaRegistryClient)
         {
@@ -57,35 +56,35 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             else if (typeof(T).Equals(typeof(int)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("int");
+                ReaderSchema = Avro.Schema.Parse("int");
             }
             else if (typeof(T).Equals(typeof(bool)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("boolean");
+                ReaderSchema = Avro.Schema.Parse("boolean");
             }
             else if (typeof(T).Equals(typeof(double)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("double");
+                ReaderSchema = Avro.Schema.Parse("double");
             }
             else if (typeof(T).Equals(typeof(string)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("string");
+                ReaderSchema = Avro.Schema.Parse("string");
             }
             else if (typeof(T).Equals(typeof(float)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("float");
+                ReaderSchema = Avro.Schema.Parse("float");
             }
             else if (typeof(T).Equals(typeof(long)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("long");
+                ReaderSchema = Avro.Schema.Parse("long");
             }
             else if (typeof(T).Equals(typeof(byte[])))
             {
-                ReaderSchema = global::Avro.Schema.Parse("bytes");
+                ReaderSchema = Avro.Schema.Parse("bytes");
             }
             else if (typeof(T).Equals(typeof(Null)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("null");
+                ReaderSchema = Avro.Schema.Parse("null");
             }
             else
             {
@@ -101,7 +100,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             try
             {
-                // Note: topic is not necessary for deserialization (or knowing if it's a key 
+                // Note: topic is not necessary for deserialization (or knowing if it's a key
                 // or value) only the schema id is needed.
 
                 if (array.Length < 5)
@@ -132,7 +131,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             }
 
                             var writerSchemaJson = await schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false);
-                            var writerSchema = global::Avro.Schema.Parse(writerSchemaJson.SchemaString);
+                            var writerSchema = Avro.Schema.Parse(writerSchemaJson.SchemaString);
 
                             datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
                             datumReaderBySchemaId[writerId] = datumReader;
@@ -145,7 +144,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
                     {
-                        // This is a generic deserializer and it knows the type that needs to be serialized into. 
+                        // This is a generic deserializer and it knows the type that needs to be serialized into.
                         // Passing default(T) will result in null value and that will force the datumRead to
                         // use the schema namespace and name provided in the schema, which may not match (T).
                         var reuse = Activator.CreateInstance<T>();
@@ -160,6 +159,5 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw e.InnerException;
             }
         }
-
     }
 }

@@ -21,9 +21,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using System.Security.Cryptography.X509Certificates;
 
 namespace Confluent.SchemaRegistry
 {
@@ -61,9 +60,9 @@ namespace Confluent.SchemaRegistry
         {
             this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
 
-            this.clients = schemaRegistryUrl
+            clients = schemaRegistryUrl
                 .Split(',')
-                .Select(SanitizeUri)// need http or https - use http if not present.
+                .Select(SanitizeUri) // need http or https - use http if not present.
                 .Select(uri =>
                 {
                     HttpClient client;
@@ -102,30 +101,24 @@ namespace Confluent.SchemaRegistry
 
         private RegisteredSchema SanitizeRegisteredSchema(RegisteredSchema schema)
         {
-            if (schema.References == null)
-            {
-                // The JSON responses from Schema Registry does not include
-                // a references list if there are no references, which means
-                // schema.References will be null here in that case. It's
-                // semantically better if this is an empty list however, so
-                // expose that.
-                schema.References = EmptyReferencesList;
-            }
+            // The JSON responses from Schema Registry does not include
+            // a references list if there are no references, which means
+            // schema.References will be null here in that case. It's
+            // semantically better if this is an empty list however, so
+            // expose that.
+            schema.References ??= EmptyReferencesList;
 
             return schema;
         }
 
         private Schema SanitizeSchema(Schema schema)
         {
-            if (schema.References == null)
-            {
-                // The JSON response from Schema Registry does not include
-                // a references list if there are no references, which means
-                // schema.References will be null here in that case. It's
-                // semantically better if this is an empty list however, so
-                // expose that.
-                schema.References = EmptyReferencesList;
-            }
+            // The JSON response from Schema Registry does not include
+            // a references list if there are no references, which means
+            // schema.References will be null here in that case. It's
+            // semantically better if this is an empty list however, so
+            // expose that.
+            schema.References ??= EmptyReferencesList;
 
             if (schema.SchemaType_String == null)
             {
@@ -144,10 +137,10 @@ namespace Confluent.SchemaRegistry
         {
             // There may be many base urls - roll until one is found that works.
             //
-            // Start with the last client that was used by this method, which only gets set on 
+            // Start with the last client that was used by this method, which only gets set on
             // success, so it's probably going to work.
             //
-            // Otherwise, try every client until a successful call is made (true even under 
+            // Otherwise, try every client until a successful call is made (true even under
             // concurrent access).
 
             string aggregatedErrorMessage = null;
@@ -157,7 +150,7 @@ namespace Confluent.SchemaRegistry
             int startClientIndex;
             lock (lastClientUsedLock)
             {
-                startClientIndex = this.lastClientUsed;
+                startClientIndex = lastClientUsed;
             }
 
             int loopIndex = startClientIndex;
@@ -178,7 +171,7 @@ namespace Confluent.SchemaRegistry
                     {
                         lock (lastClientUsedLock)
                         {
-                            this.lastClientUsed = clientIndex;
+                            lastClientUsed = clientIndex;
                         }
 
                         return response;
@@ -273,7 +266,7 @@ namespace Confluent.SchemaRegistry
 
         private HttpRequestMessage CreateRequest(string endPoint, HttpMethod method, params object[] jsonBody)
         {
-            HttpRequestMessage request = new HttpRequestMessage(method, endPoint);
+            var request = new HttpRequestMessage(method, endPoint);
             request.Headers.Add("Accept", acceptHeader);
             if (jsonBody.Length != 0)
             {
@@ -319,7 +312,7 @@ namespace Confluent.SchemaRegistry
 
         public async Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize)
             => schema.SchemaType == SchemaType.Avro
-                // In the avro case, just send the schema string to maintain backards compatibility.
+                // In the avro case, just send the schema string to maintain backwards compatibility.
                 ? (await RequestAsync<SchemaId>($"subjects/{WebUtility.UrlEncode(subject)}/versions?normalize={normalize}", HttpMethod.Post, new SchemaString(schema.SchemaString))
                         .ConfigureAwait(continueOnCapturedContext: false)).Id
                 : (await RequestAsync<SchemaId>($"subjects/{WebUtility.UrlEncode(subject)}/versions?normalize={normalize}", HttpMethod.Post, schema)
@@ -328,7 +321,7 @@ namespace Confluent.SchemaRegistry
         // Checks whether a schema has been registered under a given subject.
         public async Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas, bool normalize)
             => SanitizeRegisteredSchema(schema.SchemaType == SchemaType.Avro
-                // In the avro case, just send the schema string to maintain backards compatibility.
+                // In the avro case, just send the schema string to maintain backwards compatibility.
                 ? await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}?normalize={normalize}&deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema.SchemaString))
                         .ConfigureAwait(continueOnCapturedContext: false)
                 : await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}?normalize={normalize}&deleted={!ignoreDeletedSchemas}", HttpMethod.Post, schema)
@@ -340,7 +333,7 @@ namespace Confluent.SchemaRegistry
 
         public async Task<bool> TestCompatibilityAsync(string subject, int versionId, Schema schema)
             => schema.SchemaType == SchemaType.Avro
-                // In the avro case, just send the schema string to maintain backards compatibility.
+                // In the avro case, just send the schema string to maintain backwards compatibility.
                 ? (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{WebUtility.UrlEncode(subject)}/versions/{versionId}", HttpMethod.Post, new SchemaString(schema.SchemaString))
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible
                 : (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{WebUtility.UrlEncode(subject)}/versions/{versionId}", HttpMethod.Post, schema)
@@ -349,13 +342,13 @@ namespace Confluent.SchemaRegistry
 
         public async Task<bool> TestLatestCompatibilityAsync(string subject, Schema schema)
             => schema.SchemaType == SchemaType.Avro
-                // In the avro case, just send the schema string to maintain backards compatibility.
+                // In the avro case, just send the schema string to maintain backwards compatibility.
                 ? (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{WebUtility.UrlEncode(subject)}/versions/latest", HttpMethod.Post, new SchemaString(schema.SchemaString))
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible
                 : (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{WebUtility.UrlEncode(subject)}/versions/latest", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
-        #endregion Compatibility 
+        #endregion Compatibility
 
         #region Config
 
@@ -383,7 +376,7 @@ namespace Confluent.SchemaRegistry
         {
             if (disposing)
             {
-                foreach (var client in this.clients)
+                foreach (var client in clients)
                 {
                     client.Dispose();
                 }

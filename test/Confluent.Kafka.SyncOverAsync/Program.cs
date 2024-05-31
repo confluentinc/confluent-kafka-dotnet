@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka;
 
 
 // This program is included as an educational tool to allow you to
@@ -58,7 +57,7 @@ namespace Confluent.Kafka.SyncOverAsync
     {
         static void Main(string[] args)
         {
-            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);   
+            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);
             ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
             ThreadPool.GetMaxThreads(out workerThreads, out completionPortThreads);
             Console.WriteLine($"ThreadPool workerThreads: {workerThreads},  completionPortThreads: {completionPortThreads}");
@@ -67,7 +66,7 @@ namespace Confluent.Kafka.SyncOverAsync
             {
                 BootstrapServers = args[0]
             };
-            
+
             using (var producer = new ProducerBuilder<Null, string>(pConfig)
                 .SetValueSerializer(new SimpleAsyncSerializer().SyncOverAsync()) // may deadlock due to thread pool exhaustion.
                 // .SetValueSerializer(new SimpleSyncSerializer()) // will never deadlock.
@@ -88,7 +87,7 @@ namespace Confluent.Kafka.SyncOverAsync
                             Console.WriteLine($"running task {taskNumber}");
                             object waitObj = new object();
 
-                            Action<DeliveryReport<Null, string>> handler = dr => 
+                            Action<DeliveryReport<Null, string>> handler = dr =>
                             {
                                 // in a deadlock scenario, the delivery handler will
                                 // never execute since execution of the Produce

@@ -23,14 +23,14 @@ using Confluent.Kafka;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     <see cref="Confluent.SchemaRegistry.Serdes.AvroSerializer{T}" />
+    ///     <see cref="AvroSerializer{T}" />
     ///     configuration properties.
     /// </summary>
     public class AvroSerializerConfig : Config
     {
         /// <summary>
-        ///     Configuration property names specific to 
-        ///     <see cref="Confluent.SchemaRegistry.Serdes.AvroSerializer{T}" />.
+        ///     Configuration property names specific to
+        ///     <see cref="AvroSerializer{T}" />.
         /// </summary>
         public static class PropertyNames
         {
@@ -49,7 +49,7 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     Specifies whether or not the Avro serializer should attempt to auto-register
             ///     unrecognized schemas with Confluent Schema Registry.
             ///
-            ///     default: true
+            ///     default: <see langword="true"/>
             /// </summary>
             public const string AutoRegisterSchemas = "avro.serializer.auto.register.schemas";
 
@@ -57,7 +57,7 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     Specifies whether to normalize schemas, which will transform schemas
             ///     to have a consistent format, including ordering properties and references.
             ///
-            ///     default: false
+            ///     default: <see langword="false"/>
             /// </summary>
             public const string NormalizeSchemas = "avro.serializer.normalize.schemas";
 
@@ -67,13 +67,15 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     WARNING: There is no check that the latest schema is backwards compatible
             ///     with the schema of the object being serialized.
             ///
-            ///     default: false
+            ///     default: <see langword="false"/>
             /// </summary>
             public const string UseLatestVersion = "avro.serializer.use.latest.version";
 
             /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
-            ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
+            ///     Possible values: <see cref="SchemaRegistry.SubjectNameStrategy" />
+            ///
+            ///     default: <see cref="SubjectNameStrategy.Topic"/>
             /// </summary>
             public const string SubjectNameStrategy = "avro.serializer.subject.name.strategy";
         }
@@ -92,15 +94,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public AvroSerializerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config.ToDictionary(v => v.Key, v => v.Value)) { }
 
 
-        /// <summary>
-        ///     Specifies the initial size (in bytes) of the buffer used for Avro message
-        ///     serialization. Use a value high enough to avoid resizing the buffer, but
-        ///     small enough to avoid excessive memory use. Inspect the size of the byte
-        ///     array returned by the Serialize method to estimate an appropriate value.
-        ///     Note: each call to serialize creates a new buffer.
-        /// 
-        ///     default: 1024
-        /// </summary>
+        /// <inheritdoc cref="PropertyNames.BufferBytes"/>
         public int? BufferBytes
         {
             get { return GetInt(PropertyNames.BufferBytes); }
@@ -108,25 +102,15 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
 
-        /// <summary>
-        ///     Specifies whether or not the Avro serializer should attempt to auto-register
-        ///     unrecognized schemas with Confluent Schema Registry.
-        ///
-        ///     default: true
-        /// </summary>
+        /// <inheritdoc cref="PropertyNames.AutoRegisterSchemas"/>
         public bool? AutoRegisterSchemas
         {
             get { return GetBool(PropertyNames.AutoRegisterSchemas); }
             set { SetObject(PropertyNames.AutoRegisterSchemas, value); }
         }
-        
-        
-        /// <summary>
-        ///     Specifies whether to normalize schemas, which will transform schemas
-        ///     to have a consistent format, including ordering properties and references.
-        ///
-        ///     default: false
-        /// </summary>
+
+
+        /// <inheritdoc cref="PropertyNames.NormalizeSchemas"/>
         public bool? NormalizeSchemas
         {
             get { return GetBool(PropertyNames.NormalizeSchemas); }
@@ -134,14 +118,7 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
 
-        /// <summary>
-        ///     Specifies whether or not the Avro serializer should use the latest subject
-        ///     version for serialization.
-        ///     WARNING: There is no check that the latest schema is backwards compatible
-        ///     with the schema of the object being serialized.
-        ///
-        ///     default: false
-        /// </summary>
+        /// <inheritdoc cref="PropertyNames.UseLatestVersion"/>
         public bool? UseLatestVersion
         {
             get { return GetBool(PropertyNames.UseLatestVersion); }
@@ -149,11 +126,7 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
 
-        /// <summary>
-        ///     Subject name strategy.
-        ///     
-        ///     default: SubjectNameStrategy.Topic
-        /// </summary>
+        /// <inheritdoc cref="PropertyNames.SubjectNameStrategy"/>
         public SubjectNameStrategy? SubjectNameStrategy
         {
             get
@@ -162,8 +135,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (r == null) { return null; }
                 else
                 {
-                    SubjectNameStrategy result;
-                    if (!Enum.TryParse<SubjectNameStrategy>(r, out result))
+                    if (!Enum.TryParse(r, out SubjectNameStrategy result))
                         throw new ArgumentException(
                             $"Unknown ${PropertyNames.SubjectNameStrategy} value: {r}.");
                     else
@@ -172,10 +144,9 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             set
             {
-                if (value == null) { this.properties.Remove(PropertyNames.SubjectNameStrategy); }
-                else { this.properties[PropertyNames.SubjectNameStrategy] = value.ToString(); }
+                if (value == null) { properties.Remove(PropertyNames.SubjectNameStrategy); }
+                else { properties[PropertyNames.SubjectNameStrategy] = value.ToString(); }
             }
         }
-
     }
 }

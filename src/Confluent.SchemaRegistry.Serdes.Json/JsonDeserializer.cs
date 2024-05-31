@@ -53,11 +53,11 @@ namespace Confluent.SchemaRegistry.Serdes
         private readonly int headerSize = sizeof(int) + sizeof(byte);
 
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-        private JsonSchema schema = null;
+        private JsonSchema schema;
         private ISchemaRegistryClient schemaRegistryClient;
-        
+
         /// <summary>
-        ///     Initialize a new JsonDeserializer instance
+        ///     Initialize a new <see cref="JsonDeserializer{T}"/> instance
         ///     with a given Schema.
         /// </summary>
         /// <param name="schemaRegistryClient">
@@ -65,7 +65,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </param>
         /// <param name="schema">
         ///     Schema to use for validation, used when external
-        ///     schema references are present in the schema. 
+        ///     schema references are present in the schema.
         ///     Populate the References list of the schema for
         ///     the same. Assuming the referenced schemas have
         ///     already been registered in the registry.
@@ -97,7 +97,7 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <summary>
-        ///     Initialize a new JsonDeserializer instance.
+        ///     Initialize a new <see cref="JsonDeserializer{T}"/> instance.
         /// </summary>
         /// <param name="config">
         ///     Deserializer configuration properties (refer to
@@ -126,13 +126,13 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     The raw byte data to deserialize.
         /// </param>
         /// <param name="isNull">
-        ///     True if this is a null value.
+        ///     True if this is a <see langword="null"/> value.
         /// </param>
         /// <param name="context">
         ///     Context relevant to the deserialize operation.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that completes
+        ///     A <see cref="Task" /> that completes
         ///     with the deserialized value.
         /// </returns>
         public Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
@@ -150,15 +150,15 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 if (array[0] != Constants.MagicByte)
                 {
-                    throw new InvalidDataException($"Expecting message {context.Component.ToString()} with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
+                    throw new InvalidDataException($"Expecting message {context.Component} with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
                 }
 
                 // A schema is not required to deserialize json messages.
                 using (var stream = new MemoryStream(array, headerSize, array.Length - headerSize))
-                using (var sr = new System.IO.StreamReader(stream, Encoding.UTF8))
+                using (var sr = new StreamReader(stream, Encoding.UTF8))
                 {
                     string serializedString = sr.ReadToEnd();
-                    
+
                     if (this.schema != null)
                     {
                         JsonSchemaValidator validator = new JsonSchemaValidator();

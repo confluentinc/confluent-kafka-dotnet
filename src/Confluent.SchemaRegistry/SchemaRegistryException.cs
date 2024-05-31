@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Net;
 using System.Net.Http;
 
@@ -28,7 +27,7 @@ namespace Confluent.SchemaRegistry
     {
         /// <summary>
         ///     An error code specific to Schema Registry of the form XXX or XXXYY.
-        ///     where XXX is standard http error status (400-500) and YY specific to schema registry
+        ///     where XXX is standard HTTP error status (400-500) and YY specific to schema registry
         ///     Example: 40403 = Schema not found
         /// </summary>
         public int ErrorCode { get; }
@@ -39,7 +38,7 @@ namespace Confluent.SchemaRegistry
         public HttpStatusCode Status { get; }
 
         /// <summary>
-        ///     Initialize a new instance of SchemaRegistryException.
+        ///     Initialize a new instance of <see cref="SchemaRegistryException"/>.
         /// </summary>
         /// <param name="message">
         ///     Additional information about the error.

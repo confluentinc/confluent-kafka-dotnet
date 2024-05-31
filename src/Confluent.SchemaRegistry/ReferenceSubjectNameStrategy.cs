@@ -42,7 +42,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         ReferenceName
     }
-    
+
 
     /// <summary>
     ///     Extension methods for the ReferenceSubjectNameStrategy type.

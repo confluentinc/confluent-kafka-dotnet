@@ -20,7 +20,7 @@ using Confluent.Kafka;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     <see cref="Confluent.SchemaRegistry.Serdes.AvroDeserializer{T}" />
+    ///     <see cref="AvroDeserializer{T}" />
     ///     configuration properties.
     /// </summary>
     public class AvroDeserializerConfig : Config {}

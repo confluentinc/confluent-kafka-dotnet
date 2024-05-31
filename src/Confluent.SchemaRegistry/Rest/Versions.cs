@@ -24,20 +24,12 @@ namespace  Confluent.SchemaRegistry
         public const string SchemaRegistry_V1_JSON = "application/vnd.schemaregistry.v1+json";
         public const string SchemaRegistry_Default_JSON = "application/vnd.schemaregistry+json";
         public const string JSON = "application/json";
-        
-        public static readonly IReadOnlyList<string> PreferredResponseTypes = new List<string> 
-        { 
-            SchemaRegistry_V1_JSON, 
-            SchemaRegistry_Default_JSON, 
-            JSON 
-        };
 
-        /// <remarks>
-        ///     This type is completely generic and carries no actual information about the type of data, but
-        ///     it is the default for request entities if no content type is specified. Well behaving users
-        ///     of the API will always specify the content type, but ad hoc use may omit it. We treat this as
-        ///     JSON since that's all we currently support.
-        /// </remarks>
-        public const string GenericRequest = "application/octet-stream";
+        public static readonly IReadOnlyList<string> PreferredResponseTypes = new List<string>
+        {
+            SchemaRegistry_V1_JSON,
+            SchemaRegistry_Default_JSON,
+            JSON
+        };
     }
 }
