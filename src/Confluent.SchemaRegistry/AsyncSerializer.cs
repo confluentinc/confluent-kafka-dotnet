@@ -28,8 +28,6 @@ namespace Confluent.SchemaRegistry
     {
         private const int DefaultInitialBufferSize = 1024;
         
-        protected readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
-
         protected bool autoRegisterSchema = true;
         protected bool normalizeSchemas = false;
         
