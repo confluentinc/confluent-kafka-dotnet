@@ -312,6 +312,24 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern /* char * */ IntPtr rd_kafka_memberid(IntPtr rk);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_Uuid_t * */IntPtr rd_kafka_Uuid_new(
+                long most_significant_bits,
+                long least_significant_bits
+        );
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* char * */IntPtr rd_kafka_Uuid_base64str(IntPtr uuid);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern long rd_kafka_Uuid_most_significant_bits(IntPtr uuid);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern long rd_kafka_Uuid_least_significant_bits(IntPtr uuid);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_Uuid_destroy(IntPtr uuid);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern SafeTopicHandle rd_kafka_topic_new(
                 IntPtr rk, IntPtr topic,
                 /* rd_kafka_topic_conf_t * */ IntPtr conf);
@@ -534,6 +552,11 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_AdminOptions_set_include_authorized_operations(
                         IntPtr options,
                         IntPtr true_or_false);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AdminOptions_set_isolation_level(
+                        IntPtr options,
+                        IntPtr isolation_level);
 
        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_AdminOptions_set_match_consumer_group_states(
@@ -1173,6 +1196,18 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_AlterUserScramCredentials_result_response_error(IntPtr element);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_ListOffsets(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ListOffsets_result_infos(IntPtr resultPtr, out UIntPtr cntp);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern long rd_kafka_ListOffsetsResultInfo_timestamp(IntPtr element);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ListOffsetsResultInfo_topic_partition(IntPtr element);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_DescribeTopics(
                 IntPtr handle,
                 IntPtr topicCollection,
@@ -1194,6 +1229,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_TopicDescription_name(IntPtr topicdesc);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_TopicDescription_topic_id(IntPtr topicdesc);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_TopicDescription_partitions(IntPtr topicdesc, out UIntPtr cntp);

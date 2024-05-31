@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.3.0-RC3 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.4.0 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -174,6 +174,22 @@ namespace Confluent.Kafka
         ///     CooperativeSticky
         /// </summary>
         CooperativeSticky
+    }
+
+    /// <summary>
+    ///     GroupProtocol enum values
+    /// </summary>
+    public enum GroupProtocol
+    {
+        /// <summary>
+        ///     Classic
+        /// </summary>
+        Classic,
+
+        /// <summary>
+        ///     Consumer
+        /// </summary>
+        Consumer
     }
 
     /// <summary>
@@ -1341,12 +1357,28 @@ namespace Confluent.Kafka
         public int? HeartbeatIntervalMs { get { return GetInt("heartbeat.interval.ms"); } set { this.SetObject("heartbeat.interval.ms", value); } }
 
         /// <summary>
-        ///     Group protocol type. NOTE: Currently, the only supported group protocol type is `consumer`.
+        ///     Group protocol type for the `classic` group protocol. NOTE: Currently, the only supported group protocol type is `consumer`.
         ///
         ///     default: consumer
         ///     importance: low
         /// </summary>
         public string GroupProtocolType { get { return Get("group.protocol.type"); } set { this.SetObject("group.protocol.type", value); } }
+
+        /// <summary>
+        ///     Group protocol to use. Use `classic` for the original protocol and `consumer` for the new protocol introduced in KIP-848. Available protocols: classic or consumer. Default is `classic`, but will change to `consumer` in next releases.
+        ///
+        ///     default: classic
+        ///     importance: high
+        /// </summary>
+        public GroupProtocol? GroupProtocol { get { return (GroupProtocol?)GetEnum(typeof(GroupProtocol), "group.protocol"); } set { this.SetObject("group.protocol", value); } }
+
+        /// <summary>
+        ///     Server side assignor to use. Keep it null to make server select a suitable assignor for the group. Available assignors: uniform or range. Default is null
+        ///
+        ///     default: ''
+        ///     importance: medium
+        /// </summary>
+        public string GroupRemoteAssignor { get { return Get("group.remote.assignor"); } set { this.SetObject("group.remote.assignor", value); } }
 
         /// <summary>
         ///     How often to query for the current client group coordinator. If the currently assigned coordinator is down the configured query interval will be divided by ten to more quickly recover in case of coordinator reassignment.

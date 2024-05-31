@@ -75,6 +75,7 @@ namespace Confluent.Kafka.Impl
             AlterUserScramCredentials = 18,
             DescribeTopics = 19,
             DescribeCluster = 20,
+            ListOffsets = 21,
         }
 
         public enum EventType : int
@@ -107,6 +108,7 @@ namespace Confluent.Kafka.Impl
             AlterUserScramCredentials_Result = 0x80000,
             DescribeTopics_Result = 0x100000,
             DescribeCluster_Result = 0x200000,
+            ListOffsets_Result = 0x400000,
         }
 
         // Minimum librdkafka version.
@@ -234,6 +236,11 @@ namespace Confluent.Kafka.Impl
             _new = (Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>)methods.Single(m => m.Name == "rd_kafka_new").CreateDelegate(typeof(Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>));
             _name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _memberid = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_memberid").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _Uuid_new = (Func<long, long, IntPtr>)methods.Single(m => m.Name == "rd_kafka_Uuid_new").CreateDelegate(typeof(Func<long, long, IntPtr>));
+            _Uuid_base64str = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_Uuid_base64str").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _Uuid_most_significant_bits = (Func<IntPtr, long>)methods.Single(m => m.Name == "rd_kafka_Uuid_most_significant_bits").CreateDelegate(typeof(Func<IntPtr, long>));
+            _Uuid_least_significant_bits = (Func<IntPtr, long>)methods.Single(m => m.Name == "rd_kafka_Uuid_least_significant_bits").CreateDelegate(typeof(Func<IntPtr, long>));
+            _Uuid_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_Uuid_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_new = (Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle>)methods.Single(m => m.Name == "rd_kafka_topic_new").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle>));
             _topic_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -293,6 +300,7 @@ namespace Confluent.Kafka.Impl
             _AdminOptions_set_require_stable_offsets = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_require_stable_offsets").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _AdminOptions_set_include_authorized_operations = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_include_authorized_operations").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _AdminOptions_set_match_consumer_group_states = (Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_match_consumer_group_states").CreateDelegate(typeof(Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>));
+            _AdminOptions_set_isolation_level = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_isolation_level").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
 
             _NewTopic_new = (Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_new").CreateDelegate(typeof(Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>));
             _NewTopic_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -443,6 +451,11 @@ namespace Confluent.Kafka.Impl
             _AlterUserScramCredentials_result_responses = (_AlterUserScramCredentials_result_responses_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_responses").CreateDelegate(typeof(_AlterUserScramCredentials_result_responses_delegate));
             _AlterUserScramCredentials_result_response_user = (_AlterUserScramCredentials_result_response_user_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_response_user").CreateDelegate(typeof(_AlterUserScramCredentials_result_response_user_delegate));
             _AlterUserScramCredentials_result_response_error = (_AlterUserScramCredentials_result_response_error_delegate)methods.Single(m => m.Name == "rd_kafka_AlterUserScramCredentials_result_response_error").CreateDelegate(typeof(_AlterUserScramCredentials_result_response_error_delegate));
+            
+            _ListOffsets = (_ListOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets").CreateDelegate(typeof (_ListOffsets_delegate));
+            _ListOffsets_result_infos = (_ListOffsets_result_infos_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsets_result_infos").CreateDelegate(typeof (_ListOffsets_result_infos_delegate));
+            _ListOffsetsResultInfo_timestamp = (_ListOffsetsResultInfo_timestamp_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetsResultInfo_timestamp").CreateDelegate(typeof (_ListOffsetsResultInfo_timestamp_delegate));
+            _ListOffsetsResultInfo_topic_partition = (_ListOffsetsResultInfo_topic_partition_delegate)methods.Single(m => m.Name == "rd_kafka_ListOffsetsResultInfo_topic_partition").CreateDelegate(typeof (_ListOffsetsResultInfo_topic_partition_delegate));
 
             _DescribeTopics = (_DescribeTopics_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeTopics").CreateDelegate(typeof (_DescribeTopics_delegate));
             _DescribeTopics_result_topics = (_DescribeTopics_result_topics_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeTopics_result_topics").CreateDelegate(typeof (_DescribeTopics_result_topics_delegate));
@@ -450,6 +463,7 @@ namespace Confluent.Kafka.Impl
             _TopicCollection_destroy = (_TopicCollection_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_TopicCollection_destroy").CreateDelegate(typeof (_TopicCollection_destroy_delegate));
             _TopicDescription_error = (_TopicDescription_error_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_error").CreateDelegate(typeof (_TopicDescription_error_delegate));
             _TopicDescription_name = (_TopicDescription_name_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_name").CreateDelegate(typeof (_TopicDescription_name_delegate));
+            _TopicDescription_topic_id = (_TopicDescription_topic_id_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_topic_id").CreateDelegate(typeof (_TopicDescription_topic_id_delegate));
             _TopicDescription_partitions = (_TopicDescription_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_partitions").CreateDelegate(typeof (_TopicDescription_partitions_delegate));
             _TopicDescription_is_internal = (_TopicDescription_is_internal_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_is_internal").CreateDelegate(typeof (_TopicDescription_is_internal_delegate));
             _TopicDescription_authorized_operations = (_TopicDescription_authorized_operations_delegate)methods.Single(m => m.Name == "rd_kafka_TopicDescription_authorized_operations").CreateDelegate(typeof (_TopicDescription_authorized_operations_delegate));
@@ -1029,6 +1043,22 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr> _memberid;
         internal static IntPtr memberid(IntPtr rk) => _memberid(rk);
 
+        private static Func<long, long, IntPtr> _Uuid_new;
+        internal static IntPtr Uuid_new(long most_significant_bits, long least_significant_bits)
+            => _Uuid_new(most_significant_bits, least_significant_bits);
+
+        private static Func<IntPtr, IntPtr> _Uuid_base64str;
+        internal static IntPtr Uuid_base64str(IntPtr uuid) => _Uuid_base64str(uuid);
+
+        private static Func<IntPtr, long> _Uuid_most_significant_bits;
+        internal static long Uuid_most_significant_bits(IntPtr uuid) => _Uuid_most_significant_bits(uuid);
+
+        private static Func<IntPtr, long> _Uuid_least_significant_bits;
+        internal static long Uuid_least_significant_bits(IntPtr uuid) => _Uuid_least_significant_bits(uuid);
+
+        private static Action<IntPtr> _Uuid_destroy;
+        internal static void Uuid_destroy(IntPtr uuid) => _Uuid_destroy(uuid);
+
         private static Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle> _topic_new;
         internal static SafeTopicHandle topic_new(IntPtr rk, IntPtr topic, IntPtr conf)
             => _topic_new(rk, topic, conf);
@@ -1308,6 +1338,10 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr> _AdminOptions_set_match_consumer_group_states;
         internal static IntPtr AdminOptions_set_match_consumer_group_states(IntPtr options, ConsumerGroupState[] states, UIntPtr statesCnt)
             => _AdminOptions_set_match_consumer_group_states(options, states, statesCnt);
+
+        private static Func<IntPtr, IntPtr, IntPtr> _AdminOptions_set_isolation_level;
+        internal static IntPtr AdminOptions_set_isolation_level(IntPtr options, IntPtr IsolationLevel)
+            => _AdminOptions_set_isolation_level(options, IsolationLevel);
 
         private static Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr> _NewTopic_new;
         internal static IntPtr NewTopic_new(
@@ -1962,6 +1996,26 @@ namespace Confluent.Kafka.Impl
         private static _Node_rack_delegate _Node_rack;
         internal static IntPtr Node_rack(IntPtr node) => _Node_rack(node);
 
+        private delegate void _ListOffsets_delegate(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr);
+        private static _ListOffsets_delegate _ListOffsets;
+        internal static void ListOffsets(IntPtr handle, IntPtr topic_partition_list, IntPtr options, IntPtr resultQueuePtr)
+            => _ListOffsets(handle,topic_partition_list,options, resultQueuePtr);
+        
+        private delegate IntPtr _ListOffsets_result_infos_delegate(IntPtr resultPtr,out UIntPtr cntp);
+        private static _ListOffsets_result_infos_delegate _ListOffsets_result_infos;
+        internal static IntPtr ListOffsets_result_infos(IntPtr resultPtr,out UIntPtr cntp)
+            => _ListOffsets_result_infos(resultPtr, out cntp);
+        
+        private delegate long _ListOffsetsResultInfo_timestamp_delegate(IntPtr element);
+        private static _ListOffsetsResultInfo_timestamp_delegate _ListOffsetsResultInfo_timestamp;
+        internal static long ListOffsetsResultInfo_timestamp(IntPtr element)
+            => _ListOffsetsResultInfo_timestamp(element);
+        
+        private delegate IntPtr _ListOffsetsResultInfo_topic_partition_delegate(IntPtr element);
+        private static _ListOffsetsResultInfo_topic_partition_delegate _ListOffsetsResultInfo_topic_partition;
+        internal static IntPtr ListOffsetsResultInfo_topic_partition(IntPtr element)
+            => _ListOffsetsResultInfo_topic_partition(element);
+        
         private static Func<IntPtr, ErrorCode> _topic_result_error;
         internal static ErrorCode topic_result_error(IntPtr topicres) => _topic_result_error(topicres);
 
@@ -2129,6 +2183,12 @@ namespace Confluent.Kafka.Impl
          private static _TopicDescription_name_delegate _TopicDescription_name;
          internal static IntPtr TopicDescription_name(IntPtr topicdesc)
             => _TopicDescription_name(topicdesc);
+
+
+         private delegate IntPtr _TopicDescription_topic_id_delegate(IntPtr topicdesc);
+         private static _TopicDescription_topic_id_delegate _TopicDescription_topic_id;
+         internal static IntPtr TopicDescription_topic_id(IntPtr topicdesc)
+            => _TopicDescription_topic_id(topicdesc);
 
          private delegate IntPtr _TopicDescription_partitions_delegate(IntPtr topicdesc, out UIntPtr cntp);
          private static _TopicDescription_partitions_delegate _TopicDescription_partitions;
