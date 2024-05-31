@@ -202,6 +202,18 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
+        ///     Get the latest schema with the given metadata registered against the specified <paramref name="subject" />.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to get the latest associated schema for.
+        /// </param>
+        /// <returns>
+        ///     The latest schema with the given metadata registered against <paramref name="subject" />.
+        /// </returns>
+        Task<RegisteredSchema> GetLatestWithMetadataAsync(string subject, IDictionary<string, string> metadata, bool ignoreDeletedSchemas);
+
+
+        /// <summary>
         ///     Gets a list of all subjects with registered schemas.
         /// </summary>
         /// <returns>
