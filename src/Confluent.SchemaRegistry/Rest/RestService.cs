@@ -355,25 +355,21 @@ namespace Confluent.SchemaRegistry
                 : (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{WebUtility.UrlEncode(subject)}/versions/latest", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
-        #endregion Compatibility
+        #endregion Compatibility 
 
         #region Config
 
-        public async Task<Compatibility> GetGlobalCompatibilityAsync()
-            => (await RequestAsync<Config>("config", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
-
         public async Task<Compatibility> GetCompatibilityAsync(string subject)
-            => (await RequestAsync<Config>($"config/{WebUtility.UrlEncode(subject)}", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
+            => (await RequestAsync<Config>(
+                    string.IsNullOrEmpty(subject) ? "config" : $"config/{WebUtility.UrlEncode(subject)}",
+                    HttpMethod.Get)
+                .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
 
-        public async Task<Config> SetGlobalCompatibilityAsync(Compatibility compatibility)
-            => await RequestAsync<Config>("config", HttpMethod.Put, new Config(compatibility))
-                        .ConfigureAwait(continueOnCapturedContext: false);
-
-        public async Task<Config> SetCompatibilityAsync(string subject, Compatibility compatibility)
-            => await RequestAsync<Config>($"config/{WebUtility.UrlEncode(subject)}", HttpMethod.Put, new Config(compatibility))
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        public async Task<Compatibility> UpdateCompatibilityAsync(string subject, Compatibility compatibility)
+            => (await RequestAsync<Config>(
+                    string.IsNullOrEmpty(subject) ? "config" : $"config/{WebUtility.UrlEncode(subject)}",
+                    HttpMethod.Put, new Config(compatibility))
+                .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
 
         #endregion Config
 

@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2022-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace Confluent.Kafka.Admin
 {
@@ -50,7 +52,7 @@ namespace Confluent.Kafka.Admin
         public ConsumerGroupState State { get; set; }
 
         /// <summary>
-        ///     Consumer group coordinator (broker).
+        ///     Broker that acts as consumer group coordinator (null if not known).
         /// </summary>
         public Node Coordinator { get; set; }
 
@@ -58,5 +60,43 @@ namespace Confluent.Kafka.Admin
         ///    Members list.
         /// </summary>
         public List<MemberDescription> Members { get; set; }
+
+        /// <summary>
+        ///    AclOperation list (null if not requested or not supported).
+        /// </summary>
+        public List<AclOperation> AuthorizedOperations { get; set; }
+
+        /// <summary>
+        ///     Returns a JSON representation of this object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation of this object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            var members = string.Join(",",
+                Members.Select(member =>
+                    member.ToString()
+                ).ToList());
+            var authorizedOperations = "null";
+            if (AuthorizedOperations != null)
+            {
+                authorizedOperations = string.Join(",",
+                    AuthorizedOperations.Select(authorizedOperation =>
+                        authorizedOperation.ToString().Quote()
+                    ).ToList());
+                authorizedOperations = $"[{authorizedOperations}]";
+            }
+
+            result.Append($"{{\"GroupId\": {GroupId.Quote()}");
+            result.Append($", \"Error\": \"{Error.Code}\", \"IsSimpleConsumerGroup\": {IsSimpleConsumerGroup.Quote()}");
+            result.Append($", \"PartitionAssignor\": {PartitionAssignor.Quote()}, \"State\": {State.ToString().Quote()}");
+            result.Append($", \"Coordinator\": {Coordinator?.ToString() ?? "null"}, \"Members\": [{members}]");
+            result.Append($", \"AuthorizedOperations\": {authorizedOperations}}}");
+
+            return result.ToString();
+        }
+
     }
 }

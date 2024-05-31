@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.1.1-RC1 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.4.0 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -177,6 +177,22 @@ namespace Confluent.Kafka
     }
 
     /// <summary>
+    ///     GroupProtocol enum values
+    /// </summary>
+    public enum GroupProtocol
+    {
+        /// <summary>
+        ///     Classic
+        /// </summary>
+        Classic,
+
+        /// <summary>
+        ///     Consumer
+        /// </summary>
+        Consumer
+    }
+
+    /// <summary>
     ///     IsolationLevel enum values
     /// </summary>
     public enum IsolationLevel
@@ -221,6 +237,22 @@ namespace Confluent.Kafka
         ///     Zstd
         /// </summary>
         Zstd
+    }
+
+    /// <summary>
+    ///     ClientDnsLookup enum values
+    /// </summary>
+    public enum ClientDnsLookup
+    {
+        /// <summary>
+        ///     UseAllDnsIps
+        /// </summary>
+        UseAllDnsIps,
+
+        /// <summary>
+        ///     ResolveCanonicalBootstrapServersOnly
+        /// </summary>
+        ResolveCanonicalBootstrapServersOnly
     }
 
     /// <summary>
@@ -423,9 +455,9 @@ namespace Confluent.Kafka
         public int? MetadataMaxAgeMs { get { return GetInt("metadata.max.age.ms"); } set { this.SetObject("metadata.max.age.ms", value); } }
 
         /// <summary>
-        ///     When a topic loses its leader a new metadata request will be enqueued with this initial interval, exponentially increasing until the topic metadata has been refreshed. This is used to recover quickly from transitioning leader brokers.
+        ///     When a topic loses its leader a new metadata request will be enqueued immediately and then with this initial interval, exponentially increasing upto `retry.backoff.max.ms`, until the topic metadata has been refreshed. If not set explicitly, it will be defaulted to `retry.backoff.ms`. This is used to recover quickly from transitioning leader brokers.
         ///
-        ///     default: 250
+        ///     default: 100
         ///     importance: low
         /// </summary>
         public int? TopicMetadataRefreshFastIntervalMs { get { return GetInt("topic.metadata.refresh.fast.interval.ms"); } set { this.SetObject("topic.metadata.refresh.fast.interval.ms", value); } }
@@ -942,6 +974,14 @@ namespace Confluent.Kafka
         /// </summary>
         public string ClientRack { get { return Get("client.rack"); } set { this.SetObject("client.rack", value); } }
 
+        /// <summary>
+        ///     Controls how the client uses DNS lookups. By default, when the lookup returns multiple IP addresses for a hostname, they will all be attempted for connection before the connection is considered failed. This applies to both bootstrap and advertised servers. If the value is set to `resolve_canonical_bootstrap_servers_only`, each entry will be resolved and expanded into a list of canonical names. NOTE: Default here is different from the Java client's default behavior, which connects only to the first IP address returned for a hostname.
+        ///
+        ///     default: use_all_dns_ips
+        ///     importance: low
+        /// </summary>
+        public ClientDnsLookup? ClientDnsLookup { get { return (ClientDnsLookup?)GetEnum(typeof(ClientDnsLookup), "client.dns.lookup"); } set { this.SetObject("client.dns.lookup", value); } }
+
     }
 
 
@@ -1157,12 +1197,20 @@ namespace Confluent.Kafka
         public int? MessageSendMaxRetries { get { return GetInt("message.send.max.retries"); } set { this.SetObject("message.send.max.retries", value); } }
 
         /// <summary>
-        ///     The backoff time in milliseconds before retrying a protocol request.
+        ///     The backoff time in milliseconds before retrying a protocol request, this is the first backoff time, and will be backed off exponentially until number of retries is exhausted, and it's capped by retry.backoff.max.ms.
         ///
         ///     default: 100
         ///     importance: medium
         /// </summary>
         public int? RetryBackoffMs { get { return GetInt("retry.backoff.ms"); } set { this.SetObject("retry.backoff.ms", value); } }
+
+        /// <summary>
+        ///     The max backoff time in milliseconds before retrying a protocol request, this is the atmost backoff allowed for exponentially backed off requests.
+        ///
+        ///     default: 1000
+        ///     importance: medium
+        /// </summary>
+        public int? RetryBackoffMaxMs { get { return GetInt("retry.backoff.max.ms"); } set { this.SetObject("retry.backoff.max.ms", value); } }
 
         /// <summary>
         ///     The threshold of outstanding not yet transmitted broker requests needed to backpressure the producer's message accumulator. If the number of not yet transmitted requests equals or exceeds this number, produce request creation that would have otherwise been triggered (for example, in accordance with linger.ms) will be delayed. A lower number yields larger and more effective batches. A higher value can improve latency when using compression on slow machines.
@@ -1309,12 +1357,28 @@ namespace Confluent.Kafka
         public int? HeartbeatIntervalMs { get { return GetInt("heartbeat.interval.ms"); } set { this.SetObject("heartbeat.interval.ms", value); } }
 
         /// <summary>
-        ///     Group protocol type. NOTE: Currently, the only supported group protocol type is `consumer`.
+        ///     Group protocol type for the `classic` group protocol. NOTE: Currently, the only supported group protocol type is `consumer`.
         ///
         ///     default: consumer
         ///     importance: low
         /// </summary>
         public string GroupProtocolType { get { return Get("group.protocol.type"); } set { this.SetObject("group.protocol.type", value); } }
+
+        /// <summary>
+        ///     Group protocol to use. Use `classic` for the original protocol and `consumer` for the new protocol introduced in KIP-848. Available protocols: classic or consumer. Default is `classic`, but will change to `consumer` in next releases.
+        ///
+        ///     default: classic
+        ///     importance: high
+        /// </summary>
+        public GroupProtocol? GroupProtocol { get { return (GroupProtocol?)GetEnum(typeof(GroupProtocol), "group.protocol"); } set { this.SetObject("group.protocol", value); } }
+
+        /// <summary>
+        ///     Server side assignor to use. Keep it null to make server select a suitable assignor for the group. Available assignors: uniform or range. Default is null
+        ///
+        ///     default: ''
+        ///     importance: medium
+        /// </summary>
+        public string GroupRemoteAssignor { get { return Get("group.remote.assignor"); } set { this.SetObject("group.remote.assignor", value); } }
 
         /// <summary>
         ///     How often to query for the current client group coordinator. If the currently assigned coordinator is down the configured query interval will be divided by ten to more quickly recover in case of coordinator reassignment.
@@ -1379,6 +1443,14 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public int? FetchWaitMaxMs { get { return GetInt("fetch.wait.max.ms"); } set { this.SetObject("fetch.wait.max.ms", value); } }
+
+        /// <summary>
+        ///     How long to postpone the next fetch request for a topic+partition in case the current fetch queue thresholds (queued.min.messages or queued.max.messages.kbytes) have been exceded. This property may need to be decreased if the queue thresholds are set low and the application is experiencing long (~1s) delays between messages. Low values may increase CPU utilization.
+        ///
+        ///     default: 1000
+        ///     importance: medium
+        /// </summary>
+        public int? FetchQueueBackoffMs { get { return GetInt("fetch.queue.backoff.ms"); } set { this.SetObject("fetch.queue.backoff.ms", value); } }
 
         /// <summary>
         ///     Initial maximum number of bytes per topic+partition to request when fetching messages from the broker. If the client encounters a message larger than this value it will gradually try to increase it until the entire message can be fetched.

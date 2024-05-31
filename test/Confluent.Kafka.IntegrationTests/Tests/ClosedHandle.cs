@@ -19,6 +19,7 @@
 using System;
 using System.Threading;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -39,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers,
                 EnableBackgroundPoll = false
             };
-            var producer = new ProducerBuilder<Null, Null>(producerConfig).Build();
+            var producer = new TestProducerBuilder<Null, Null>(producerConfig).Build();
             producer.Poll(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));
@@ -58,7 +59,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start Consumer_ClosedHandle");
 
             var consumerConfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
-            var consumer = new ConsumerBuilder<Null, Null>(consumerConfig).Build();
+            var consumer = new TestConsumerBuilder<Null, Null>(consumerConfig).Build();
             consumer.Consume(TimeSpan.FromSeconds(10));
             consumer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromSeconds(10)));
@@ -77,7 +78,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start TypedProducer_ClosedHandle");
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
-            var producer = new ProducerBuilder<Null, Null>(producerConfig).Build();
+            var producer = new TestProducerBuilder<Null, Null>(producerConfig).Build();
             producer.Flush(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Thread.Sleep(TimeSpan.FromMilliseconds(500)); // kafka handle destroy is done on the poll thread, is not immediate.
@@ -97,7 +98,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start TypedConsumer_ClosedHandle");
 
             var consumerConfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
-            var consumer = new ConsumerBuilder<Null, Null>(consumerConfig).Build();
+            var consumer = new TestConsumerBuilder<Null, Null>(consumerConfig).Build();
             consumer.Consume(TimeSpan.FromSeconds(10));
             consumer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromSeconds(10)));

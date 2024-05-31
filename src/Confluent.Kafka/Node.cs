@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2022-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,9 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
+using System.Text;
+
 
 namespace Confluent.Kafka
 {
@@ -37,11 +40,23 @@ namespace Confluent.Kafka
         public int Port { get; set; }
 
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Rack id (optional).
         /// </summary>
+        public string Rack { get; set; }
+
+        /// <summary>
+        ///     Returns a JSON representation of this object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation of this object.
+        /// </returns>
         public override string ToString()
         {
-            return $"Id = {Id}, {Host}:{Port}";
+            var result = new StringBuilder();
+            result.Append($"{{\"Id\": {Id}");
+            result.Append($", \"Host\": {Host.Quote()}, \"Port\": {Port}");
+            result.Append($", \"Rack\": {Rack.Quote()}}}");
+            return result.ToString();
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2018-2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -264,7 +264,8 @@ namespace Confluent.Kafka
 
         private ListConsumerGroupsReport extractListConsumerGroupsResults(IntPtr resultPtr)
         {
-            var result = new ListConsumerGroupsReport() {
+            var result = new ListConsumerGroupsReport()
+            {
                 Valid = new List<ConsumerGroupListing>(),
                 Errors = new List<Error>(),
             };
@@ -275,7 +276,8 @@ namespace Confluent.Kafka
                 IntPtr[] consumerGroupListingPtrArr = new IntPtr[(int)resultCountPtr];
                 Marshal.Copy(validResultsPtr, consumerGroupListingPtrArr, 0, (int)resultCountPtr);
                 result.Valid = consumerGroupListingPtrArr.Select(cglPtr => {
-                    return new ConsumerGroupListing() {
+                    return new ConsumerGroupListing()
+                    {
                         GroupId = PtrToStringUTF8(Librdkafka.ConsumerGroupListing_group_id(cglPtr)),
                         IsSimpleConsumerGroup =
                             (int)Librdkafka.ConsumerGroupListing_is_simple_consumer_group(cglPtr) == 1,
@@ -296,10 +298,12 @@ namespace Confluent.Kafka
             return result;
         }
 
-        private DescribeConsumerGroupsReport extractDescribeConsumerGroupsResults(IntPtr resultPtr) {
+        private DescribeConsumerGroupsReport extractDescribeConsumerGroupsResults(IntPtr resultPtr)
+        {
             var groupsPtr = Librdkafka.DescribeConsumerGroups_result_groups(resultPtr, out UIntPtr groupsCountPtr);
 
-            var result = new DescribeConsumerGroupsReport() {
+            var result = new DescribeConsumerGroupsReport()
+            {
                 ConsumerGroupDescriptions = new List<ConsumerGroupDescription>()
             };
 
@@ -312,18 +316,15 @@ namespace Confluent.Kafka
             result.ConsumerGroupDescriptions = groupPtrArr.Select(groupPtr => {
 
                 var coordinatorPtr = Librdkafka.ConsumerGroupDescription_coordinator(groupPtr);
-                var coordinator = new Node() {
-                    Id = (int)Librdkafka.Node_id(coordinatorPtr),
-                    Host = PtrToStringUTF8(Librdkafka.Node_host(coordinatorPtr)),
-                    Port = (int)Librdkafka.Node_port(coordinatorPtr),
-                };
+                var coordinator = extractNode(coordinatorPtr);
 
                 var memberCount = (int)Librdkafka.ConsumerGroupDescription_member_count(groupPtr);
                 var members = new List<MemberDescription>();
                 for (int midx = 0; midx < memberCount; midx++)
                 {
                     var memberPtr = Librdkafka.ConsumerGroupDescription_member(groupPtr, (IntPtr)midx);
-                    var member = new MemberDescription() {
+                    var member = new MemberDescription()
+                    {
                         ClientId =
                             PtrToStringUTF8(Librdkafka.MemberDescription_client_id(memberPtr)),
                         ConsumerId =
@@ -343,11 +344,17 @@ namespace Confluent.Kafka
                     members.Add(member);
                 }
 
-                var desc = new ConsumerGroupDescription() {
+                var authorizedOperations = extractAuthorizedOperations(
+                    Librdkafka.ConsumerGroupDescription_authorized_operations(groupPtr,
+                        out UIntPtr authorizedOperationCount),
+                    (int) authorizedOperationCount);
+
+                var desc = new ConsumerGroupDescription()
+                {
                     GroupId =
                         PtrToStringUTF8(Librdkafka.ConsumerGroupDescription_group_id(groupPtr)),
                     Error =
-                        new Error(Librdkafka.ConsumerGroupDescription_error(groupPtr)),
+                        new Error(Librdkafka.ConsumerGroupDescription_error(groupPtr), false),
                     IsSimpleConsumerGroup =
                         (int)Librdkafka.ConsumerGroupDescription_is_simple_consumer_group(groupPtr) == 1,
                     PartitionAssignor =
@@ -356,11 +363,275 @@ namespace Confluent.Kafka
                         Librdkafka.ConsumerGroupDescription_state(groupPtr),
                     Coordinator = coordinator,
                     Members = members,
+                    AuthorizedOperations = authorizedOperations,
                 };
                 return desc;
             }).ToList();
 
             return result;
+        }
+
+        private DescribeUserScramCredentialsReport extractDescribeUserScramCredentialsResult(IntPtr eventPtr)
+        {
+            var report = new DescribeUserScramCredentialsReport();
+            
+            var resultDescriptionsPtr = Librdkafka.DescribeUserScramCredentials_result_descriptions(
+                eventPtr,
+                out UIntPtr resultDescriptionCntPtr);
+
+            IntPtr[] resultDescriptionsPtrArr = new IntPtr[(int)resultDescriptionCntPtr];
+            Marshal.Copy(resultDescriptionsPtr, resultDescriptionsPtrArr, 0, (int)resultDescriptionCntPtr);
+            
+            var descriptions = resultDescriptionsPtrArr.Select(resultDescriptionPtr =>
+            {
+                var description = new UserScramCredentialsDescription();
+                
+                var user = PtrToStringUTF8(Librdkafka.UserScramCredentialsDescription_user(resultDescriptionPtr));
+                IntPtr cError = Librdkafka.UserScramCredentialsDescription_error(resultDescriptionPtr);
+                var error = new Error(cError, false);
+                var scramCredentialInfos = new List<ScramCredentialInfo>();
+                if (Librdkafka.error_code(cError)==0)
+                {
+                    int numCredentials = Librdkafka.UserScramCredentialsDescription_scramcredentialinfo_count(resultDescriptionPtr);
+                    for(int j=0; j<numCredentials; j++)
+                    {
+                        var ScramCredentialInfo = new ScramCredentialInfo();
+                        IntPtr c_ScramCredentialInfo = Librdkafka.UserScramCredentialsDescription_scramcredentialinfo(resultDescriptionPtr,j);
+                        ScramCredentialInfo.Mechanism = Librdkafka.ScramCredentialInfo_mechanism(c_ScramCredentialInfo);
+                        ScramCredentialInfo.Iterations = Librdkafka.ScramCredentialInfo_iterations(c_ScramCredentialInfo);
+                        scramCredentialInfos.Add(ScramCredentialInfo);
+                    }
+                }
+                
+                return new UserScramCredentialsDescription {
+                    User = user,
+                    Error = error,
+                    ScramCredentialInfos = scramCredentialInfos
+                };
+            }).ToList();
+            
+            report.UserScramCredentialsDescriptions = descriptions;
+            return report;
+        }
+
+        private List<AlterUserScramCredentialsReport> extractAlterUserScramCredentialsResults(IntPtr eventPtr)
+        {
+            var reports = new List<AlterUserScramCredentialsReport>();
+            var resultResponsesPtr = Librdkafka.AlterUserScramCredentials_result_responses(
+                eventPtr,
+                out UIntPtr resultResponsesCntPtr);
+
+            IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resultResponsesCntPtr];
+            Marshal.Copy(resultResponsesPtr, resultResponsesPtrArr, 0, (int)resultResponsesCntPtr);
+            
+            return resultResponsesPtrArr.Select(resultResponsePtr => {
+                var user = 
+                PtrToStringUTF8(
+                    Librdkafka.AlterUserScramCredentials_result_response_user(resultResponsePtr));
+                var error =
+                    new Error(Librdkafka.AlterUserScramCredentials_result_response_error(resultResponsePtr), false);
+                return new AlterUserScramCredentialsReport 
+                {
+                    User = user,
+                    Error = error
+                };
+            }).ToList();
+        }
+
+        private List<TopicPartitionInfo> extractTopicPartitionInfo(IntPtr topicPartitionInfosPtr, int topicPartitionInfosCount)
+        {
+            if (topicPartitionInfosCount == 0)
+                return new List<TopicPartitionInfo>();
+                
+            IntPtr[] topicPartitionInfos = new IntPtr[topicPartitionInfosCount];
+            Marshal.Copy(topicPartitionInfosPtr, topicPartitionInfos, 0, topicPartitionInfosCount);
+
+            return topicPartitionInfos.Select(topicPartitionInfoPtr => {
+                return new TopicPartitionInfo
+                {
+                    ISR = extractNodeList(
+                        Librdkafka.TopicPartitionInfo_isr(topicPartitionInfoPtr,
+                            out UIntPtr isrCount
+                        ),
+                        (int) isrCount                        
+                    ),
+                    Leader = extractNode(Librdkafka.TopicPartitionInfo_leader(topicPartitionInfoPtr)),
+                    Partition = Librdkafka.TopicPartitionInfo_partition(topicPartitionInfoPtr),
+                    Replicas = extractNodeList(
+                        Librdkafka.TopicPartitionInfo_replicas(topicPartitionInfoPtr,
+                            out UIntPtr replicasCount
+                        ),
+                        (int) replicasCount                        
+                    ),
+                };
+            }).ToList();
+        }
+
+        private DescribeTopicsReport extractDescribeTopicsResults(IntPtr resultPtr)
+        {
+            var topicsPtr = Librdkafka.DescribeTopics_result_topics(resultPtr, out UIntPtr topicsCountPtr);
+
+            var result = new DescribeTopicsReport()
+            {
+                TopicDescriptions = new List<TopicDescription>()
+            };
+
+            if ((int)topicsCountPtr == 0)
+                return result;
+
+            IntPtr[] topicPtrArr = new IntPtr[(int)topicsCountPtr];
+            Marshal.Copy(topicsPtr, topicPtrArr, 0, (int)topicsCountPtr);
+
+            result.TopicDescriptions = topicPtrArr.Select(topicPtr =>
+            {
+
+                var topicName = PtrToStringUTF8(Librdkafka.TopicDescription_name(topicPtr));
+                var topicId = Librdkafka.TopicDescription_topic_id(topicPtr);
+                var error = new Error(Librdkafka.TopicDescription_error(topicPtr), false);
+                var isInternal = Librdkafka.TopicDescription_is_internal(topicPtr) != IntPtr.Zero;
+                List<AclOperation> authorizedOperations = extractAuthorizedOperations(
+                    Librdkafka.TopicDescription_authorized_operations(
+                        topicPtr,
+                        out UIntPtr authorizedOperationCount),
+                    (int) authorizedOperationCount);
+                
+                return new TopicDescription()
+                {
+                    Name = topicName,
+                    TopicId = extractUuid(topicId),
+                    Error = error,
+                    AuthorizedOperations = authorizedOperations,
+                    IsInternal = isInternal,
+                    Partitions = extractTopicPartitionInfo(
+                        Librdkafka.TopicDescription_partitions(topicPtr,
+                            out UIntPtr partitionsCount),
+                        (int) partitionsCount
+                    ),
+                };
+            }).ToList();
+            return result;
+        }
+
+        private Uuid extractUuid(IntPtr uuidPtr)
+        {
+            if (uuidPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            return new Uuid(
+                Librdkafka.Uuid_most_significant_bits(uuidPtr),
+                Librdkafka.Uuid_least_significant_bits(uuidPtr)
+            );
+        } 
+        
+        private Node extractNode(IntPtr nodePtr)
+        {
+            if (nodePtr == IntPtr.Zero)
+            {
+                return null;
+            }
+            
+            return new Node()
+            {
+                Id = (int)Librdkafka.Node_id(nodePtr),
+                Host = PtrToStringUTF8(Librdkafka.Node_host(nodePtr)),
+                Port = (int)Librdkafka.Node_port(nodePtr),
+                Rack = PtrToStringUTF8(Librdkafka.Node_rack(nodePtr)),
+            };
+        }
+
+
+        private List<Node> extractNodeList(IntPtr nodesPtr, int nodesCount)
+        {
+            IntPtr[] nodes = new IntPtr[nodesCount];
+            Marshal.Copy(nodesPtr, nodes, 0, nodesCount);
+
+            return nodes.Select(nodePtr =>
+                extractNode(nodePtr)
+            ).ToList();
+        }
+
+        private unsafe List<AclOperation> extractAuthorizedOperations(IntPtr authorizedOperationsPtr, int authorizedOperationCount)
+        {
+            if (authorizedOperationsPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+            
+            List<AclOperation> authorizedOperations = new List<AclOperation>(authorizedOperationCount);
+            for (int i = 0; i < authorizedOperationCount; i++)
+            {
+                AclOperation *aclOperationPtr = ((AclOperation *) authorizedOperationsPtr.ToPointer()) + i;
+                authorizedOperations.Add(
+                    *aclOperationPtr);
+            }
+            return authorizedOperations;
+        }
+
+        private DescribeClusterResult extractDescribeClusterResult(IntPtr resultPtr)
+        {
+            var clusterId = PtrToStringUTF8(Librdkafka.DescribeCluster_result_cluster_id(resultPtr));
+            var controller = extractNode(
+                    Librdkafka.DescribeCluster_result_controller(resultPtr));
+
+            var nodes = extractNodeList(
+                Librdkafka.DescribeCluster_result_nodes(resultPtr, out UIntPtr nodeCount),
+                (int) nodeCount);
+
+            List<AclOperation> authorizedOperations = extractAuthorizedOperations(
+                Librdkafka.DescribeCluster_result_authorized_operations(
+                    resultPtr,
+                    out UIntPtr authorizedOperationCount),
+                (int) authorizedOperationCount);
+
+            return new DescribeClusterResult()
+            {
+                ClusterId = clusterId,
+                Controller = controller,
+                AuthorizedOperations = authorizedOperations,
+                Nodes = nodes
+            };
+        }
+
+        private ListOffsetsReport extractListOffsetsReport(IntPtr resultPtr)
+        {
+            var resultInfosPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resulInfosCntPtr);
+            
+            IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resulInfosCntPtr];
+            if ((int)resulInfosCntPtr > 0)
+            {
+                Marshal.Copy(resultInfosPtr, resultResponsesPtrArr, 0, (int)resulInfosCntPtr);
+            }            
+            
+            ErrorCode reportErrorCode = ErrorCode.NoError;
+            var listOffsetsResultInfos = resultResponsesPtrArr.Select(resultResponsePtr => 
+            {
+                long timestamp = Librdkafka.ListOffsetsResultInfo_timestamp(resultResponsePtr);
+                IntPtr c_topic_partition = Librdkafka.ListOffsetsResultInfo_topic_partition(resultResponsePtr);
+                var tp = Marshal.PtrToStructure<rd_kafka_topic_partition>(c_topic_partition);
+                ErrorCode code = tp.err;
+                Error error = new Error(code);
+                if ((code != ErrorCode.NoError) && (reportErrorCode == ErrorCode.NoError))
+                {
+                    reportErrorCode = code;
+                }
+                return new ListOffsetsResultInfo
+                {
+                    Timestamp = timestamp,
+                    TopicPartitionOffsetError = new TopicPartitionOffsetError(
+                        tp.topic,
+                        new Partition(tp.partition),
+                        new Offset(tp.offset),
+                        error)
+                };
+            }).ToList();
+
+            return new ListOffsetsReport
+            {
+                ResultInfos = listOffsetsResultInfos,
+                Error = new Error(reportErrorCode)
+            };
         }
 
         private Task StartPollTask(CancellationToken ct)
@@ -741,7 +1012,8 @@ namespace Confluent.Kafka
                                             Task.Run(() =>
                                                 ((TaskCompletionSource<List<AlterConsumerGroupOffsetsResult>>)adminClientResult).TrySetResult(
                                                     results
-                                                        .Select(r => new AlterConsumerGroupOffsetsResult() {
+                                                        .Select(r => new AlterConsumerGroupOffsetsResult()
+                                                        {
                                                             Group = r.Group,
                                                             Partitions = r.Partitions
                                                         })
@@ -750,6 +1022,40 @@ namespace Confluent.Kafka
                                         }
                                         break;
                                     }
+                                    
+                                    case Librdkafka.EventType.IncrementalAlterConfigs_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                            }
+
+                                            var result = extractResultConfigs(
+                                                Librdkafka.IncrementalAlterConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp)
+                                                    .Select(r => new IncrementalAlterConfigsReport { ConfigResource = r.ConfigResource, Error = r.Error })
+                                                    .ToList();
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>)adminClientResult).TrySetException(
+                                                        new IncrementalAlterConfigsException(result)));
+                                            }
+                                            else
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<IncrementalAlterConfigsResult>>) adminClientResult).TrySetResult(
+                                                            result.Select(r => new IncrementalAlterConfigsResult
+                                                            {
+                                                               ConfigResource = r.ConfigResource,
+                                                            }).ToList()
+                                                    ));
+                                            }
+                                        }
+                                        break;
 
                                     case Librdkafka.EventType.ListConsumerGroupOffsets_Result:
                                     {
@@ -830,7 +1136,122 @@ namespace Confluent.Kafka
                                         }
                                         break;
                                     }
+                                    case Librdkafka.EventType.DescribeUserScramCredentials_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeUserScramCredentialsResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        var results = extractDescribeUserScramCredentialsResult(eventPtr);
+                                        if (results.UserScramCredentialsDescriptions.Any(desc => desc.Error.IsError))
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeUserScramCredentialsResult>)adminClientResult).TrySetException(
+                                                        new DescribeUserScramCredentialsException(results)));
+                                        }
+                                        else
+                                        {
+                                            Task.Run(() =>
+                                                ((TaskCompletionSource<DescribeUserScramCredentialsResult>)adminClientResult).TrySetResult(
+                                                    new DescribeUserScramCredentialsResult() { UserScramCredentialsDescriptions = results.UserScramCredentialsDescriptions }
+                                                ));
+                                        }
+                                        break;
 
+                                    }
+                                    case Librdkafka.EventType.AlterUserScramCredentials_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<Null>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        
+                                        var results = extractAlterUserScramCredentialsResults(eventPtr);
+
+                                        if (results.Any(r => r.Error.IsError))
+                                        {
+                                            Task.Run(() => 
+                                                ((TaskCompletionSource<Null>)adminClientResult).TrySetException(
+                                                    new AlterUserScramCredentialsException(results)));
+                                        }
+                                        else
+                                        {
+                                            Task.Run(() => 
+                                                ((TaskCompletionSource<Null>)adminClientResult).TrySetResult(null));
+                                        }
+                                        
+                                        break;
+                                    }
+                                    case Librdkafka.EventType.DescribeTopics_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeTopicsResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        var results = extractDescribeTopicsResults(eventPtr);
+                                        if (results.TopicDescriptions.Any(desc => desc.Error.IsError))
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeTopicsResult>)adminClientResult).TrySetException(
+                                                        new DescribeTopicsException(results)));
+                                        }
+                                        else
+                                        {
+                                            Task.Run(() =>
+                                                ((TaskCompletionSource<DescribeTopicsResult>)adminClientResult).TrySetResult(
+                                                    new DescribeTopicsResult() { TopicDescriptions = results.TopicDescriptions }
+                                                ));
+                                        }
+                                        break;
+                                    }
+                                    case Librdkafka.EventType.DescribeCluster_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<DescribeClusterResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        var res = extractDescribeClusterResult(eventPtr);
+                                        Task.Run(() =>
+                                            ((TaskCompletionSource<DescribeClusterResult>)adminClientResult).TrySetResult(res));
+                                        break;
+                                    }
+                                    case Librdkafka.EventType.ListOffsets_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        ListOffsetsReport report = extractListOffsetsReport(eventPtr);
+                                        if (report.Error.IsError)
+                                        {
+                                            Task.Run(() => 
+                                                ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetException(
+                                                    new ListOffsetsException(report)));
+                                        }
+                                        else
+                                        {
+                                            var result = new ListOffsetsResult() { ResultInfos = report.ResultInfos };
+                                            Task.Run(() =>
+                                                ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetResult(
+                                                    result));
+                                        }
+                                        break;
+                                    }
                                     default:
                                         // Should never happen.
                                         throw new InvalidOperationException($"Unknown result type: {type}");
@@ -865,6 +1286,7 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.DeleteTopics_Result, typeof(TaskCompletionSource<List<DeleteTopicReport>>) },
             { Librdkafka.EventType.DescribeConfigs_Result, typeof(TaskCompletionSource<List<DescribeConfigsResult>>) },
             { Librdkafka.EventType.AlterConfigs_Result, typeof(TaskCompletionSource<List<AlterConfigsReport>>) },
+            { Librdkafka.EventType.IncrementalAlterConfigs_Result, typeof(TaskCompletionSource<List<IncrementalAlterConfigsResult>>) },
             { Librdkafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsReport>>) },
             { Librdkafka.EventType.DeleteRecords_Result, typeof(TaskCompletionSource<List<DeleteRecordsResult>>) },
             { Librdkafka.EventType.DeleteConsumerGroupOffsets_Result, typeof(TaskCompletionSource<DeleteConsumerGroupOffsetsResult>) },
@@ -876,6 +1298,11 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.ListConsumerGroupOffsets_Result, typeof(TaskCompletionSource<List<ListConsumerGroupOffsetsResult>>) },
             { Librdkafka.EventType.ListConsumerGroups_Result, typeof(TaskCompletionSource<ListConsumerGroupsResult>) },
             { Librdkafka.EventType.DescribeConsumerGroups_Result, typeof(TaskCompletionSource<DescribeConsumerGroupsResult>) },
+            { Librdkafka.EventType.DescribeUserScramCredentials_Result, typeof(TaskCompletionSource<DescribeUserScramCredentialsResult>) },
+            { Librdkafka.EventType.AlterUserScramCredentials_Result, typeof(TaskCompletionSource<Null>) },
+            { Librdkafka.EventType.DescribeTopics_Result, typeof(TaskCompletionSource<DescribeTopicsResult>) },
+            { Librdkafka.EventType.DescribeCluster_Result, typeof(TaskCompletionSource<DescribeClusterResult>) },
+            { Librdkafka.EventType.ListOffsets_Result, typeof(TaskCompletionSource<ListOffsetsResult>) },
         };
 
 
@@ -901,8 +1328,6 @@ namespace Confluent.Kafka
         /// </summary>
         public Task AlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, AlterConfigsOptions options = null)
         {
-            // TODO: To support results that may complete at different times, we may also want to implement:
-            // List<Task<AlterConfigResult>> AlterConfigsConcurrent(Dictionary<ConfigResource, Config> configs, AlterConfigsOptions options = null)
 
             var completionSource = new TaskCompletionSource<List<AlterConfigsReport>>();
             // Note: There is a level of indirection between the GCHandle and
@@ -911,6 +1336,25 @@ namespace Confluent.Kafka
             // a handle-table.
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.AlterConfigs(
+                configs, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.IncrementalAlterConfigsAsync(Dictionary{ConfigResource, List{ConfigEntry}}, IncrementalAlterConfigsOptions)" />
+        /// </summary>
+        public Task<List<IncrementalAlterConfigsResult>> IncrementalAlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, IncrementalAlterConfigsOptions options = null)
+        {
+
+            var completionSource = new TaskCompletionSource<List<IncrementalAlterConfigsResult>>();
+            // Note: There is a level of indirection between the GCHandle and
+            // physical memory address. GCHandle.ToIntPtr doesn't return the
+            // physical address, it returns an id that refers to the object via
+            // a handle-table.
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.IncrementalAlterConfigs(
                 configs, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1245,7 +1689,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListConsumerGroupsAsync(ListConsumerGroupsOptions)" />
         /// </summary>
-        public Task<ListConsumerGroupsResult> ListConsumerGroupsAsync(ListConsumerGroupsOptions options = null) {
+        public Task<ListConsumerGroupsResult> ListConsumerGroupsAsync(ListConsumerGroupsOptions options = null)
+        {
             var completionSource = new TaskCompletionSource<ListConsumerGroupsResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.ListConsumerGroups(
@@ -1258,11 +1703,76 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeConsumerGroupsAsync(IEnumerable{string}, DescribeConsumerGroupsOptions)" />
         /// </summary>
-        public Task<DescribeConsumerGroupsResult> DescribeConsumerGroupsAsync(IEnumerable<string> groups, DescribeConsumerGroupsOptions options = null) {
+        public Task<DescribeConsumerGroupsResult> DescribeConsumerGroupsAsync(IEnumerable<string> groups, DescribeConsumerGroupsOptions options = null)
+        {
             var completionSource = new TaskCompletionSource<DescribeConsumerGroupsResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.DescribeConsumerGroups(
                 groups, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeUserScramCredentialsAsync(IEnumerable{string}, DescribeUserScramCredentialsOptions)" />
+        /// </summary>
+        public Task<DescribeUserScramCredentialsResult> DescribeUserScramCredentialsAsync(IEnumerable<string> users, DescribeUserScramCredentialsOptions options = null)
+        {
+            var completionSource = new TaskCompletionSource<DescribeUserScramCredentialsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DescribeUserScramCredentials(
+                users, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.AlterUserScramCredentialsAsync(IEnumerable{UserScramCredentialAlteration}, AlterUserScramCredentialsOptions)" />
+        /// </summary>
+        public Task AlterUserScramCredentialsAsync(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options = null)
+        {
+            var completionSource = new TaskCompletionSource<Null>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.AlterUserScramCredentials(
+                alterations, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.DescribeTopicsAsync(IAdminClient, TopicCollection, DescribeTopicsOptions)" />
+        /// </summary>
+        public Task<DescribeTopicsResult> DescribeTopicsAsync(TopicCollection topicCollection, DescribeTopicsOptions options = null)
+        {
+            var completionSource = new TaskCompletionSource<DescribeTopicsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DescribeTopics(
+                topicCollection, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.DescribeClusterAsync(IAdminClient, DescribeClusterOptions)" />
+        /// </summary>
+        public Task<DescribeClusterResult> DescribeClusterAsync(DescribeClusterOptions options = null)
+        {
+            var completionSource = new TaskCompletionSource<DescribeClusterResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DescribeCluster(
+                options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.ListOffsetsAsync(IAdminClient, IEnumerable{TopicPartitionOffsetSpec}, ListOffsetsOptions)" />
+        /// </summary>
+        public Task<ListOffsetsResult> ListOffsetsAsync(IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsetSpecs,ListOffsetsOptions options = null) {
+            var completionSource = new TaskCompletionSource<ListOffsetsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.ListOffsets(
+                topicPartitionOffsetSpecs, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
