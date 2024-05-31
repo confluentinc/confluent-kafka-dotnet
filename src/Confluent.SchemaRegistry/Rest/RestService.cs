@@ -274,7 +274,7 @@ namespace Confluent.SchemaRegistry
                 .ConfigureAwait(continueOnCapturedContext: false);
             string responseJson =
                 await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false);
-            T t = JObject.Parse(responseJson).ToObject<T>();
+            T t = JObject.Parse(responseJson).ToObject<T>(JsonSerializer.Create());
             return t;
         }
 
@@ -287,7 +287,7 @@ namespace Confluent.SchemaRegistry
                 .ConfigureAwait(continueOnCapturedContext: false);
             return JArray.Parse(
                     await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false))
-                .ToObject<List<T>>();
+                .ToObject<List<T>>(JsonSerializer.Create());
         }
 
         private HttpRequestMessage CreateRequest(string endPoint, HttpMethod method, params object[] jsonBody)

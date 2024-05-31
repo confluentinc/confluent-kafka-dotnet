@@ -184,7 +184,7 @@ namespace Confluent.SchemaRegistry
         public int? RequestTimeoutMs
         {
             get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs, value.ToString()); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs, value?.ToString()); }
         }
 
         ///    <summary>
@@ -196,7 +196,7 @@ namespace Confluent.SchemaRegistry
         public string SslCaLocation
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SslCaLocation); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCaLocation, value.ToString()); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCaLocation, value?.ToString()); }
         }
 
         ///    <summary>
@@ -208,7 +208,8 @@ namespace Confluent.SchemaRegistry
         public string SslKeystoreLocation
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation, value.ToString()); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation, value?.ToString()); }
+            
         }
 
         ///    <summary>
@@ -220,7 +221,7 @@ namespace Confluent.SchemaRegistry
         public string SslKeystorePassword
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystorePassword); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystorePassword, value.ToString()); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystorePassword, value?.ToString()); }
         }
 
         ///    <summary>
@@ -244,7 +245,7 @@ namespace Confluent.SchemaRegistry
         public int? MaxCachedSchemas
         {
             get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas, value.ToString()); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas, value?.ToString()); }
         }
 
 
@@ -256,7 +257,7 @@ namespace Confluent.SchemaRegistry
         public int? LatestCacheTtlSecs
         {
             get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs, value.ToString()); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs, value?.ToString()); }
         }
 
 

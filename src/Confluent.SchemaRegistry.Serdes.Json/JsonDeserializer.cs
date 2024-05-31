@@ -22,6 +22,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NJsonSchema;
 using NJsonSchema.Generation;
@@ -225,7 +226,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 }
                             }
 
-                            value = json.ToObject<T>();
+                            value = json.ToObject<T>(JsonSerializer.Create());
                         }
                     }
                     else
