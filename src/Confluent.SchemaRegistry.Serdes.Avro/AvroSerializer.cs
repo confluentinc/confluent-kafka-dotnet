@@ -37,15 +37,11 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class AvroSerializer<T> : IAsyncSerializer<T>
     {
-        private bool autoRegisterSchema = true;
-        private bool normalizeSchemas = false;
-        private bool useLatestVersion = false;
-        private int initialBufferSize = DefaultInitialBufferSize;
-        private SubjectNameStrategyDelegate subjectNameStrategy = null;
-
-        private IAvroSerializerImpl<T> serializerImpl;
-
         private ISchemaRegistryClient schemaRegistryClient;
+        private AvroSerializerConfig config;
+        private IList<IRuleExecutor> ruleExecutors;
+
+        private IAsyncSerializer<T> serializerImpl;
 
         /// <summary>
         ///     The default initial size (in bytes) of buffers used for message 
@@ -86,42 +82,35 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Serializer configuration properties (refer to 
         ///     <see cref="AvroSerializerConfig" />)
         /// </param>
-        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, AvroSerializerConfig config = null)
+        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, AvroSerializerConfig config = null, IList<IRuleExecutor> ruleExecutors = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
-
+            this.config = config;
+            this.ruleExecutors = ruleExecutors ?? new List<IRuleExecutor>();
+            
             if (config == null) { return; }
 
-            var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
+            var nonAvroConfig = config
+                .Where(item => !item.Key.StartsWith("avro.") && !item.Key.StartsWith("rules."));
             if (nonAvroConfig.Count() > 0)
             {
                 throw new ArgumentException($"AvroSerializer: unknown configuration parameter {nonAvroConfig.First().Key}");
             }
 
-            var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
+            var avroConfig = config
+                .Where(item => item.Key.StartsWith("avro.") && !item.Key.StartsWith("rules."));
             foreach (var property in avroConfig)
             {
                 if (property.Key != AvroSerializerConfig.PropertyNames.AutoRegisterSchemas &&
                     property.Key != AvroSerializerConfig.PropertyNames.UseLatestVersion &&
+                    property.Key != AvroSerializerConfig.PropertyNames.UseLatestWithMetadata &&
                     property.Key != AvroSerializerConfig.PropertyNames.BufferBytes &&
                     property.Key != AvroSerializerConfig.PropertyNames.SubjectNameStrategy)
                 {
                     throw new ArgumentException($"AvroSerializer: unknown configuration property {property.Key}");
                 }
             }
-
-            if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
-            if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
-            if (config.NormalizeSchemas != null) { this.normalizeSchemas = config.NormalizeSchemas.Value; }
-            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-
-            if (this.useLatestVersion && this.autoRegisterSchema)
-            {
-                throw new ArgumentException($"AvroSerializer: cannot enable both use.latest.version and auto.register.schemas");
-            }
         }
-
 
         /// <summary>
         ///     Serialize an instance of type <typeparamref name="T"/> to a byte array in Avro format. The serialized
@@ -140,7 +129,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
         public async Task<byte[]> SerializeAsync(T value, SerializationContext context)
-        { 
+        {
             try
             {
                 // null needs to treated specially since the client most likely just wants to send
@@ -156,11 +145,13 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (serializerImpl == null)
                 {
                     serializerImpl = typeof(T) == typeof(GenericRecord)
-                        ? (IAvroSerializerImpl<T>)new GenericSerializerImpl(schemaRegistryClient, autoRegisterSchema, normalizeSchemas, useLatestVersion, initialBufferSize, subjectNameStrategy)
-                        : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, normalizeSchemas, useLatestVersion, initialBufferSize, subjectNameStrategy);
+                        ? (IAsyncSerializer<T>)new GenericSerializerImpl(
+                            schemaRegistryClient, config, ruleExecutors)
+                        : new SpecificSerializerImpl<T>(schemaRegistryClient, config, ruleExecutors);
                 }
 
-                return await serializerImpl.Serialize(context.Topic, value, context.Component == MessageComponentType.Key).ConfigureAwait(continueOnCapturedContext: false);
+                return await serializerImpl.SerializeAsync(value, context)
+                    .ConfigureAwait(continueOnCapturedContext: false);
             }
             catch (AggregateException e)
             {
