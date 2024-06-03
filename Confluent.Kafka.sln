@@ -72,6 +72,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonWithReferences", "examples\JsonWithReferences\JsonWithReferences.csproj", "{2931D890-9420-4EA7-BCEE-AAD53108A629}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.TestsCommon", "test\Confluent.Kafka.TestsCommon\Confluent.Kafka.TestsCommon.csproj", "{1DDD2809-5B7B-4B95-80D3-A3A516D6D356}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.Encryption", "src\Confluent.SchemaRegistry.Encryption\Confluent.SchemaRegistry.Encryption.csproj", "{CFA3E05E-0130-4AEA-9ED5-B4A843FC5475}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.Encryption.Aws", "src\Confluent.SchemaRegistry.Encryption.Aws\Confluent.SchemaRegistry.Encryption.Aws.csproj", "{1366863F-0971-439D-8794-6C0CCA255442}"
