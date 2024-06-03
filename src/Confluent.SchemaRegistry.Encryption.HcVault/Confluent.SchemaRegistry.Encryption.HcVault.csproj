@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!--
+        <ProbjectTypeGuids>{6D514D1C-2433-4AC6-B51F-FE620C71C850}</ProbjectTypeGuids>
+        -->
+        <Authors>Confluent Inc.</Authors>
+        <Description>Provides field-level encryption for use with Confluent Schema Registry using Hashicorp Vault</Description>
+        <Copyright>Copyright 2021-2022 Confluent Inc.</Copyright>
+        <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
+        <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
+        <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+        <PackageTags>Kafka;Confluent;Schema Registry;Encryption;Hashicorp;Vault</PackageTags>
+        <PackageId>Confluent.SchemaRegistry.Encryption.HcVault</PackageId>
+        <Title>Confluent.SchemaRegistry.Encryption.HcVault</Title>
+        <AssemblyName>Confluent.SchemaRegistry.Encryption.HcVault</AssemblyName>
+        <VersionPrefix>1.9.3</VersionPrefix>
+        <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!--
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Encryption.HcVault.snk</AssemblyOriginatorKeyFile>
+        -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
+        <ProjectReference Include="..\Confluent.SchemaRegistry.Encryption\Confluent.SchemaRegistry.Encryption.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="VaultSharp" Version="1.13.0.1" />
+    </ItemGroup>
+
+
+</Project>
