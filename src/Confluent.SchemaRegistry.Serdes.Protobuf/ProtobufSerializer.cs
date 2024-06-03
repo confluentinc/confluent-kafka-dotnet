@@ -17,16 +17,18 @@
 // Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
 #pragma warning disable CS0618
 
+extern alias ProtobufNet;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using Google.Protobuf;
-using Google.Protobuf.Reflection;
+using ProtobufNet::Google.Protobuf.Reflection;
+using FileDescriptor = Google.Protobuf.Reflection.FileDescriptor;
+using MessageDescriptor = Google.Protobuf.Reflection.MessageDescriptor;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -50,46 +52,35 @@ namespace Confluent.SchemaRegistry.Serdes
     ///                            a single 0 byte as an optimization.
     ///                         2. The protobuf serialized data.
     /// </remarks>
-    public class ProtobufSerializer<T> : IAsyncSerializer<T>  where T : IMessage<T>, new()
+    public class ProtobufSerializer<T> : AsyncSerializer<T, FileDescriptorSet>  where T : IMessage<T>, new()
     {
-        private const int DefaultInitialBufferSize = 1024;
-
-        private bool autoRegisterSchema = true;
-        private bool normalizeSchemas = false;
-        private bool useLatestVersion = false;
-        private bool skipKnownTypes = false;
-        private bool useDeprecatedFormat = false;
-        private int initialBufferSize = DefaultInitialBufferSize;
-        private SubjectNameStrategyDelegate subjectNameStrategy = null;
-        private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy = null;
-        private ISchemaRegistryClient schemaRegistryClient;
-        
-        private HashSet<string> subjectsRegistered = new HashSet<string>();
-        private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
+        private bool skipKnownTypes;
+        private bool useDeprecatedFormat;
+        private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy;
 
         /// <remarks>
         ///     A given schema is uniquely identified by a schema id, even when
         ///     registered against multiple subjects.
         /// </remarks>
-        private int? schemaId = null;
+        private int? schemaId;
 
-        private byte[] indexArray = null;
+        private byte[] indexArray;
 
 
         /// <summary>
         ///     Initialize a new instance of the ProtobufSerializer class.
         /// </summary>
-        public ProtobufSerializer(ISchemaRegistryClient schemaRegistryClient, ProtobufSerializerConfig config = null)
+        public ProtobufSerializer(ISchemaRegistryClient schemaRegistryClient, ProtobufSerializerConfig config = null, 
+            IList<IRuleExecutor> ruleExecutors = null) : base(schemaRegistryClient, config, ruleExecutors)
         {
-            this.schemaRegistryClient = schemaRegistryClient;
-
             if (config == null)
             { 
                 this.referenceSubjectNameStrategy = ReferenceSubjectNameStrategy.ReferenceName.ToDelegate();
                 return;
             }
 
-            var nonProtobufConfig = config.Where(item => !item.Key.StartsWith("protobuf."));
+            var nonProtobufConfig = config
+                .Where(item => !item.Key.StartsWith("protobuf.") && !item.Key.StartsWith("rules."));
             if (nonProtobufConfig.Count() > 0)
             {
                 throw new ArgumentException($"ProtobufSerializer: unknown configuration parameter {nonProtobufConfig.First().Key}");
@@ -99,6 +90,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
             if (config.NormalizeSchemas != null) { this.normalizeSchemas = config.NormalizeSchemas.Value; }
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
+            if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SkipKnownTypes != null) { this.skipKnownTypes = config.SkipKnownTypes.Value; }
             if (config.UseDeprecatedFormat != null) { this.useDeprecatedFormat = config.UseDeprecatedFormat.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
@@ -112,8 +104,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
-
-        private static byte[] createIndexArray(MessageDescriptor md, bool useDeprecatedFormat)
+        private static byte[] CreateIndexArray(MessageDescriptor md, bool useDeprecatedFormat)
         {
             var indices = new List<int>();
 
@@ -204,7 +195,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     continue;
                 }
                 
-                Func<FileDescriptor, Task<SchemaReference>> t = async (FileDescriptor dependency) => {
+                Func<FileDescriptor, Task<SchemaReference>> t = async (dependency) => {
                     var dependencyReferences = await RegisterOrGetReferences(dependency, context, autoRegisterSchema, skipKnownTypes).ConfigureAwait(continueOnCapturedContext: false);
                     var subject = referenceSubjectNameStrategy(context, dependency.Name);
                     var schema = new Schema(dependency.SerializedData.ToBase64(), dependencyReferences, SchemaType.Protobuf);
@@ -216,9 +207,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 };
                 tasks.Add(t(fileDescriptor));
             }
-            await Task.WhenAll(tasks.ToArray()).ConfigureAwait(continueOnCapturedContext: false);
+            SchemaReference[] refs = await Task.WhenAll(tasks.ToArray()).ConfigureAwait(continueOnCapturedContext: false);
 
-            return tasks.Select(t => t.Result).ToList();
+            return refs.ToList();
         }
 
 
@@ -248,7 +239,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> SerializeAsync(T value, SerializationContext context)
+        public override async Task<byte[]> SerializeAsync(T value, SerializationContext context)
         {
             if (value == null) { return null; }
 
@@ -256,15 +247,17 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 if (this.indexArray == null)
                 {
-                    this.indexArray = createIndexArray(value.Descriptor, useDeprecatedFormat);
+                    this.indexArray = CreateIndexArray(value.Descriptor, useDeprecatedFormat);
                 }
 
                 string fullname = value.Descriptor.FullName;
 
-                await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+                string subject;
+                RegisteredSchema latestSchema = null;
+                await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    string subject = this.subjectNameStrategy != null
+                    subject = this.subjectNameStrategy != null
                         // use the subject name strategy specified in the serializer config if available.
                         ? this.subjectNameStrategy(context, fullname)
                         // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
@@ -274,10 +267,10 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (!subjectsRegistered.Contains(subject))
                     {
-                        if (useLatestVersion)
+                        latestSchema = await GetReaderSchema(subject)
+                            .ConfigureAwait(continueOnCapturedContext: false);
+                        if (latestSchema != null)
                         {
-                            var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
-                                .ConfigureAwait(continueOnCapturedContext: false);
                             schemaId = latestSchema.Id;
                         }
                         else
@@ -306,7 +299,20 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
                 finally
                 {
-                    serializeMutex.Release();
+                    serdeMutex.Release();
+                }
+
+                if (latestSchema != null)
+                {
+                    var fdSet = await GetParsedSchema(latestSchema).ConfigureAwait(false);
+                    FieldTransformer fieldTransformer = async (ctx, transform, message) =>
+                    {
+                        return await ProtobufUtils.Transform(ctx, fdSet, message, transform).ConfigureAwait(false);
+                    };
+                    value = await ExecuteRules(context.Component == MessageComponentType.Key, subject,
+                            context.Topic, context.Headers, RuleMode.Write, null,
+                            latestSchema, value, fieldTransformer)
+                        .ContinueWith(t => (T)t.Result).ConfigureAwait(continueOnCapturedContext: false);
                 }
 
                 using (var stream = new MemoryStream(initialBufferSize))
@@ -323,6 +329,13 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 throw e.InnerException;
             }
+        }
+
+        protected override async Task<FileDescriptorSet> ParseSchema(Schema schema)
+        {
+            IDictionary<string, string> references = await ResolveReferences(schema)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            return ProtobufUtils.Parse(schema.SchemaString, references);
         }
     }
 }

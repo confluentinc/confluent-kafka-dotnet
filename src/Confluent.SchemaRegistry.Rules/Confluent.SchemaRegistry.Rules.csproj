@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Jsonata.Net.Native" Version="2.6.1" />
+      <PackageReference Include="Jsonata.Net.Native.JsonNet" Version="2.6.1" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+      <PackageReference Include="Cel.NET" Version="0.3.0" />
+    </ItemGroup>
+
+</Project>
