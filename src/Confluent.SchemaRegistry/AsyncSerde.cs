@@ -60,9 +60,9 @@ namespace Confluent.SchemaRegistry
             }
         }
 
-        protected async Task<(Schema, TParsedSchema)> GetSchema(int writerId, string subject, string format = null)
+        protected async Task<(Schema, TParsedSchema)> GetSchema(string subject, int writerId, string format = null)
         {
-            Schema writerSchema = await schemaRegistryClient.GetSchemaBySubjectAsync(writerId, subject, format)
+            Schema writerSchema = await schemaRegistryClient.GetSchemaBySubjectAndIdAsync(subject, writerId, format)
                 .ConfigureAwait(continueOnCapturedContext: false);
             TParsedSchema parsedSchema = await GetParsedSchema(writerSchema);
             return (writerSchema, parsedSchema);

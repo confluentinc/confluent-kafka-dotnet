@@ -321,7 +321,7 @@ namespace Confluent.SchemaRegistry
                         HttpMethod.Get)
                     .ConfigureAwait(continueOnCapturedContext: false)));
 
-        public async Task<Schema> GetSchemaBySubjectAsync(int id, string subject, string format)
+        public async Task<Schema> GetSchemaBySubjectAndIdAsync(string subject, int id, string format)
             => SanitizeSchema(
                 (await RequestAsync<Schema>($"schemas/ids/{id}?subject={subject}{(format != null ? "&format=" + format : "")}",
                         HttpMethod.Get)

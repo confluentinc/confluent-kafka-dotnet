@@ -180,7 +180,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (schemaRegistryClient != null)
                     {
-                        (writerSchema, fdSet) = await GetSchema(writerId, subject);
+                        (writerSchema, fdSet) = await GetSchema(subject, writerId);
                     }
 
                     message = parser.ParseFrom(stream);

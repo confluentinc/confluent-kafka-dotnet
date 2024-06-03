@@ -153,7 +153,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
-                    (writerSchemaJson, writerSchema) = await GetSchema(writerId, subject);
+                    (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
                     
                     if (latestSchema != null)
                     {

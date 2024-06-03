@@ -135,13 +135,13 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     Gets the schema uniquely identified by <paramref name="id" />.
+        ///     Gets the schema uniquely identified by <paramref name="subject"> and <paramref name="id" />.
         /// </summary>
-        /// <param name="id">
-        ///     The unique id of schema to get.
-        /// </param>
         /// <param name="subject">
         ///     The subject.
+        /// </param>
+        /// <param name="id">
+        ///     The unique id of schema to get.
         /// </param>
         /// <param name="format">
         ///     The format of the schema to get. Currently, the only supported
@@ -153,7 +153,7 @@ namespace Confluent.SchemaRegistry
         /// <returns>
         ///     The schema identified by <paramref name="id" />.
         /// </returns>
-        Task<Schema> GetSchemaBySubjectAsync(int id, string subject, string format = null);
+        Task<Schema> GetSchemaBySubjectAndIdAsync(string subject, int id, string format = null);
 
 
         /// <summary>
