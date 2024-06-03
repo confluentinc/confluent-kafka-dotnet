@@ -38,6 +38,7 @@ namespace Confluent.SchemaRegistry
     ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, Schema, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, string, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSchemaAsync(int, string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaBySubjectAsync(int, string, string)" />
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, Schema, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int)" />
@@ -546,6 +547,30 @@ namespace Confluent.SchemaRegistry
                 {
                     CleanCacheIfFull();
                     schema = (await restService.GetSchemaAsync(id, format)
+                        .ConfigureAwait(continueOnCapturedContext: false));
+                    schemaById[id] = schema;
+                }
+
+                return schema;
+            }
+            finally
+            {
+                cacheMutex.Release();
+            }
+        }
+
+
+        /// <inheritdoc/>
+        public async Task<Schema> GetSchemaBySubjectAsync(int id, string subject, string format = null)
+        {
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
+            {
+                if (!this.schemaById.TryGetValue(id, out Schema schema) ||
+                    !checkSchemaMatchesFormat(format, schema.SchemaString))
+                {
+                    CleanCacheIfFull();
+                    schema = (await restService.GetSchemaBySubjectAsync(id, subject, format)
                         .ConfigureAwait(continueOnCapturedContext: false));
                     schemaById[id] = schema;
                 }

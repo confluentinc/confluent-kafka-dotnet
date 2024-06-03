@@ -135,6 +135,28 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
+        ///     Gets the schema uniquely identified by <paramref name="id" />.
+        /// </summary>
+        /// <param name="id">
+        ///     The unique id of schema to get.
+        /// </param>
+        /// <param name="subject">
+        ///     The subject.
+        /// </param>
+        /// <param name="format">
+        ///     The format of the schema to get. Currently, the only supported
+        ///     value is "serialized", and this is only valid for protobuf
+        ///     schemas. If 'serialized', the SchemaString property of the returned
+        ///     value will be a base64 encoded protobuf file descriptor. If null,
+        ///     SchemaString will be human readable text.
+        /// </param>
+        /// <returns>
+        ///     The schema identified by <paramref name="id" />.
+        /// </returns>
+        Task<Schema> GetSchemaBySubjectAsync(int id, string subject, string format = null);
+
+
+        /// <summary>
         ///     Get the registered schema details (including version and id)
         ///     given a subject name and schema, or throw an exception if
         ///     the schema is not registered against the subject.
