@@ -27,6 +27,12 @@ namespace Confluent.SchemaRegistry
     public interface ISchemaRegistryClient : IDisposable
     {
         /// <summary>
+        ///     The client config.
+        /// </summary>
+        IEnumerable<KeyValuePair<string, string>> Config { get; }
+
+
+        /// <summary>
         ///     The maximum capacity of the local schema cache.
         /// </summary>
         int MaxCachedSchemas { get; }

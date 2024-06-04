@@ -57,6 +57,8 @@ namespace Confluent.SchemaRegistry
     {
         private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
 
+        private IEnumerable<KeyValuePair<string, string>> config;
+
         private IRestService restService;
         private int identityMapCapacity;
         private int latestCacheTtlSecs;
@@ -107,6 +109,12 @@ namespace Confluent.SchemaRegistry
         ///     The default value subject name strategy.
         /// </summary>
         public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Topic;
+
+        
+        /// <inheritdoc />
+        public IEnumerable<KeyValuePair<string, string>> Config
+            => config;
+
 
         /// <inheritdoc />
         public int MaxCachedSchemas
@@ -165,6 +173,8 @@ namespace Confluent.SchemaRegistry
             {
                 throw new ArgumentNullException("config properties must be specified.");
             }
+            
+            this.config = config;
 
             keySubjectNameStrategy = GetKeySubjectNameStrategy(config);
             valueSubjectNameStrategy = GetValueSubjectNameStrategy(config);

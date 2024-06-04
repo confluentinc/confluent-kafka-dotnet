@@ -91,7 +91,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<RegisteredDek> CreateDekAsync(string kekName, Dek dek)
-            => await RequestAsync<RegisteredDek>($"dek-registry/v1/keks/{Uri.EscapeDataString(kekName)}",
+            => await RequestAsync<RegisteredDek>($"dek-registry/v1/keks/{Uri.EscapeDataString(kekName)}/deks",
                     HttpMethod.Post, dek)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
