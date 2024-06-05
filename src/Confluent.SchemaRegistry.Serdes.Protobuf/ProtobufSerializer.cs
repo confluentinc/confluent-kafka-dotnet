@@ -265,10 +265,11 @@ namespace Confluent.SchemaRegistry.Serdes
                             ? schemaRegistryClient.ConstructKeySubjectName(context.Topic, fullname)
                             : schemaRegistryClient.ConstructValueSubjectName(context.Topic, fullname);
 
+                    latestSchema = await GetReaderSchema(subject)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                    
                     if (!subjectsRegistered.Contains(subject))
                     {
-                        latestSchema = await GetReaderSchema(subject)
-                            .ConfigureAwait(continueOnCapturedContext: false);
                         if (latestSchema != null)
                         {
                             schemaId = latestSchema.Id;

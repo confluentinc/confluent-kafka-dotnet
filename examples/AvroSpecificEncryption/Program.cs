@@ -22,6 +22,9 @@ using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Encryption;
 using Confluent.SchemaRegistry.Encryption.Aws;
+using Confluent.SchemaRegistry.Encryption.Azure;
+using Confluent.SchemaRegistry.Encryption.Gcp;
+using Confluent.SchemaRegistry.Encryption.HcVault;
 using Confluent.SchemaRegistry.Serdes;
 
 
@@ -31,19 +34,25 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
     {
         static void Main(string[] args)
         {
-            if (args.Length != 4)
+            if (args.Length != 6)
             {
-                Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName kmsKeyId");
+                Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName kekName kmsType kmsKeyId");
                 return;
             }
             
+            // Register the KMS drivers and the field encryption executor
             AwsKmsDriver.Register();
+            AzureKmsDriver.Register();
+            GcpKmsDriver.Register();
+            HcVaultKmsDriver.Register();
             FieldEncryptionExecutor.Register();
 
             string bootstrapServers = args[0];
             string schemaRegistryUrl = args[1];
             string topicName = args[2];
-            string kmsKeyId = args[3];
+            string kekName = args[3];
+            string kmsType = args[4]; // one of aws-kms, azure-kms, gcp-kms, hcvault
+            string kmsKeyId = args[5];
             string subjectName = topicName + "-value";
 
             var producerConfig = new ProducerConfig
@@ -82,8 +91,8 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
                         "PII"
                     }, new Dictionary<string, string>
                     {
-                        ["encrypt.kek.name"] = "kek1",
-                        ["encrypt.kms.type"] = "aws-kms",
+                        ["encrypt.kek.name"] = kekName,
+                        ["encrypt.kms.type"] = kmsType,
                         ["encrypt.kms.key.id"] = kmsKeyId,
                     }, null, null, "ERROR,NONE", false)
                 }
