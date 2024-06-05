@@ -19,38 +19,38 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Avro.Specific;
 using Avro.IO;
 using Avro.Generic;
 using Confluent.Kafka;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 
 namespace Confluent.SchemaRegistry.Serdes
 {
-    internal class SpecificDeserializerImpl<T> : IAvroDeserializerImpl<T>
+    internal class SpecificDeserializerImpl<T> : AsyncDeserializer<T, Avro.Schema>
     {
         /// <remarks>
         ///     A datum reader cache (one corresponding to each write schema that's been seen) 
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId 
-            = new Dictionary<int, DatumReader<T>>();
-
-        private SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
+        private readonly Dictionary<(Avro.Schema, Avro.Schema), DatumReader<T>> datumReaderBySchema 
+            = new Dictionary<(Avro.Schema, Avro.Schema), DatumReader<T>>();
 
         /// <summary>
         ///     The Avro schema used to read values of type <typeparamref name="T"/>
         /// </summary>
         public global::Avro.Schema ReaderSchema { get; private set; }
 
-        private ISchemaRegistryClient schemaRegistryClient;
-
-        public SpecificDeserializerImpl(ISchemaRegistryClient schemaRegistryClient)
+        public SpecificDeserializerImpl(
+            ISchemaRegistryClient schemaRegistryClient,
+            AvroDeserializerConfig config,
+            IList<IRuleExecutor> ruleExecutors) : base(schemaRegistryClient, config, ruleExecutors)
         {
-            this.schemaRegistryClient = schemaRegistryClient;
-
             if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
             {
                 ReaderSchema = ((ISpecificRecord)Activator.CreateInstance<T>()).Schema;
@@ -95,9 +95,24 @@ namespace Confluent.SchemaRegistry.Serdes
                     "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
                 );
             }
+            
+            if (config == null) { return; }
+
+            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
+            if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
+            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
         }
 
-        public async Task<T> Deserialize(string topic, byte[] array)
+        public override async Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull,
+            SerializationContext context)
+        {
+            return isNull
+                ? default
+                : await Deserialize(context.Topic, context.Headers, data.ToArray(),
+                    context.Component == MessageComponentType.Key);
+        }
+        
+        public async Task<T> Deserialize(string topic, Headers headers, byte[] array, bool isKey)
         {
             try
             {
@@ -108,7 +123,26 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     throw new InvalidDataException($"Expecting data framing of length 5 bytes or more but total data size is {array.Length} bytes");
                 }
+                
+                string subject = this.subjectNameStrategy != null
+                    // use the subject name strategy specified in the serializer config if available.
+                    ? this.subjectNameStrategy(
+                        new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic),
+                        null)
+                    // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
+                    : schemaRegistryClient == null 
+                        ? null
+                        : isKey 
+                            ? schemaRegistryClient.ConstructKeySubjectName(topic)
+                            : schemaRegistryClient.ConstructValueSubjectName(topic);
 
+                Schema latestSchema = await GetReaderSchema(subject)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+
+                Schema writerSchemaJson = null;
+                Avro.Schema writerSchema = null;
+                object data;
+                IList<Migration> migrations = new List<Migration>();
                 using (var stream = new MemoryStream(array))
                 using (var reader = new BinaryReader(stream))
                 {
@@ -119,47 +153,124 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
-                    DatumReader<T> datumReader;
-                    await deserializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-                    try
+                    (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
+                    
+                    if (latestSchema != null)
                     {
-                        datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
-                        if (datumReader == null)
+                        migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
+                            .ConfigureAwait(continueOnCapturedContext: false);
+                    }
+
+                    DatumReader<T> datumReader = null;
+                    if (migrations.Count > 0)
+                    {
+                        data = new GenericReader<GenericRecord>(writerSchema, writerSchema)
+                            .Read(default(GenericRecord), new BinaryDecoder(stream));
+                        
+                        string jsonString = null;
+                        using (var jsonStream = new MemoryStream())
                         {
-                            if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
-                            {
-                                datumReaderBySchemaId.Clear();
-                            }
+                            GenericRecord record = (GenericRecord)data;
+                            DatumWriter<object> datumWriter = new GenericDatumWriter<object>(writerSchema);
 
-                            var writerSchemaJson = await schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false);
-                            var writerSchema = global::Avro.Schema.Parse(writerSchemaJson.SchemaString);
+                            JsonEncoder encoder = new JsonEncoder(writerSchema, jsonStream);
+                            datumWriter.Write(record, encoder);
+                            encoder.Flush();
 
-                            datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
-                            datumReaderBySchemaId[writerId] = datumReader;
+                            jsonString = Encoding.UTF8.GetString(jsonStream.ToArray());
                         }
+                        
+                        JToken json = JToken.Parse(jsonString);
+                        json = await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
+                            .ContinueWith(t => (JToken)t.Result)
+                            .ConfigureAwait(continueOnCapturedContext: false);
+                        Avro.IO.Decoder decoder = new JsonDecoder(ReaderSchema, json.ToString(Formatting.None));
+                        
+                        datumReader = new SpecificReader<T>(ReaderSchema, ReaderSchema);
+                        data = Read(datumReader, decoder);
                     }
-                    finally
+                    else
                     {
-                        deserializeMutex.Release();
+                        datumReader = await GetDatumReader(writerSchema, ReaderSchema);
+                        data = Read(datumReader, new BinaryDecoder(stream));
                     }
-
-                    if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
-                    {
-                        // This is a generic deserializer and it knows the type that needs to be serialized into. 
-                        // Passing default(T) will result in null value and that will force the datumRead to
-                        // use the schema namespace and name provided in the schema, which may not match (T).
-                        var reuse = Activator.CreateInstance<T>();
-                        return datumReader.Read(reuse, new BinaryDecoder(stream));
-                    }
-
-                    return datumReader.Read(default(T), new BinaryDecoder(stream));
                 }
+
+                FieldTransformer fieldTransformer = async (ctx, transform, message) => 
+                {
+                    return await AvroUtils.Transform(ctx, writerSchema, message, transform).ConfigureAwait(false);
+                };
+                data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read, null,
+                    writerSchemaJson, data, fieldTransformer)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+
+                return (T) data;
             }
             catch (AggregateException e)
             {
                 throw e.InnerException;
             }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
 
+        protected override Task<Avro.Schema> ParseSchema(Schema schema)
+        {
+            return Task.FromResult(Avro.Schema.Parse(schema.SchemaString));
+        }
+        
+        private async Task<DatumReader<T>> GetDatumReader(Avro.Schema writerSchema, Avro.Schema readerSchema)
+        {
+            DatumReader<T> datumReader = null;
+            await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
+            {
+                if (datumReaderBySchema.TryGetValue((writerSchema, readerSchema), out datumReader))
+                {
+                    return datumReader;
+
+                }
+                else
+                {
+                    if (datumReaderBySchema.Count > schemaRegistryClient.MaxCachedSchemas)
+                    {
+                        datumReaderBySchema.Clear();
+                    }
+
+                    if (readerSchema == null)
+                    {
+                        readerSchema = writerSchema;
+                    }
+                    datumReader = new SpecificReader<T>(writerSchema, readerSchema);
+                    datumReaderBySchema[(writerSchema, readerSchema)] = datumReader;
+                    return datumReader;
+                }
+            }
+            finally
+            {
+                serdeMutex.Release();
+            }
+        }
+
+        private static object Read(DatumReader<T> datumReader, Avro.IO.Decoder decoder)
+        {
+            object data;
+            if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
+            {
+                // This is a generic deserializer and it knows the type that needs to be serialized into. 
+                // Passing default(T) will result in null value and that will force the datumRead to
+                // use the schema namespace and name provided in the schema, which may not match (T).
+                var reuse = Activator.CreateInstance<T>();
+                data = datumReader.Read(reuse, decoder);
+            }
+            else
+            {
+                data = datumReader.Read(default(T), decoder);
+            }
+
+            return data;
+        }
     }
 }
