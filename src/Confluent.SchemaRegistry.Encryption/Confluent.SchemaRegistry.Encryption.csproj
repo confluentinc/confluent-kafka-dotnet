@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!--
+        <ProbjectTypeGuids>{6D514D1C-2433-4AC6-B51F-FE620C71C850}</ProbjectTypeGuids>
+        -->
+        <Authors>Confluent Inc.</Authors>
+        <Description>Provides field-level encryption for use with Confluent Schema Registry</Description>
+        <Copyright>Copyright 2021-2022 Confluent Inc.</Copyright>
+        <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
+        <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
+        <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+        <PackageTags>Kafka;Confluent;Schema Registry;Encryption</PackageTags>
+        <PackageId>Confluent.SchemaRegistry.Encryption</PackageId>
+        <Title>Confluent.SchemaRegistry.Encryption</Title>
+        <AssemblyName>Confluent.SchemaRegistry.Encryption</AssemblyName>
+        <VersionPrefix>1.9.3</VersionPrefix>
+        <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!--
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Encryption.snk</AssemblyOriginatorKeyFile>
+        -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="HKDF.Standard" Version="2.0.0" />
+        <PackageReference Include="Miscreant" Version="0.3.3" />
+    </ItemGroup>
+
+
+</Project>
