@@ -24,7 +24,7 @@ namespace Confluent.SchemaRegistry
     /// </summary>
     public class NoneAction : IRuleAction
     {
-        public static readonly string ActionType = "ERROR";
+        public static readonly string ActionType = "NONE";
         
         public void Configure(IEnumerable<KeyValuePair<string, string>> config)
         {
