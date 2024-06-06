@@ -210,10 +210,6 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 throw e.InnerException;
             }
-            catch (Exception e)
-            {
-                throw e;
-            }
         }
 
         protected override Task<Avro.Schema> ParseSchema(Schema schema)

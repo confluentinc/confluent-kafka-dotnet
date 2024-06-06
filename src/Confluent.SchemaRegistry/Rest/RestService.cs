@@ -359,7 +359,7 @@ namespace Confluent.SchemaRegistry
         
         private string getKeyValuePairs(IDictionary<string, string> metadata)
         {
-            return string.Join("&", metadata.Select(x => $"{x.Key}={x.Value}"));
+            return string.Join("&", metadata.Select(x => $"key={x.Key}&value={x.Value}"));
         }
         
         public async Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize)
