@@ -14,10 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Encryption;
@@ -26,20 +23,60 @@ using Confluent.SchemaRegistry.Encryption.Azure;
 using Confluent.SchemaRegistry.Encryption.Gcp;
 using Confluent.SchemaRegistry.Encryption.HcVault;
 using Confluent.SchemaRegistry.Serdes;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Threading;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 
-namespace Confluent.Kafka.Examples.AvroSpecificEncryption
+/// <summary>
+///     An example of working with JSON data, Apache Kafka and 
+///     Confluent Schema Registry (v5.5 or later required for
+///     JSON schema support).
+/// </summary>
+namespace Confluent.Kafka.Examples.JsonSerialization
 {
+    /// <summary>
+    ///     A POCO class corresponding to the JSON data written
+    ///     to Kafka, where the schema is implicitly defined through 
+    ///     the class properties and their attributes.
+    /// </summary>
+    /// <remarks>
+    ///     Internally, the JSON serializer uses Newtonsoft.Json for
+    ///     serialization and NJsonSchema for schema creation and
+    ///     validation. You can use any property annotations recognised
+    ///     by these libraries.
+    ///
+    ///     Note: Off-the-shelf libraries do not yet exist to enable
+    ///     integration of System.Text.Json and JSON Schema, so this
+    ///     is not yet supported by the Confluent serializers.
+    /// </remarks>
+    class User
+    {
+        [JsonRequired] // use Newtonsoft.Json annotations
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonRequired]
+        [JsonProperty("favorite_color")]
+        public string FavoriteColor { get; set; }
+
+        [JsonProperty("favorite_number")]
+        public long FavoriteNumber { get; set; }
+    }
+
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             if (args.Length != 6)
             {
                 Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName kekName kmsType kmsKeyId");
                 return;
             }
-            
+
             // Register the KMS drivers and the field encryption executor
             AwsKmsDriver.Register();
             AzureKmsDriver.Register();
@@ -55,6 +92,22 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
             string kmsKeyId = args[5];
             string subjectName = topicName + "-value";
 
+            var schemaStr = @"{
+              ""type"": ""object"",
+              ""properties"": {
+                ""FavoriteColor"": {
+                  ""type"": ""string""
+                },
+                ""FavoriteNumber"": {
+                  ""type"": ""number""
+                },
+                ""Name"": {
+                  ""type"": ""string"",
+                  ""confluent:tags"": [ ""PII"" ]
+                }
+              }
+            }";
+            
             var producerConfig = new ProducerConfig
             {
                 BootstrapServers = bootstrapServers
@@ -72,17 +125,17 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
-                GroupId = "avro-specific-example-group"
+                GroupId = "json-example-consumer-group"
             };
 
-            var avroSerializerConfig = new AvroSerializerConfig
+            // Note: Specifying json serializer configuration is optional.
+            var jsonSerializerConfig = new JsonSerializerConfig
             {
                 AutoRegisterSchemas = false,
                 UseLatestVersion = true,
-                // optional Avro serializer properties:
                 BufferBytes = 100
             };
-            
+
             RuleSet ruleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
@@ -97,7 +150,7 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
                     }, null, null, "ERROR,NONE", false)
                 }
             );
-            Schema schema = new Schema(User._SCHEMA.ToString(), null, SchemaType.Avro, null, ruleSet);
+            Schema schema = new Schema(schemaStr, null, SchemaType.Json, null, ruleSet);
 
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
@@ -105,11 +158,11 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
                 using (var consumer =
                     new ConsumerBuilder<string, User>(consumerConfig)
-                        .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
+                        .SetKeyDeserializer(Deserializers.Utf8)
+                        .SetValueDeserializer(new JsonDeserializer<User>(schemaRegistry).AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
-
                     consumer.Subscribe(topicName);
 
                     try
@@ -118,9 +171,9 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
                         {
                             try
                             {
-                                var consumeResult = consumer.Consume(cts.Token);
-                                var user = consumeResult.Message.Value;
-                                Console.WriteLine($"key: {consumeResult.Message.Key}, user name: {user.name}, favorite number: {user.favorite_number}, favorite color: {user.favorite_color}, hourly_rate: {user.hourly_rate}");
+                                var cr = consumer.Consume(cts.Token);
+                                var user = cr.Message.Value;
+                                Console.WriteLine($"user name: {user.Name}, favorite number: {user.FavoriteNumber}, favorite color: {user.FavoriteColor}");
                             }
                             catch (ConsumeException e)
                             {
@@ -138,40 +191,38 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry, avroSerializerConfig))
+                    .SetValueSerializer(new JsonSerializer<User>(schemaRegistry, jsonSerializerConfig))
                     .Build())
             {
-                schemaRegistry.RegisterSchemaAsync(subjectName, schema, true);
+                await schemaRegistry.RegisterSchemaAsync(subjectName, schema, true);
                     
-                Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
+                Console.WriteLine($"{producer.Name} producing on {topicName}. Enter first names, q to exit.");
 
-                int i = 1;
+                long i = 1;
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    User user = new User { name = text, favorite_color = "green", favorite_number = ++i, hourly_rate = new Avro.AvroDecimal(67.99) };
-                    producer
-                        .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user })
-                        .ContinueWith(task =>
-                            {
-                                if (!task.IsFaulted)
-                                {
-                                    Console.WriteLine($"produced to: {task.Result.TopicPartitionOffset}");
-                                    return;
-                                }
-
-                                // Task.Exception is of type AggregateException. Use the InnerException property
-                                // to get the underlying ProduceException. In some cases (notably Schema Registry
-                                // connectivity issues), the InnerException of the ProduceException will contain
-                                // additional information pertaining to the root cause of the problem. Note: this
-                                // information is automatically included in the output of the ToString() method of
-                                // the ProduceException which is called implicitly in the below.
-                                Console.WriteLine($"error producing message: {task.Exception.InnerException}");
-                            });
+                    User user = new User { Name = text, FavoriteColor = "blue", FavoriteNumber = i++ };
+                    try 
+                    {
+                        await producer.ProduceAsync(topicName, new Message<string, User> { Value = user });
+                    }
+                    catch (Exception e) 
+                    {
+                        Console.WriteLine($"error producing message: {e.Message}");
+                    }
                 }
             }
 
             cts.Cancel();
+
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            {
+                // Note: a subject name strategy was not configured, so the default "Topic" was used.
+                schema = await schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName));
+                Console.WriteLine("\nThe JSON schema corresponding to the written data:");
+                Console.WriteLine(schema.SchemaString);
+            }
         }
     }
 }

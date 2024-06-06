@@ -14,32 +14,35 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using Avro;
+using Avro.Generic;
 using Confluent.Kafka.SyncOverAsync;
-using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Encryption;
 using Confluent.SchemaRegistry.Encryption.Aws;
 using Confluent.SchemaRegistry.Encryption.Azure;
 using Confluent.SchemaRegistry.Encryption.Gcp;
 using Confluent.SchemaRegistry.Encryption.HcVault;
 using Confluent.SchemaRegistry.Serdes;
+using Confluent.SchemaRegistry;
+using Schema = Confluent.SchemaRegistry.Schema;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 
-namespace Confluent.Kafka.Examples.AvroSpecificEncryption
+namespace Confluent.Kafka.Examples.AvroGeneric
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             if (args.Length != 6)
             {
-                Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName kekName kmsType kmsKeyId");
+                Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName");
                 return;
             }
-            
+
             // Register the KMS drivers and the field encryption executor
             AwsKmsDriver.Register();
             AzureKmsDriver.Register();
@@ -54,26 +57,20 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
             string kmsType = args[4]; // one of aws-kms, azure-kms, gcp-kms, hcvault
             string kmsKeyId = args[5];
             string subjectName = topicName + "-value";
+            string groupName = "avro-generic-example-group";
 
-            var producerConfig = new ProducerConfig
-            {
-                BootstrapServers = bootstrapServers
-            };
-
-            var schemaRegistryConfig = new SchemaRegistryConfig
-            {
-                // Note: you can specify more than one schema registry url using the
-                // schema.registry.url property for redundancy (comma separated list). 
-                // The property name is not plural to follow the convention set by
-                // the Java implementation.
-                Url = schemaRegistryUrl
-            };
-
-            var consumerConfig = new ConsumerConfig
-            {
-                BootstrapServers = bootstrapServers,
-                GroupId = "avro-specific-example-group"
-            };
+            // var s = (RecordSchema)RecordSchema.Parse(File.ReadAllText("my-schema.json"));
+            var s = (RecordSchema)RecordSchema.Parse(
+                @"{
+                    ""type"": ""record"",
+                    ""name"": ""User"",
+                    ""fields"": [
+                        {""name"": ""name"", ""type"": ""string"", ""confluent:tags"": [""PII""]},
+                        {""name"": ""favorite_number"",  ""type"": ""long""},
+                        {""name"": ""favorite_color"", ""type"": ""string""}
+                    ]
+                  }"
+            );
 
             var avroSerializerConfig = new AvroSerializerConfig
             {
@@ -97,19 +94,18 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
                     }, null, null, "ERROR,NONE", false)
                 }
             );
-            Schema schema = new Schema(User._SCHEMA.ToString(), null, SchemaType.Avro, null, ruleSet);
+            Schema schema = new Schema(s.ToString(), null, SchemaType.Avro, null, ruleSet);
 
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
             {
-                using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+                using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
                 using (var consumer =
-                    new ConsumerBuilder<string, User>(consumerConfig)
-                        .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
+                    new ConsumerBuilder<string, GenericRecord>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName })
+                        .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
-
                     consumer.Subscribe(topicName);
 
                     try
@@ -119,8 +115,8 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
                             try
                             {
                                 var consumeResult = consumer.Consume(cts.Token);
-                                var user = consumeResult.Message.Value;
-                                Console.WriteLine($"key: {consumeResult.Message.Key}, user name: {user.name}, favorite number: {user.favorite_number}, favorite color: {user.favorite_color}, hourly_rate: {user.hourly_rate}");
+
+                                Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Message.Value}");
                             }
                             catch (ConsumeException e)
                             {
@@ -130,44 +126,44 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
                     }
                     catch (OperationCanceledException)
                     {
+                        // commit final offsets and leave the group.
                         consumer.Close();
                     }
                 }
             });
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var producer =
-                new ProducerBuilder<string, User>(producerConfig)
-                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry, avroSerializerConfig))
+                new ProducerBuilder<string, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
+                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry, avroSerializerConfig))
                     .Build())
             {
                 schemaRegistry.RegisterSchemaAsync(subjectName, schema, true);
                     
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
-                int i = 1;
+                long i = 1;
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    User user = new User { name = text, favorite_color = "green", favorite_number = ++i, hourly_rate = new Avro.AvroDecimal(67.99) };
-                    producer
-                        .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user })
-                        .ContinueWith(task =>
-                            {
-                                if (!task.IsFaulted)
-                                {
-                                    Console.WriteLine($"produced to: {task.Result.TopicPartitionOffset}");
-                                    return;
-                                }
+                    var record = new GenericRecord(s);
+                    record.Add("name", text);
+                    record.Add("favorite_number", i++);
+                    record.Add("favorite_color", "blue");
 
-                                // Task.Exception is of type AggregateException. Use the InnerException property
-                                // to get the underlying ProduceException. In some cases (notably Schema Registry
-                                // connectivity issues), the InnerException of the ProduceException will contain
-                                // additional information pertaining to the root cause of the problem. Note: this
-                                // information is automatically included in the output of the ToString() method of
-                                // the ProduceException which is called implicitly in the below.
-                                Console.WriteLine($"error producing message: {task.Exception.InnerException}");
-                            });
+                    try
+                    {
+                        var dr = await producer.ProduceAsync(topicName, new Message<string, GenericRecord> { Key = text, Value = record });
+                        Console.WriteLine($"produced to: {dr.TopicPartitionOffset}");
+                    }
+                    catch (ProduceException<string, GenericRecord> ex)
+                    {
+                        // In some cases (notably Schema Registry connectivity issues), the InnerException
+                        // of the ProduceException contains additional informatiom pertaining to the root
+                        // cause of the problem. This information is automatically included in the output
+                        // of the ToString() method of the ProduceException, called implicitly in the below.
+                        Console.WriteLine($"error producing message: {ex}");
+                    }
                 }
             }
 
