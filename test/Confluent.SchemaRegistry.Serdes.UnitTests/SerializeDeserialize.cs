@@ -136,6 +136,21 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
+            
+            // serialize second object
+            user = new User
+            {
+                favorite_color = "red",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(user.name, result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
         }
 
         [Fact]
@@ -522,6 +537,39 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal("awesome", result3.title);
             Assert.Equal(user.favorite_color, result3.favorite_color);
             Assert.Equal(user.favorite_number, result3.favorite_number);
+        }
+
+        [Fact]
+        public void GenericRecord()
+        {
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, null);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
+
+            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            user.Add("name", "awesome");
+            user.Add("favorite_number", 100);
+            user.Add("favorite_color", "blue");
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal(user["name"], result["name"]);
+            Assert.Equal(user["favorite_color"], result["favorite_color"]);
+            Assert.Equal(user["favorite_number"], result["favorite_number"]);
+            
+            // serialize second object
+            user = new GenericRecord((RecordSchema) User._SCHEMA);
+            user.Add("name", "cool");
+            user.Add("favorite_number", 100);
+            user.Add("favorite_color", "red");
+
+            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal(user["name"], result["name"]);
+            Assert.Equal(user["favorite_color"], result["favorite_color"]);
+            Assert.Equal(user["favorite_number"], result["favorite_number"]);
         }
 
         [Fact]
