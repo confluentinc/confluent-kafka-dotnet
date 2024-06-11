@@ -25,6 +25,7 @@ using System.Linq;
 using Confluent.Kafka;
 using Confluent.SchemaRegistry.Encryption;
 using Example;
+using Google.Protobuf;
 
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
@@ -326,16 +327,18 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             package example;
 
-            message Person {
+            message PersonWithPic {
                 string favorite_color = 1;
                 int32 favorite_number = 2;
                 string name = 3 [(.confluent.field_meta) = { tags: ""PII"" }];
+                bytes picture = 4 [(.confluent.field_meta) = { tags: ""PII"" }];
             }";
             
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Protobuf, null);
             schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
                 {
-                    ["example.Person.name"] = new HashSet<string> { "PII" }
+                    ["example.PersonWithPic.name"] = new HashSet<string> { "PII" },
+                    ["example.PersonWithPic.picture"] = new HashSet<string> { "PII" }
 
                 }, new Dictionary<string, string>(), new HashSet<string>()
             );
@@ -362,14 +365,17 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
             config.Set("rules.secret", "mysecret");
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient);
-            var serializer = new ProtobufSerializer<Person>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
-            var deserializer = new ProtobufDeserializer<Person>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+            var serializer = new ProtobufSerializer<PersonWithPic>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
+            var deserializer = new ProtobufDeserializer<PersonWithPic>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
 
-            var user = new Person
+
+            var pic = new byte[] { 1, 2, 3 };
+            var user = new PersonWithPic
             {
                 FavoriteColor = "blue",
                 FavoriteNumber = 100,
-                Name = "awesome"
+                Name = "awesome",
+                Picture = ByteString.CopyFrom(pic)
             };
 
             Headers headers = new Headers();
@@ -380,6 +386,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal("awesome", result.Name);
             Assert.Equal(user.FavoriteColor, result.FavoriteColor);
             Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
+            Assert.True(pic.SequenceEqual(result.Picture));
         }
 
     }

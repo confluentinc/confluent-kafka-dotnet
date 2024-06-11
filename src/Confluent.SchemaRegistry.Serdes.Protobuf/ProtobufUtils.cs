@@ -159,8 +159,18 @@ namespace Confluent.SchemaRegistry.Serdes
                     
                     if (ruleTags.Count == 0 || intersect.Count != 0)
                     {
-                        return await fieldTransform.Transform(ctx, fieldContext, message)
+                        if (message is ByteString)
+                        {
+                            message = ((ByteString)message).ToByteArray();
+                        }
+                        message = await fieldTransform.Transform(ctx, fieldContext, message)
                             .ConfigureAwait(continueOnCapturedContext: false);
+                        if (message is byte[])
+                        {
+                            message = ByteString.CopyFrom((byte[])message);
+                        }
+
+                        return message;
                     }
                 }
 

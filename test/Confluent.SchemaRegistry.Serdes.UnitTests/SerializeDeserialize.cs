@@ -23,6 +23,7 @@ using Avro.Specific;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
 using System;
+using System.Linq;
 using System.Runtime.Serialization;
 using Avro;
 using Avro.Generic;
@@ -334,14 +335,16 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [Fact]
         public void ISpecificRecordFieldEncryption()
         {
-            var schemaStr = "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
-            "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\",\"confluent:tags\": [ \"PII\" ]},{\"name\":\"favorite_number\",\"type\":[\"i" +
-            "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
+            var schemaStr = "{\"type\":\"record\",\"name\":\"UserWithPic\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
+                    "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\"," +
+                    "\"type\":[\"int\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}," +
+                    "{\"name\":\"picture\",\"type\":[\"null\",\"bytes\"],\"default\":null}]}";
 
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
             schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
                 {
-                    ["Confluent.Kafka.Examples.AvroSpecific.User.name"] = new HashSet<string> { "PII" }
+                    ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.name"] = new HashSet<string> { "PII" },
+                    ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.picture"] = new HashSet<string> { "PII" }
 
                 }, new Dictionary<string, string>(), new HashSet<string>()
             );
@@ -368,14 +371,16 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
             config.Set("rules.secret", "mysecret");
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient);
-            var serializer = new AvroSerializer<User>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
-            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+            var serializer = new AvroSerializer<UserWithPic>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
+            var deserializer = new AvroDeserializer<UserWithPic>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
 
-            var user = new User
+            var pic = new byte[] { 1, 2, 3 };
+            var user = new UserWithPic()
             {
                 favorite_color = "blue",
                 favorite_number = 100,
-                name = "awesome"
+                name = "awesome",
+                picture = pic
             };
 
             Headers headers = new Headers();
@@ -386,6 +391,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal("awesome", result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
+            Assert.True(pic.SequenceEqual(result.picture));
         }
 
         [Fact]
@@ -743,14 +749,16 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [Fact]
         public void GenericRecordFieldEncryption()
         {
-            var schemaStr = "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
-            "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\",\"confluent:tags\": [ \"PII\" ]},{\"name\":\"favorite_number\",\"type\":[\"i" +
-            "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
+            var schemaStr = "{\"type\":\"record\",\"name\":\"UserWithPic\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
+                    "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\"," +
+                    "\"type\":[\"int\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}," +
+                    "{\"name\":\"picture\",\"type\":[\"null\",\"bytes\"],\"default\":null}]}";
 
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
             schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
                 {
-                    ["Confluent.Kafka.Examples.AvroSpecific.User.name"] = new HashSet<string> { "PII" }
+                    ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.name"] = new HashSet<string> { "PII" },
+                    ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.picture"] = new HashSet<string> { "PII" }
 
                 }, new Dictionary<string, string>(), new HashSet<string>()
             );
@@ -780,10 +788,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
             var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var pic = new byte[] { 1, 2, 3 };
+            var user = new GenericRecord((RecordSchema) UserWithPic._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
+            user.Add("picture", pic);
 
             Headers headers = new Headers();
             var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
@@ -792,6 +802,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal("awesome", result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
             Assert.Equal(user["favorite_number"], result["favorite_number"]);
+            Assert.True(pic.SequenceEqual((byte[])result["picture"]));
         }
 
         [Fact]
