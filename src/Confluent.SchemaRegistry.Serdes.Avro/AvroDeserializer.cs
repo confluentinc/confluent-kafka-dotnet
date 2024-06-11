@@ -37,9 +37,16 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class AvroDeserializer<T> : IAsyncDeserializer<T>
     {
-        private IAvroDeserializerImpl<T> deserializerImpl;
-
         private ISchemaRegistryClient schemaRegistryClient;
+        private AvroDeserializerConfig config;
+        private IList<IRuleExecutor> ruleExecutors;
+
+        private IAsyncDeserializer<T> deserializerImpl;
+
+        public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient)
+            : this(schemaRegistryClient, null)
+        {
+        }
 
         /// <summary>
         ///     Initialize a new AvroDeserializer instance.
@@ -52,22 +59,36 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Deserializer configuration properties (refer to 
         ///     <see cref="AvroDeserializerConfig" />).
         /// </param>
-        public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
+        public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null) 
+            : this(schemaRegistryClient, config != null ? new AvroDeserializerConfig(config) : null)
+        {
+        }
+
+        public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig config = null, IList<IRuleExecutor> ruleExecutors = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
-
+            this.config = config;
+            this.ruleExecutors = ruleExecutors ?? new List<IRuleExecutor>();
+            
             if (config == null) { return; }
 
-            var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
+            var nonAvroConfig = config
+                .Where(item => !item.Key.StartsWith("avro.") && !item.Key.StartsWith("rules."));
             if (nonAvroConfig.Count() > 0)
             {
                 throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {nonAvroConfig.First().Key}.");
             }
 
-            var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
-            if (avroConfig.Count() != 0)
+            var avroConfig = config
+                .Where(item => item.Key.StartsWith("avro.") && !item.Key.StartsWith("rules."));
+            foreach (var property in avroConfig)
             {
-                throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {avroConfig.First().Key}");
+                if (property.Key != AvroDeserializerConfig.PropertyNames.UseLatestVersion &&
+                    property.Key != AvroDeserializerConfig.PropertyNames.UseLatestWithMetadata &&
+                    property.Key != AvroSerializerConfig.PropertyNames.SubjectNameStrategy)
+                {
+                    throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {property.Key}");
+                }
             }
         }
 
@@ -108,12 +129,12 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (deserializerImpl == null)
                 {
                     deserializerImpl = (typeof(T) == typeof(GenericRecord))
-                        ? (IAvroDeserializerImpl<T>)new GenericDeserializerImpl(schemaRegistryClient)
-                        : new SpecificDeserializerImpl<T>(schemaRegistryClient);
+                        ? (IAsyncDeserializer<T>)new GenericDeserializerImpl(schemaRegistryClient, config, ruleExecutors)
+                        : new SpecificDeserializerImpl<T>(schemaRegistryClient, config, ruleExecutors);
                 }
 
-                // TODO: change this interface such that it takes ReadOnlyMemory<byte>, not byte[].
-                return isNull ? default : await deserializerImpl.Deserialize(context.Topic, data.ToArray()).ConfigureAwait(continueOnCapturedContext: false);
+                return isNull ? default : await deserializerImpl.DeserializeAsync(data, isNull, context)
+                    .ConfigureAwait(continueOnCapturedContext: false);
             }
             catch (AggregateException e)
             {
