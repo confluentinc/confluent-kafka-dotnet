@@ -18,14 +18,9 @@
 #pragma warning disable CS0618
 
 using Moq;
-using Xunit;
 using System.Collections.Generic;
 using System.Linq;
-using Avro.Specific;
-using Confluent.Kafka;
-using Confluent.Kafka.Examples.AvroSpecific;
 using System;
-using Avro.Generic;
 using Confluent.SchemaRegistry.Encryption;
 using Confluent.SchemaRegistry.Rules;
 
@@ -35,11 +30,14 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
     {
         protected ISchemaRegistryClient schemaRegistryClient;
         protected IDekRegistryClient dekRegistryClient;
+        protected IClock clock;
+        protected long now;
         protected string testTopic;
         protected IDictionary<string, int> store = new Dictionary<string, int>();
         protected IDictionary<string, List<RegisteredSchema>> subjectStore = new Dictionary<string, List<RegisteredSchema>>();
         protected IDictionary<KekId, RegisteredKek> kekStore = new Dictionary<KekId, RegisteredKek>();
         protected IDictionary<DekId, RegisteredDek> dekStore = new Dictionary<DekId, RegisteredDek>();
+        protected IDictionary<string, int> dekLastVersions = new Dictionary<string, int>();
 
         public BaseSerializeDeserializeTests()
         {
@@ -110,6 +108,17 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 (string kekName, Dek dek) =>
                 {
                     int version = dek.Version ?? 1;
+                    if (dekLastVersions.TryGetValue(dek.Subject, out int lastVersion))
+                    {
+                        if (version > lastVersion)
+                        {
+                            dekLastVersions[dek.Subject] = version;
+                        }
+                    }
+                    else
+                    {
+                        dekLastVersions[dek.Subject] = version;
+                    }
                     var dekId = new DekId(kekName, dek.Subject, version, dek.Algorithm, false);
                     return dekStore.TryGetValue(dekId, out RegisteredDek registeredDek)
                         ? registeredDek
@@ -133,11 +142,23 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             dekRegistryMock.Setup(x => x.GetDekVersionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<DekFormat>(), It.IsAny<bool>())).ReturnsAsync(
                 (string kekName, string subject, int version, DekFormat? algorithm, bool ignoreDeletedKeks) =>
                 {
+                    if (version == -1)
+                    {
+                        if (!dekLastVersions.TryGetValue(subject, out version))
+                        {
+                            version = 1;
+                        }
+                    }
                     var dekId = new DekId(kekName, subject, version, algorithm, false);
                     return dekStore.TryGetValue(dekId, out RegisteredDek registeredDek) ? registeredDek : null;
                 });
             dekRegistryClient = dekRegistryMock.Object;
             
+            var clockMock = new Mock<IClock>();
+            clockMock.Setup(x => x.NowToUnixTimeMilliseconds()).Returns(() => now);
+            clock = clockMock.Object;
+            now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
             // Register kms drivers
             LocalKmsDriver.Register();
             CelExecutor.Register();

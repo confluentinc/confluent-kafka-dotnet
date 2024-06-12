@@ -32,14 +32,17 @@ namespace Confluent.SchemaRegistry.Encryption
 
         internal IEnumerable<KeyValuePair<string, string>> Configs;
         internal IDekRegistryClient Client;
+        internal IClock Clock;
 
         public FieldEncryptionExecutor()
         {
+            Clock = new Clock();
         }
         
-        public FieldEncryptionExecutor(IDekRegistryClient client)
+        public FieldEncryptionExecutor(IDekRegistryClient client, IClock clock)
         {
             Client = client;
+            Clock = clock ?? new Clock();
         }
         
         public override void Configure(IEnumerable<KeyValuePair<string, string>> config)
@@ -319,10 +322,11 @@ namespace Confluent.SchemaRegistry.Encryption
 
         private bool IsExpired(RuleContext ctx, RegisteredDek dek)
         {
+            long now = executor.Clock.NowToUnixTimeMilliseconds();
             return ctx.RuleMode != RuleMode.Read
                 && dekExpiryDays > 0
                 && dek != null
-                && (DateTimeOffset.Now.ToUnixTimeMilliseconds() - dek.Timestamp) / FieldEncryptionExecutor.MillisInDay > dekExpiryDays;
+                && ((double) (now - dek.Timestamp)) / FieldEncryptionExecutor.MillisInDay > dekExpiryDays;
         }
         
         private async Task<RegisteredDek> RetrieveDekFromRegistry(DekId key)
@@ -501,5 +505,15 @@ namespace Confluent.SchemaRegistry.Encryption
         public void Dispose()
         {
         }
+    }
+
+    public interface IClock
+    {
+        long NowToUnixTimeMilliseconds();
+    }
+
+    internal class Clock : IClock
+    {
+        public long NowToUnixTimeMilliseconds() => DateTimeOffset.Now.ToUnixTimeMilliseconds();
     }
 }

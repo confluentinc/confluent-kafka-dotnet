@@ -17,7 +17,6 @@
 // ConstructValueSubjectName is still used a an internal implementation detail.
 #pragma warning disable CS0618
 
-using Moq;
 using Confluent.Kafka;
 using Confluent.SchemaRegistry.Encryption;
 using Newtonsoft.Json;
@@ -629,7 +628,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 UseLatestVersion = true
             };
             config.Set("rules.secret", "mysecret");
-            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient);
+            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
             var serializer = new JsonSerializer<Customer>(schemaRegistryClient, config, null,
                 new List<IRuleExecutor> { ruleExecutor });
             var deserializer = new JsonDeserializer<Customer>(schemaRegistryClient, null, null,

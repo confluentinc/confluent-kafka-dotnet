@@ -18,7 +18,6 @@
 #pragma warning disable CS0618
 
 using System;
-using Moq;
 using Xunit;
 using System.Collections.Generic;
 using System.Linq;
@@ -364,7 +363,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 UseLatestVersion = true
             };
             config.Set("rules.secret", "mysecret");
-            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient);
+            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
             var serializer = new ProtobufSerializer<PersonWithPic>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
             var deserializer = new ProtobufDeserializer<PersonWithPic>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
 

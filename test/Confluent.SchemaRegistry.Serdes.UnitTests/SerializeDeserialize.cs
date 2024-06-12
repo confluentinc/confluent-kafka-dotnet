@@ -24,11 +24,10 @@ using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
 using System;
 using System.Linq;
-using System.Runtime.Serialization;
 using Avro;
 using Avro.Generic;
 using Confluent.SchemaRegistry.Encryption;
-using Confluent.SchemaRegistry.Rules;
+
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
 {
@@ -363,14 +362,14 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
                 UseLatestVersion = true
             };
             config.Set("rules.secret", "mysecret");
-            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient);
+            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
             var serializer = new AvroSerializer<UserWithPic>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
             var deserializer = new AvroDeserializer<UserWithPic>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
 
@@ -392,6 +391,113 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
             Assert.True(pic.SequenceEqual(result.picture));
+        }
+
+        [Fact]
+        public void ISpecificRecordFieldEncryptionDekRotation()
+        {
+            var schemaStr =
+                "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
+                "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\"," +
+                "\"type\":[\"int\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
+
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
+                {
+                    ["Confluent.Kafka.Examples.AvroSpecific.User.name"] = new HashSet<string> { "PII" },
+
+                }, new Dictionary<string, string>(), new HashSet<string>()
+            );
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("encryptPII", RuleKind.Transform, RuleMode.WriteRead, "ENCRYPT", new HashSet<string>
+                    {
+                        "PII"
+                    }, new Dictionary<string, string>
+                    {
+                        ["encrypt.kek.name"] = "kek1",
+                        ["encrypt.kms.type"] = "local-kms",
+                        ["encrypt.kms.key.id"] = "mykey",
+                        ["encrypt.dek.expiry.days"] = "1"
+                    })
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            config.Set("rules.secret", "mysecret");
+            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
+            var serializer = new AvroSerializer<User>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+
+            var user = new User()
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            // The user name has been modified
+            Assert.Equal("awesome", result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+
+            RegisteredDek dek = dekRegistryClient.GetDekVersionAsync(
+                "kek1", "topic-value", -1, DekFormat.AES256_GCM, false).Result;
+            Assert.Equal(1, dek.Version);
+
+            // Advance 2 days
+            now += 2 * 24 * 60 * 60 * 1000;
+
+            user = new User()
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            // The user name has been modified
+            Assert.Equal("awesome", result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+
+            dek = dekRegistryClient.GetDekVersionAsync(
+                "kek1", "topic-value", -1, DekFormat.AES256_GCM, false).Result;
+            Assert.Equal(2, dek.Version);
+
+            // Advance 2 days
+            now += 2 * 24 * 60 * 60 * 1000;
+
+            user = new User()
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            // The user name has been modified
+            Assert.Equal("awesome", result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+
+            dek = dekRegistryClient.GetDekVersionAsync(
+                "kek1", "topic-value", -1, DekFormat.AES256_GCM, false).Result;
+            Assert.Equal(3, dek.Version);
         }
 
         [Fact]
@@ -784,7 +890,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 UseLatestVersion = true
             };
             config.Set("rules.secret", "mysecret");
-            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient);
+            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
             var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
 
