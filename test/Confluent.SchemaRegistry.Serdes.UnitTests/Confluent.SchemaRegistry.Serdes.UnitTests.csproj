@@ -15,13 +15,19 @@
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
     <PackageReference Include="Moq" Version="4.18.2" />
-    <PackageReference Include="Google.Protobuf" Version="3.15.0" />
-    <PackageReference Include="Apache.Avro" Version="1.11.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.26.1" />
+    <PackageReference Include="Apache.Avro" Version="1.11.3" />
     <PackageReference Include="System.Runtime" Version="4.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Rules\Confluent.SchemaRegistry.Rules.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Encryption\Confluent.SchemaRegistry.Encryption.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Encryption.Aws\Confluent.SchemaRegistry.Encryption.Aws.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Encryption.Azure\Confluent.SchemaRegistry.Encryption.Azure.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Encryption.Gcp\Confluent.SchemaRegistry.Encryption.Gcp.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Encryption.HcVault\Confluent.SchemaRegistry.Encryption.HcVault.csproj" />
     <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Avro\Confluent.SchemaRegistry.Serdes.Avro.csproj" />
     <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Json\Confluent.SchemaRegistry.Serdes.Json.csproj" />
     <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Protobuf\Confluent.SchemaRegistry.Serdes.Protobuf.csproj" />
