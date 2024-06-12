@@ -463,7 +463,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(FieldEncryptionExecutor.MagicByte);
-                    writer.Write(version);
+                    writer.Write(IPAddress.HostToNetworkOrder(version));
                     writer.Write(ciphertext);
                     return stream.ToArray();
                 }
@@ -479,7 +479,7 @@ namespace Confluent.SchemaRegistry.Encryption
                     int remainingSize = ciphertext.Length;
                     reader.ReadByte();
                     remainingSize--;
-                    int version = reader.ReadInt32();
+                    int version = IPAddress.NetworkToHostOrder(reader.ReadInt32());
                     remainingSize -= FieldEncryptionExecutor.VersionSize;
                     byte[] remaining = reader.ReadBytes(remainingSize);
                     return (version, remaining);
