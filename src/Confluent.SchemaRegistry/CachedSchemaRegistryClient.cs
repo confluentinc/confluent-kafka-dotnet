@@ -39,10 +39,10 @@ namespace Confluent.SchemaRegistry
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, Schema, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetLatestSchemaAsync(string)" />
     ///
     ///     The following method calls do NOT cache results:
     ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool, bool)" />
-    ///      - <see cref="CachedSchemaRegistryClient.GetLatestSchemaAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetAllSubjectsAsync" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSubjectVersionsAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, Schema)" />
@@ -60,6 +60,7 @@ namespace Confluent.SchemaRegistry
 
         private readonly Dictionary<string /*subject*/, Dictionary<string, int>> idBySchemaBySubject = new Dictionary<string, Dictionary<string, int>>();
         private readonly Dictionary<string /*subject*/, Dictionary<int, RegisteredSchema>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, RegisteredSchema>>();
+        private readonly Dictionary<string /*subject*/, RegisteredSchema> schemaByLatestSubject = new Dictionary<string, RegisteredSchema>();
 
         private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
 
@@ -283,6 +284,7 @@ namespace Confluent.SchemaRegistry
                 this.schemaById.Clear();
                 this.idBySchemaBySubject.Clear();
                 this.schemaByVersionBySubject.Clear();
+                this.schemaByLatestSubject.Clear();
                 return true;
             }
 
@@ -492,8 +494,27 @@ namespace Confluent.SchemaRegistry
 
         /// <inheritdoc/>
         public async Task<RegisteredSchema> GetLatestSchemaAsync(string subject)
-            => await restService.GetLatestSchemaAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+        {
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
+            {
+                CleanCacheIfFull();
 
+                if (schemaByLatestSubject.TryGetValue(subject, out RegisteredSchema schema))
+                {
+                    return schema;
+                }
+
+                schema = await restService.GetLatestSchemaAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+                schemaByLatestSubject[subject] = schema;
+
+                return schema;
+            }
+            finally
+            {
+                cacheMutex.Release();
+            }
+        }
 
         /// <inheritdoc/>
         public Task<List<string>> GetAllSubjectsAsync()
