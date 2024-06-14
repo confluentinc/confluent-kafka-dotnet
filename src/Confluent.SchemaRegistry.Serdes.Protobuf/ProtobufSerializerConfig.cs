@@ -227,29 +227,30 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <summary>
         ///     Reference subject name strategy.
-        ///     
-        ///     default: ReferenceSubjectNameStrategy.ReferenceName
+        ///     The provided type must be an implementation of <see cref="IReferenceSubjectNameStrategy" />
+        ///     default: <see cref="DefaultReferenceSubjectNameStrategy" />
         /// </summary>
-        public ReferenceSubjectNameStrategy? ReferenceSubjectNameStrategy
+        public Type ReferenceSubjectNameStrategy
         {
             get
             {
                 var r = Get(PropertyNames.ReferenceSubjectNameStrategy);
-                if (r == null) { return null; }
+                if (r == null) { return typeof(DefaultReferenceSubjectNameStrategy); }
                 else
                 {
-                    ReferenceSubjectNameStrategy result;
-                    if (!Enum.TryParse<ReferenceSubjectNameStrategy>(r, out result))
-                        throw new ArgumentException(
-                            $"Unknown ${PropertyNames.ReferenceSubjectNameStrategy} value: {r}.");
+                    var type = Type.GetType(r);
+                    if (typeof(IReferenceSubjectNameStrategy).IsAssignableFrom(type)) { return type; }
                     else
-                        return result;
+                    {
+                        throw new ArgumentException(
+                            $"Provided type for {nameof(ReferenceSubjectNameStrategy)} does not implement interface {nameof(IReferenceSubjectNameStrategy)}");
+                    }
                 }
             }
             set
             {
                 if (value == null) { this.properties.Remove(PropertyNames.ReferenceSubjectNameStrategy); }
-                else { this.properties[PropertyNames.ReferenceSubjectNameStrategy] = value.ToString(); }
+                else { this.properties[PropertyNames.ReferenceSubjectNameStrategy] = value.AssemblyQualifiedName; }
             }
         }
 
