@@ -1,3 +1,10 @@
+# 2.5.0
+
+## Fixes
+
+- Switch license expression and other repo information. (#2192, @thompson-tomo)
+
+
 # 2.4.0
 
 ## Enhancements
