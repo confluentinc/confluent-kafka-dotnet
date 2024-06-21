@@ -24,12 +24,12 @@
     <AssemblyOriginatorKeyFile>Confluent.Kafka.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="librdkafka.redist" Version="2.5.0-RC3">
-            <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="System.Memory" Version="4.5.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="librdkafka.redist" Version="2.5.0-RC3">
+      <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="System.Memory" Version="4.5.0" />
+  </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
     <PackageReference Include="System.Console" Version="4.3.0" />
