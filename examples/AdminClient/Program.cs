@@ -583,20 +583,48 @@ namespace Confluent.Kafka.Examples
             var timeout = TimeSpan.FromSeconds(30);
             var statesList = new List<ConsumerGroupState>();
             var groupTypesList = new List<ConsumerGroupType>();
+            var isType = false;
+            var isState = false;
             try
             {
-                for (int i = 1; i <= Int32.Parse(commandArgs[0]); i++)
+                for (int i = 0; i < commandArgs.Length; i++) 
                 {
-                    statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
-                }
-                for (int i = Int32.Parse(commandArgs[0])+2; i < commandArgs.Length; i++)
-                {
-                    groupTypesList.Add(Enum.Parse<ConsumerGroupType>(commandArgs[i]));
+                    if (commandArgs[i] == "-states")
+                    {
+                        if (isState)
+                        {
+
+                        }
+                        isState = true;
+                    }
+                    else if (commandArgs[i] == "-types")
+                    {
+                        if (isType)
+                        {
+
+                        }
+                        isType = true;
+                    }
+                    else
+                    {
+                        if (isState)
+                        {
+                            statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
+                        }
+                        else if (isType)
+                        {
+                            groupTypesList.Add(Enum.Parse<ConsumerGroupType>(commandArgs[i]));
+                        }
+                        else
+                        {
+
+                        }
+                    }
                 }
             }
             catch (SystemException)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups states_cnt [<match_state_1> <match_state_2> ... <match_state_N>] group_types_cnt [<group_type_1> .. <group_type_M>]");
+                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups -states [<match_state_1> <match_state_2> ... <match_state_N>] -types [<group_type_1> .. <group_type_M>]");
                 Environment.ExitCode = 1;
                 return;
             }
