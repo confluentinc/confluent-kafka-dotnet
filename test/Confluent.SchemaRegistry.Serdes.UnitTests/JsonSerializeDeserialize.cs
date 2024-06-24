@@ -20,8 +20,9 @@
 using Confluent.Kafka;
 using Moq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
-using NJsonSchema.Generation;
+using NJsonSchema.NewtonsoftJson.Generation;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -205,7 +206,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         {
             const int value = 1234;
             var expectedJson = $"{{\"Value\":{value * 2}}}";
-            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
             {
                 SerializerSettings = new JsonSerializerSettings
                 {
@@ -249,7 +250,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
             
-            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
             {
                 SerializerSettings = new JsonSerializerSettings
                 {
@@ -279,14 +280,22 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Theory]
-        [InlineData(EnumHandling.CamelCaseString, EnumType.EnumValue, "{\"Value\":\"enumValue\"}")]
-        [InlineData(EnumHandling.String, EnumType.None, "{\"Value\":\"None\"}")]
-        [InlineData(EnumHandling.Integer, EnumType.OtherValue, "{\"Value\":5678}")]
-        public async Task WithJsonSchemaGeneratorSettingsSerDe(EnumHandling enumHandling, EnumType value, string expectedJson)
+        [InlineData("CamelCaseString", EnumType.EnumValue, "{\"Value\":\"enumValue\"}")]
+        [InlineData("String", EnumType.None, "{\"Value\":\"None\"}")]
+        [InlineData("Integer", EnumType.OtherValue, "{\"Value\":5678}")]
+        public async Task WithJsonSchemaGeneratorSettingsSerDe(string enumHandling, EnumType value, string expectedJson)
         {
-            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            var serializerSettings = enumHandling switch
             {
-                DefaultEnumHandling = enumHandling
+                "CamelCaseString" => new JsonSerializerSettings { Converters = { new StringEnumConverter(new CamelCaseNamingStrategy()) } },
+                "String" => new JsonSerializerSettings { Converters = { new StringEnumConverter() } },
+                "Integer" => new JsonSerializerSettings(),
+                _ => throw new ArgumentException("Invalid enumHandling value", nameof(enumHandling)),
+            };
+            
+            var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
+            {
+                SerializerSettings = serializerSettings,
             };
 
             var jsonSerializer = new JsonSerializer<EnumObject>(schemaRegistryClient, jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings);
