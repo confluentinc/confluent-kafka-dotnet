@@ -585,50 +585,46 @@ namespace Confluent.Kafka.Examples
             var groupTypesList = new List<ConsumerGroupType>();
             var isType = false;
             var isState = false;
-            try
+            for (int i = 0; i < commandArgs.Length; i++) 
             {
-                for (int i = 0; i < commandArgs.Length; i++) 
+                if (commandArgs[i] == "-states")
                 {
-                    if (commandArgs[i] == "-states")
+                    if (isState)
                     {
-                        if (isState)
-                        {
-
-                        }
-                        isState = true;
+                        Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                        Environment.ExitCode = 1;
+                        return;
                     }
-                    else if (commandArgs[i] == "-types")
+                    isState = true;
+                }
+                else if (commandArgs[i] == "-types")
+                {
+                    if (isType)
                     {
-                        if (isType)
-                        {
-
-                        }
-                        isType = true;
+                        Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                        Environment.ExitCode = 1;
+                        return;
+                    }
+                    isType = true;
+                }
+                else
+                {
+                    if (isState)
+                    {
+                        statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
+                    }
+                    else if (isType)
+                    {
+                        groupTypesList.Add(Enum.Parse<ConsumerGroupType>(commandArgs[i]));
                     }
                     else
                     {
-                        if (isState)
-                        {
-                            statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
-                        }
-                        else if (isType)
-                        {
-                            groupTypesList.Add(Enum.Parse<ConsumerGroupType>(commandArgs[i]));
-                        }
-                        else
-                        {
-
-                        }
+                        Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                        Environment.ExitCode = 1;
+                        return;
                     }
                 }
             }
-            catch (SystemException)
-            {
-                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups -states [<match_state_1> <match_state_2> ... <match_state_N>] -types [<group_type_1> .. <group_type_M>]");
-                Environment.ExitCode = 1;
-                return;
-            }
-
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 try
