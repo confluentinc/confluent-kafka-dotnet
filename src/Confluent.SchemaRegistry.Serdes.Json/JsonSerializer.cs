@@ -221,10 +221,10 @@ namespace Confluent.SchemaRegistry.Serdes
                 
                 if (latestSchema != null)
                 {
-                    var laterSchemaJson = await GetParsedSchema(latestSchema).ConfigureAwait(false);
+                    var latestSchemaJson = await GetParsedSchema(latestSchema).ConfigureAwait(false);
                     FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                     {
-                        return await JsonUtils.Transform(ctx, laterSchemaJson, "$", message, transform).ConfigureAwait(false);
+                        return await JsonUtils.Transform(ctx, latestSchemaJson, "$", message, transform).ConfigureAwait(false);
                     };
                     value = await ExecuteRules(context.Component == MessageComponentType.Key, subject,
                             context.Topic, context.Headers, RuleMode.Write, null,

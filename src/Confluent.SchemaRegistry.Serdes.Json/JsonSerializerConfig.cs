@@ -180,8 +180,8 @@ namespace Confluent.SchemaRegistry.Serdes
         
 
         /// <summary>
-        ///     Specifies whether or not the JSON serializer should use the latest subject
-        ///     version for serialization.
+        ///     Specifies whether or not the JSON serializer should use the latest schema
+        ///     with the given metadata for serialization.
         ///     WARNING: There is no check that the latest schema is backwards compatible
         ///     with the schema of the object being serialized.
         /// </summary>

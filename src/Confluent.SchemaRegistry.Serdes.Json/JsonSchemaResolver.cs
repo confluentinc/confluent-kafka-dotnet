@@ -43,7 +43,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private Dictionary<string, JsonSchema> dictSchemaNameToJsonSchema = new Dictionary<string, JsonSchema>();
 
         /// <summary>
-        ///     Initialize a new instance of the JsonSerDesSchemaUtils class.
+        ///     Initialize a new instance of the JsonSchemaResolver class.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///     Confluent Schema Registry client instance that would be used to fetch

@@ -85,7 +85,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 if (property.Key != AvroDeserializerConfig.PropertyNames.UseLatestVersion &&
                     property.Key != AvroDeserializerConfig.PropertyNames.UseLatestWithMetadata &&
-                    property.Key != AvroSerializerConfig.PropertyNames.SubjectNameStrategy)
+                    property.Key != AvroDeserializerConfig.PropertyNames.SubjectNameStrategy)
                 {
                     throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {property.Key}");
                 }

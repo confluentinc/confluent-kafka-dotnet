@@ -188,10 +188,6 @@ namespace Confluent.SchemaRegistry.Serdes
                         throw new InvalidDataException($"Expecting message {context.Component.ToString()} with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
                     }
 
-                    // A schema is not required to deserialize protobuf messages since the
-                    // serialized data includes tag and type information, which is enough for
-                    // the IMessage<T> implementation to deserialize the data (even if the
-                    // schema has evolved). _schemaId is thus unused.
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
                     if (schemaRegistryClient != null)
