@@ -65,8 +65,64 @@ namespace Confluent.Kafka.IntegrationTests
         {
             if (!TestConsumerGroupProtocol.IsClassic())
             {
-                LogToFile("KIP 848 Admin operations changes still aren't " +
-                          "available");
+                LogToFile("start AdminClient_ListDescribeConsumerGroups with Consumer Protocol");
+                var groupID = Guid.NewGuid().ToString();
+                var nonExistentGroupID = Guid.NewGuid().ToString();
+                const string clientID = "test.client";
+
+                // Create an AdminClient here - we need it throughout the test.
+                using (var adminClient = new AdminClientBuilder(new AdminClientConfig {
+                    BootstrapServers = bootstrapServers }).Build())
+                {
+                    var listOptionsWithTimeout = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
+                    var listOptionsWithClassic = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30), ConsumerGroupType = ConsumerGroupType.Classic };
+                    var listOptionsWithConsumer = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30), ConsumerGroupType = ConsumerGroupType.Consumer };
+                    // We should not have any group initially.
+                    var groups = adminClient.ListConsumerGroupsAsync().Result;
+                    Assert.Empty(groups.Valid.Where(group => group.GroupId == groupID));
+                    Assert.Empty(groups.Valid.Where(group => group.GroupId == nonExistentGroupID));
+
+                    // Ensure that the partitioned topic we are using has exactly two partitions.
+                    Assert.Equal(2, partitionedTopicNumPartitions);
+
+                    var consumerConfig = new ConsumerConfig
+                    {
+                        GroupId = groupID,
+                        BootstrapServers = bootstrapServers,
+                        SessionTimeoutMs = 6000,
+                        PartitionAssignmentStrategy = PartitionAssignmentStrategy.Range,
+                        ClientId = clientID,
+
+                    };
+                    var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build();
+                    consumer.Subscribe(new string[] { partitionedTopic });
+                    // Wait for rebalance.
+                    consumer.Consume(TimeSpan.FromSeconds(10));
+
+                    // No Classic Group should be present
+                    groups = adminClient.ListConsumerGroupsAsync(listOptionsWithClassic).Result;
+                    Assert.Empty(groups.Valid)
+
+                    // Our Consumer Group should be listed with Consumer Type option
+                    groups = adminClient.ListConsumerGroupsAsync(listOptionsWithConsumer).Result;
+                    Assert.Single(groups.Valid.Where(group => group.GroupId == groupID));
+                    Assert.Empty(groups.Valid.Where(group => group.GroupId == nonExistentGroupID));
+
+                    var group = groups.Valid.Find(group => group.GroupId == groupID);
+                    Assert.Equal(ConsumerGroupState.Stable, group.State);
+                    Assert.False(group.IsSimpleConsumerGroup);
+                    Assert.Equal(ConsumerGroupType.Consumer, group.GroupType)
+
+                    // Null Type option should give all the consumer groups(atleast 1) which we created
+                    groups = adminClient.ListConsumerGroupsAsync(listOptionsWithTimeout).Result;
+                    Assert.NotEmpty(groups.Valid)
+
+                    consumer.Close();
+                    consumer.Dispose();
+                }
+
+                Assert.Equal(0, Library.HandleCount);
+                LogToFile("end   AdminClient_ListDescribeConsumerGroups with Consumer Protocol");
                 return;
             }
 
