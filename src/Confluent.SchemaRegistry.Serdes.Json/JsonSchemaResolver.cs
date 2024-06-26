@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using NJsonSchema;
 using NJsonSchema.Generation;
 using Newtonsoft.Json.Linq;
@@ -41,29 +42,69 @@ namespace Confluent.SchemaRegistry.Serdes
         private Dictionary<string, Schema> dictSchemaNameToSchema = new Dictionary<string, Schema>();
         private Dictionary<string, JsonSchema> dictSchemaNameToJsonSchema = new Dictionary<string, JsonSchema>();
 
-        private void CreateSchemaDictUtil(Schema root)
+        /// <summary>
+        ///     Initialize a new instance of the JsonSchemaResolver class.
+        /// </summary>
+        /// <param name="schemaRegistryClient">
+        ///     Confluent Schema Registry client instance that would be used to fetch
+        ///     the reference schemas.
+        /// </param>
+        /// <param name="schema">
+        ///     Schema to use for validation, used when external
+        ///     schema references are present in the schema. 
+        ///     Populate the References list of the schema for
+        ///     the same.
+        /// </param>
+        /// <param name="jsonSchemaGeneratorSettings">
+        ///     Schema generator setting to use.
+        /// </param>
+        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
+            this.schemaRegistryClient = schemaRegistryClient;
+            this.root = schema;
+            this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
+        }
+        
+        /// <summary>
+        ///     Get the resolved JsonSchema instance for the Schema provided to
+        ///     the constructor.
+        /// </summary>
+        public async Task<JsonSchema> GetResolvedSchema(){
+            if (resolvedJsonSchema == null)
+            {
+                await CreateSchemaDictUtil(root);
+                resolvedJsonSchema = await GetSchemaUtil(root);
+            }
+            return resolvedJsonSchema;
+        }
+        
+        private async Task CreateSchemaDictUtil(Schema root)
         {
-            string root_str = root.SchemaString;
-            JObject schema = JObject.Parse(root_str);
+            string rootStr = root.SchemaString;
+            JObject schema = JObject.Parse(rootStr);
             string schemaId = (string)schema["$id"];
-            if (!dictSchemaNameToSchema.ContainsKey(schemaId))
+            if (schemaId != null && !dictSchemaNameToSchema.ContainsKey(schemaId))
                 this.dictSchemaNameToSchema.Add(schemaId, root);
 
-            foreach (var reference in root.References)
+            if (root.References != null)
             {
-                Schema ref_schema_res = this.schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version).Result;
-                CreateSchemaDictUtil(ref_schema_res);
+                foreach (var reference in root.References)
+                {
+                    Schema refSchemaRes = await schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version);
+                    await CreateSchemaDictUtil(refSchemaRes);
+                }
             }
         }
 
-        private JsonSchema GetSchemaUtil(Schema root)
+        private async Task<JsonSchema> GetSchemaUtil(Schema root)
         {
-            List<SchemaReference> refers = root.References;
+            List<SchemaReference> refers = root.References ?? new List<SchemaReference>();
             foreach (var x in refers)
             {
                 if (!dictSchemaNameToJsonSchema.ContainsKey(x.Name))
-                    dictSchemaNameToJsonSchema.Add(
-                        x.Name, GetSchemaUtil(dictSchemaNameToSchema[x.Name]));
+                {
+                    var jsonSchema = await GetSchemaUtil(dictSchemaNameToSchema[x.Name]);
+                    dictSchemaNameToJsonSchema.Add(x.Name, jsonSchema);
+                }
             }
 
             Func<JsonSchema, JsonReferenceResolver> factory;
@@ -84,43 +125,10 @@ namespace Confluent.SchemaRegistry.Serdes
                 return referenceResolver;
             };
 
-            string root_str = root.SchemaString;
-            JObject schema = JObject.Parse(root_str);
+            string rootStr = root.SchemaString;
+            JObject schema = JObject.Parse(rootStr);
             string schemaId = (string)schema["$id"];
-            JsonSchema root_schema = JsonSchema.FromJsonAsync(root_str, schemaId, factory).Result;
-            return root_schema;
-        }
-
-        /// <summary>
-        ///     Get the resolved JsonSchema instance for the Schema provided to
-        ///     the constructor.
-        /// </summary>
-        public JsonSchema GetResolvedSchema(){
-            return this.resolvedJsonSchema;
-        }
-
-        /// <summary>
-        ///     Initialize a new instance of the JsonSerDesSchemaUtils class.
-        /// </summary>
-        /// <param name="schemaRegistryClient">
-        ///     Confluent Schema Registry client instance that would be used to fetch
-        ///     the reference schemas.
-        /// </param>
-        /// <param name="schema">
-        ///     Schema to use for validation, used when external
-        ///     schema references are present in the schema. 
-        ///     Populate the References list of the schema for
-        ///     the same.
-        /// </param>
-        /// <param name="jsonSchemaGeneratorSettings">
-        ///     Schema generator setting to use.
-        /// </param>
-        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
-            this.schemaRegistryClient = schemaRegistryClient;
-            this.root = schema;
-            this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
-            CreateSchemaDictUtil(root);
-            this.resolvedJsonSchema = GetSchemaUtil(root);
+            return await JsonSchema.FromJsonAsync(rootStr, schemaId, factory);
         }
     }
 }
