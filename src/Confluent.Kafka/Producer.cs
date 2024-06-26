@@ -16,7 +16,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -788,6 +791,8 @@ namespace Confluent.Kafka
                     ex);
             }
 
+            Activity activity = Diagnostics.Producer.Start(topicPartition, message);
+
             try
             {
                 if (enableDeliveryReports)
@@ -839,6 +844,10 @@ namespace Confluent.Kafka
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                     });
+            }
+            finally
+            {
+                activity?.Stop();
             }
         }
 
@@ -911,6 +920,8 @@ namespace Confluent.Kafka
                     ex);
             }
 
+            Activity activity = Diagnostics.Producer.Start(topicPartition, message);
+
             try
             {
                 ProduceImpl(
@@ -936,6 +947,10 @@ namespace Confluent.Kafka
                             Message = message,
                             TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                         });
+            }
+            finally
+            {
+                activity?.Stop();
             }
         }
 

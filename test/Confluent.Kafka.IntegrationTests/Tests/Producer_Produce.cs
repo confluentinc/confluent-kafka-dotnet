@@ -17,6 +17,10 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
@@ -29,6 +33,63 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public partial class Tests
     {
+        [Theory]
+        [MemberData(nameof(KafkaParameters))]
+        public void Producer_Produce_WithOpenTelemetryInstrumentation(string bootstrapServers)
+        {
+            LogToFile("start Producer_Produce_WithOpenTelemetryInstrumentation");
+
+            // Prepare the activity events listener
+            string activityName = "Confluent.Kafka.MessageProduced";
+            ActivityEventsRecorder eventsRecorder = new(activityName);
+            ActivityListener listener = eventsRecorder.BuildActivityListener();
+            ActivitySource.AddActivityListener(listener);
+
+            // Produce messages
+            var producerConfig = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers,
+                EnableIdempotence = true,
+                LingerMs = 1.5
+            };
+
+            using var producer = new ProducerBuilder<string, string>(producerConfig).Build();
+
+            producer.Produce(
+                new TopicPartition(singlePartitionTopic, 0),
+                new Message<string, string> { Key = "test key 0", Value = "test val 0" });
+
+            producer.Produce(
+                new TopicPartition(singlePartitionTopic, 0),
+                new Message<string, string> { Key = "test key 1", Value = "test val 1" });
+
+            producer.Flush(TimeSpan.FromSeconds(10));
+
+            // Capture start/stop events
+            int actualStartEventsCount = eventsRecorder.Events.Count(x => x.Value.Any());
+            int actualStopEventsCount = eventsRecorder.Events.Count(x => !x.Value.Any());
+
+            var startEventsTags = eventsRecorder.Events
+                .Select(activityEvent => activityEvent.Value)
+                .Where(eventTags => eventTags.Any());
+
+            // Check the number of start/stop events generated
+            Assert.Equal(4, eventsRecorder.Events.Count);
+            Assert.Equal(2, actualStartEventsCount);
+            Assert.Equal(2, actualStopEventsCount);
+
+            // Check if default OpenTelemetry attributes were created on start events
+            foreach (IEnumerable<KeyValuePair<string, string>> startEventTags in startEventsTags)
+            {
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.SYSTEM && tag.Value == "kafka");
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.DESTINATION_KIND && tag.Value == "topic");
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.DESTINATION && tag.Value == singlePartitionTopic);
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.KAFKA_PARTITION && tag.Value == "0");
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.KAFKA_MESSAGE_KEY && tag.Value.Contains("test key"));
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.MESSAGE_PAYLOAD_SIZE_BYTES && tag.Value == "10");
+            }
+        }
+
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Producer_Produce(string bootstrapServers)
         {
@@ -40,7 +101,6 @@ namespace Confluent.Kafka.IntegrationTests
                 EnableIdempotence = true,
                 LingerMs = 1.5
             };
-
 
             // serializer case.
 
@@ -73,7 +133,6 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             Assert.Equal(2, count);
-
 
             // byte[] case.
 

@@ -25,7 +25,8 @@
     <PackageReference Include="librdkafka.redist" Version="2.4.0">
         <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="System.Memory" Version="4.5.0" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="5.0.1" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
