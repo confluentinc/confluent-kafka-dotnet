@@ -63,20 +63,22 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AdminClient_ListDescribeConsumerGroups(string bootstrapServers)
         {
+            var groupID = Guid.NewGuid().ToString();
+            var nonExistentGroupID = Guid.NewGuid().ToString();
             if (!TestConsumerGroupProtocol.IsClassic())
             {
                 LogToFile("start AdminClient_ListDescribeConsumerGroups with Consumer Protocol");
-                var groupID = Guid.NewGuid().ToString();
-                var nonExistentGroupID = Guid.NewGuid().ToString();
                 const string clientID = "test.client";
 
                 // Create an AdminClient here - we need it throughout the test.
-                using (var adminClient = new AdminClientBuilder(new AdminClientConfig {
-                    BootstrapServers = bootstrapServers }).Build())
+                using (var adminClient = new AdminClientBuilder(new AdminClientConfig
+                {
+                    BootstrapServers = bootstrapServers
+                }).Build())
                 {
                     var listOptionsWithTimeout = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
-                    var listOptionsWithClassic = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30), ConsumerGroupType = ConsumerGroupType.Classic };
-                    var listOptionsWithConsumer = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30), ConsumerGroupType = ConsumerGroupType.Consumer };
+                    var listOptionsWithClassic = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30), MatchGroupTypes = new List<ConsumerGroupType> { ConsumerGroupType.Classic } };
+                    var listOptionsWithConsumer = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30), MatchGroupTypes = new List<ConsumerGroupType> { ConsumerGroupType.Consumer } };
                     // We should not have any group initially.
                     var groups = adminClient.ListConsumerGroupsAsync().Result;
                     Assert.Empty(groups.Valid.Where(group => group.GroupId == groupID));
@@ -101,7 +103,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                     // No Classic Group should be present
                     groups = adminClient.ListConsumerGroupsAsync(listOptionsWithClassic).Result;
-                    Assert.Empty(groups.Valid)
+                    Assert.Empty(groups.Valid);
 
                     // Our Consumer Group should be listed with Consumer Type option
                     groups = adminClient.ListConsumerGroupsAsync(listOptionsWithConsumer).Result;
@@ -111,11 +113,11 @@ namespace Confluent.Kafka.IntegrationTests
                     var group = groups.Valid.Find(group => group.GroupId == groupID);
                     Assert.Equal(ConsumerGroupState.Stable, group.State);
                     Assert.False(group.IsSimpleConsumerGroup);
-                    Assert.Equal(ConsumerGroupType.Consumer, group.GroupType)
+                    Assert.Equal(ConsumerGroupType.Consumer, group.GroupType);
 
                     // Null Type option should give all the consumer groups(atleast 1) which we created
                     groups = adminClient.ListConsumerGroupsAsync(listOptionsWithTimeout).Result;
-                    Assert.NotEmpty(groups.Valid)
+                    Assert.NotEmpty(groups.Valid);
 
                     consumer.Close();
                     consumer.Dispose();
@@ -127,14 +129,14 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             LogToFile("start AdminClient_ListDescribeConsumerGroups");
-            var groupID = Guid.NewGuid().ToString();
-            var nonExistentGroupID = Guid.NewGuid().ToString();
             const string clientID1 = "test.client.1";
             const string clientID2 = "test.client.2";
 
             // Create an AdminClient here - we need it throughout the test.
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig {
-                BootstrapServers = bootstrapServers }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig
+            {
+                BootstrapServers = bootstrapServers
+            }).Build())
             {
                 var listOptionsWithTimeout = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
                 var describeOptionsWithTimeout = new Admin.DescribeConsumerGroupsOptions()
@@ -225,8 +227,10 @@ namespace Confluent.Kafka.IntegrationTests
                 // Check the 'States' option by listing Stable consumer groups, which shouldn't
                 // include `groupID`.
                 groups = adminClient.ListConsumerGroupsAsync(new Admin.ListConsumerGroupsOptions()
-                { MatchStates = new List<ConsumerGroupState>() { ConsumerGroupState.Stable },
-                  RequestTimeout = TimeSpan.FromSeconds(30) }).Result;
+                {
+                    MatchStates = new List<ConsumerGroupState>() { ConsumerGroupState.Stable },
+                    RequestTimeout = TimeSpan.FromSeconds(30)
+                }).Result;
                 Assert.Empty(groups.Valid.Where(group => group.GroupId == groupID));
 
                 descResult = adminClient.DescribeConsumerGroupsAsync(
