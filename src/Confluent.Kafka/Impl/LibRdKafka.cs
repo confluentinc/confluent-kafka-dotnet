@@ -725,9 +725,8 @@ namespace Confluent.Kafka.Impl
                 }
                 else
                 {
-                    delegates.Add(typeof(NativeMethods.NativeMethods_Centos7));
+                    delegates.Add(typeof(NativeMethods.NativeMethods_Centos8));
                     delegates.Add(typeof(NativeMethods.NativeMethods));
-                    delegates.Add(typeof(NativeMethods.NativeMethods_Centos6));
                 }
 
                 TrySetDelegates(delegates);
