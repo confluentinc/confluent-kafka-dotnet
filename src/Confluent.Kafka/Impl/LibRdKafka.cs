@@ -725,8 +725,10 @@ namespace Confluent.Kafka.Impl
                 }
                 else
                 {
-                    delegates.Add(typeof(NativeMethods.NativeMethods_Centos8));
+                    // Try to load first the shared library with GSSAPI linkage 
+                    // and then the one without.
                     delegates.Add(typeof(NativeMethods.NativeMethods));
+                    delegates.Add(typeof(NativeMethods.NativeMethods_Centos8));
                 }
 
                 TrySetDelegates(delegates);
