@@ -9,3 +9,4 @@ To add your project, open a pull request!
 - [Chr.Avro](https://github.com/ch-robinson/dotnet-avro) - A modern and flexible Avro implementation for .NET. Integrates seamlessly with Confluent.Kafka and Schema Registry.
 - [Multi Schema Avro Deserializer](https://github.com/ycherkes/multi-schema-avro-desrializer) - Avro deserializer for reading messages serialized with multiple schemas.
 - [OpenSleigh.Transport.Kafka](https://github.com/mizrael/OpenSleigh/tree/develop/src/OpenSleigh.Transport.Kafka) - A Kafka Transport for OpenSleigh, a distributed saga management library.
+- [SlimMessageBus.Host.Kafka](https://github.com/zarusz/SlimMessageBus) - Apache Kafka transport for SlimMessageBus (lightweight message bus for .NET)
