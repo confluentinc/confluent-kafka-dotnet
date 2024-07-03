@@ -17,11 +17,6 @@
 using Avro;
 using Avro.Generic;
 using Confluent.Kafka.SyncOverAsync;
-using Confluent.SchemaRegistry.Encryption;
-using Confluent.SchemaRegistry.Encryption.Aws;
-using Confluent.SchemaRegistry.Encryption.Azure;
-using Confluent.SchemaRegistry.Encryption.Gcp;
-using Confluent.SchemaRegistry.Encryption.HcVault;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using Schema = Confluent.SchemaRegistry.Schema;
@@ -29,37 +24,49 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.SchemaRegistry.Rules;
 
 
-namespace Confluent.Kafka.Examples.AvroGenericEncryption
+namespace Confluent.Kafka.Examples.AvroGenericMigration
 {
     class Program
     {
         static async Task Main(string[] args)
         {
-            if (args.Length != 6)
+            if (args.Length != 3)
             {
                 Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName");
                 return;
             }
 
             // Register the KMS drivers and the field encryption executor
-            AwsKmsDriver.Register();
-            AzureKmsDriver.Register();
-            GcpKmsDriver.Register();
-            HcVaultKmsDriver.Register();
-            FieldEncryptionExecutor.Register();
+            JsonataExecutor.Register();
 
             string bootstrapServers = args[0];
             string schemaRegistryUrl = args[1];
             string topicName = args[2];
-            string kekName = args[3];
-            string kmsType = args[4]; // one of aws-kms, azure-kms, gcp-kms, hcvault
-            string kmsKeyId = args[5];
             string subjectName = topicName + "-value";
             string groupName = "avro-generic-example-group";
 
-            // var s = (RecordSchema)RecordSchema.Parse(File.ReadAllText("my-schema.json"));
+            var avroSerializerConfig = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestWithMetadata = new Dictionary<string, string>()
+                {
+                    ["application.major.version"] = "1"
+                },
+                // optional Avro serializer properties:
+                BufferBytes = 100
+            };
+
+            var avroDeserializerConfig = new AvroDeserializerConfig
+            {
+                UseLatestWithMetadata = new Dictionary<string, string>()
+                {
+                    ["application.major.version"] = "2"
+                }
+            };
+
             var s = (RecordSchema)RecordSchema.Parse(
                 @"{
                     ""type"": ""record"",
@@ -72,29 +79,44 @@ namespace Confluent.Kafka.Examples.AvroGenericEncryption
                   }"
             );
 
-            var avroSerializerConfig = new AvroSerializerConfig
-            {
-                AutoRegisterSchemas = false,
-                UseLatestVersion = true,
-                // optional Avro serializer properties:
-                BufferBytes = 100
-            };
-            
-            RuleSet ruleSet = new RuleSet(new List<Rule>(),
-                new List<Rule>
+            Confluent.SchemaRegistry.Metadata metadata = new Confluent.SchemaRegistry.Metadata(
+                null,
+                new Dictionary<string, string>
                 {
-                    new Rule("encryptPII", RuleKind.Transform, RuleMode.WriteRead, "ENCRYPT", new HashSet<string>
-                    {
-                        "PII"
-                    }, new Dictionary<string, string>
-                    {
-                        ["encrypt.kek.name"] = kekName,
-                        ["encrypt.kms.type"] = kmsType,
-                        ["encrypt.kms.key.id"] = kmsKeyId,
-                    }, null, null, "ERROR,NONE", false)
-                }
+                    ["application.major.version"] = "1",
+                },
+                null
             );
-            Schema schema = new Schema(s.ToString(), null, SchemaType.Avro, null, ruleSet);
+            Schema schema = new Schema(s.ToString(), null, SchemaType.Avro, metadata, null);
+
+            var s2 = (RecordSchema)RecordSchema.Parse(
+                @"{
+                    ""type"": ""record"",
+                    ""name"": ""User"",
+                    ""fields"": [
+                        {""name"": ""name"", ""type"": ""string"", ""confluent:tags"": [""PII""]},
+                        {""name"": ""fave_num"",  ""type"": ""long""},
+                        {""name"": ""favorite_color"", ""type"": ""string""}
+                    ]
+                  }"
+            );
+
+            Confluent.SchemaRegistry.Metadata metadata2 = new Confluent.SchemaRegistry.Metadata(
+                null,
+                new Dictionary<string, string>
+                {
+                    ["application.major.version"] = "2",
+                },
+                null
+            );
+            String expr = "$merge([$sift($, function($v, $k) {$k != 'favorite_number'}), {'fave_num': $.'favorite_number'}])";
+            RuleSet ruleSet = new RuleSet(new List<Rule>
+                {
+                    new Rule("upgrade", RuleKind.Transform, RuleMode.Upgrade, "JSONATA", null, null,
+                        expr, null, null, false)
+                }, new List<Rule>()
+            );
+            Schema schema2 = new Schema(s2.ToString(), null, SchemaType.Avro, metadata2, ruleSet);
 
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
@@ -102,7 +124,7 @@ namespace Confluent.Kafka.Examples.AvroGenericEncryption
                 using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
                 using (var consumer =
                     new ConsumerBuilder<string, GenericRecord>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName })
-                        .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry, avroDeserializerConfig).AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -138,8 +160,10 @@ namespace Confluent.Kafka.Examples.AvroGenericEncryption
                     .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry, avroSerializerConfig))
                     .Build())
             {
-                schemaRegistry.RegisterSchemaAsync(subjectName, schema, true);
-                    
+                var c = schemaRegistry.UpdateCompatibilityAsync(Compatibility.None, null).Result;
+                var id = schemaRegistry.RegisterSchemaAsync(subjectName, schema, true).Result;
+                var id2 = schemaRegistry.RegisterSchemaAsync(subjectName, schema2, true).Result;
+
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
                 long i = 1;
