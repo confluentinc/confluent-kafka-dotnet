@@ -1,3 +1,14 @@
+# 2.5.0
+
+## Enhancements
+
+- Add support for metadata and ruleSet in the schema registry client, which together support data 
+contracts.
+- Add support for CSFLE (client-side field-level encryption) for AWS, Azure, GCP, and HashiCorp 
+Vault.  See the encryption examples in the examples directory.
+- Add support for CEL, CEL_FIELD, and JSONata rules.
+
+
 # 2.4.0
 
 ## Enhancements
