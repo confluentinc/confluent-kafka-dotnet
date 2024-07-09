@@ -6,6 +6,7 @@ using Cel.Checker;
 using Cel.Common.Types.Avro;
 using Cel.Common.Types.Json;
 using Cel.Common.Types.Pb;
+using Cel.Extension;
 using Cel.Tools;
 using Duration = Google.Protobuf.WellKnownTypes.Duration;
 using Google.Api.Expr.V1Alpha1;
@@ -166,8 +167,7 @@ namespace Confluent.SchemaRegistry.Rules
                 .WithDeclarations(new List<Decl>(ruleWithArgs.Decls.Values))
                 .WithTypes(type);
 
-            // TODO builtin library
-            //scriptBuilder = scriptBuilder.WithLibraries(new StringsLib(), new BuiltinLibrary());
+            scriptBuilder = scriptBuilder.WithLibraries(new StringsLib(), new BuiltinLibrary());
             return scriptBuilder.Build();
         }
 

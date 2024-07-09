@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-      <PackageReference Include="Cel.NET" Version="0.3.0" />
+      <PackageReference Include="Cel.NET" Version="0.3.1" />
     </ItemGroup>
 
 </Project>
