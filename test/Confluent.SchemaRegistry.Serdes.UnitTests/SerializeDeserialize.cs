@@ -751,6 +751,72 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void GenericRecordCELConditionEmail()
+        {
+            var schemaStr = User._SCHEMA.ToString();
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
+                        "message.name.isEmail()", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
+
+            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            user.Add("name", "bob@confluent.com");
+            user.Add("favorite_number", 100);
+            user.Add("favorite_color", "blue");
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("bob@confluent.com", result["name"]);
+            Assert.Equal(user["favorite_color"], result["favorite_color"]);
+            Assert.Equal(user["favorite_number"], result["favorite_number"]);
+        }
+
+        [Fact]
+        public void GenericRecordCELConditionEmailFail()
+        {
+            var schemaStr = User._SCHEMA.ToString();
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
+                        "message.name.isEmail()", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
+
+            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            user.Add("name", "awesome");
+            user.Add("favorite_number", 100);
+            user.Add("favorite_color", "blue");
+
+            Headers headers = new Headers();
+            Assert.Throws<AggregateException>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result);
+        }
+
+        [Fact]
         public void GenericRecordCELFieldTransform()
         {
             var schemaStr = User._SCHEMA.ToString();
