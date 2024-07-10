@@ -19,8 +19,10 @@
         <TargetFrameworks>net6.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!--
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Rules.snk</AssemblyOriginatorKeyFile>
+        -->
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 

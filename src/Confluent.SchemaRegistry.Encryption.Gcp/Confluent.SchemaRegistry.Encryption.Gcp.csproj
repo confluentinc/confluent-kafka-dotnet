@@ -19,8 +19,10 @@
         <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!--
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Encryption.Gcp.snk</AssemblyOriginatorKeyFile>
+        -->
     </PropertyGroup>
 
     <ItemGroup>
