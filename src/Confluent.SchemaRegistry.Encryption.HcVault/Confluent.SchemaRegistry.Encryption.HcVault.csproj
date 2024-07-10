@@ -32,5 +32,9 @@
         <PackageReference Include="VaultSharp" Version="1.13.0.1" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
 
 </Project>

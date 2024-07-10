@@ -32,5 +32,9 @@
         <PackageReference Include="AWSSDK.KeyManagementService" Version="3.7.302.19" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
 
 </Project>
