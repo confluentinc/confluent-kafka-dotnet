@@ -6,7 +6,10 @@
     <Description>A .NET Client for Confluent Schema Registry</Description>
     <Copyright>Copyright 2017-2022 Confluent Inc.</Copyright>
     <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+    <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>confluent-logo.png</PackageIcon>
     <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
     <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;Schema Registry</PackageTags>
@@ -29,6 +32,11 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
 </Project>

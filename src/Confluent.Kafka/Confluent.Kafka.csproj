@@ -5,7 +5,10 @@
     <Description>Confluent's .NET Client for Apache Kafka</Description>
     <Copyright>Copyright 2016-2020 Confluent Inc., Andreas Heider</Copyright>
     <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+    <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>confluent-logo.png</PackageIcon>
     <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
     <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;librdkafka</PackageTags>
@@ -23,7 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="librdkafka.redist" Version="2.5.0-RC3">
-        <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
+      <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
     </PackageReference>
     <PackageReference Include="System.Memory" Version="4.5.0" />
   </ItemGroup>
@@ -37,6 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\" />
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
