@@ -1,28 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <!--
-        <ProbjectTypeGuids>{6D514D1C-2433-4AC6-B51F-FE620C71C850}</ProbjectTypeGuids>
-        -->
+        <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
         <Authors>Confluent Inc.</Authors>
         <Description>Provides field-level encryption for use with Confluent Schema Registry using GCP</Description>
         <Copyright>Copyright 2021-2022 Confluent Inc.</Copyright>
         <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
-        <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
+        <PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+        <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageIcon>confluent-logo.png</PackageIcon>
         <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
         <PackageTags>Kafka;Confluent;Schema Registry;Encryption;GCP</PackageTags>
         <PackageId>Confluent.SchemaRegistry.Encryption.Gcp</PackageId>
         <Title>Confluent.SchemaRegistry.Encryption.Gcp</Title>
         <AssemblyName>Confluent.SchemaRegistry.Encryption.Gcp</AssemblyName>
-        <VersionPrefix>1.9.3</VersionPrefix>
+        <VersionPrefix>2.5.0-RC3</VersionPrefix>
         <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <!--
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Encryption.Gcp.snk</AssemblyOriginatorKeyFile>
-        -->
     </PropertyGroup>
 
     <ItemGroup>
