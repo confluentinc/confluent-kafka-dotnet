@@ -75,6 +75,12 @@ blocks:
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption/Confluent.SchemaRegistry.Encryption.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Aws/Confluent.SchemaRegistry.Encryption.Aws.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Azure/Confluent.SchemaRegistry.Encryption.Azure.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Gcp/Confluent.SchemaRegistry.Encryption.Gcp.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.HcVault/Confluent.SchemaRegistry.Encryption.HcVault.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Rules/Confluent.SchemaRegistry.Rules.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
@@ -102,6 +108,12 @@ blocks:
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption/Confluent.SchemaRegistry.Encryption.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Aws/Confluent.SchemaRegistry.Encryption.Aws.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Azure/Confluent.SchemaRegistry.Encryption.Azure.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Gcp/Confluent.SchemaRegistry.Encryption.Gcp.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.HcVault/Confluent.SchemaRegistry.Encryption.HcVault.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Rules/Confluent.SchemaRegistry.Rules.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --output artifacts
