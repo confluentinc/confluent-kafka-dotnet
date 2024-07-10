@@ -7,6 +7,7 @@ contracts.
 - Add support for CSFLE (client-side field-level encryption) for AWS, Azure, GCP, and HashiCorp 
 Vault.  See the encryption examples in the examples directory.
 - Add support for CEL, CEL_FIELD, and JSONata rules.
+- References librdkafka.redist 2.5.0. Refer to the [librdkafka v2.5.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.5.0) for more information.
 
 ## Fixes
 
