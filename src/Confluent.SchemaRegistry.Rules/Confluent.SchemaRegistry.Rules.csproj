@@ -37,4 +37,9 @@
       <PackageReference Include="Cel.NET" Version="0.3.1" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
 </Project>
