@@ -336,6 +336,12 @@ namespace Confluent.Kafka
         Local_LogTruncation = -139,
 
         /// <summary>
+        ///     A different record in the batch was invalid
+        ///     and this message failed persisting
+        /// </summary> 
+        Local_InvalidDifferentRecord = -138,
+
+        /// <summary>
         ///     Unknown broker error
         /// </summary>
         Unknown = -1,
@@ -834,7 +840,46 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Request principal deserialization failed during forwarding.
         /// </summary>
-        PrincipalDeserializationFailure = 97
+        PrincipalDeserializationFailure = 97,
+
+        /// <summary>
+        ///     Unknown Topic Id.
+        /// </summary>
+        UnknownTopicId = 100,
+
+        /// <summary>
+        ///     The member epoch is fenced by the group coordinator.
+        /// </summary>
+        FencedMemberEpoch = 110,
+
+        /// <summary>
+        ///     The instance ID is still used by another member in the
+        ///     consumer group.
+        /// </summary>
+        UnreleasedInstanceId = 111,
+
+        /// <summary>
+        ///     The assignor or its version range is not supported by
+        ///     the consumer group.
+        /// </summary>
+        UnsupportedAssignor = 112,
+
+        /// <summary>
+        ///     The member epoch is stale.
+        /// </summary>
+        StaleMemberEpoch = 113,
+
+        /// <summary>
+        ///     Client sent a push telemetry request with an invalid or outdated
+        ///     subscription ID.
+        /// </summary>
+        UnknownSubscriptionId = 117,
+
+        /// <summary>
+        ///     Client sent a push telemetry request larger than the maximum size
+        ///     the broker will accept.
+        /// </summary>
+        TelemetryTooLarge = 118,
     };
 
     /// <summary>
