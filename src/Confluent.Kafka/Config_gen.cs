@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.4.0 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.5.0 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -975,12 +975,36 @@ namespace Confluent.Kafka
         public string ClientRack { get { return Get("client.rack"); } set { this.SetObject("client.rack", value); } }
 
         /// <summary>
-        ///     Controls how the client uses DNS lookups. By default, when the lookup returns multiple IP addresses for a hostname, they will all be attempted for connection before the connection is considered failed. This applies to both bootstrap and advertised servers. If the value is set to `resolve_canonical_bootstrap_servers_only`, each entry will be resolved and expanded into a list of canonical names. NOTE: Default here is different from the Java client's default behavior, which connects only to the first IP address returned for a hostname.
+        ///     The backoff time in milliseconds before retrying a protocol request, this is the first backoff time, and will be backed off exponentially until number of retries is exhausted, and it's capped by retry.backoff.max.ms.
+        ///
+        ///     default: 100
+        ///     importance: medium
+        /// </summary>
+        public int? RetryBackoffMs { get { return GetInt("retry.backoff.ms"); } set { this.SetObject("retry.backoff.ms", value); } }
+
+        /// <summary>
+        ///     The max backoff time in milliseconds before retrying a protocol request, this is the atmost backoff allowed for exponentially backed off requests.
+        ///
+        ///     default: 1000
+        ///     importance: medium
+        /// </summary>
+        public int? RetryBackoffMaxMs { get { return GetInt("retry.backoff.max.ms"); } set { this.SetObject("retry.backoff.max.ms", value); } }
+
+        /// <summary>
+        ///     Controls how the client uses DNS lookups. By default, when the lookup returns multiple IP addresses for a hostname, they will all be attempted for connection before the connection is considered failed. This applies to both bootstrap and advertised servers. If the value is set to `resolve_canonical_bootstrap_servers_only`, each entry will be resolved and expanded into a list of canonical names. **WARNING**: `resolve_canonical_bootstrap_servers_only` must only be used with `GSSAPI` (Kerberos) as `sasl.mechanism`, as it's the only purpose of this configuration value. **NOTE**: Default here is different from the Java client's default behavior, which connects only to the first IP address returned for a hostname.
         ///
         ///     default: use_all_dns_ips
         ///     importance: low
         /// </summary>
         public ClientDnsLookup? ClientDnsLookup { get { return (ClientDnsLookup?)GetEnum(typeof(ClientDnsLookup), "client.dns.lookup"); } set { this.SetObject("client.dns.lookup", value); } }
+
+        /// <summary>
+        ///     Whether to enable pushing of client metrics to the cluster, if the cluster has a client metrics subscription which matches this client
+        ///
+        ///     default: true
+        ///     importance: low
+        /// </summary>
+        public bool? EnableMetricsPush { get { return GetBool("enable.metrics.push"); } set { this.SetObject("enable.metrics.push", value); } }
 
     }
 
@@ -1195,22 +1219,6 @@ namespace Confluent.Kafka
         ///     importance: high
         /// </summary>
         public int? MessageSendMaxRetries { get { return GetInt("message.send.max.retries"); } set { this.SetObject("message.send.max.retries", value); } }
-
-        /// <summary>
-        ///     The backoff time in milliseconds before retrying a protocol request, this is the first backoff time, and will be backed off exponentially until number of retries is exhausted, and it's capped by retry.backoff.max.ms.
-        ///
-        ///     default: 100
-        ///     importance: medium
-        /// </summary>
-        public int? RetryBackoffMs { get { return GetInt("retry.backoff.ms"); } set { this.SetObject("retry.backoff.ms", value); } }
-
-        /// <summary>
-        ///     The max backoff time in milliseconds before retrying a protocol request, this is the atmost backoff allowed for exponentially backed off requests.
-        ///
-        ///     default: 1000
-        ///     importance: medium
-        /// </summary>
-        public int? RetryBackoffMaxMs { get { return GetInt("retry.backoff.max.ms"); } set { this.SetObject("retry.backoff.max.ms", value); } }
 
         /// <summary>
         ///     The threshold of outstanding not yet transmitted broker requests needed to backpressure the producer's message accumulator. If the number of not yet transmitted requests equals or exceeds this number, produce request creation that would have otherwise been triggered (for example, in accordance with linger.ms) will be delayed. A lower number yields larger and more effective batches. A higher value can improve latency when using compression on slow machines.

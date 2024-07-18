@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+        <Authors>Confluent Inc.</Authors>
+        <Description>Provides field-level encryption for use with Confluent Schema Registry using AWS</Description>
+        <Copyright>Copyright 2024 Confluent Inc.</Copyright>
+        <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+        <PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+        <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageIcon>confluent-logo.png</PackageIcon>
+        <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+        <PackageTags>Kafka;Confluent;Schema Registry;Encryption;AWS</PackageTags>
+        <PackageId>Confluent.SchemaRegistry.Encryption.Aws</PackageId>
+        <Title>Confluent.SchemaRegistry.Encryption.Aws</Title>
+        <AssemblyName>Confluent.SchemaRegistry.Encryption.Aws</AssemblyName>
+        <VersionPrefix>2.5.0</VersionPrefix>
+        <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Encryption.Aws.snk</AssemblyOriginatorKeyFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
+        <ProjectReference Include="..\Confluent.SchemaRegistry.Encryption\Confluent.SchemaRegistry.Encryption.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AWSSDK.KeyManagementService" Version="3.7.302.19" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+</Project>

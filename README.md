@@ -22,7 +22,7 @@ and [confluent-kafka-go](https://github.com/confluentinc/confluent-kafka-go)).
 [Confluent](https://confluent.io/).
 
 - **Future proof** - Confluent, founded by the
-creators of Kafka, is building a [streaming platform](https://www.confluent.io/product/)
+original creator/co-creator of Kafka, is building a [streaming platform](https://www.confluent.io/product/)
 with Apache Kafka at its core. It's high priority for us that client features keep
 pace with core Apache Kafka and components of the [Confluent Platform](https://www.confluent.io/product/).
 
@@ -32,24 +32,30 @@ client. Thanks Andreas!
 
 ## Referencing
 
-confluent-kafka-dotnet is distributed via NuGet. We provide five packages:
+confluent-kafka-dotnet is distributed via NuGet. We provide the following  packages:
 
 - [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[net462, netstandard1.3, netstandard2.0]* - The core client library.
 - [Confluent.SchemaRegistry.Serdes.Avro](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Avro/) *[netstandard2.0]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
 - [Confluent.SchemaRegistry.Serdes.Protobuf](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Protobuf/) *[netstandard2.0]* - Provides a serializer and deserializer for working with Protobuf serialized data with Confluent Schema Registry integration.
 - [Confluent.SchemaRegistry.Serdes.Json](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Json/) *[netstandard2.0]* - Provides a serializer and deserializer for working with Json serialized data with Confluent Schema Registry integration.
-- [Confluent.SchemaRegistry](https://www.nuget.org/packages/Confluent.SchemaRegistry/) *[netstandard1.4, netstandard2.0]* - Confluent Schema Registry client (a dependency of the Confluent.SchemaRegistry.Serdes packages).
+- [Confluent.SchemaRegistry](https://www.nuget.org/packages/Confluent.SchemaRegistry/) *[netstandard2.0]* - Confluent Schema Registry client (a dependency of the Confluent.SchemaRegistry.Serdes packages).
+- [Confluent.SchemaRegistry.Encryption](https://www.nuget.org/packages/Confluent.SchemaRegistry.Encryption/) *[netcoreapp3.1, net6.0]* - Confluent Schema Registry client-side field-level encryption client (a dependency of the other Confluent.SchemaRegistry.Encryption.* packages).
+- [Confluent.SchemaRegistry.Encryption.Aws](https://www.nuget.org/packages/Confluent.SchemaRegistry.Encryption.Aws/) *[netcoreapp3.1, net6.0]* - Confluent Schema Registry client-side field-level encryption client for AWS KMS.
+- [Confluent.SchemaRegistry.Encryption.Azure](https://www.nuget.org/packages/Confluent.SchemaRegistry.Encryption.Azure/) *[netcoreapp3.1, net6.0]* - Confluent Schema Registry client-side field-level encryption client for Azure Key Vault.
+- [Confluent.SchemaRegistry.Encryption.Gcp](https://www.nuget.org/packages/Confluent.SchemaRegistry.Encryption.Gcp/) *[netcoreapp3.1, net6.0]* - Confluent Schema Registry client-side field-level encryption client for Google Cloud KMS.
+- [Confluent.SchemaRegistry.Encryption.HcVault](https://www.nuget.org/packages/Confluent.SchemaRegistry.Encryption.HcVault/) *[netcoreapp3.1, net6.0]* - Confluent Schema Registry client-side field-level encryption client for Hashicorp Vault.
+- [Confluent.SchemaRegistry.Rules](https://www.nuget.org/packages/Confluent.SchemaRegistry.Rules/) *[net6.0]* - Confluent Schema Registry client-side support for data quality rules (via the Common Expression Language) and schema migration rules (via JSONata).
 
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 2.4.0
+Install-Package Confluent.Kafka -Version 2.5.0
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 2.4.0 Confluent.Kafka
+dotnet add package -v 2.5.0 Confluent.Kafka
 ```
 
 Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provides a number of different builds of `librdkafka` that are compatible with [common platforms](https://github.com/edenhill/librdkafka/wiki/librdkafka.redist-NuGet-package-runtime-libraries). If you are on one of these platforms this will all work seamlessly (and you don't need to explicitly reference `librdkafka.redist`). If you are on a different platform, you may need to [build librdkafka](https://github.com/edenhill/librdkafka#building) manually (or acquire it via other means) and load it using the [Library.Load](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.Library.html#Confluent_Kafka_Library_Load_System_String_) method.

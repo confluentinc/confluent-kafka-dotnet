@@ -1,3 +1,19 @@
+# 2.5.0
+
+## Enhancements
+
+- References librdkafka.redist 2.5.0. Refer to the [librdkafka v2.5.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.5.0) for more information.
+- Add support for metadata and ruleSet in the schema registry client, which together support data 
+contracts.
+- Add support for CSFLE (client-side field-level encryption) for AWS, Azure, GCP, and HashiCorp 
+Vault.  See the encryption examples in the examples directory.
+- Add support for CEL, CEL_FIELD, and JSONata rules.
+
+## Fixes
+
+- Switch license expression and other repo information. (#2192, @thompson-tomo)
+
+
 # 2.4.0
 
 ## Enhancements

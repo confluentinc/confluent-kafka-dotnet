@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+        <Authors>Confluent Inc.</Authors>
+        <Description>Provides field-level encryption for use with Confluent Schema Registry</Description>
+        <Copyright>Copyright 2024 Confluent Inc.</Copyright>
+        <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+        <PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+        <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageIcon>confluent-logo.png</PackageIcon>
+        <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+        <PackageTags>Kafka;Confluent;Schema Registry;Encryption</PackageTags>
+        <PackageId>Confluent.SchemaRegistry.Encryption</PackageId>
+        <Title>Confluent.SchemaRegistry.Encryption</Title>
+        <AssemblyName>Confluent.SchemaRegistry.Encryption</AssemblyName>
+        <VersionPrefix>2.5.0</VersionPrefix>
+        <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Encryption.snk</AssemblyOriginatorKeyFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="HKDF.Standard" Version="2.0.0" />
+        <PackageReference Include="Miscreant" Version="0.3.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+</Project>

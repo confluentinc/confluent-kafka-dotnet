@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+// Copyright 2024 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,36 +14,36 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
 using System.Runtime.Serialization;
-
+using System.Threading.Tasks;
 
 namespace Confluent.SchemaRegistry
 {
-    [DataContract]
-    internal class Config
+    /// <summary>
+    ///     An error action   
+    /// </summary>
+    public class ErrorAction : IRuleAction
     {
-        [DataMember(Name = "compatibility")]
-        public Compatibility CompatibilityLevel { get; }
-        
-        public Config(Compatibility compatibilityLevel)
-        {
-            CompatibilityLevel = compatibilityLevel;
-        }
+        public static readonly string ActionType = "ERROR";
 
-        public override string ToString() 
-            => $"{{compatibility={CompatibilityLevel}}}";
-        
-        public override bool Equals(object obj)
+        public void Configure(IEnumerable<KeyValuePair<string, string>> config)
         {
-            if (obj == null || GetType() != obj.GetType())
-            {
-                return false;
-            }
-
-            return CompatibilityLevel == ((Config)obj).CompatibilityLevel;
         }
         
-        public override int GetHashCode()
-            => 31 * CompatibilityLevel.GetHashCode();
+        public string Type()
+        {
+            return ActionType;
+        }
+        
+        public Task Run(RuleContext ctx, object message, RuleException exception = null)
+        {
+            string msg = "Rule failed: " + ctx.Rule.Name;
+            throw new SerializationException(msg, exception);
+        }
+
+        public void Dispose()
+        {
+        }
     }
 }
