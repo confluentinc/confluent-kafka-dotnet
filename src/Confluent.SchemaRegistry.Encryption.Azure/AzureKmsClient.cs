@@ -31,14 +31,14 @@ namespace Confluent.SchemaRegistry.Encryption.Azure
         public async Task<byte[]> Encrypt(byte[] plaintext)
         {
             var client = GetCryptographyClient();
-            var result = await client.EncryptAsync(EncryptionAlgorithm.RsaOaep, plaintext).ConfigureAwait(false);
+            var result = await client.EncryptAsync(EncryptionAlgorithm.RsaOaep256, plaintext).ConfigureAwait(false);
             return result.Ciphertext;
         }
 
         public async Task<byte[]> Decrypt(byte[] ciphertext)
         {
             var client = GetCryptographyClient();
-            var result = await client.DecryptAsync(EncryptionAlgorithm.RsaOaep, ciphertext).ConfigureAwait(false);
+            var result = await client.DecryptAsync(EncryptionAlgorithm.RsaOaep256, ciphertext).ConfigureAwait(false);
             return result.Plaintext;
         }
         
