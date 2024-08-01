@@ -1,3 +1,12 @@
+# 2.5.1
+
+## Fixes
+
+- Fix CSFLE (client-side field-level encryption) when using Azure Key Vault by specifying RsaOaep256 (instead of RsaOaep) for interoperability with clients in other languages (Java, go, etc.).
+- Fix AvroSerializer configuration to allow using schema normalization.
+- Upgrade Azure Identity library to 1.11.4 to address a vulnerability in previous versions.
+
+
 # 2.5.0
 
 ## Enhancements
