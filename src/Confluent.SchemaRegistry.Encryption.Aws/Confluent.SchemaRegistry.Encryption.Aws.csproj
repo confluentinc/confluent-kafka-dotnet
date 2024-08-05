@@ -6,7 +6,7 @@
         <Description>Provides field-level encryption for use with Confluent Schema Registry using AWS</Description>
         <Copyright>Copyright 2024 Confluent Inc.</Copyright>
         <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
-        <PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageIcon>confluent-logo.png</PackageIcon>
