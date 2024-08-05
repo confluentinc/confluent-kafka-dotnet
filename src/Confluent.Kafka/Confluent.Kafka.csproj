@@ -5,7 +5,7 @@
     <Description>Confluent's .NET Client for Apache Kafka</Description>
     <Copyright>Copyright 2016-2020 Confluent Inc., Andreas Heider</Copyright>
     <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
-    <PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageIcon>confluent-logo.png</PackageIcon>
