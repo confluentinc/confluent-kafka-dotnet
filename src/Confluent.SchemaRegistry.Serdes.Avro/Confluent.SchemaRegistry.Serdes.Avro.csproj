@@ -6,7 +6,7 @@
     <Description>Provides an Avro Serializer and Deserializer for use with Confluent.Kafka with Confluent Schema Registry integration</Description>
     <Copyright>Copyright 2017-2022 Confluent Inc.</Copyright>
     <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
-    <PackageLicenceExpression>Apache-2.0</PackageLicenceExpression>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageIcon>confluent-logo.png</PackageIcon>
