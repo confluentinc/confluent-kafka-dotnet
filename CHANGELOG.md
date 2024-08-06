@@ -1,3 +1,12 @@
+# 2.5.2
+
+## Fixes
+
+- Fix CSFLE (client-side field-level encryption) to use the Google Tink format for DEKs for interoperability with clients in other languages (Java, go, etc.).
+- Improve error when specifying an invalid KMS type for CSFLE
+- Enhance CSFLE examples with KMS configuration settings
+
+
 # 2.5.1
 
 ## Fixes
