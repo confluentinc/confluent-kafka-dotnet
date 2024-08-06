@@ -30,21 +30,18 @@ namespace  Confluent.SchemaRegistry
         #region API backwards-compatibility hack
 
         /// <summary>
-        ///     DEPRECATED. The subject the schema is registered against.
+        ///     The subject the schema is registered against.
         /// </summary>
-        [Obsolete("Included to maintain API backwards compatibility only. Use RegisteredSchema instead. This property will be removed in a future version of the library.")]
         public virtual string Subject { get; set; }
 
         /// <summary>
-        ///     DEPRECATED. The schema version.
+        ///     The schema version.
         /// </summary>
-        [Obsolete("Included to maintain API backwards compatibility only. Use RegisteredSchema instead. This property will be removed in a future version of the library.")]
         public virtual int Version { get; set; }
 
         /// <summary>
-        ///     DEPRECATED. Unique identifier of the schema.
+        ///     Unique identifier of the schema.
         /// </summary>
-        [Obsolete("Included to maintain API backwards compatibility only. Use RegisteredSchema instead. This property will be removed in a future version of the library.")]
         public virtual int Id { get; set; }
 
         /// <summary>
