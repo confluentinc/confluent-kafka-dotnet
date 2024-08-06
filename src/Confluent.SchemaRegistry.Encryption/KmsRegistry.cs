@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -61,7 +62,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 kmsDriversMutex.Release();
             }
 
-            return null;
+            throw new ArgumentException("No KMS driver found for key URL: " + keyUrl); ;
         }
         
         public static void RegisterKmsClient(IKmsClient kmsClient)
@@ -95,7 +96,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 kmsClientsMutex.Release();
             }
 
-            return null;
+            throw new ArgumentException("No KMS client found for key URL: " + keyUrl); ;
         }
     }
 }

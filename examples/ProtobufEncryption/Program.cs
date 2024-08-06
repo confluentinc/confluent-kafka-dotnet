@@ -50,6 +50,7 @@ namespace Confluent.Kafka.Examples.Protobuf
             AzureKmsDriver.Register();
             GcpKmsDriver.Register();
             HcVaultKmsDriver.Register();
+            LocalKmsDriver.Register();
             FieldEncryptionExecutor.Register();
 
             string bootstrapServers = args[0];
@@ -96,7 +97,10 @@ namespace Confluent.Kafka.Examples.Protobuf
                 // optional Avro serializer properties:
                 BufferBytes = 100
             };
-            
+            // KMS properties can be passed as follows
+            // protobufSerializerConfig.Set("rules.secret.access.key", "xxx");
+            // protobufSerializerConfig.Set("rules.access.key.id", "xxx");
+
             RuleSet ruleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
