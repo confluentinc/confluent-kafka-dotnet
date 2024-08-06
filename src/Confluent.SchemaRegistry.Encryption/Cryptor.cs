@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
+using Google.Crypto.Tink;
+using Google.Protobuf;
 using Miscreant;
 
 namespace Confluent.SchemaRegistry.Encryption
@@ -40,18 +42,39 @@ namespace Confluent.SchemaRegistry.Encryption
 
         public byte[] GenerateKey()
         {
-            return Aead.GenerateNonce(KeySize());
+            byte[] rawKey = Aead.GenerateNonce(KeySize());
+            switch (DekFormat)
+            {
+                case DekFormat.AES256_SIV:
+                    AesSivKey aesSiv = new AesSivKey();
+                    aesSiv.Version = 0;
+                    aesSiv.KeyValue = ByteString.CopyFrom(rawKey);
+                    return aesSiv.ToByteArray();
+                case DekFormat.AES128_GCM:
+                case DekFormat.AES256_GCM:
+                    AesGcmKey aesGcm = new AesGcmKey();
+                    aesGcm.Version = 0;
+                    aesGcm.KeyValue = ByteString.CopyFrom(rawKey);
+                    return aesGcm.ToByteArray();
+                default:
+                    throw new ArgumentException();
+            }
         }
 
         public byte[] Encrypt(byte[] key, byte[] plaintext)
         {
+            byte[] rawKey;
             switch (DekFormat)
             {
                 case DekFormat.AES256_SIV:
-                    return EncryptWithAesSiv(key, plaintext);
+                    AesSivKey aesSiv = AesSivKey.Parser.ParseFrom(key);
+                    rawKey = aesSiv.KeyValue.ToByteArray();
+                    return EncryptWithAesSiv(rawKey, plaintext);
                 case DekFormat.AES128_GCM:
                 case DekFormat.AES256_GCM:
-                    return EncryptWithAesGcm(key, plaintext);
+                    AesGcmKey aesGcm = AesGcmKey.Parser.ParseFrom(key);
+                    rawKey = aesGcm.KeyValue.ToByteArray();
+                    return EncryptWithAesGcm(rawKey, plaintext);
                 default:
                     throw new ArgumentException();
             }
@@ -59,13 +82,18 @@ namespace Confluent.SchemaRegistry.Encryption
 
         public byte[] Decrypt(byte[] key, byte[] ciphertext)
         {
+            byte[] rawKey;
             switch (DekFormat)
             {
                 case DekFormat.AES256_SIV:
-                    return DecryptWithAesSiv(key, ciphertext);
+                    AesSivKey aesSiv = AesSivKey.Parser.ParseFrom(key);
+                    rawKey = aesSiv.KeyValue.ToByteArray();
+                    return DecryptWithAesSiv(rawKey, ciphertext);
                 case DekFormat.AES128_GCM:
                 case DekFormat.AES256_GCM:
-                    return DecryptWithAesGcm(key, ciphertext);
+                    AesGcmKey aesGcm = AesGcmKey.Parser.ParseFrom(key);
+                    rawKey = aesGcm.KeyValue.ToByteArray();
+                    return DecryptWithAesGcm(rawKey, ciphertext);
                 default:
                     throw new ArgumentException();
             }
