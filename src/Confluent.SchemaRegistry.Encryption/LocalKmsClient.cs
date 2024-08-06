@@ -3,6 +3,8 @@ using HkdfStandard;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Google.Crypto.Tink;
+using Google.Protobuf;
 
 namespace Confluent.SchemaRegistry.Encryption
 {
@@ -20,7 +22,12 @@ namespace Confluent.SchemaRegistry.Encryption
             }
             Secret = secret;
             cryptor = new Cryptor(DekFormat.AES256_GCM);
-            key = Hkdf.DeriveKey(HashAlgorithmName.SHA256, Encoding.UTF8.GetBytes(secret), cryptor.KeySize());
+            byte[] rawKey = Hkdf.DeriveKey(
+                HashAlgorithmName.SHA256, Encoding.UTF8.GetBytes(secret), cryptor.KeySize());
+            AesGcmKey aesGcm = new AesGcmKey();
+            aesGcm.Version = 0;
+            aesGcm.KeyValue = ByteString.CopyFrom(rawKey);
+            key = aesGcm.ToByteArray();
         }
 
         public bool DoesSupport(string uri)
