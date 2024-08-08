@@ -41,5 +41,13 @@ namespace Confluent.Kafka.Admin
         ///     Default: null
         /// </summary>
         public IEnumerable<ConsumerGroupState> MatchStates { get; set; } = null;
+
+        /// <summary>
+        ///      An enumerable with the group types to query, null to query for all
+        ///      the group types.
+        ///
+        ///     Default: null
+        /// </summary>
+        public IEnumerable<ConsumerGroupType> MatchGroupTypes { get; set; } = null;
     }
 }

@@ -1,4 +1,4 @@
-// Copyright 2022 Confluent Inc.
+// Copyright 2024 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,31 +13,28 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
-using System.Collections.Generic;
 
-namespace Confluent.Kafka.Admin
+
+namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents the result of a list consumer group operation.
+    ///     Enumerates the different consumer group types.
     /// </summary>
-    public class ListConsumerGroupsResult
+    public enum ConsumerGroupType : int
     {
         /// <summary>
-        ///    List of valid consumer group listings.
+        ///     Unknown
         /// </summary>
-        public List<ConsumerGroupListing> Valid { get; set; }
+        Unknown = 0,
 
         /// <summary>
-        ///    Returns a human readable representation of this object.
+        ///     Consumer
         /// </summary>
-        public override string ToString()
-        {
-            string res = "Groups:\n";
-            foreach (ConsumerGroupListing cgl in Valid)
-            {
-                res += "\t" + cgl.ToString() + "\n";
-            }
-            return res;
-        }
-    }
+        Consumer = 1,
+
+        /// <summary>
+        ///     Classic
+        /// </summary>
+        Classic = 2,
+    };
 }
