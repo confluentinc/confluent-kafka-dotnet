@@ -63,16 +63,68 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AdminClient_ListDescribeConsumerGroups(string bootstrapServers)
         {
+            var groupID = Guid.NewGuid().ToString();
+            var nonExistentGroupID = Guid.NewGuid().ToString();
             if (!TestConsumerGroupProtocol.IsClassic())
             {
-                LogToFile("KIP 848 Admin operations changes still aren't " +
-                          "available");
+                LogToFile("start AdminClient_ListDescribeConsumerGroups with Consumer Protocol");
+                const string clientID = "test.client";
+
+                // Create an AdminClient here - we need it throughout the test.
+                using (var adminClient = new AdminClientBuilder(new AdminClientConfig
+                {
+                    BootstrapServers = bootstrapServers
+                }).Build())
+                {
+                    var listOptionsWithTimeout = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
+                    var listOptionsWithClassic = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30), MatchGroupTypes = new List<ConsumerGroupType> { ConsumerGroupType.Classic } };
+                    var listOptionsWithConsumer = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30), MatchGroupTypes = new List<ConsumerGroupType> { ConsumerGroupType.Consumer } };
+                    // We should not have any group initially.
+                    var groups = adminClient.ListConsumerGroupsAsync().Result;
+                    Assert.Empty(groups.Valid.Where(group => group.GroupId == groupID));
+                    Assert.Empty(groups.Valid.Where(group => group.GroupId == nonExistentGroupID));
+
+                    // Ensure that the partitioned topic we are using has exactly two partitions.
+                    Assert.Equal(2, partitionedTopicNumPartitions);
+
+                    var consumerConfig = new ConsumerConfig
+                    {
+                        GroupId = groupID,
+                        BootstrapServers = bootstrapServers,
+                        SessionTimeoutMs = 6000,
+                        PartitionAssignmentStrategy = PartitionAssignmentStrategy.Range,
+                        ClientId = clientID,
+
+                    };
+                    var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build();
+                    consumer.Subscribe(new string[] { partitionedTopic });
+                    // Wait for rebalance.
+                    consumer.Consume(TimeSpan.FromSeconds(10));
+
+                    // No Consumer Group Type should be present as we passed the Classic Type option
+                    groups = adminClient.ListConsumerGroupsAsync(listOptionsWithClassic).Result;
+                    Assert.Empty(groups.Valid.Where(group => group.GroupType == ConsumerGroupType.Consumer));
+
+                    // Our Consumer Group should be listed with Consumer Type option
+                    groups = adminClient.ListConsumerGroupsAsync(listOptionsWithConsumer).Result;
+                    Assert.Single(groups.Valid.Where(group => group.GroupId == groupID));
+                    Assert.Empty(groups.Valid.Where(group => group.GroupId == nonExistentGroupID));
+
+                    var group = groups.Valid.Find(group => group.GroupId == groupID);
+                    Assert.Equal(ConsumerGroupState.Stable, group.State);
+                    Assert.False(group.IsSimpleConsumerGroup);
+                    Assert.Equal(ConsumerGroupType.Consumer, group.GroupType);
+
+                    consumer.Close();
+                    consumer.Dispose();
+                }
+
+                Assert.Equal(0, Library.HandleCount);
+                LogToFile("end   AdminClient_ListDescribeConsumerGroups with Consumer Protocol");
                 return;
             }
 
             LogToFile("start AdminClient_ListDescribeConsumerGroups");
-            var groupID = Guid.NewGuid().ToString();
-            var nonExistentGroupID = Guid.NewGuid().ToString();
             const string clientID1 = "test.client.1";
             const string clientID2 = "test.client.2";
 
