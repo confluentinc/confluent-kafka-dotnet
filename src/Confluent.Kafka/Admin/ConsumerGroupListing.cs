@@ -33,6 +33,11 @@ namespace Confluent.Kafka.Admin
         public ConsumerGroupState State { get; set; }
 
         /// <summary>
+        ///     The group type of the consumer group.
+        /// </summary>
+        public ConsumerGroupType GroupType { get; set; }
+
+        /// <summary>
         ///     Whether the consumer group is simple or not.
         /// </summary>
         public bool IsSimpleConsumerGroup { get; set; }
@@ -42,7 +47,7 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         public override string ToString()
         {
-            return $"{GroupId}, State = {State}, IsSimpleConsumerGroup = {IsSimpleConsumerGroup}";
+            return $"{GroupId}, State = {State}, IsSimpleConsumerGroup = {IsSimpleConsumerGroup}, Type = {GroupType}";
         }
     }
 }
