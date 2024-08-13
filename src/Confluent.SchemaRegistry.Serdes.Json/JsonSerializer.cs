@@ -26,7 +26,11 @@ using System.Threading.Tasks;
 using NJsonSchema;
 using NJsonSchema.Validation;
 using Confluent.Kafka;
+#if NET8_0_OR_GREATER
 using NJsonSchema.NewtonsoftJson.Generation;
+#else
+using NJsonSchema.Generation;
+#endif
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -54,7 +58,11 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class JsonSerializer<T> : AsyncSerializer<T, JsonSchema> where T : class
     {
+#if NET8_0_OR_GREATER
         private readonly NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
+#else
+        private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
+#endif
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
         
         private JsonSchemaValidator validator = new JsonSchemaValidator();
@@ -82,7 +90,11 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     JSON schema generator settings.
         /// </param>
         public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, 
+#if NET8_0_OR_GREATER
             NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
+#else
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
+#endif
             : base(schemaRegistryClient, config, ruleExecutors)
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
@@ -136,7 +148,11 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     JSON schema generator settings.
         /// </param>
         public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, 
-            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null) 
+#if NET8_0_OR_GREATER
+            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
+#else
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
+#endif
             : this(schemaRegistryClient, config, jsonSchemaGeneratorSettings, ruleExecutors)
         {
             foreach (var reference in schema.References)
@@ -233,7 +249,11 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
+#if NET8_0_OR_GREATER
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.SerializerSettings);
+#else
+                var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
+#endif
                 var validationResult = validator.Validate(serializedString, this.schema);
                 if (validationResult.Count > 0)
                 {
