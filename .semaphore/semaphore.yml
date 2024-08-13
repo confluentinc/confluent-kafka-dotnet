@@ -70,7 +70,6 @@ blocks:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
-            - dotnet tool update -g docfx
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
@@ -84,9 +83,6 @@ blocks:
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
-            - docfx doc/docfx.json
-            - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
-            - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
             - artifact push workflow artifacts
   - name: 'Windows Artifacts on tagged commits'
     run:
@@ -103,7 +99,6 @@ blocks:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
-            - dotnet tool update -g docfx
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --output artifacts
@@ -117,9 +112,6 @@ blocks:
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --output artifacts
-            - docfx doc/docfx.json
-            - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
-            - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
             - artifact push workflow artifacts
   - name: 'Integration tests'
     dependencies: [ ]
@@ -131,6 +123,10 @@ blocks:
         commands:
           - '[[ -z $DOCKERHUB_APIKEY ]] || docker login --username $DOCKERHUB_USER --password $DOCKERHUB_APIKEY'
       jobs:
+        - name: 'Build documentation'
+          commands:
+            - dotnet tool update -g docfx
+            - docfx doc/docfx.json
         - name: 'Build and test with "classic" protocol'
           commands:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
