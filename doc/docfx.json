@@ -4,14 +4,17 @@
       "src": [
         {
           "files": [
-            "src/**/*.cs"
+            "src/Confluent.Kafka/Confluent.Kafka.csproj",
+            "src/Confluent.SchemaRegistry**/*.csproj"
           ],
-          "cwd": ".."
+          "src": ".." 
         }
       ],
-      "dest": "api"
+      "dest": "api",
+      "properties": {
+              "TargetFramework": "net6.0"
+      }
     }
-    
   ],
   "build": {
     "content": [
