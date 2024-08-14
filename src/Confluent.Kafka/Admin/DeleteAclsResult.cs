@@ -45,7 +45,7 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var result = (DeleteAclsResult) obj;
+            var result = (DeleteAclsResult)obj;
             if (base.Equals(result)) return true;
             return AclBindings == null ? result.AclBindings == null :
                 new HashSet<AclBinding>(AclBindings).SetEquals(new HashSet<AclBinding>(result.AclBindings));
@@ -99,7 +99,7 @@ namespace Confluent.Kafka.Admin
             int hash = 1;
             if (AclBindings != null)
             {
-                foreach(AclBinding aclBinding in AclBindings)
+                foreach (AclBinding aclBinding in AclBindings)
                 {
                     hash ^= aclBinding.GetHashCode();
                 }

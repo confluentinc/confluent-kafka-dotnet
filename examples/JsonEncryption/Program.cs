@@ -1,4 +1,4 @@
-﻿// Copyright 2024 Confluent Inc.
+// Copyright 2024 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ namespace Confluent.Kafka.Examples.JsonSerialization
                 }
               }
             }";
-            
+
             var producerConfig = new ProducerConfig
             {
                 BootstrapServers = bootstrapServers
@@ -199,7 +199,7 @@ namespace Confluent.Kafka.Examples.JsonSerialization
                     .Build())
             {
                 await schemaRegistry.RegisterSchemaAsync(subjectName, schema, true);
-                    
+
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter first names, q to exit.");
 
                 long i = 1;
@@ -207,11 +207,11 @@ namespace Confluent.Kafka.Examples.JsonSerialization
                 while ((text = Console.ReadLine()) != "q")
                 {
                     User user = new User { Name = text, FavoriteColor = "blue", FavoriteNumber = i++ };
-                    try 
+                    try
                     {
                         await producer.ProduceAsync(topicName, new Message<string, User> { Value = user });
                     }
-                    catch (Exception e) 
+                    catch (Exception e)
                     {
                         Console.WriteLine($"error producing message: {e.Message}");
                     }

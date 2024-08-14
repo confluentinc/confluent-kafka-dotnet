@@ -212,7 +212,8 @@ namespace Confluent.Kafka.Examples.ConsumerExample
             Console.WriteLine($"Started consumer, Ctrl-C to stop consuming");
 
             CancellationTokenSource cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (_, e) => {
+            Console.CancelKeyPress += (_, e) =>
+            {
                 e.Cancel = true; // prevent the process from terminating.
                 cts.Cancel();
             };

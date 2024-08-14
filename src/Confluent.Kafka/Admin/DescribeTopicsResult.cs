@@ -44,7 +44,7 @@ namespace Confluent.Kafka.Admin
                 TopicDescriptions.Select(topicDescription =>
                     topicDescription.ToString()
                 ).ToList());
-            
+
             result.Append($"{{\"TopicDescriptions\": [{topicDescriptions}]}}");
             return result.ToString();
         }

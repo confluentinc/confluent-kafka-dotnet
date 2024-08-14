@@ -37,9 +37,9 @@ namespace Confluent.SchemaRegistry.Encryption
         /// <summary>
         ///     The DEK algorithm.
         /// </summary>
-        [DataMember(Name = "algorithm")] 
+        [DataMember(Name = "algorithm")]
         public DekFormat Algorithm { get; set; }
-        
+
         /// <summary>
         ///     The encrypted key material.
         /// </summary>
@@ -56,7 +56,7 @@ namespace Confluent.SchemaRegistry.Encryption
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Subject == other.Subject && Version == other.Version && Algorithm == other.Algorithm && 
+            return Subject == other.Subject && Version == other.Version && Algorithm == other.Algorithm &&
                    EncryptedKeyMaterial == other.EncryptedKeyMaterial && Deleted == other.Deleted;
         }
 

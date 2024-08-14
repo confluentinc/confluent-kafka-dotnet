@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Kms.V1;
@@ -11,7 +11,7 @@ namespace Confluent.SchemaRegistry.Encryption.Gcp
         private KeyManagementServiceClient kmsClient;
         private string keyId;
         private CryptoKeyName keyName;
-        
+
         public string KekId { get; }
 
         public GcpKmsClient(string kekId, GoogleCredential credential)
@@ -27,9 +27,9 @@ namespace Confluent.SchemaRegistry.Encryption.Gcp
             keyName = CryptoKeyName.Parse(keyId);
             kmsClient = credential != null
                 ? new KeyManagementServiceClientBuilder()
-                    {
-                        GoogleCredential = credential
-                    }
+                {
+                    GoogleCredential = credential
+                }
                     .Build()
                 : KeyManagementServiceClient.Create();
         }
@@ -38,7 +38,7 @@ namespace Confluent.SchemaRegistry.Encryption.Gcp
         {
             return uri.StartsWith(GcpKmsDriver.Prefix);
         }
-        
+
         public async Task<byte[]> Encrypt(byte[] plaintext)
         {
             var result = await kmsClient.EncryptAsync(keyName, ByteString.CopyFrom(plaintext))

@@ -41,7 +41,7 @@ namespace Confluent.Kafka
         public TopicPartitionOffsetError(TopicPartition tp, Offset offset,
                                          Error error,
                                          int? leaderEpoch = null)
-            : this(tp.Topic, tp.Partition, offset, error, leaderEpoch) {}
+            : this(tp.Topic, tp.Partition, offset, error, leaderEpoch) { }
 
         /// <summary>
         ///     Initializes a new TopicPartitionOffsetError instance.
@@ -54,7 +54,8 @@ namespace Confluent.Kafka
         /// </param>
         public TopicPartitionOffsetError(TopicPartitionOffset tpo, Error error)
             : this(tpo.Topic, tpo.Partition, tpo.Offset, error,
-                   tpo.LeaderEpoch) {}
+                   tpo.LeaderEpoch)
+        { }
 
         /// <summary>
         ///     Initializes a new TopicPartitionOffsetError instance.
@@ -98,7 +99,7 @@ namespace Confluent.Kafka
         ///     Gets the Kafka partition offset value.
         /// </summary>
         public Offset Offset { get; }
-        
+
         /// <summary>
         ///     Gets the offset leader epoch (optional).
         /// </summary>
@@ -149,7 +150,7 @@ namespace Confluent.Kafka
         /// </returns>
         public override int GetHashCode()
             // x by prime number is quick and gives decent distribution.
-            => ((Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode())*251 + Error.GetHashCode();
+            => ((Partition.GetHashCode() * 251 + Topic.GetHashCode()) * 251 + Offset.GetHashCode()) * 251 + Error.GetHashCode();
 
         /// <summary>
         ///     Tests whether TopicPartitionOffsetError instance a is equal to TopicPartitionOffsetError instance b.
@@ -204,7 +205,7 @@ namespace Confluent.Kafka
             {
                 throw new KafkaException(tpoe.Error);
             }
-            
+
             return tpoe.TopicPartitionOffset;
         }
 

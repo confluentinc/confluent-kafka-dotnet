@@ -54,8 +54,8 @@ namespace Confluent.SchemaRegistry.Serdes
             /// </summary>
             public const string SubjectNameStrategy = "json.deserializer.subject.name.strategy";
         }
-        
-        
+
+
         /// <summary>
         ///     Initialize a new <see cref="JsonDeserializerConfig" />.
         /// </summary>
@@ -68,7 +68,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </summary>
         public JsonDeserializerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config.ToDictionary(v => v.Key, v => v.Value)) { }
 
-        
+
         /// <summary>
         ///     Specifies whether or not the JSON deserializer should use the latest subject
         ///     version for serialization.

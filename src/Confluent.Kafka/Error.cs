@@ -75,7 +75,7 @@ namespace Confluent.Kafka
                 TxnRequiresAbort = false;
                 return;
             }
-            
+
             Code = Librdkafka.error_code(error);
             IsFatal = Librdkafka.error_is_fatal(error);
             TxnRequiresAbort = Librdkafka.error_txn_requires_abort(error);

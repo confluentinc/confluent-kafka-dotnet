@@ -22,7 +22,7 @@ namespace Confluent.SchemaRegistry
     public abstract class FieldRuleExecutor : IRuleExecutor
     {
         public abstract void Configure(IEnumerable<KeyValuePair<string, string>> config);
-        
+
         public abstract string Type();
 
         public abstract IFieldTransform NewTransform(RuleContext ctx);

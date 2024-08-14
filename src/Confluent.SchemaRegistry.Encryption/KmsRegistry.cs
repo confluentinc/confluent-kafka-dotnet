@@ -30,7 +30,7 @@ namespace Confluent.SchemaRegistry.Encryption
 
         private static IList<IKmsDriver> kmsDrivers = new List<IKmsDriver>();
         private static IList<IKmsClient> kmsClients = new List<IKmsClient>();
-        
+
         public static void RegisterKmsDriver(IKmsDriver kmsDriver)
         {
             kmsDriversMutex.Wait();
@@ -43,7 +43,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 kmsDriversMutex.Release();
             }
         }
-        
+
         public static IKmsDriver GetKmsDriver(string keyUrl)
         {
             kmsDriversMutex.Wait();
@@ -64,7 +64,7 @@ namespace Confluent.SchemaRegistry.Encryption
 
             throw new ArgumentException("No KMS driver found for key URL: " + keyUrl); ;
         }
-        
+
         public static void RegisterKmsClient(IKmsClient kmsClient)
         {
             kmsClientsMutex.Wait();
@@ -77,7 +77,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 kmsClientsMutex.Release();
             }
         }
-        
+
         public static IKmsClient GetKmsClient(string keyUrl)
         {
             kmsClientsMutex.Wait();

@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Admin
         /// </returns>
         public override string ToString()
         {
-            return $"{{\"User\": {User.Quote()}, " + 
+            return $"{{\"User\": {User.Quote()}, " +
                    $"\"Error\": {Error.ToString().Quote()}}}";
         }
     }

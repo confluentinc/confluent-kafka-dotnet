@@ -1,4 +1,4 @@
-﻿// Copyright 2023 Confluent Inc.
+// Copyright 2023 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
         public decimal Price { get; set; }
 
         public List<string> Tags { get; set; }
-        
+
         public Dimensions Dimensions { get; set; }
 
         public GeographicalLocation WarehouseLocation { get; set; }
@@ -145,7 +145,7 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                 AutoRegisterSchemas = false,
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
-            
+
             // This is needed only if you want to change attribute naming strategy
             // from default one to camelCase.
             // It's also possible to add JsonProperty attributes to customize

@@ -42,7 +42,7 @@ namespace Confluent.Kafka
         {
             Results = results;
         }
-        
+
         /// <summary>
         ///     The result corresponding to all ConfigResources in the request 
         ///     (whether or not they were in error). At least one of these

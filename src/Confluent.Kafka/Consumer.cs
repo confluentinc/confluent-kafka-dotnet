@@ -118,7 +118,7 @@ namespace Confluent.Kafka
             {
                 handlerException = e;
             }
-            
+
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
@@ -172,7 +172,7 @@ namespace Confluent.Kafka
             {
                 // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
                 if (kafkaHandle.IsClosed)
-                { 
+                {
                     // The RebalanceCallback should never be invoked as a side effect of Dispose.
                     // If for some reason flow of execution gets here, something is badly wrong. 
                     // (and we have a closed librdkafka handle that is expecting an assign call...)
@@ -335,8 +335,8 @@ namespace Confluent.Kafka
             byte[] keyAsByteArray = null;
             if (msg.key != IntPtr.Zero)
             {
-                keyAsByteArray = new byte[(int) msg.key_len];
-                Marshal.Copy(msg.key, keyAsByteArray, 0, (int) msg.key_len);
+                keyAsByteArray = new byte[(int)msg.key_len];
+                Marshal.Copy(msg.key, keyAsByteArray, 0, (int)msg.key_len);
             }
             return keyAsByteArray;
         }
@@ -346,8 +346,8 @@ namespace Confluent.Kafka
             byte[] valAsByteArray = null;
             if (msg.val != IntPtr.Zero)
             {
-                valAsByteArray = new byte[(int) msg.len];
-                Marshal.Copy(msg.val, valAsByteArray, 0, (int) msg.len);
+                valAsByteArray = new byte[(int)msg.len];
+                Marshal.Copy(msg.val, valAsByteArray, 0, (int)msg.len);
             }
             return valAsByteArray;
         }
@@ -446,7 +446,7 @@ namespace Confluent.Kafka
         {
             try
             {
-                kafkaHandle.StoreOffsets(new [] { offset });
+                kafkaHandle.StoreOffsets(new[] { offset });
             }
             catch (TopicPartitionOffsetException e)
             {
@@ -475,7 +475,7 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Attempt was made to commit offset corresponding to an empty consume result");
             }
 
-            Commit(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1,
+            Commit(new[] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1,
                                 result.LeaderEpoch) });
         }
 
@@ -607,7 +607,7 @@ namespace Confluent.Kafka
         {
             // Calling Dispose a second or subsequent time should be a no-op.
             lock (disposeHasBeenCalledLockObj)
-            { 
+            {
                 if (disposeHasBeenCalled) { return; }
                 disposeHasBeenCalled = true;
             }
@@ -669,7 +669,8 @@ namespace Confluent.Kafka
                                 case "headers": this.enableHeaderMarshaling = true; break;
                                 case "timestamp": this.enableTimestampMarshaling = true; break;
                                 case "topic": this.enableTopicNameMarshaling = true; break;
-                                default: throw new ArgumentException(
+                                default:
+                                    throw new ArgumentException(
                                     $"Unexpected consume result field name '{part}' in config value '{ConfigPropertyNames.Consumer.ConsumeResultFields}'.");
                             }
                         }
@@ -831,7 +832,7 @@ namespace Confluent.Kafka
                     Librdkafka.message_headers(msgPtr, out IntPtr hdrsPtr);
                     if (hdrsPtr != IntPtr.Zero)
                     {
-                        for (var i=0; ; ++i)
+                        for (var i = 0; ; ++i)
                         {
                             var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
                             if (err != ErrorCode.NoError)
@@ -938,7 +939,7 @@ namespace Confluent.Kafka
                         ex);
                 }
 
-                return new ConsumeResult<TKey, TValue> 
+                return new ConsumeResult<TKey, TValue>
                 {
                     TopicPartitionOffset = new TopicPartitionOffset(topic,
                         msg.partition, msg.offset,

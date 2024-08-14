@@ -34,7 +34,7 @@ namespace Confluent.Kafka
         /// </param>
         public TopicPartitionOffset(TopicPartition tp, Offset offset)
             : this(tp.Topic, tp.Partition, offset, null) { }
-        
+
         /// <summary>
         ///     Initializes a new TopicPartitionOffset instance.
         /// </summary>
@@ -105,7 +105,7 @@ namespace Confluent.Kafka
         ///     Gets the Kafka partition offset value.
         /// </summary>
         public Offset Offset { get; }
-        
+
         /// <summary>
         ///     Gets the offset leader epoch (optional).
         /// </summary>
@@ -143,9 +143,9 @@ namespace Confluent.Kafka
         /// <returns>
         ///     An integer that specifies a hash value for this TopicPartitionOffset.
         /// </returns>
-        public override int GetHashCode()  
+        public override int GetHashCode()
             // x by prime number is quick and gives decent distribution.
-            => (Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode();
+            => (Partition.GetHashCode() * 251 + Topic.GetHashCode()) * 251 + Offset.GetHashCode();
 
         /// <summary>
         ///     Tests whether TopicPartitionOffset instance a is equal to TopicPartitionOffset instance b.
@@ -165,7 +165,7 @@ namespace Confluent.Kafka
             {
                 return (b is null);
             }
-            
+
             return a.Equals(b);
         }
 

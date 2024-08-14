@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Internal
                 {
                     return null;
                 }
-                
+
                 // TODO: Is there a built in / vectorized / better way to implement this?              
                 byte* pTraverse = (byte*)strPtr;
                 while (*pTraverse != 0) { pTraverse += 1; }

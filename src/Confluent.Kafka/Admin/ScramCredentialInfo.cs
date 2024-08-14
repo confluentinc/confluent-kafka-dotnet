@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Admin
         ///     The iterations of the ScramCredentialInfo
         /// </summary>
         public int Iterations { get; set; }
-        
+
         /// <summary>
         ///     Returns a JSON representation of the ScramCredentialInfo object.
         /// </summary>

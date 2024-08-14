@@ -58,7 +58,7 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         public ResourcePattern Clone()
         {
-            return (ResourcePattern) MemberwiseClone();
+            return (ResourcePattern)MemberwiseClone();
         }
 
         /// <summary>

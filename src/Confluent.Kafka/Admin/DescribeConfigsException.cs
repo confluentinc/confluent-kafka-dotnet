@@ -38,7 +38,7 @@ namespace Confluent.Kafka.Admin
             : base(new Error(ErrorCode.Local_Partial,
                 "An error occurred describing the following resources: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.ConfigResource)) +
-                "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) + 
+                "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) +
                 "]."))
         {
             Results = results;

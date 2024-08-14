@@ -325,7 +325,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
             using (var producer = new ProducerBuilder<string, Null>(pConfig).Build())
             using (var consumer = new ConsumerBuilder<Null, string>(cConfig)
-                .SetPartitionsRevokedHandler((c, partitions) => {
+                .SetPartitionsRevokedHandler((c, partitions) =>
+                {
                     var remaining = c.Assignment.Where(tp => partitions.Where(x => x.TopicPartition == tp).Count() == 0);
                     Console.WriteLine(
                         "** MapWords consumer group partitions revoked: [" +
@@ -351,7 +352,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     producer.BeginTransaction();
                 })
 
-                .SetPartitionsLostHandler((c, partitions) => {
+                .SetPartitionsLostHandler((c, partitions) =>
+                {
                     // Ownership of the partitions has been involuntarily lost and
                     // are now likely already owned by another consumer.
 
@@ -364,7 +366,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     producer.BeginTransaction();
                 })
 
-                .SetPartitionsAssignedHandler((c, partitions) => {
+                .SetPartitionsAssignedHandler((c, partitions) =>
+                {
                     Console.WriteLine(
                         "** MapWords consumer group additional partitions assigned: [" +
                         string.Join(',', partitions.Select(p => p.Partition.Value)) +
@@ -574,7 +577,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
             using (var producer = new ProducerBuilder<string, int>(pConfig).Build())
             using (var consumer = new ConsumerBuilder<string, Null>(cConfig)
-                .SetPartitionsRevokedHandler((c, partitions) => {
+                .SetPartitionsRevokedHandler((c, partitions) =>
+                {
                     var remaining = c.Assignment.Where(tp => partitions.Where(x => x.TopicPartition == tp).Count() == 0);
                     Console.WriteLine(
                         "** AggregateWords consumer group partitions revoked: [" +
@@ -598,7 +602,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     producer.BeginTransaction();
                 })
 
-                .SetPartitionsLostHandler((c, partitions) => {
+                .SetPartitionsLostHandler((c, partitions) =>
+                {
                     Console.WriteLine(
                         "** AggregateWords consumer group partitions lost: [" +
                         string.Join(',', partitions.Select(p => p.Partition.Value)) +
@@ -615,7 +620,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     producer.BeginTransaction();
                 })
 
-                .SetPartitionsAssignedHandler((c, partitions) => {
+                .SetPartitionsAssignedHandler((c, partitions) =>
+                {
                     Console.WriteLine(
                         "** AggregateWords consumer group partition assigned: [" +
                         string.Join(',', partitions.Select(p => p.Partition.Value)) +
@@ -710,11 +716,11 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     var store = kvp.Value;
                     var itr = store.Store.Iterate();
 
-                    while(itr.GetNext(out var recordInfo))
+                    while (itr.GetNext(out var recordInfo))
                     {
                         var wc = (itr.GetValue(), itr.GetKey());
                         if (maxWords.Count < N) { maxWords.Add(wc); }
-                        else { if (wc.Item1 > maxWords[N-1].Item1) { maxWords[N-1] = wc; } }
+                        else { if (wc.Item1 > maxWords[N - 1].Item1) { maxWords[N - 1] = wc; } }
                         maxWords.Sort((x, y) => y.Item1.CompareTo(x.Item1));
                     }
                 }
@@ -749,7 +755,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             string clientId = args.Length > 2 ? args[2] : null;
 
             CancellationTokenSource cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (_, e) => {
+            Console.CancelKeyPress += (_, e) =>
+            {
                 e.Cancel = true; // prevent the process from terminating.
                 cts.Cancel();
             };
@@ -767,12 +774,12 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
                 case "gen":
                     try { await Generator_LineInputData(brokerList, clientId, cts.Token); }
-                    catch (OperationCanceledException) {}
+                    catch (OperationCanceledException) { }
                     return;
 
                 case "map":
                     try { Processor_MapWords(brokerList, clientId, cts.Token); }
-                    catch (OperationCanceledException) {}
+                    catch (OperationCanceledException) { }
                     return;
 
                 case "reduce":

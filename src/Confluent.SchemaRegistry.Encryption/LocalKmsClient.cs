@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HkdfStandard;
 using System.Security.Cryptography;
 using System.Text;
@@ -34,7 +34,7 @@ namespace Confluent.SchemaRegistry.Encryption
         {
             return uri.StartsWith(LocalKmsDriver.Prefix);
         }
-        
+
         public Task<byte[]> Encrypt(byte[] plaintext)
         {
             return Task.FromResult(cryptor.Encrypt(key, plaintext));

@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2019 Confluent Inc.
+// Copyright 2016-2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Deserializer configuration properties (refer to 
         ///     <see cref="AvroDeserializerConfig" />).
         /// </param>
-        public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null) 
+        public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
             : this(schemaRegistryClient, config != null ? new AvroDeserializerConfig(config) : null)
         {
         }
@@ -69,7 +69,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schemaRegistryClient = schemaRegistryClient;
             this.config = config;
             this.ruleExecutors = ruleExecutors ?? new List<IRuleExecutor>();
-            
+
             if (config == null) { return; }
 
             var nonAvroConfig = config

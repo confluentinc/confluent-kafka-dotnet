@@ -43,7 +43,7 @@ namespace Confluent.Kafka.Admin
         {
             Results = results;
         }
-        
+
         /// <summary>
         ///     The result corresponding to all topics in the request 
         ///     (whether or not they were in error). At least one of these

@@ -74,7 +74,7 @@ namespace Confluent.Kafka
         private Handle borrowedHandle;
 
         private SafeKafkaHandle KafkaHandle
-            => ownedKafkaHandle != null 
+            => ownedKafkaHandle != null
                 ? ownedKafkaHandle
                 : borrowedHandle.LibrdkafkaHandle;
 
@@ -112,7 +112,7 @@ namespace Confluent.Kafka
                             }
                         }
                     }
-                    catch (OperationCanceledException) {}
+                    catch (OperationCanceledException) { }
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 
@@ -216,17 +216,17 @@ namespace Confluent.Kafka
                 }
 
                 var gch = GCHandle.FromIntPtr(msg._private);
-                var deliveryHandler = (IDeliveryHandler) gch.Target;
+                var deliveryHandler = (IDeliveryHandler)gch.Target;
                 gch.Free();
 
                 Headers headers = null;
-                if (this.enableDeliveryReportHeaders) 
+                if (this.enableDeliveryReportHeaders)
                 {
                     headers = new Headers();
                     Librdkafka.message_headers(rkmessage, out IntPtr hdrsPtr);
                     if (hdrsPtr != IntPtr.Zero)
                     {
-                        for (var i=0; ; ++i)
+                        for (var i = 0; ; ++i)
                         {
                             var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
                             if (err != ErrorCode.NoError)
@@ -263,8 +263,8 @@ namespace Confluent.Kafka
                     {
                         // Topic is not set here in order to avoid the marshalling cost.
                         // Instead, the delivery handler is expected to cache the topic string.
-                        Partition = msg.partition, 
-                        Offset = msg.offset, 
+                        Partition = msg.partition,
+                        Offset = msg.offset,
                         Error = KafkaHandle.CreatePossiblyFatalError(msg.err, null),
                         Status = messageStatus,
                         Message = new Message<Null, Null> { Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
@@ -401,7 +401,7 @@ namespace Confluent.Kafka
             }
         }
 
-        
+
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -423,7 +423,7 @@ namespace Confluent.Kafka
         {
             // Calling Dispose a second or subsequent time should be a no-op.
             lock (disposeHasBeenCalledLockObj)
-            { 
+            {
                 if (disposeHasBeenCalled) { return; }
                 disposeHasBeenCalled = true;
             }
@@ -486,7 +486,7 @@ namespace Confluent.Kafka
 
 
         /// <inheritdoc/>
-        public Handle Handle 
+        public Handle Handle
         {
             get
             {
@@ -639,7 +639,8 @@ namespace Confluent.Kafka
                                 case "timestamp": this.enableDeliveryReportTimestamp = true; break;
                                 case "headers": this.enableDeliveryReportHeaders = true; break;
                                 case "status": this.enableDeliveryReportPersistedStatus = true; break;
-                                default: throw new ArgumentException(
+                                default:
+                                    throw new ArgumentException(
                                     $"Unknown delivery report field name '{part}' in config value '{ConfigPropertyNames.Producer.DeliveryReportFields}'.");
                             }
                         }
@@ -815,10 +816,10 @@ namespace Confluent.Kafka
                 else
                 {
                     ProduceImpl(
-                        topicPartition.Topic, 
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                        message.Timestamp, topicPartition.Partition, headers.BackingList, 
+                        topicPartition.Topic,
+                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                        message.Timestamp, topicPartition.Partition, headers.BackingList,
                         null);
 
                     var result = new DeliveryResult<TKey, TValue>
@@ -932,10 +933,10 @@ namespace Confluent.Kafka
                 throw new ProduceException<TKey, TValue>(
                     ex.Error,
                     new DeliveryReport<TKey, TValue>
-                        {
-                            Message = message,
-                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
-                        });
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
+                    });
             }
         }
 
@@ -1023,12 +1024,12 @@ namespace Confluent.Kafka
                 {
                     TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
                     Status = deliveryReport.Status,
-                    Message = new Message<TKey, TValue> 
+                    Message = new Message<TKey, TValue>
                     {
                         Key = Key,
                         Value = Value,
-                        Timestamp = deliveryReport.Message == null 
-                            ? new Timestamp(0, TimestampType.NotAvailable) 
+                        Timestamp = deliveryReport.Message == null
+                            ? new Timestamp(0, TimestampType.NotAvailable)
                             : deliveryReport.Message.Timestamp,
                         Headers = deliveryReport.Message?.Headers
                     }
@@ -1055,7 +1056,7 @@ namespace Confluent.Kafka
         /// <inheritdoc/>
         public void CommitTransaction(TimeSpan timeout)
             => KafkaHandle.CommitTransaction(timeout.TotalMillisecondsAsInt());
-        
+
         /// <inheritdoc/>
         public void CommitTransaction()
             => KafkaHandle.CommitTransaction(-1);

@@ -29,7 +29,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         /// <param name="config"></param>
         void Configure(IEnumerable<KeyValuePair<string, string>> config);
-        
+
         /// <summary>
         ///     The type of rule executor or action
         /// </summary>
