@@ -43,7 +43,8 @@ namespace Confluent.Kafka.Benchmark
 
             var monitorObj = new Object();
 
-            var consumerTask = Task.Run(() => {
+            var consumerTask = Task.Run(() =>
+            {
                 // Use middle results only to better estimate steady state performance.
                 var trimStart = (long)(numberOfMessages * 0.05);
                 var trimEnd = (long)(numberOfMessages * 0.95);
@@ -65,7 +66,8 @@ namespace Confluent.Kafka.Benchmark
                 };
 
                 using (var consumer = new ConsumerBuilder<Null, byte[]>(config)
-                    .SetPartitionsAssignedHandler((c, partitions) => {
+                    .SetPartitionsAssignedHandler((c, partitions) =>
+                    {
                         // Ensure there is no race between consumer determining start offsets and production starting.
                         var initialAssignment = partitions.Select(p => new TopicPartitionOffset(p, c.QueryWatermarkOffsets(p, TimeSpan.FromSeconds(5)).High)).ToList();
                         if (initialAssignment.Where(p => p.Offset != 0).Count() > 0)
@@ -103,7 +105,7 @@ namespace Confluent.Kafka.Benchmark
                         results[count++ - trimStart] = latencyMilliSeconds;
                         if (count % (numberOfMessages / 10) == 0)
                         {
-                            Console.WriteLine($"...{(count / (numberOfMessages/10))}0% complete");
+                            Console.WriteLine($"...{(count / (numberOfMessages / 10))}0% complete");
                         }
                     }
 
@@ -115,15 +117,16 @@ namespace Confluent.Kafka.Benchmark
 
                 Console.WriteLine(
                     "Latency percentiles (ms) [p50: {0}, p75: {1}, p90: {2}, p95: {3}, p99: {4}]",
-                    results[(int)(results.Length * 50.0/100.0)],
-                    results[(int)(results.Length * 75.0/100.0)],
-                    results[(int)(results.Length * 90.0/100.0)],
-                    results[(int)(results.Length * 95.0/100.0)],
-                    results[(int)(results.Length * 99.0/100.0)]);
+                    results[(int)(results.Length * 50.0 / 100.0)],
+                    results[(int)(results.Length * 75.0 / 100.0)],
+                    results[(int)(results.Length * 90.0 / 100.0)],
+                    results[(int)(results.Length * 95.0 / 100.0)],
+                    results[(int)(results.Length * 99.0 / 100.0)]);
             });
 
 
-            var producerTask = Task.Run(() => {
+            var producerTask = Task.Run(() =>
+            {
 
                 lock (monitorObj) { Monitor.Wait(monitorObj); }
 
@@ -132,7 +135,7 @@ namespace Confluent.Kafka.Benchmark
                     BootstrapServers = bootstrapServers,
                     QueueBufferingMaxMessages = 2000000,
                     MessageSendMaxRetries = 3,
-                    RetryBackoffMs = 500 ,
+                    RetryBackoffMs = 500,
                     LingerMs = 5,
                     DeliveryReportFields = "none",
                     EnableIdempotence = true,
@@ -146,17 +149,17 @@ namespace Confluent.Kafka.Benchmark
                 if (headerCount > 0)
                 {
                     headers = new Headers();
-                    for (int i=0; i<headerCount; ++i)
+                    for (int i = 0; i < headerCount; ++i)
                     {
-                        headers.Add($"header-{i+1}", new byte[] { (byte)i, (byte)(i+1), (byte)(i+2), (byte)(i+3) });
+                        headers.Add($"header-{i + 1}", new byte[] { (byte)i, (byte)(i + 1), (byte)(i + 2), (byte)(i + 3) });
                     }
                 }
-                
+
                 using (var producer = new ProducerBuilder<Null, byte[]>(config).Build())
                 {
                     var startMilliseconds = sw.ElapsedMilliseconds;
 
-                    for (int i=0; i<numberOfMessages; ++i)
+                    for (int i = 0; i < numberOfMessages; ++i)
                     {
                         var payload = new byte[messageSize];
 
@@ -170,7 +173,7 @@ namespace Confluent.Kafka.Benchmark
                         producer.Produce(topicName, new Message<Null, byte[]> { Value = payload, Headers = headers },
                             dr => { if (dr.Error.Code != ErrorCode.NoError) Console.WriteLine("Message delivery failed: " + dr.Error.Reason); });
 
-                        var desiredProduceCount = (elapsedMilliseconds - startMilliseconds)/1000.0 * messagesPerSecond;
+                        var desiredProduceCount = (elapsedMilliseconds - startMilliseconds) / 1000.0 * messagesPerSecond;
 
                         // Simple, but about as good as we can do assuming a fast enough rate, and a poor Thread.Sleep precision.
                         if (i > desiredProduceCount)
@@ -179,15 +182,15 @@ namespace Confluent.Kafka.Benchmark
                         }
                     }
 
-                    while (producer.Flush(TimeSpan.FromSeconds(1)) > 0);
+                    while (producer.Flush(TimeSpan.FromSeconds(1)) > 0) ;
 
                     long elapsedMilliSeconds;
-                    lock (sw) {elapsedMilliSeconds = sw.ElapsedMilliseconds; }
+                    lock (sw) { elapsedMilliSeconds = sw.ElapsedMilliseconds; }
                     Console.WriteLine("Actual throughput: " + (int)Math.Round((numberOfMessages / ((double)(elapsedMilliSeconds - startMilliseconds) / 1000.0))) + " msg/s");
                 }
             });
 
-            Task.WaitAll(new [] { producerTask, consumerTask });
+            Task.WaitAll(new[] { producerTask, consumerTask });
         }
     }
 }

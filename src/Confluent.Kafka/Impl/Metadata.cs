@@ -23,14 +23,16 @@ using System.Runtime.InteropServices;
 namespace Confluent.Kafka.Impl
 {
     [StructLayout(LayoutKind.Sequential)]
-    struct rd_kafka_metadata_broker {
+    struct rd_kafka_metadata_broker
+    {
         internal int id;
         internal string host;
         internal int port;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct rd_kafka_metadata_partition {
+    struct rd_kafka_metadata_partition
+    {
         internal int id;
         internal ErrorCode err;
         internal int leader;
@@ -41,7 +43,8 @@ namespace Confluent.Kafka.Impl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct rd_kafka_metadata_topic {
+    struct rd_kafka_metadata_topic
+    {
         internal string topic;
         internal int partition_cnt;
         internal /* struct rd_kafka_metadata_partition * */ IntPtr partitions;
@@ -49,7 +52,8 @@ namespace Confluent.Kafka.Impl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct rd_kafka_metadata {
+    struct rd_kafka_metadata
+    {
         internal int broker_cnt;
         internal /* struct rd_kafka_metadata_broker * */ IntPtr brokers;
         internal int topic_cnt;
@@ -90,7 +94,7 @@ namespace Confluent.Kafka.Impl
         internal IntPtr groups;
         internal int group_cnt;
     };
-    
+
     enum rd_kafka_vtype
     {
         End,       // va-arg sentinel

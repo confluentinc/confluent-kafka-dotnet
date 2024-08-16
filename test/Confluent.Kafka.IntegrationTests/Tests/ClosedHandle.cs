@@ -63,7 +63,7 @@ namespace Confluent.Kafka.IntegrationTests
             consumer.Consume(TimeSpan.FromSeconds(10));
             consumer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromSeconds(10)));
-            
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_ClosedHandle");
         }

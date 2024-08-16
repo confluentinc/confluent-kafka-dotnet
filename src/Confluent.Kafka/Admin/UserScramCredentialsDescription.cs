@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     User Level Error
         /// </summary>
-        public Error Error {get;set;}
+        public Error Error { get; set; }
 
         /// <summary>
         ///     Returns a JSON representation of the UserScramCredentialsDescription object.
@@ -56,10 +56,10 @@ namespace Confluent.Kafka.Admin
                 "{\"User\": ");
             result.Append(User.Quote());
             result.Append(", \"ScramCredentialInfos\": [");
-            result.Append(string.Join(", ",ScramCredentialInfos.Select(u => u.ToString())));
+            result.Append(string.Join(", ", ScramCredentialInfos.Select(u => u.ToString())));
             result.Append("]");
             result.Append($", \"Error\": {Error.ToString().Quote()}}}");
-            return  result.ToString();
+            return result.ToString();
         }
 
     }

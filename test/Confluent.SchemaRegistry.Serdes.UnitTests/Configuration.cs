@@ -1,4 +1,4 @@
-﻿// Copyright 2018-2020 Confluent Inc.
+// Copyright 2018-2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 { "avro.serializer.auto.register.schemas", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => {  var avroDeserializer = new AvroDeserializer<int>(null, config); });
+            Assert.Throws<ArgumentException>(() => { var avroDeserializer = new AvroDeserializer<int>(null, config); });
         }
     }
 }

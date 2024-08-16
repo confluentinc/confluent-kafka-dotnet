@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ namespace Confluent.Kafka.UnitTests
             //                 Topic = topic, Partition = 0, Offset = 0, Error = new Error(ErrorCode.NoError), 
             //                 Message = message
             //             };
-                        
+
             //             // Note: this is a simplification of the actual Producer implementation -
             //             // A good mock would delay invocation of the callback and invoke it on a
             //             // different thread.

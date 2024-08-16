@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,14 +71,14 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 (string subject, IDictionary<string, string> metadata, bool ignoreDeleted) =>
                 {
                     return subjectStore[subject].First(x =>
-                        x.Metadata != null 
-                        && x.Metadata.Properties != null 
+                        x.Metadata != null
+                        && x.Metadata.Properties != null
                         && metadata.Keys.All(k => x.Metadata.Properties.ContainsKey(k) && x.Metadata.Properties[k] == metadata[k])
                     );
                 }
             );
             schemaRegistryClient = schemaRegistryMock.Object;
-            
+
             var dekRegistryMock = new Mock<IDekRegistryClient>();
             dekRegistryMock.Setup(x => x.CreateKekAsync(It.IsAny<Kek>())).ReturnsAsync(
                 (Kek kek) =>
@@ -153,7 +153,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                     return dekStore.TryGetValue(dekId, out RegisteredDek registeredDek) ? registeredDek : null;
                 });
             dekRegistryClient = dekRegistryMock.Object;
-            
+
             var clockMock = new Mock<IClock>();
             clockMock.Setup(x => x.NowToUnixTimeMilliseconds()).Returns(() => now);
             clock = clockMock.Object;

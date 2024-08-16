@@ -30,7 +30,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var testSchemaBase64 = Confluent.Kafka.Examples.Protobuf.User.Descriptor.File.SerializedData.ToBase64();
             var topicName = Guid.NewGuid().ToString();
             var subjectInitial = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
-            var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName+"2", null);
+            var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName + "2", null);
 
             // check that registering a base64 protobuf schema works.
             var id1 = srInitial.RegisterSchemaAsync(subjectInitial, new Schema(testSchemaBase64, SchemaType.Protobuf)).Result;
@@ -71,7 +71,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             // compatibility
             var compat = sr.IsCompatibleAsync(subject, schema2).Result;
             Assert.True(compat);
-            var avroSchema = 
+            var avroSchema =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
@@ -81,8 +81,9 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             Assert.False(compat3);
 
             // invalid type
-            Assert.ThrowsAny<Exception>(() => {
-                sr.RegisterSchemaAsync(SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName+"3", null), new Schema(avroSchema, SchemaType.Protobuf)).Wait();
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                sr.RegisterSchemaAsync(SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName + "3", null), new Schema(avroSchema, SchemaType.Protobuf)).Wait();
             });
         }
     }

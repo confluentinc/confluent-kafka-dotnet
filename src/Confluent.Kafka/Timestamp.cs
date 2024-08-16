@@ -41,10 +41,10 @@ namespace Confluent.Kafka
         ///     the number of seconds past this UTC time, excluding 
         ///     leap seconds.
         /// </summary>
-        public static readonly DateTime UnixTimeEpoch 
+        public static readonly DateTime UnixTimeEpoch
             = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        private const long UnixTimeEpochMilliseconds 
+        private const long UnixTimeEpochMilliseconds
             = 62135596800000; // = UnixTimeEpoch.TotalMiliseconds
 
 
@@ -90,8 +90,8 @@ namespace Confluent.Kafka
         ///     The DateTime value corresponding to the timestamp.
         /// </param>
         public Timestamp(DateTime dateTime)
-            : this(dateTime, TimestampType.CreateTime) 
-        {}
+            : this(dateTime, TimestampType.CreateTime)
+        { }
 
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
@@ -101,8 +101,8 @@ namespace Confluent.Kafka
         ///     The DateTimeOffset value corresponding to the timestamp.
         /// </param>
         public Timestamp(DateTimeOffset dateTimeOffset)
-            : this(dateTimeOffset.UtcDateTime, TimestampType.CreateTime) 
-        {}
+            : this(dateTimeOffset.UtcDateTime, TimestampType.CreateTime)
+        { }
 
         /// <summary>
         ///     Gets the timestamp type.

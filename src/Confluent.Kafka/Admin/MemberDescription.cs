@@ -49,7 +49,7 @@ namespace Confluent.Kafka.Admin
         ///     Member assignment.
         /// </summary>
         public MemberAssignment Assignment { get; set; }
-        
+
         /// <summary>
         ///     Returns a JSON representation of this object.
         /// </summary>
@@ -60,10 +60,10 @@ namespace Confluent.Kafka.Admin
         {
             var result = new StringBuilder();
             var assignment = string.Join(",",
-                Assignment.TopicPartitions.Select(topicPartition => 
+                Assignment.TopicPartitions.Select(topicPartition =>
                     $"{{\"Topic\": {topicPartition.Topic.Quote()}, \"Partition\": {topicPartition.Partition.Value}}}"
                 ).ToList());
-            
+
             result.Append($"{{\"ClientId\": {ClientId.Quote()}");
             result.Append($", \"GroupInstanceId\": {GroupInstanceId.Quote()}, \"ConsumerId\": {ConsumerId.Quote()}");
             result.Append($", \"Host\": {Host.Quote()}, \"Assignment\": [{assignment}]}}");

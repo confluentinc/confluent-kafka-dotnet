@@ -36,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_ProduceAsync_Await_Serializing");
 
-            Func<Task> mthd = async () => 
+            Func<Task> mthd = async () =>
             {
                 using (var producer = new TestProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
                 {
@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             mthd().Wait();
-            
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Await_Serializing");
         }
@@ -88,7 +88,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new TestProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 await Assert.ThrowsAsync<ProduceException<byte[], byte[]>>(
-                    async () => 
+                    async () =>
                     {
                         await producer.ProduceAsync(
                             new TopicPartition(singlePartitionTopic, 42),
@@ -96,7 +96,7 @@ namespace Confluent.Kafka.IntegrationTests
                         throw new Exception("unexpected exception");
                     });
             }
-            
+
             // variation 2
 
             Func<Task> mthd = async () =>

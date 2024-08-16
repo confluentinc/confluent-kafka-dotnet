@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ namespace Confluent.Kafka
         ///     A Kafka timestamp value.
         /// </param>
         public TopicPartitionTimestamp(TopicPartition tp, Timestamp timestamp)
-            : this (tp.Topic, tp.Partition, timestamp)
+            : this(tp.Topic, tp.Partition, timestamp)
         {
         }
 

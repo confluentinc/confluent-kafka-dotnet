@@ -69,7 +69,7 @@ namespace Confluent.Kafka.Admin
                     ).ToList());
                 authorizedOperations = $"[{authorizedOperations}]";
             }
-            
+
             result.Append($"{{\"ClusterId\": {ClusterId.Quote()}");
             result.Append($", \"Controller\": {Controller?.ToString() ?? "null"}, \"Nodes\": [{nodes}]");
             result.Append($", \"AuthorizedOperations\": {authorizedOperations}}}");

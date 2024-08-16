@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2018 Confluent Inc.
+// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,19 +17,19 @@
 using System.Collections.Generic;
 
 
-namespace  Confluent.SchemaRegistry
+namespace Confluent.SchemaRegistry
 {
     internal static class Versions
     {
         public const string SchemaRegistry_V1_JSON = "application/vnd.schemaregistry.v1+json";
         public const string SchemaRegistry_Default_JSON = "application/vnd.schemaregistry+json";
         public const string JSON = "application/json";
-        
-        public static readonly IReadOnlyList<string> PreferredResponseTypes = new List<string> 
-        { 
-            SchemaRegistry_V1_JSON, 
-            SchemaRegistry_Default_JSON, 
-            JSON 
+
+        public static readonly IReadOnlyList<string> PreferredResponseTypes = new List<string>
+        {
+            SchemaRegistry_V1_JSON,
+            SchemaRegistry_Default_JSON,
+            JSON
         };
 
         /// <remarks>

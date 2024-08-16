@@ -63,7 +63,7 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var exception = (DeleteAclsException) obj;
+            var exception = (DeleteAclsException)obj;
             if (base.Equals(exception)) return true;
             return Error == exception.Error &&
                 (Results?.SequenceEqual(exception.Results) ?? exception.Results == null);
@@ -119,7 +119,7 @@ namespace Confluent.Kafka.Admin
             if (Error != null) hash ^= Error.GetHashCode();
             if (Results != null)
             {
-                foreach(DeleteAclsReport report in Results)
+                foreach (DeleteAclsReport report in Results)
                 {
                     hash ^= report.GetHashCode();
                 }

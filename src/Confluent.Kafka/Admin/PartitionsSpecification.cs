@@ -28,7 +28,7 @@ namespace Confluent.Kafka.Admin
         ///     The topic that the new partitions specification corresponds to.
         /// </summary>
         public string Topic { get; set; }
-        
+
         /// <summary>
         ///     The replica assignments for the new partitions, or null if the assignment
         ///     will be done by the controller. The outer list is indexed by the new 

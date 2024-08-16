@@ -51,7 +51,7 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var report = (DescribeAclsReport) obj;
+            var report = (DescribeAclsReport)obj;
             if (base.Equals(report)) return true;
             return Error == report.Error &&
                 (AclBindings == null ? report.AclBindings == null :
@@ -107,7 +107,7 @@ namespace Confluent.Kafka.Admin
             if (Error != null) hash ^= Error.GetHashCode();
             if (AclBindings != null)
             {
-                foreach(AclBinding aclBinding in AclBindings)
+                foreach (AclBinding aclBinding in AclBindings)
                 {
                     hash ^= aclBinding.GetHashCode();
                 }

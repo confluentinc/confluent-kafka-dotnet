@@ -69,9 +69,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public class Schema1
         {
             public string Field1 { get; set; }
-            
+
             public int Field2 { get; set; }
-            
+
             public bool Field3 { get; set; }
         }
 
@@ -218,15 +218,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var refs = new List<SchemaReference> { new SchemaReference("schema2.json", subject2, 1) };
             var registeredSchema1 = new RegisteredSchema(subject1, 1, 2, schema1, SchemaType.Json, refs);
             store[schema1] = 2;
-            subjectStore[subject1] = new List<RegisteredSchema> { registeredSchema1 }; 
-            
+            subjectStore[subject1] = new List<RegisteredSchema> { registeredSchema1 };
+
             var jsonSerializerConfig = new JsonSerializerConfig
             {
                 UseLatestVersion = true,
                 AutoRegisterSchemas = false,
                 SubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
-            
+
             var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
             {
                 SerializerSettings = new JsonSerializerSettings
@@ -237,7 +237,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                     }
                 }
             };
-            
+
             var jsonSerializer = new JsonSerializer<Schema1>(schemaRegistryClient, registeredSchema1,
                 jsonSerializerConfig, jsonSchemaGeneratorSettings);
             var jsonDeserializer = new JsonDeserializer<Schema1>(schemaRegistryClient, registeredSchema1);
@@ -358,12 +358,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new JsonSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -409,12 +409,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name != 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new JsonSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -454,12 +454,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
                         "typeName == 'STRING' ; value + '-suffix'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new JsonSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -505,12 +505,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null,
                         "name == 'name' ; value == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new JsonSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -556,12 +556,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null,
                         "name == 'name' ; value != 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new JsonSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -601,10 +601,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
             schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
-                {
-                    ["$.name"] = new HashSet<string> { "PII" }
+            {
+                ["$.name"] = new HashSet<string> { "PII" }
 
-                }, new Dictionary<string, string>(), new HashSet<string>()
+            }, new Dictionary<string, string>(), new HashSet<string>()
             );
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
@@ -859,7 +859,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [JsonProperty("name")]
         public string Name { get; set; }
     }
-    
+
     class NewCustomer
     {
         [JsonProperty("favorite_color")]
@@ -869,7 +869,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [JsonProperty("full_name")]
         public string FullName { get; set; }
     }
-    
+
     class NewerCustomer
     {
         [JsonProperty("favorite_color")]

@@ -59,7 +59,8 @@ namespace Confluent.Kafka.IntegrationTests
                     return 13;
                 })
                 .Build()
-            ) {
+            )
+            {
 
                 Action<DeliveryReport<string, Null>> dh = (DeliveryReport<string, Null> dr) =>
                 {

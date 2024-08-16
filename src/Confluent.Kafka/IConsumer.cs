@@ -179,7 +179,7 @@ namespace Confluent.Kafka
         ///     e.g. ^myregex
         /// </param>
         void Subscribe(string topic);
-        
+
 
         /// <summary>
         ///     Unsubscribe from the current subscription

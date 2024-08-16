@@ -57,7 +57,7 @@ namespace Confluent.Kafka
             /// </summary>
             public const string DeliveryReportFields = "dotnet.producer.delivery.report.fields";
         }
-        
+
 
         /// <summary>
         ///     Consumer specific configuration properties.
@@ -86,6 +86,6 @@ namespace Confluent.Kafka
         ///     range: 1 &lt;= dotnet.cancellation.delay.max.ms &lt;= 10000
         /// </summary>
         public const string CancellationDelayMaxMs = "dotnet.cancellation.delay.max.ms";
-        
+
     }
 }

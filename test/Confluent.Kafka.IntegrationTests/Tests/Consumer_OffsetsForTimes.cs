@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+// Copyright 2016-2017 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
                     // If empty request, expect empty result.
                     var result = consumer.OffsetsForTimes(new TopicPartitionTimestamp[0], timeout).ToList();
                     Assert.Empty(result);
-                    
+
                     // Getting the offset for the first produced message timestamp.
                     result = consumer.OffsetsForTimes(
                             new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Timestamp) },
@@ -130,10 +130,10 @@ namespace Confluent.Kafka.IntegrationTests
                     var message = producer.ProduceAsync(
                         new TopicPartition(topic, partition),
                         new Message<byte[], byte[]>
-                        { 
+                        {
                             Key = Serializers.Utf8.Serialize($"test key {index}", SerializationContext.Empty),
                             Value = Serializers.Utf8.Serialize($"test val {index}", SerializationContext.Empty),
-                            Timestamp = new Timestamp(baseTime + index*1000, TimestampType.CreateTime),
+                            Timestamp = new Timestamp(baseTime + index * 1000, TimestampType.CreateTime),
                             Headers = null
                         }
                     ).Result;

@@ -60,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.IsType<ProduceException<string, string>>(inner);
                 var dr = ((ProduceException<string, string>)inner).DeliveryResult;
                 var err = ((ProduceException<string, string>)inner).Error;
-                
+
                 Assert.True(err.IsError);
                 Assert.Equal(PersistenceStatus.NotPersisted, dr.Status);
                 Assert.False(err.IsFatal);
@@ -95,7 +95,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.IsType<ProduceException<byte[], byte[]>>(inner);
                 var dr = ((ProduceException<byte[], byte[]>)inner).DeliveryResult;
                 var err = ((ProduceException<byte[], byte[]>)inner).Error;
-                
+
                 Assert.True(err.IsError);
                 Assert.False(err.IsFatal);
                 Assert.Equal(partitionedTopic, dr.Topic);

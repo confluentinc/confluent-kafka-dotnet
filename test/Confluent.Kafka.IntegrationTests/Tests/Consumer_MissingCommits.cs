@@ -46,16 +46,16 @@ namespace Confluent.Kafka.IntegrationTests
                 using (var producer = new TestProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
                 using (var consumer = new TestConsumerBuilder<Null, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupId }).Build())
                 {
-                    for (int i=0; i<numPartitions; ++i)
+                    for (int i = 0; i < numPartitions; ++i)
                     {
-                        for (int j=0; j<numMessagesPerPartition; ++j)
+                        for (int j = 0; j < numMessagesPerPartition; ++j)
                         {
                             producer.Produce(new TopicPartition(topic.Name, i), new Message<Null, string> { Value = "test" });
                         }
                     }
                     producer.Flush();
 
-                    for (int i=0; i<numPartitionsWithCommittedOffsets; ++i)
+                    for (int i = 0; i < numPartitionsWithCommittedOffsets; ++i)
                     {
                         consumer.Commit(new TopicPartitionOffset[] { new TopicPartitionOffset(topic.Name, i, commitOffset) });
                     }
@@ -65,7 +65,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var messageCounts = new Dictionary<int, int>();
                 try
                 {
-                    for (int i=0; i<numConsumers; ++i)
+                    for (int i = 0; i < numConsumers; ++i)
                     {
                         var consumer = new TestConsumerBuilder<Null, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupId, AutoOffsetReset = AutoOffsetReset.Earliest }).Build();
                         consumers.Add(consumer);
@@ -82,7 +82,7 @@ namespace Confluent.Kafka.IntegrationTests
                             complete = true;
                         }
 
-                        for (int i=0; i<numConsumers; ++i)
+                        for (int i = 0; i < numConsumers; ++i)
                         {
                             var cr = consumers[i].Consume(0);
                             if (cr != null && cr.Message != null)
@@ -96,15 +96,15 @@ namespace Confluent.Kafka.IntegrationTests
                         }
 
                         complete = true;
-                        for (int i=0; i<numPartitionsWithCommittedOffsets; ++i)
+                        for (int i = 0; i < numPartitionsWithCommittedOffsets; ++i)
                         {
-                            if (!messageCounts.ContainsKey(i) || messageCounts[i] < numMessagesPerPartition-commitOffset)
+                            if (!messageCounts.ContainsKey(i) || messageCounts[i] < numMessagesPerPartition - commitOffset)
                             {
                                 complete = false;
                                 break;
                             }
                         }
-                        for (int i=numPartitionsWithCommittedOffsets; i<numPartitions; ++i)
+                        for (int i = numPartitionsWithCommittedOffsets; i < numPartitions; ++i)
                         {
                             if (!messageCounts.ContainsKey(i) || messageCounts[i] < numMessagesPerPartition)
                             {
@@ -116,7 +116,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 finally
                 {
-                    for (int i=0; i<numConsumers; ++i)
+                    for (int i = 0; i < numConsumers; ++i)
                     {
                         try
                         {

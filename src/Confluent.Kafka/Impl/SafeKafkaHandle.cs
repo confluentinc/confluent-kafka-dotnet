@@ -43,10 +43,10 @@ namespace Confluent.Kafka.Impl
         internal int partition;                       /* Partition */
         internal /* void   * */ IntPtr val;           /* err==0: Message val
                                                        * err!=0: Error string */
-        internal UIntPtr  len;                        /* err==0: Message val length
+        internal UIntPtr len;                        /* err==0: Message val length
                                                        * err!=0: Error string length */
         internal /* void   * */ IntPtr key;           /* err==0: Optional message key */
-        internal UIntPtr  key_len;                    /* err==0: Optional message key length */
+        internal UIntPtr key_len;                    /* err==0: Optional message key length */
         internal long offset;                         /* Consume:
                                                        *   Message offset (or offset for error
                                                        *   if err!=0 if applicable).
@@ -112,7 +112,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        public SafeKafkaHandle() : base("kafka") {}
+        public SafeKafkaHandle() : base("kafka") { }
 
         /// <summary>
         ///     This object is tightly coupled to the referencing Producer /
@@ -134,7 +134,7 @@ namespace Confluent.Kafka.Impl
         public static SafeKafkaHandle Create(RdKafkaType type, IntPtr config, IClient owner)
         {
             var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
-            var kh = Librdkafka.kafka_new(type, config, errorStringBuilder,(UIntPtr) errorStringBuilder.Capacity);
+            var kh = Librdkafka.kafka_new(type, config, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
             if (kh.IsInvalid)
             {
                 Librdkafka.conf_destroy(config);
@@ -469,7 +469,8 @@ namespace Confluent.Kafka.Impl
 
             if (err == ErrorCode.NoError)
             {
-                try {
+                try
+                {
                     var meta = Util.Marshal.PtrToStructure<rd_kafka_metadata>(metaPtr);
 
                     var brokers = Enumerable.Range(0, meta.broker_cnt)
@@ -631,7 +632,7 @@ namespace Confluent.Kafka.Impl
             }
             var result = new byte[(int)dataSize];
             byte* pIter = (byte*)buffer;
-            for (int i=0; i<(int)dataSize; ++i)
+            for (int i = 0; i < (int)dataSize; ++i)
             {
                 result[i] = *pIter++;
             }
@@ -659,7 +660,7 @@ namespace Confluent.Kafka.Impl
                 throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
 
-            return new WatermarkOffsets(low,  high);
+            return new WatermarkOffsets(low, high);
         }
 
         internal WatermarkOffsets GetWatermarkOffsets(string topic, int partition)
@@ -690,7 +691,7 @@ namespace Confluent.Kafka.Impl
             {
                 // The timestamps to query are represented as Offset property in offsets param on input, 
                 // and Offset property will contain the offset on output
-                var errorCode = Librdkafka.offsets_for_times(handle, cOffsets, (IntPtr) millisecondsTimeout);
+                var errorCode = Librdkafka.offsets_for_times(handle, cOffsets, (IntPtr)millisecondsTimeout);
                 if (errorCode != ErrorCode.NoError)
                 {
                     throw new KafkaException(CreatePossiblyFatalError(errorCode, null));
@@ -725,7 +726,7 @@ namespace Confluent.Kafka.Impl
                 throw new ArgumentNullException("Subscribed-to topic must not be null");
             }
 
-            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) topics.Count());
+            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr)topics.Count());
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create topic partition list");
@@ -813,7 +814,7 @@ namespace Confluent.Kafka.Impl
             IntPtr list = IntPtr.Zero;
             if (partitions != null)
             {
-                list = Librdkafka.topic_partition_list_new((IntPtr) partitions.Count());
+                list = Librdkafka.topic_partition_list_new((IntPtr)partitions.Count());
                 if (list == IntPtr.Zero)
                 {
                     throw new Exception("Failed to create topic partition list");
@@ -829,7 +830,7 @@ namespace Confluent.Kafka.Impl
                     IntPtr ptr = Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
                     Marshal.WriteInt64(
                         ptr,
-                        (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                        (int)Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
                         partition.Offset);
                 }
             }
@@ -883,7 +884,8 @@ namespace Confluent.Kafka.Impl
             {
                 ThrowIfHandleClosed();
                 var rebalanceProtocolPtr = Librdkafka.rebalance_protocol(handle);
-                if (rebalanceProtocolPtr == IntPtr.Zero) {
+                if (rebalanceProtocolPtr == IntPtr.Zero)
+                {
                     return null;
                 }
                 return Util.Marshal.PtrToStringUTF8(rebalanceProtocolPtr);
@@ -979,9 +981,9 @@ namespace Confluent.Kafka.Impl
                            int? leaderEpoch = null)
         {
             ThrowIfHandleClosed();
-          
+
             ErrorCode result;
-            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) 1);
+            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr)1);
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create seek partition list");
@@ -992,9 +994,9 @@ namespace Confluent.Kafka.Impl
 
             Marshal.WriteInt64(
                 listPartition,
-                (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                (int)Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
                 offset);
-            
+
             if (leaderEpoch != null)
             {
                 Librdkafka.topic_partition_set_leader_epoch(listPartition,
@@ -1004,7 +1006,7 @@ namespace Confluent.Kafka.Impl
             IntPtr resultError = Librdkafka.seek_partitions(
                 handle,
                 list, (IntPtr)millisecondsTimeout);
-            
+
             if (resultError != IntPtr.Zero)
             {
                 result = Librdkafka.error_code(resultError);
@@ -1013,7 +1015,7 @@ namespace Confluent.Kafka.Impl
             {
                 result = ErrorCode.NoError;
             }
-            
+
             if (result == ErrorCode.NoError)
             {
                 var topicPartitionErrors = GetTopicPartitionErrorList(list);
@@ -1025,7 +1027,7 @@ namespace Confluent.Kafka.Impl
                     }
                 }
             }
-            
+
             Librdkafka.topic_partition_list_destroy(list);
 
             if (result != ErrorCode.NoError)
@@ -1038,7 +1040,7 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) partitions.Count());
+            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr)partitions.Count());
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create pause partition list");
@@ -1070,7 +1072,7 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) partitions.Count());
+            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr)partitions.Count());
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create resume partition list");
@@ -1103,7 +1105,7 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) partitions.Count());
+            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr)partitions.Count());
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create committed partition list");
@@ -1135,7 +1137,7 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) partitions.Count());
+            IntPtr list = Librdkafka.topic_partition_list_new((IntPtr)partitions.Count());
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create position list");
@@ -1268,7 +1270,7 @@ namespace Confluent.Kafka.Impl
                 }
                 IntPtr ptr = Librdkafka.topic_partition_list_add(list, p.Topic, p.Partition);
                 Marshal.WriteInt64(ptr, (int)Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"), p.Offset);
-                
+
                 if (p.LeaderEpoch != null)
                 {
                     Librdkafka.topic_partition_set_leader_epoch(ptr,
@@ -1317,8 +1319,8 @@ namespace Confluent.Kafka.Impl
             byte[] data = null;
             if (ptr != IntPtr.Zero)
             {
-                data = new byte[(int) len];
-                Marshal.Copy(ptr, data, 0, (int) len);
+                data = new byte[(int)len];
+                Marshal.Copy(ptr, data, 0, (int)len);
             }
             return data;
         }
@@ -1531,7 +1533,7 @@ namespace Confluent.Kafka.Impl
 
             Librdkafka.AlterConfigs(handle, configPtrs, (UIntPtr)configPtrs.Length, optionsPtr, resultQueuePtr);
 
-            for (int i=0; i<configPtrs.Length; ++i)
+            for (int i = 0; i < configPtrs.Length; ++i)
             {
                 Librdkafka.ConfigResource_destroy(configPtrs[i]);
             }
@@ -1566,7 +1568,7 @@ namespace Confluent.Kafka.Impl
                     {
                         throw new ArgumentException($"Config name must be specified for {resource}");
                     }
-                    
+
                     var error = Librdkafka.ConfigResource_add_incremental_config(resourcePtr, rc.Name, rc.IncrementalOperation, rc.Value);
                     if (error != IntPtr.Zero)
                     {
@@ -1581,10 +1583,10 @@ namespace Confluent.Kafka.Impl
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
             setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
-            
+
             Librdkafka.IncrementalAlterConfigs(handle, configPtrs, (UIntPtr)configPtrs.Length, optionsPtr, resultQueuePtr);
 
-            for (int i=0; i<configPtrs.Length; ++i)
+            for (int i = 0; i < configPtrs.Length; ++i)
             {
                 Librdkafka.ConfigResource_destroy(configPtrs[i]);
             }
@@ -1619,7 +1621,7 @@ namespace Confluent.Kafka.Impl
 
             Librdkafka.DescribeConfigs(handle, configPtrs, (UIntPtr)configPtrs.Length, optionsPtr, resultQueuePtr);
 
-            for (int i=0; i<configPtrs.Length; ++i)
+            for (int i = 0; i < configPtrs.Length; ++i)
             {
                 Librdkafka.ConfigResource_destroy(configPtrs[i]);
             }
@@ -1779,9 +1781,9 @@ namespace Confluent.Kafka.Impl
             }
             finally
             {
-                foreach(var deleteGroupPtr in deleteGroupsPtrs)
+                foreach (var deleteGroupPtr in deleteGroupsPtrs)
                 {
-                    if(deleteGroupPtr != IntPtr.Zero)
+                    if (deleteGroupPtr != IntPtr.Zero)
                     {
                         Librdkafka.DeleteGroup_destroy(deleteGroupPtr);
                     }
@@ -2182,10 +2184,10 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-	        // For now, we only support one group at a time given as a single element of groupsPartitions.
-	        // Code has been written so that only this if-guard needs to be removed when we add support for
-	        // multiple ConsumerGroupTopicPartitionOffsets.
-            if (groupsPartitions.Count() != 1) 
+            // For now, we only support one group at a time given as a single element of groupsPartitions.
+            // Code has been written so that only this if-guard needs to be removed when we add support for
+            // multiple ConsumerGroupTopicPartitionOffsets.
+            if (groupsPartitions.Count() != 1)
             {
                 throw new ArgumentException("Can only alter offsets for one group at a time");
             }
@@ -2254,10 +2256,10 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-	        // For now, we only support one group at a time given as a single element of groupsPartitions.
-	        // Code has been written so that only this if-guard needs to be removed when we add support for
-	        // multiple ConsumerGroupTopicPartitions.
-            if (groupsPartitions.Count() != 1) 
+            // For now, we only support one group at a time given as a single element of groupsPartitions.
+            // Code has been written so that only this if-guard needs to be removed when we add support for
+            // multiple ConsumerGroupTopicPartitions.
+            if (groupsPartitions.Count() != 1)
             {
                 throw new ArgumentException("Can only list offsets for one group at a time");
             }
@@ -2357,7 +2359,8 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            if (groups.Count() == 0) {
+            if (groups.Count() == 0)
+            {
                 throw new ArgumentException("at least one group should be provided to DescribeConsumerGroups");
             }
 
@@ -2396,7 +2399,7 @@ namespace Confluent.Kafka.Impl
                     throw new ArgumentException("Cannot have a null or empty user");
                 }
             }
-            
+
             var optionsPtr = IntPtr.Zero;
             try
             {
@@ -2408,7 +2411,7 @@ namespace Confluent.Kafka.Impl
 
                 // Call DescribeUserScramCredentials (async).
                 Librdkafka.DescribeUserScramCredentials(
-                    handle, users.ToArray(), (UIntPtr) users.Count(),
+                    handle, users.ToArray(), (UIntPtr)users.Count(),
                     optionsPtr, resultQueuePtr);
             }
             finally
@@ -2457,21 +2460,21 @@ namespace Confluent.Kafka.Impl
                         int saltSize = 0;
                         if (salt != null)
                             saltSize = salt.Length;
-                        
+
                         c_alterationsPtr[idx] = Librdkafka.UserScramCredentialUpsertion_new(
                             upsertion.User,
                             upsertion.ScramCredentialInfo.Mechanism,
                             upsertion.ScramCredentialInfo.Iterations,
                             upsertion.Password,
-                            (IntPtr) upsertion.Password.Length,
+                            (IntPtr)upsertion.Password.Length,
                             salt,
-                            (IntPtr) saltSize
+                            (IntPtr)saltSize
                         );
                         idx++;
                     }
                     else
                     {
-                        throw new ArgumentException("Every alteration must be either a UserScramCredentialDeletion " + 
+                        throw new ArgumentException("Every alteration must be either a UserScramCredentialDeletion " +
                             "or UserScramCredentialUpsertion");
                     }
                 }
@@ -2481,7 +2484,7 @@ namespace Confluent.Kafka.Impl
             }
             finally
             {
-                for(var i=0; i<idx; i++)
+                for (var i = 0; i < idx; i++)
                 {
                     Librdkafka.UserScramCredentialAlteration_destroy(c_alterationsPtr[i]);
                 }
@@ -2503,14 +2506,14 @@ namespace Confluent.Kafka.Impl
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
                 topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)topicPartitionOffsets.Count());
-                foreach(var topicPartitionOffset in topicPartitionOffsets)
+                foreach (var topicPartitionOffset in topicPartitionOffsets)
                 {
                     string topic = topicPartitionOffset.TopicPartition.Topic;
                     Partition partition = topicPartitionOffset.TopicPartition.Partition;
                     IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topic, partition);
                     Marshal.WriteInt64(
                         topic_partition,
-                        (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                        (int)Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
                         topicPartitionOffset.OffsetSpec.Value());
                 }
                 Librdkafka.ListOffsets(handle, topic_partition_list, optionsPtr, resultQueuePtr);
@@ -2539,7 +2542,7 @@ namespace Confluent.Kafka.Impl
                 topicCollectionPtr = Librdkafka.TopicCollection_of_topic_names(
                     topicCollection.Topics.ToArray(),
                     (UIntPtr)topicCollection.Topics.Count());
-                
+
                 // Set Admin Options if any.
                 options = options ?? new DescribeTopicsOptions();
                 optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeTopics);
@@ -2599,8 +2602,8 @@ namespace Confluent.Kafka.Impl
             var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
             var errorCode = Librdkafka.oauthbearer_set_token(handle,
                 tokenValue, lifetimeMs, principalName,
-                extensionsArray, (UIntPtr) (extensionsArray?.Length ?? 0),
-                errorStringBuilder, (UIntPtr) errorStringBuilder.Capacity);
+                extensionsArray, (UIntPtr)(extensionsArray?.Length ?? 0),
+                errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
 
             if (errorCode != ErrorCode.NoError)
             {

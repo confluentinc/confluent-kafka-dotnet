@@ -49,7 +49,7 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         public ResourcePatternFilter Clone()
         {
-            return (ResourcePatternFilter) MemberwiseClone();
+            return (ResourcePatternFilter)MemberwiseClone();
         }
 
         /// <summary>

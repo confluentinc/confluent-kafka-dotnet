@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     // Verify schema compatibility (& register as required) + get the 
                     // id corresponding to the schema.
-                    
+
                     // TODO: Again, the hash functions in use below are potentially 
                     // slow since writerSchemaString is potentially long. It would be
                     // better to use hash functions based on the writerSchemaString 
@@ -141,7 +141,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
-                        
+
                     var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
                     if (!registeredSchemas.Contains(subjectSchemaPair))
                     {
@@ -189,7 +189,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (latestSchema != null)
                 {
                     var schema = await GetParsedSchema(latestSchema);
-                    FieldTransformer fieldTransformer = async (ctx, transform, message) => 
+                    FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                     {
                         return await AvroUtils.Transform(ctx, schema, message, transform).ConfigureAwait(false);
                     };
@@ -214,7 +214,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw e.InnerException;
             }
         }
-        
+
         protected override Task<Avro.Schema> ParseSchema(Schema schema)
         {
             return Task.FromResult(Avro.Schema.Parse(schema.SchemaString));

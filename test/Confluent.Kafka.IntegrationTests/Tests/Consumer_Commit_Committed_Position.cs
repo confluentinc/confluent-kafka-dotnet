@@ -79,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
                         }
                         else
                         {
-                           throw;
+                            throw;
                         }
                     }
                 }
@@ -89,7 +89,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var co = consumer.Committed(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
                 Assert.Equal(firstMsgOffset + 1, co[0].Offset);
                 Assert.Equal(firstMsgOffset + 1, offset);
-                
+
                 // Test #2
                 var record2 = consumer.Consume(TimeSpan.FromMilliseconds(6000));
                 os = consumer.Commit();

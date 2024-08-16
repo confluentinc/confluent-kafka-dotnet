@@ -29,12 +29,12 @@ namespace Confluent.Kafka.Admin
         ///     The mechanism and iterations.
         /// </summary>
         public ScramCredentialInfo ScramCredentialInfo { get; set; }
-        
+
         /// <summary>
         ///     Password to HMAC before storage
         /// </summary>
         public byte[] Password { get; set; }
-        
+
         /// <summary>
         ///     Salt to use. Will be generated randomly if null (optional)
         /// </summary>
@@ -58,7 +58,7 @@ namespace Confluent.Kafka.Admin
             // Password and Salt aren't included to
             // avoid accidental leak.
             result.Append("}");
-            return  result.ToString();
+            return result.ToString();
         }
     }
 }

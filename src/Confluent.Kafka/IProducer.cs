@@ -182,7 +182,7 @@ namespace Confluent.Kafka
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);
 
-        
+
         /// <summary>
         ///     Poll for callback events.
         /// </summary>
@@ -250,7 +250,7 @@ namespace Confluent.Kafka
         /// </remarks>
         int Flush(TimeSpan timeout);
 
-        
+
         /// <summary>
         ///     Wait until all outstanding produce requests and
         ///     delivery report callbacks are completed.

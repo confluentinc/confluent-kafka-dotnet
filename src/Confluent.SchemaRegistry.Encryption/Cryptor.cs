@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using Google.Crypto.Tink;
@@ -10,7 +10,7 @@ namespace Confluent.SchemaRegistry.Encryption
     public class Cryptor
     {
         private static byte[] EmptyAAD = new byte[] { };
-        
+
         public Cryptor(DekFormat dekFormat)
         {
             DekFormat = dekFormat;
@@ -37,7 +37,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 default:
                     throw new ArgumentException();
             }
-            
+
         }
 
         public byte[] GenerateKey()

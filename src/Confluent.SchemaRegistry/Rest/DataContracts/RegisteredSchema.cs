@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+// Copyright 2016-2017 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ namespace Confluent.SchemaRegistry
         ///     Included to enable API backwards compatibility only, do not use.
         /// </summary>
         [Obsolete("Included to enable API backwards compatibility. This will be removed in a future release.")]
-        protected RegisteredSchema() {}
+        protected RegisteredSchema() { }
 
         /// <summary>
         ///     Initializes a new instance of this class.

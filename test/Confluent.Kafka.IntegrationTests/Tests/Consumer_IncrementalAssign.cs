@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 Util.ProduceNullStringMessages(bootstrapServers, topic1.Name, 1, 1);
                 Util.ProduceNullStringMessages(bootstrapServers, topic2.Name, 1, 1);
-        
+
                 consumer.IncrementalAssign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic1.Name, 0, Offset.Beginning) });
                 var cr1 = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr1);

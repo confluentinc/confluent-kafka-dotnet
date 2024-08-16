@@ -65,7 +65,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
             var topicName = Guid.NewGuid().ToString();
             var subjectInitial = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
-            var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName+"2", null);
+            var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName + "2", null);
 
             var id1 = srInitial.RegisterSchemaAsync(subjectInitial, new Schema(TestJsonSchema, SchemaType.Json)).Result;
             var schema1 = sr.GetSchemaAsync(id1).Result; // use a different sr instance to ensure a cached value is not read.
@@ -85,7 +85,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             // compatibility
             var compat = sr.IsCompatibleAsync(subject, schema2).Result;
             Assert.True(compat);
-            var avroSchema = 
+            var avroSchema =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";

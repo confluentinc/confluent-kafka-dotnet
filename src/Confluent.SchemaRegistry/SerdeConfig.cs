@@ -83,7 +83,7 @@ namespace Confluent.SchemaRegistry
                 SetObject(key, null);
                 return;
             }
-            
+
             var result = string.Join(",", value.Select(kv => $"{kv.Key}={kv.Value}"));
             SetObject(key, result);
         }

@@ -119,7 +119,7 @@ namespace Confluent.Kafka.UnitTests
                 }
             }
         }
-        
+
         [Fact]
         public async void InvalidAclBindingFilters()
         {
@@ -132,7 +132,8 @@ namespace Confluent.Kafka.UnitTests
                     "Invalid operation",
                     "Invalid permission type",
                 };
-                var invalidTests = suffixes.Select((suffix) => {
+                var invalidTests = suffixes.Select((suffix) =>
+                {
                     return testAclBindingFilters[0].Clone();
                 }).ToList();
                 invalidTests[0].PatternFilter.Type = ResourceType.Unknown;

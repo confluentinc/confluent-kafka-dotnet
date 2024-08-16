@@ -148,8 +148,8 @@ namespace Confluent.SchemaRegistry.Serdes
             get { return GetBool(PropertyNames.AutoRegisterSchemas); }
             set { SetObject(PropertyNames.AutoRegisterSchemas, value); }
         }
-        
-        
+
+
         /// <summary>
         ///     Specifies whether to normalize schemas, which will transform schemas
         ///     to have a consistent format, including ordering properties and references.
@@ -176,7 +176,7 @@ namespace Confluent.SchemaRegistry.Serdes
             get { return GetBool(PropertyNames.UseLatestVersion); }
             set { SetObject(PropertyNames.UseLatestVersion, value); }
         }
-        
+
 
         /// <summary>
         ///     Specifies whether or not the Protobuf serializer should use the latest subject
@@ -189,7 +189,7 @@ namespace Confluent.SchemaRegistry.Serdes
             get { return GetDictionaryProperty(PropertyNames.UseLatestWithMetadata); }
             set { SetDictionaryProperty(PropertyNames.UseLatestWithMetadata, value); }
         }
-        
+
 
         /// <summary>
         ///     Specifies whether or not the Protobuf serializer should skip known types
@@ -202,7 +202,7 @@ namespace Confluent.SchemaRegistry.Serdes
             get { return GetBool(PropertyNames.SkipKnownTypes); }
             set { SetObject(PropertyNames.SkipKnownTypes, value); }
         }
-        
+
 
         /// <summary>
         ///     Specifies whether the Protobuf serializer should serialize message indexes
@@ -215,7 +215,7 @@ namespace Confluent.SchemaRegistry.Serdes
             get { return GetBool(PropertyNames.UseDeprecatedFormat); }
             set { SetObject(PropertyNames.UseDeprecatedFormat, value); }
         }
-        
+
 
         /// <summary>
         ///     Subject name strategy.

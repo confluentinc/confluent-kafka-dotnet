@@ -32,7 +32,8 @@ namespace Confluent.Kafka
         /// <param name="topicPartitionOffsets">
         ///     A list of Kafka (topic, partition) tuples.
         /// </param>
-        public ConsumerGroupTopicPartitionOffsets(string group, List<TopicPartitionOffset> topicPartitionOffsets) {
+        public ConsumerGroupTopicPartitionOffsets(string group, List<TopicPartitionOffset> topicPartitionOffsets)
+        {
             this.TopicPartitionOffsets = topicPartitionOffsets;
             this.Group = group;
         }

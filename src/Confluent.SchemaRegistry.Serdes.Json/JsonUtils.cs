@@ -41,13 +41,13 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 return message;
             }
-            
+
             RuleContext.FieldContext fieldContext = ctx.CurrentField();
             if (fieldContext != null)
             {
                 fieldContext.Type = GetType(schema);
             }
-            
+
             if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
             {
                 JToken jsonObject = JToken.FromObject(message);
@@ -65,9 +65,9 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             else if (schema.IsArray)
             {
-                bool isList = typeof(IList).IsAssignableFrom(message.GetType()) 
-                              || (message.GetType().IsGenericType 
-                                  && (message.GetType().GetGenericTypeDefinition() == typeof(List<>) 
+                bool isList = typeof(IList).IsAssignableFrom(message.GetType())
+                              || (message.GetType().IsGenericType
+                                  && (message.GetType().GetGenericTypeDefinition() == typeof(List<>)
                                       || message.GetType().GetGenericTypeDefinition() == typeof(IList<>)));
                 if (!isList)
                 {
@@ -125,7 +125,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             ISet<string> ruleTags = ctx.Rule.Tags ?? new HashSet<string>();
                             ISet<string> intersect = new HashSet<string>(fieldContext.Tags);
                             intersect.IntersectWith(ruleTags);
-                            
+
                             if (ruleTags.Count == 0 || intersect.Count != 0)
                             {
                                 return await fieldTransform.Transform(ctx, fieldContext, message)
@@ -191,7 +191,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     SetValue = (instance, value) => propertyInfo.SetValue(instance, value);
                     return;
                 }
-                
+
                 var fieldInfo = type.GetField(fieldName,
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (fieldInfo != null)
@@ -200,7 +200,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     SetValue = (instance, value) => fieldInfo.SetValue(instance, value);
                     return;
                 }
-                
+
                 foreach (PropertyInfo prop in type.GetProperties())
                 {
                     if (prop.IsDefined(typeof(JsonPropertyAttribute)))
@@ -217,7 +217,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
                     }
                 }
-                
+
                 foreach (FieldInfo field in type.GetFields())
                 {
                     if (field.IsDefined(typeof(JsonPropertyAttribute)))
@@ -234,7 +234,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
                     }
                 }
-                
+
                 throw new ArgumentException("Could not find field " + fieldName);
             }
 

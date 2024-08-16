@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            for (int i=0; i<4; ++i)
+            for (int i = 0; i < 4; ++i)
             {
                 consumerConfig.Set("group.id", Guid.NewGuid().ToString());
 

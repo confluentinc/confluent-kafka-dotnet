@@ -52,13 +52,13 @@ namespace Confluent.Kafka.IntegrationTests
             }).Build())
             {
                 var describeOptionsWithTimeout = new Admin.DescribeTopicsOptions()
-                { 
-                    RequestTimeout = TimeSpan.FromSeconds(30), 
+                {
+                    RequestTimeout = TimeSpan.FromSeconds(30),
                     IncludeAuthorizedOperations = false
                 };
                 var describeOptionsWithAuthOps = new Admin.DescribeTopicsOptions()
-                { 
-                    RequestTimeout = TimeSpan.FromSeconds(30), 
+                {
+                    RequestTimeout = TimeSpan.FromSeconds(30),
                     IncludeAuthorizedOperations = true
                 };
 
@@ -85,7 +85,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.False(ex.Results.TopicDescriptions[1].Error.IsError);
                 }
 
-                var topicListAuthOps = 
+                var topicListAuthOps =
                 TopicCollection.OfTopicNames(
                     new List<string>
                     {
@@ -98,7 +98,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotEmpty(descResWithAuthOps.TopicDescriptions[0].AuthorizedOperations);
                 Assert.Equal(8, descResWithAuthOps.TopicDescriptions[0].AuthorizedOperations.Count);
 
-                var topicACLs =  new List<AclBinding>
+                var topicACLs = new List<AclBinding>
                 {
                     new AclBinding()
                     {
@@ -149,8 +149,8 @@ namespace Confluent.Kafka.IntegrationTests
                     BootstrapServers = bootstrapServers
                 }).Build())
                 {
-                     descResWithAuthOps = await adminClientUser.DescribeTopicsAsync(topicListAuthOps,
-                        describeOptionsWithAuthOps);
+                    descResWithAuthOps = await adminClientUser.DescribeTopicsAsync(topicListAuthOps,
+                       describeOptionsWithAuthOps);
                 }
 
                 var descResAuthOps =

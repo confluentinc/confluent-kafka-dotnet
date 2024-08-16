@@ -52,7 +52,7 @@ namespace Confluent.Kafka
         public KafkaException(Error error, Exception innerException)
             : base(error.Reason, innerException)
         {
-            Error = error;            
+            Error = error;
         }
 
         /// <summary>

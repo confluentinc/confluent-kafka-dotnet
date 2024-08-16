@@ -33,17 +33,17 @@ namespace Confluent.SchemaRegistry
     {
         protected ISchemaRegistryClient schemaRegistryClient;
         protected IList<IRuleExecutor> ruleExecutors;
-        
+
         protected bool useLatestVersion = false;
         protected bool latestCompatibilityStrict = false;
         protected IDictionary<string, string> useLatestWithMetadata = null;
         protected SubjectNameStrategyDelegate subjectNameStrategy = null;
-        
+
         protected SemaphoreSlim serdeMutex = new SemaphoreSlim(1);
-        
+
         private readonly IDictionary<Schema, TParsedSchema> parsedSchemaCache = new Dictionary<Schema, TParsedSchema>();
         private SemaphoreSlim parsedSchemaMutex = new SemaphoreSlim(1);
-        
+
         protected AsyncSerde(ISchemaRegistryClient schemaRegistryClient, SerdeConfig config, IList<IRuleExecutor> ruleExecutors = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
@@ -54,10 +54,10 @@ namespace Confluent.SchemaRegistry
             IEnumerable<KeyValuePair<string, string>> ruleConfigs = schemaRegistryClient.Config.Concat(config
                 .Select(kv => new KeyValuePair<string, string>(
                     kv.Key.StartsWith("rules.") ? kv.Key.Substring("rules.".Length) : kv.Key, kv.Value)));
-            
+
             foreach (IRuleExecutor executor in this.ruleExecutors.Concat(RuleRegistry.GetRuleExecutors()))
             {
-                executor.Configure(ruleConfigs); 
+                executor.Configure(ruleConfigs);
             }
         }
 
@@ -92,9 +92,9 @@ namespace Confluent.SchemaRegistry
                 parsedSchemaMutex.Release();
             }
         }
-        
+
         protected abstract Task<TParsedSchema> ParseSchema(Schema schema);
-        
+
         protected async Task<IDictionary<string, string>> ResolveReferences(Schema schema)
         {
             IList<SchemaReference> references = schema.References;
@@ -109,7 +109,7 @@ namespace Confluent.SchemaRegistry
                 .ConfigureAwait(continueOnCapturedContext: false);
             return result;
         }
-        
+
         private async Task<IDictionary<string, string>> ResolveReferences(
             Schema schema, IDictionary<string, string> schemas, ISet<string> visited)
         {
@@ -165,23 +165,29 @@ namespace Confluent.SchemaRegistry
             IList<Schema> versions = await GetSchemasBetween(subject, first, last)
                 .ConfigureAwait(continueOnCapturedContext: false);
             Schema previous = null;
-            for (int i = 0; i < versions.Count; i++) {
-              Schema current = versions[i];
-              if (i == 0) {
-                // skip the first version
-                previous = current;
-                continue;
-              }
-              if (current.RuleSet != null && current.RuleSet.HasRules(migrationMode)) {
-                Migration m;
-                if (migrationMode == RuleMode.Upgrade) {
-                  m = new Migration(migrationMode, previous, current);
-                } else {
-                  m = new Migration(migrationMode, current, previous);
+            for (int i = 0; i < versions.Count; i++)
+            {
+                Schema current = versions[i];
+                if (i == 0)
+                {
+                    // skip the first version
+                    previous = current;
+                    continue;
                 }
-                migrations.Add(m);
-              }
-              previous = current;
+                if (current.RuleSet != null && current.RuleSet.HasRules(migrationMode))
+                {
+                    Migration m;
+                    if (migrationMode == RuleMode.Upgrade)
+                    {
+                        m = new Migration(migrationMode, previous, current);
+                    }
+                    else
+                    {
+                        m = new Migration(migrationMode, current, previous);
+                    }
+                    migrations.Add(m);
+                }
+                previous = current;
             }
             if (migrationMode == RuleMode.Downgrade)
             {
@@ -200,7 +206,8 @@ namespace Confluent.SchemaRegistry
             var tasks = new List<Task<RegisteredSchema>>();
             int version1 = first.Version;
             int version2 = last.Version;
-            for (int i = version1 + 1; i < version2; i++) {
+            for (int i = version1 + 1; i < version2; i++)
+            {
                 tasks.Add(schemaRegistryClient.GetRegisteredSchemaAsync(subject, i));
             }
             RegisteredSchema[] schemas = await Task.WhenAll(tasks).ConfigureAwait(continueOnCapturedContext: false);
@@ -211,7 +218,7 @@ namespace Confluent.SchemaRegistry
             result.Add(last);
             return result;
         }
-        
+
         protected async Task<RegisteredSchema> GetReaderSchema(string subject, Schema schema = null)
         {
             if (schemaRegistryClient == null)
@@ -242,14 +249,14 @@ namespace Confluent.SchemaRegistry
 
             return null;
         }
-        
+
         protected async Task<object> ExecuteMigrations(
-            IList<Migration> migrations, 
+            IList<Migration> migrations,
             bool isKey,
-            String subject, 
+            String subject,
             String topic,
-            Headers headers, 
-            object message) 
+            Headers headers,
+            object message)
         {
             foreach (Migration m in migrations)
             {
@@ -274,13 +281,13 @@ namespace Confluent.SchemaRegistry
         /// <exception cref="RuleConditionException"></exception>
         /// <exception cref="ArgumentException"></exception>
         protected async Task<object> ExecuteRules(
-            bool isKey, 
-            string subject, 
-            string topic, 
+            bool isKey,
+            string subject,
+            string topic,
             Headers headers,
-            RuleMode ruleMode, 
-            Schema source, 
-            Schema target, 
+            RuleMode ruleMode,
+            Schema source,
+            Schema target,
             object message,
             FieldTransformer fieldTransformer)
         {
@@ -370,14 +377,14 @@ namespace Confluent.SchemaRegistry
                     }
                     catch (RuleException ex)
                     {
-                        await RunAction(ctx, ruleMode, rule, rule.OnFailure, message, 
+                        await RunAction(ctx, ruleMode, rule, rule.OnFailure, message,
                             ex, ErrorAction.ActionType)
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
                 else
                 {
-                    await RunAction(ctx, ruleMode, rule, rule.OnFailure, message, 
+                    await RunAction(ctx, ruleMode, rule, rule.OnFailure, message,
                         new RuleException("Could not find rule executor of type " + rule.Type), ErrorAction.ActionType)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
@@ -406,7 +413,7 @@ namespace Confluent.SchemaRegistry
             return null;
         }
 
-        private static async Task RunAction(RuleContext ctx, RuleMode ruleMode, 
+        private static async Task RunAction(RuleContext ctx, RuleMode ruleMode,
             Rule rule, string action, object message, RuleException ex, string defaultAction)
         {
             string actionName = GetRuleActionName(rule, ruleMode, action);
@@ -425,7 +432,8 @@ namespace Confluent.SchemaRegistry
                 try
                 {
                     await ruleAction.Run(ctx, message, ex).ConfigureAwait(continueOnCapturedContext: false);
-                } catch (RuleException e)
+                }
+                catch (RuleException e)
                 {
                     throw new SerializationException("Failed to run rule action " + actionName, e);
                 }
@@ -468,7 +476,7 @@ namespace Confluent.SchemaRegistry
             return action;
         }
     }
-    
+
     public class Migration : IEquatable<Migration>
     {
         public Migration(RuleMode ruleMode, Schema source, Schema target)
@@ -477,11 +485,11 @@ namespace Confluent.SchemaRegistry
             Source = source;
             Target = target;
         }
-        
+
         public RuleMode RuleMode { get; set; }
-        
+
         public Schema Source { get; set; }
-        
+
         public Schema Target { get; set; }
 
         public bool Equals(Migration other)

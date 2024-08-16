@@ -88,7 +88,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(new byte[] { 100, 42 }, testHeader);
             }
 
-            
+
             // Test accumulation of headers
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             using (var producer = new TestProducerBuilder<string, string>(producerConfig)

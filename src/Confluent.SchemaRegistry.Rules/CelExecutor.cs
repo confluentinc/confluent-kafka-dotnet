@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Avro;
 using Avro.Generic;
 using Avro.Specific;
@@ -95,9 +95,9 @@ namespace Confluent.SchemaRegistry.Rules
                 {
                     type = ScriptType.Protobuf;
                 }
-                else if (typeof(IList).IsAssignableFrom(msg.GetType()) 
-                         || (msg.GetType().IsGenericType 
-                             && (msg.GetType().GetGenericTypeDefinition() == typeof(List<>) 
+                else if (typeof(IList).IsAssignableFrom(msg.GetType())
+                         || (msg.GetType().IsGenericType
+                             && (msg.GetType().GetGenericTypeDefinition() == typeof(List<>)
                                  || msg.GetType().GetGenericTypeDefinition() == typeof(IList<>))))
                 {
                     // list not supported
@@ -141,12 +141,12 @@ namespace Confluent.SchemaRegistry.Rules
                     if (msg is ISpecificRecord)
                     {
                         type = ((ISpecificRecord)msg).Schema;
-                        
+
                     }
                     else
                     {
                         type = ((GenericRecord)msg).Schema;
-                        
+
                     }
                     break;
                 case ScriptType.Json:
@@ -306,7 +306,7 @@ namespace Confluent.SchemaRegistry.Rules
                 var objType = FindTypeForClass(typeof(object));
                 return Decls.NewListType(objType);
             }
-            
+
             return Decls.NewObjectType(type.FullName);
         }
 

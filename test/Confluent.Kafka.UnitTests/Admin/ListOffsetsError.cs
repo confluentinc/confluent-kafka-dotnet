@@ -36,14 +36,14 @@ namespace Confluent.Kafka.UnitTests
         public async void InvalidRequestTimeout()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
+            {
                 BootstrapServers = "localhost:90922",
                 SocketTimeoutMs = 10
             }).Build())
             {
                 var ex = await Assert.ThrowsAsync<KafkaException>(() =>
                     adminClient.ListOffsetsAsync(
-                        new List<TopicPartitionOffsetSpec> {},
+                        new List<TopicPartitionOffsetSpec> { },
                         new ListOffsetsOptions
                         {
                             RequestTimeout = TimeSpan.FromSeconds(-1)
@@ -57,7 +57,7 @@ namespace Confluent.Kafka.UnitTests
         public async void InvalidPartitions()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
+            {
                 BootstrapServers = "localhost:90922",
                 SocketTimeoutMs = 10
             }).Build())
@@ -98,7 +98,7 @@ namespace Confluent.Kafka.UnitTests
                 }
             }
         }
-        
+
         [Fact]
         public async void EmptyPartitions()
         {
@@ -108,7 +108,7 @@ namespace Confluent.Kafka.UnitTests
                 {
                     var result = await adminClient.ListOffsetsAsync(
                         new List<TopicPartitionOffsetSpec>
-                        {},
+                        { },
                         option);
                     Assert.Empty(result.ResultInfos);
                 }
@@ -119,7 +119,7 @@ namespace Confluent.Kafka.UnitTests
         public async void SamePartitionDifferentOffsets()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
+            {
                 BootstrapServers = "localhost:90922",
                 SocketTimeoutMs = 10
             }).Build())
@@ -154,7 +154,7 @@ namespace Confluent.Kafka.UnitTests
         public async void TwoDifferentPartitions()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
+            {
                 BootstrapServers = "localhost:90922",
                 SocketTimeoutMs = 10
             }).Build())
@@ -189,7 +189,7 @@ namespace Confluent.Kafka.UnitTests
         public async void SinglePartition()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
+            {
                 BootstrapServers = "localhost:90922",
                 SocketTimeoutMs = 10
             }).Build())

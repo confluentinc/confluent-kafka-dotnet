@@ -30,9 +30,11 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
-        public override string ToString() {
+        public override string ToString()
+        {
             string res = "Groups:\n";
-            foreach (ConsumerGroupListing cgl in Valid) {
+            foreach (ConsumerGroupListing cgl in Valid)
+            {
                 res += "\t" + cgl.ToString() + "\n";
             }
             return res;

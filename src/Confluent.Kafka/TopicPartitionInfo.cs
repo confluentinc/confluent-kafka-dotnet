@@ -65,7 +65,7 @@ namespace Confluent.Kafka
                 ISR.Select(isr =>
                     isr?.ToString() ?? "null")
             );
-            
+
             result.Append($"{{\"Partition\": {Partition}");
             result.Append($", \"Leader\": {leader}, \"Replicas\": [{replicas}]");
             result.Append($", \"ISR\": [{isrs}]}}");

@@ -1,4 +1,4 @@
-﻿// Copyright 2022 Confluent Inc.
+// Copyright 2022 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         private Metadata() { }
 
-        public Metadata(IDictionary<string, ISet<string>> tags, 
-            IDictionary<string, string> properties, 
+        public Metadata(IDictionary<string, ISet<string>> tags,
+            IDictionary<string, string> properties,
             ISet<string> sensitive)
         {
             Tags = tags;
@@ -50,10 +50,10 @@ namespace Confluent.SchemaRegistry
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Utils.DictEquals(Tags, other.Tags) && Utils.DictEquals(Properties, other.Properties) && 
+            return Utils.DictEquals(Tags, other.Tags) && Utils.DictEquals(Properties, other.Properties) &&
                 Utils.SetEquals(Sensitive, other.Sensitive);
         }
-        
+
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;

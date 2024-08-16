@@ -53,7 +53,8 @@ namespace Confluent.Kafka.Examples.ProducerExample
                 Console.WriteLine("Ctrl-C to quit.\n");
 
                 var cancelled = false;
-                Console.CancelKeyPress += (_, e) => {
+                Console.CancelKeyPress += (_, e) =>
+                {
                     e.Cancel = true; // prevent the process from terminating.
                     cancelled = true;
                 };

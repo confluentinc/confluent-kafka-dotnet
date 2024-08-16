@@ -54,11 +54,11 @@ namespace Confluent.SchemaRegistry.Serdes
     public class JsonDeserializer<T> : AsyncDeserializer<T, JsonSchema> where T : class
     {
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-        
+
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
         private JsonSchema schema = null;
-        
+
         /// <summary>
         ///     Initialize a new JsonDeserializer instance.
         /// </summary>
@@ -74,13 +74,13 @@ namespace Confluent.SchemaRegistry.Serdes
         {
         }
 
-        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) 
+        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
             : this(schemaRegistryClient, config != null ? new JsonDeserializerConfig(config) : null, jsonSchemaGeneratorSettings)
         {
         }
 
-        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, JsonDeserializerConfig config, 
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null) 
+        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, JsonDeserializerConfig config,
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
             : base(schemaRegistryClient, config, ruleExecutors)
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
@@ -155,7 +155,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 throw new InvalidDataException($"Expecting data framing of length 6 bytes or more but total data size is {array.Length} bytes");
             }
-            
+
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
             string subject = this.subjectNameStrategy != null
@@ -164,15 +164,15 @@ namespace Confluent.SchemaRegistry.Serdes
                     new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic),
                     null)
                 // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                : schemaRegistryClient == null 
+                : schemaRegistryClient == null
                     ? null
-                    : isKey 
+                    : isKey
                         ? schemaRegistryClient.ConstructKeySubjectName(topic)
                         : schemaRegistryClient.ConstructValueSubjectName(topic);
-            
+
             Schema latestSchema = await GetReaderSchema(subject)
                 .ConfigureAwait(continueOnCapturedContext: false);
-                
+
             try
             {
                 Schema writerSchema = null;
@@ -194,7 +194,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         (writerSchema, writerSchemaJson) = await GetSchema(subject, writerId);
                     }
-                    
+
                     if (latestSchema != null)
                     {
                         migrations = await GetMigrations(subject, writerSchema, latestSchema)
@@ -231,7 +231,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         using (var jsonReader = new StreamReader(jsonStream, Encoding.UTF8))
                         {
                             string serializedString = jsonReader.ReadToEnd();
-                    
+
                             if (schema != null)
                             {
                                 var validationResult = validator.Validate(serializedString, schema);
@@ -261,8 +261,8 @@ namespace Confluent.SchemaRegistry.Serdes
                             writerSchema, value, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
-                } 
-                    
+                }
+
                 return value;
             }
             catch (AggregateException e)
@@ -275,7 +275,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, jsonSchemaGeneratorSettings);
-            
+
             return await utils.GetResolvedSchema();
         }
     }

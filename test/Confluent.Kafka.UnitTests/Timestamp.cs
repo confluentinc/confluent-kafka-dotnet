@@ -122,11 +122,11 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal(0, Timestamp.DateTimeToUnixTimestampMs(Timestamp.UnixTimeEpoch));
             Assert.Equal(DateTimeKind.Utc, Timestamp.UnixTimeEpoch.Kind);
         }
-        
+
         [Fact]
         public void DateTimeProperties()
         {
-            var ts = new Timestamp(1, TimestampType.CreateTime);            
+            var ts = new Timestamp(1, TimestampType.CreateTime);
             Assert.Equal(DateTimeKind.Utc, ts.UtcDateTime.Kind);
             Assert.Equal(1, (ts.UtcDateTime - Timestamp.UnixTimeEpoch).TotalMilliseconds);
         }
@@ -135,7 +135,7 @@ namespace Confluent.Kafka.UnitTests
         public void Rounding()
         {
             // check is to millisecond accuracy, rounding down the value
-            
+
             var dateTimeAfterEpoch = new DateTime(2012, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
             var dateTimeBeforeEpoch = new DateTime(1950, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
 
@@ -147,7 +147,7 @@ namespace Confluent.Kafka.UnitTests
                 var unixTime4 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(-1));
 
                 var expectedUnixTime = Timestamp.DateTimeToUnixTimestampMs(datetime);
-                
+
                 Assert.Equal(expectedUnixTime, unixTime1);
                 Assert.Equal(expectedUnixTime, unixTime2);
                 Assert.Equal(expectedUnixTime + 1, unixTime3);

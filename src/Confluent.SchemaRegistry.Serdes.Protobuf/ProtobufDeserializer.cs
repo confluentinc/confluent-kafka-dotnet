@@ -50,7 +50,7 @@ namespace Confluent.SchemaRegistry.Serdes
     public class ProtobufDeserializer<T> : AsyncDeserializer<T, FileDescriptorSet> where T : class, IMessage<T>, new()
     {
         private bool useDeprecatedFormat;
-        
+
         private MessageParser<T> parser;
 
         /// <summary>
@@ -64,12 +64,12 @@ namespace Confluent.SchemaRegistry.Serdes
         {
         }
 
-        public ProtobufDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null) 
+        public ProtobufDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
             : this(schemaRegistryClient, config != null ? new ProtobufDeserializerConfig(config) : null)
         {
         }
 
-        public ProtobufDeserializer(ISchemaRegistryClient schemaRegistryClient, ProtobufDeserializerConfig config, 
+        public ProtobufDeserializer(ISchemaRegistryClient schemaRegistryClient, ProtobufDeserializerConfig config,
             IList<IRuleExecutor> ruleExecutors = null) : base(schemaRegistryClient, config, ruleExecutors)
         {
             this.parser = new MessageParser<T>(() => new T());
@@ -129,12 +129,12 @@ namespace Confluent.SchemaRegistry.Serdes
                     new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic),
                     null)
                 // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                : schemaRegistryClient == null 
+                : schemaRegistryClient == null
                     ? null
-                    : isKey 
+                    : isKey
                         ? schemaRegistryClient.ConstructKeySubjectName(topic)
                         : schemaRegistryClient.ConstructValueSubjectName(topic);
-            
+
             // Currently Protobuf does not support migration rules because of lack of support for DynamicMessage
             // See https://github.com/protocolbuffers/protobuf/issues/658
             /*
@@ -166,7 +166,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     // needed, but parsing them is the easiest way to seek to the start of
                     // the serialized data because they are varints.
                     var indicesLength = useDeprecatedFormat ? (int)stream.ReadUnsignedVarint() : stream.ReadVarint();
-                    for (int i=0; i<indicesLength; ++i)
+                    for (int i = 0; i < indicesLength; ++i)
                     {
                         if (useDeprecatedFormat)
                         {
@@ -197,7 +197,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
-                
+
                 return message;
             }
             catch (AggregateException e)

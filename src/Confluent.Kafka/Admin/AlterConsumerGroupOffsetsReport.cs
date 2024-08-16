@@ -44,7 +44,8 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///    Returns a human readable representation of this object.
         /// </summary>
-        public override string ToString() {
+        public override string ToString()
+        {
             var errString = Error.IsError ? Error.ToString() : "";
             return $"{Group} [ {String.Join(", ", Partitions)} ] {errString}";
         }

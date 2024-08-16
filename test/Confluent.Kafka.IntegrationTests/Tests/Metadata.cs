@@ -49,26 +49,26 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(deserialized.Value<string>("OriginatingBrokerName"), metadata.OriginatingBrokerName);
                 var topics = new List<JToken>(deserialized["Topics"].Children());
                 Assert.Equal(metadata.Topics.Count, topics.Count);
-                for (int i=0; i<metadata.Topics.Count; ++i)
+                for (int i = 0; i < metadata.Topics.Count; ++i)
                 {
                     Assert.Equal(topics[i].Value<string>("Error"), metadata.Topics[i].Error.Code.ToString());
                     Assert.Equal(topics[i].Value<string>("Topic"), metadata.Topics[i].Topic);
                     var partitions = new List<JToken>(topics[i]["Partitions"].Children());
                     Assert.Equal(partitions.Count, metadata.Topics[i].Partitions.Count);
-                    for (int j=0; j<metadata.Topics[i].Partitions.Count; ++j)
+                    for (int j = 0; j < metadata.Topics[i].Partitions.Count; ++j)
                     {
                         Assert.Equal(partitions[j].Value<string>("Error"), metadata.Topics[i].Partitions[j].Error.Code.ToString());
                         Assert.Equal(partitions[j].Value<int>("Leader"), metadata.Topics[i].Partitions[j].Leader);
                         Assert.Equal(partitions[j].Value<int>("PartitionId"), metadata.Topics[i].Partitions[j].PartitionId);
                         var replicas = new List<JToken>(partitions[j]["Replicas"].Children());
                         Assert.Equal(replicas.Count, metadata.Topics[i].Partitions[j].Replicas.Length);
-                        for (int k=0; k<metadata.Topics[i].Partitions[j].Replicas.Length; ++k)
+                        for (int k = 0; k < metadata.Topics[i].Partitions[j].Replicas.Length; ++k)
                         {
                             Assert.Equal(replicas[k].Value<int>(), metadata.Topics[i].Partitions[j].Replicas[k]);
                         }
                         var inSyncReplicas = new List<JToken>(partitions[j]["InSyncReplicas"].Children());
                         Assert.Equal(inSyncReplicas.Count, metadata.Topics[i].Partitions[j].InSyncReplicas.Length);
-                        for (int k=0; k<metadata.Topics[i].Partitions[j].InSyncReplicas.Length; ++k)
+                        for (int k = 0; k < metadata.Topics[i].Partitions[j].InSyncReplicas.Length; ++k)
                         {
                             Assert.Equal(inSyncReplicas[k].Value<int>(), metadata.Topics[i].Partitions[j].InSyncReplicas[k]);
                         }
@@ -77,7 +77,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var brokers = new List<JToken>(deserialized["Brokers"].Children());
                 Assert.Equal(metadata.Brokers.Count, brokers.Count);
-                for (int i=0; i<metadata.Brokers.Count; ++i)
+                for (int i = 0; i < metadata.Brokers.Count; ++i)
                 {
                     Assert.Equal(metadata.Brokers[i].BrokerId, brokers[i].Value<int>("BrokerId"));
                     Assert.Equal(metadata.Brokers[i].Host, brokers[i].Value<string>("Host"));

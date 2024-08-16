@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2020 Confluent Inc.
+// Copyright 2016-2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ namespace Confluent.SchemaRegistry
             new Dictionary<string, Dictionary<int, RegisteredSchema>>();
 
         private readonly MemoryCache latestVersionBySubject = new MemoryCache(new MemoryCacheOptions());
-        
+
         private readonly MemoryCache latestWithMetadataBySubject = new MemoryCache(new MemoryCacheOptions());
 
         private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
@@ -110,7 +110,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Topic;
 
-        
+
         /// <inheritdoc />
         public IEnumerable<KeyValuePair<string, string>> Config
             => config;
@@ -173,7 +173,7 @@ namespace Confluent.SchemaRegistry
             {
                 throw new ArgumentNullException("config properties must be specified.");
             }
-            
+
             this.config = config;
 
             keySubjectNameStrategy = GetKeySubjectNameStrategy(config);
@@ -229,7 +229,7 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentException(
                     $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs} must be an integer.");
             }
-            
+
             var basicAuthSource = config.FirstOrDefault(prop =>
                     prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource)
                 .Value ?? "";
@@ -658,7 +658,7 @@ namespace Confluent.SchemaRegistry
             RegisteredSchema schema;
             if (!latestWithMetadataBySubject.TryGetValue(key, out schema))
             {
-                schema =  await restService.GetLatestWithMetadataAsync(subject, metadata, ignoreDeletedSchemas).ConfigureAwait(continueOnCapturedContext: false);
+                schema = await restService.GetLatestWithMetadataAsync(subject, metadata, ignoreDeletedSchemas).ConfigureAwait(continueOnCapturedContext: false);
                 MemoryCacheEntryOptions opts = new MemoryCacheEntryOptions();
                 if (latestCacheTtlSecs > 0)
                 {

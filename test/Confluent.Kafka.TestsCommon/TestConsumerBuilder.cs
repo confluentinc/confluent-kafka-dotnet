@@ -16,7 +16,8 @@ public class TestConsumerBuilder<TKey, TValue> : ConsumerBuilder<TKey, TValue>
         IEnumerable<KeyValuePair<string, string>> config)
     {
         var consumerConfig = new ConsumerConfig(
-            new Dictionary<string, string>(config)) {};
+            new Dictionary<string, string>(config))
+        { };
 
         var groupProtocol = TestConsumerGroupProtocol.GroupProtocol();
         if (groupProtocol != null)
@@ -26,7 +27,7 @@ public class TestConsumerBuilder<TKey, TValue> : ConsumerBuilder<TKey, TValue>
                 GroupProtocol.Consumer;
         }
 
-        
+
         return consumerConfig;
     }
 }

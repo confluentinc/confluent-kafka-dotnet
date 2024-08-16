@@ -40,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             ThreadPool.GetMaxThreads(out int originalWorkerThreads, out int originalCompletionPortThreads);
 
-            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);   
+            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);
             ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
             ThreadPool.GetMaxThreads(out workerThreads, out completionPortThreads);
 
@@ -56,15 +56,15 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 var tasks = new List<Task>();
 
-                int N = workerThreads+2;
-                for (int i=0; i<N; ++i)
+                int N = workerThreads + 2;
+                for (int i = 0; i < N; ++i)
                 {
                     tasks.Add(producer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "test" }));
                 }
 
                 Task.WaitAll(tasks.ToArray());
 
-                for (int i=0; i<N; ++i)
+                for (int i = 0; i < N; ++i)
                 {
                     tasks.Add(dProducer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "test" }));
                 }

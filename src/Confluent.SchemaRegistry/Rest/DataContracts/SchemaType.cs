@@ -15,7 +15,7 @@
 // Refer to LICENSE for more information.
 
 
-namespace  Confluent.SchemaRegistry
+namespace Confluent.SchemaRegistry
 {
     /// <summary>
     ///     Enumerates the types of schema supported by Schema Registry.

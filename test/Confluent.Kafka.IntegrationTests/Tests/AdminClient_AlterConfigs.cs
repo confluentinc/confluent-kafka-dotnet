@@ -73,42 +73,42 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotEqual("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 4. do a valid call, and check that the alteration did correctly happen.
-                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
-                { 
-                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="10011" } } } 
+                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
+                {
+                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="10011" } } }
                 };
                 adminClient.AlterConfigsAsync(toUpdate);
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
                 Assert.Equal("10011", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 4. test ValidateOnly = true does not update config entry.
-                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
-                { 
-                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="20002" } } } 
+                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
+                {
+                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="20002" } } }
                 };
                 adminClient.AlterConfigsAsync(toUpdate, new AlterConfigsOptions { ValidateOnly = true }).Wait();
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
                 Assert.Equal("10011", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 5. test updating broker resource. 
-                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
+                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
                 {
-                    { 
+                    {
                         new ConfigResource { Name = "0", Type = ResourceType.Broker },
                         new List<ConfigEntry> { new ConfigEntry { Name="num.network.threads", Value="6" } }
                     }
                 };
                 adminClient.AlterConfigsAsync(toUpdate).Wait();
                 // Reset to default
-                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
+                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
                 {
-                    { 
+                    {
                         new ConfigResource { Name = "0", Type = ResourceType.Broker },
                         new List<ConfigEntry> { new ConfigEntry { Name="num.network.threads", Value="3" } }
                     }
                 };
                 adminClient.AlterConfigsAsync(toUpdate).Wait();
-                
+
                 // 6. test updating more than one resource.
                 string topicName2 = Guid.NewGuid().ToString();
                 adminClient.CreateTopicsAsync(
@@ -116,7 +116,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throws unknown topic/partition error.
 
                 var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
-                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
+                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
                 {
                     { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="222" } } },
                     { configResource2, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="333" } } }

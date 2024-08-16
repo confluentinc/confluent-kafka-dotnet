@@ -32,7 +32,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         {
             using (var topic1 = new TemporaryTopic(bootstrapServers, 1))
             using (var topic2 = new TemporaryTopic(bootstrapServers, 1))
-            {            
+            {
                 var producerConfig = new ProducerConfig
                 {
                     BootstrapServers = bootstrapServers
@@ -134,7 +134,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic2.Name, 0, 0));
-                        Assert.ThrowsAny<ConsumeException>(() => 
+                        Assert.ThrowsAny<ConsumeException>(() =>
                             {
                                 try
                                 {

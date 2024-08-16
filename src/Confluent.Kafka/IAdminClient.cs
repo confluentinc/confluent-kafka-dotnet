@@ -536,7 +536,7 @@ namespace Confluent.Kafka
     /// </summary>
     public static class IAdminClientExtensions
     {
-        
+
         /// <summary>
         ///    Describes topics in the cluster.
         /// </summary>
@@ -569,7 +569,7 @@ namespace Confluent.Kafka
         {
             if (adminClient is AdminClient)
             {
-                return ((AdminClient) adminClient).DescribeTopicsAsync(
+                return ((AdminClient)adminClient).DescribeTopicsAsync(
                     topicCollection, options);
             }
             throw new NotImplementedException();
@@ -596,12 +596,12 @@ namespace Confluent.Kafka
         {
             if (adminClient is AdminClient)
             {
-                return ((AdminClient) adminClient).DescribeClusterAsync(
+                return ((AdminClient)adminClient).DescribeClusterAsync(
                     options);
             }
             throw new NotImplementedException();
         }
-        
+
         /// <summary>
         ///     Enables to find the beginning offset,
         ///     end offset as well as the offset matching a timestamp
@@ -623,7 +623,7 @@ namespace Confluent.Kafka
         {
             if (adminClient is AdminClient)
             {
-                return ((AdminClient) adminClient).ListOffsetsAsync(
+                return ((AdminClient)adminClient).ListOffsetsAsync(
                         topicPartitionOffsets,
                         options);
             }

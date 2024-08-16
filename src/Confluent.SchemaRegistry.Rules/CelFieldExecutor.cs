@@ -1,4 +1,4 @@
-﻿using Google.Protobuf;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 
 namespace Confluent.SchemaRegistry.Rules
@@ -25,7 +25,7 @@ namespace Confluent.SchemaRegistry.Rules
         public override void Configure(IEnumerable<KeyValuePair<string, string>> config)
         {
         }
-        
+
         public override IFieldTransform NewTransform(RuleContext ctx)
         {
             CelFieldExecutorTransform transform = new CelFieldExecutorTransform(celExecutor);
@@ -37,11 +37,11 @@ namespace Confluent.SchemaRegistry.Rules
         {
             celExecutor.Dispose();
         }
-        
+
         public class CelFieldExecutorTransform : IFieldTransform
         {
             private CelExecutor celExecutor;
-            
+
             public CelFieldExecutorTransform(CelExecutor celExecutor)
             {
                 this.celExecutor = celExecutor;
@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Rules
 
             public async Task<object> Transform(RuleContext ctx, RuleContext.FieldContext fieldCtx, object fieldValue)
             {
-                if (!fieldCtx.IsPrimitive()) 
+                if (!fieldCtx.IsPrimitive())
                 {
                     // CEL field transforms only apply to primitive types
                     return fieldValue;
@@ -75,7 +75,7 @@ namespace Confluent.SchemaRegistry.Rules
                 }
                 return result;
             }
-            
+
             public void Dispose()
             {
             }

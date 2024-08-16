@@ -106,7 +106,7 @@ namespace Confluent.Kafka
                 {
                     throw new MessageNullException();
                 }
-                
+
                 return Message.Value;
             }
         }
@@ -140,7 +140,7 @@ namespace Confluent.Kafka
                 {
                     throw new MessageNullException();
                 }
-                
+
                 return Message.Headers;
             }
         }

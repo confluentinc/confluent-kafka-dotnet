@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
                     var cr2 = consumer.Consume();
                     var cr3 = consumer.Consume(TimeSpan.FromMilliseconds(100)); // force the consumer to read over the final control message internally.
                     Assert.Equal(wm.High, cr1.Offset);
-                    Assert.Equal(wm.High+2, cr2.Offset); // there should be a skipped offset due to a commit marker in the log.
+                    Assert.Equal(wm.High + 2, cr2.Offset); // there should be a skipped offset due to a commit marker in the log.
                     Assert.Null(cr3); // control message should not be exposed to application.
 
                     // Test that the committed offset accounts for the final ctrl message.
@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
 
                 using (var producer = new TestProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
-                using (var consumer = new TestConsumerBuilder<string, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, AutoOffsetReset=AutoOffsetReset.Latest }).Build())
+                using (var consumer = new TestConsumerBuilder<string, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, AutoOffsetReset = AutoOffsetReset.Latest }).Build())
                 {
                     consumer.Assign(new TopicPartition(topic.Name, 0));
 

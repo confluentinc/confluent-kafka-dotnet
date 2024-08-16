@@ -19,7 +19,7 @@ using System.Runtime.Serialization;
 using System.Collections.Generic;
 
 
-namespace  Confluent.SchemaRegistry
+namespace Confluent.SchemaRegistry
 {
     /// <summary>
     ///     Represents a schema.
@@ -103,7 +103,7 @@ namespace  Confluent.SchemaRegistry
 
         [DataMember(Name = "schemaType")]
         internal string SchemaType_String { get; set; }
-        
+
         /// <summary>
         ///     Metadata for the schema
         /// </summary>

@@ -50,7 +50,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 ReferencedMessage ref = 2 [(.confluent.field_meta).annotation = ""PII""];
 
             }";
-            
+
             string import = @"syntax = ""proto3"";
             package io.confluent.kafka.serializers.protobuf.test;
 
@@ -112,12 +112,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -159,12 +159,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name != 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -200,12 +200,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
                         "typeName == 'STRING' ; value + '-suffix'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -247,12 +247,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null,
                         "name == 'name' ; value == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -294,12 +294,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null,
                         "name == 'name' ; value != 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -332,14 +332,14 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 string name = 3 [(.confluent.field_meta) = { tags: ""PII"" }];
                 bytes picture = 4 [(.confluent.field_meta) = { tags: ""PII"" }];
             }";
-            
+
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Protobuf, null);
             schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
-                {
-                    ["example.PersonWithPic.name"] = new HashSet<string> { "PII" },
-                    ["example.PersonWithPic.picture"] = new HashSet<string> { "PII" }
+            {
+                ["example.PersonWithPic.name"] = new HashSet<string> { "PII" },
+                ["example.PersonWithPic.picture"] = new HashSet<string> { "PII" }
 
-                }, new Dictionary<string, string>(), new HashSet<string>()
+            }, new Dictionary<string, string>(), new HashSet<string>()
             );
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
@@ -356,7 +356,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -364,8 +364,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
             config.Set("rules.secret", "mysecret");
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var serializer = new ProtobufSerializer<PersonWithPic>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
-            var deserializer = new ProtobufDeserializer<PersonWithPic>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+            var serializer = new ProtobufSerializer<PersonWithPic>(schemaRegistryClient, config, new List<IRuleExecutor> { ruleExecutor });
+            var deserializer = new ProtobufDeserializer<PersonWithPic>(schemaRegistryClient, null, new List<IRuleExecutor> { ruleExecutor });
 
 
             var pic = new byte[] { 1, 2, 3 };

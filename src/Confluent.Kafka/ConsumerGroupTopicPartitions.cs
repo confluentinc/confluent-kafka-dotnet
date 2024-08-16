@@ -32,7 +32,8 @@ namespace Confluent.Kafka
         /// <param name="topicPartitions">
         ///     A list of Kafka (topic, partition) tuples.
         /// </param>
-        public ConsumerGroupTopicPartitions(string group, List<TopicPartition> topicPartitions) {
+        public ConsumerGroupTopicPartitions(string group, List<TopicPartition> topicPartitions)
+        {
             this.TopicPartitions = topicPartitions;
             this.Group = group;
         }

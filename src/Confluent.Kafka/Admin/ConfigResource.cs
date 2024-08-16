@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Admin
         /// </returns>
         public override int GetHashCode()
             // x by prime number is quick and gives decent distribution.
-            => Type.GetHashCode()*251 + Name.GetHashCode();
+            => Type.GetHashCode() * 251 + Name.GetHashCode();
 
         /// <summary>
         ///     Tests whether ConfigResource instance a is equal to ConfigResource instance b.

@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Impl
         // TODO: deduplicate, merge with other one
         internal Dictionary<string, string> Dump()
         {
-            UIntPtr cntp = (UIntPtr) 0;
+            UIntPtr cntp = (UIntPtr)0;
             IntPtr data = Librdkafka.topic_conf_dump(handle, out cntp);
 
             if (data == IntPtr.Zero)
@@ -56,14 +56,14 @@ namespace Confluent.Kafka.Impl
 
             try
             {
-                if (((int) cntp & 1) != 0)
+                if (((int)cntp & 1) != 0)
                 {
                     // Expect Key -> Value, so even number of strings
                     throw new Exception("Invalid number of config entries");
                 }
 
                 var dict = new Dictionary<string, string>();
-                for (int i = 0; i < (int) cntp / 2; ++i)
+                for (int i = 0; i < (int)cntp / 2; ++i)
                 {
                     dict.Add(Util.Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(data, 2 * i * Util.Marshal.SizeOf<IntPtr>())),
                              Util.Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(data, (2 * i + 1) * Util.Marshal.SizeOf<IntPtr>())));
@@ -81,7 +81,7 @@ namespace Confluent.Kafka.Impl
         {
             var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
             ConfRes res = Librdkafka.topic_conf_set(handle, name, value,
-                    errorStringBuilder, (UIntPtr) errorStringBuilder.Capacity);
+                    errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
             if (res == ConfRes.Ok)
             {
                 return;
@@ -108,7 +108,7 @@ namespace Confluent.Kafka.Impl
             ConfRes res = Librdkafka.topic_conf_get(handle, name, null, ref destSize);
             if (res == ConfRes.Ok)
             {
-                sb = new StringBuilder((int) destSize);
+                sb = new StringBuilder((int)destSize);
                 res = Librdkafka.topic_conf_get(handle, name, sb, ref destSize);
             }
             if (res != ConfRes.Ok)

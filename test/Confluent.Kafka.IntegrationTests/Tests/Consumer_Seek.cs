@@ -61,7 +61,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(record.Message);
                 // check leader epoch of first record
                 Assert.Equal(0, record.LeaderEpoch);
-                
+
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -75,18 +75,18 @@ namespace Confluent.Kafka.IntegrationTests
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Equal(checkValue, record.Message.Value);
-                
+
                 consumer.Seek(firstRecord.TopicPartitionOffset);
-                
+
                 // position shouldn't be equal to the seek position.
                 var tpo = consumer.PositionTopicPartitionOffset(record.TopicPartition);
                 Assert.NotEqual(firstRecord.Offset, tpo.Offset);
-                
+
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Equal(checkValue, record.Message.Value);
                 Assert.Equal(0, record.LeaderEpoch);
-                
+
                 // position should be equal to last consumed message position + 1.
                 tpo = consumer.PositionTopicPartitionOffset(record.TopicPartition);
                 Assert.Equal(record.Offset + 1, tpo.Offset);

@@ -41,7 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
                           "for topics not in local cache");
                 return;
             }
-            
+
             LogToFile("start Consumer_Poll_MessageError");
 
             var consumerConfig = new ConsumerConfig

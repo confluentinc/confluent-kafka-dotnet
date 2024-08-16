@@ -35,7 +35,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start Producer_Produce");
 
             var producerConfig = new ProducerConfig
-            { 
+            {
                 BootstrapServers = bootstrapServers,
                 EnableIdempotence = true,
                 LingerMs = 1.5
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new TestProducerBuilder<string, string>(producerConfig).Build())
             {
                 producer.Produce(
-                    new TopicPartition(singlePartitionTopic, 0), 
+                    new TopicPartition(singlePartitionTopic, 0),
                     new Message<string, string> { Key = "test key 0", Value = "test val 0" }, dh);
 
                 producer.Produce(
@@ -95,11 +95,11 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 producer.Produce(
-                    new TopicPartition(singlePartitionTopic, 0), 
+                    new TopicPartition(singlePartitionTopic, 0),
                     new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 42"), Value = Encoding.UTF8.GetBytes("test val 42") }, dh2);
 
                 producer.Produce(
-                    singlePartitionTopic, 
+                    singlePartitionTopic,
                     new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 43"), Value = Encoding.UTF8.GetBytes("test val 43") }, dh2);
 
                 producer.Flush(TimeSpan.FromSeconds(10));

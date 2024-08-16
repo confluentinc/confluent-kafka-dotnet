@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             var topicName1 = Guid.NewGuid().ToString();
             var topicName2 = Guid.NewGuid().ToString();
             var topicName3 = Guid.NewGuid().ToString();
-            
+
             // test single delete topic.
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
@@ -70,7 +70,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 catch (AggregateException ex)
                 {
-                    var dte = (DeleteTopicsException) ex.InnerException;
+                    var dte = (DeleteTopicsException)ex.InnerException;
                     Assert.Equal(2, dte.Results.Count);
                     Assert.Single(dte.Results.Where(r => r.Error.IsError));
                     Assert.Single(dte.Results.Where(r => !r.Error.IsError));

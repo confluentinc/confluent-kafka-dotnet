@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Admin
         ///     Literal: A literal resource name
         /// </summary>        
         Literal = 3,
-        
+
         /// <summary>
         ///     Prefixed: A prefixed resource name
         /// </summary>        

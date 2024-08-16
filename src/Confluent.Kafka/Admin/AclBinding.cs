@@ -52,7 +52,7 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         public AclBinding Clone()
         {
-            var ret = (AclBinding) MemberwiseClone();
+            var ret = (AclBinding)MemberwiseClone();
             ret.Pattern = ret.Pattern.Clone();
             ret.Entry = ret.Entry.Clone();
             return ret;

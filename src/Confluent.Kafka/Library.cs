@@ -22,7 +22,7 @@ using System.Threading;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Impl;
 
-[assembly:CLSCompliant(true)]
+[assembly: CLSCompliant(true)]
 
 
 namespace Confluent.Kafka
@@ -49,7 +49,7 @@ namespace Confluent.Kafka
             get
             {
                 Librdkafka.Initialize(null);
-                return (int) Librdkafka.version();
+                return (int)Librdkafka.version();
             }
         }
 

@@ -43,9 +43,9 @@ namespace Confluent.Kafka.Admin
             var result = new StringBuilder();
             result.Append(
                 "{\"UserScramCredentialsDescriptions\": [");
-            result.Append(string.Join(",",UserScramCredentialsDescriptions.Select(u => u.ToString())));
+            result.Append(string.Join(",", UserScramCredentialsDescriptions.Select(u => u.ToString())));
             result.Append("]}");
-            return  result.ToString();
+            return result.ToString();
         }
     }
 }
