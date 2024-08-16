@@ -51,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
             for (var i = 0; i < 10; i++)
             {
                 using var consumer = new TestConsumerBuilder<Ignore, Ignore>(consumerConfig).Build();
-                
+
                 consumer.Subscribe(topic.Name);
                 Task.Delay(TimeSpan.FromSeconds(1)).Wait();
 
@@ -59,7 +59,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(info);
                 Assert.Equal(i + 1, info.Members.Count);
             }
-            
+
             LogToFile("end   AdminClient_ListGroups");
         }
     }

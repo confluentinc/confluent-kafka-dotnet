@@ -59,7 +59,7 @@ namespace Confluent.Kafka.IntegrationTests
                 new TestConsumerBuilder<byte[], byte[]>(consumerConfig)
                     .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
                     .Build())
-            {                    
+            {
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
                 var record = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -68,7 +68,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(TimestampType.NotAvailable, record.Message.Timestamp.Type);
                 Assert.Equal(0, record.Message.Timestamp.UnixTimestampMs);
             }
-            
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_DisableTimestamps");
         }

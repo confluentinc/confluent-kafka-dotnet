@@ -58,7 +58,8 @@ namespace Confluent.Kafka.UnitTests
                     PermissionType = AclPermissionType.Allow
                 }
             };
-            var acl3 = new AclBinding {
+            var acl3 = new AclBinding
+            {
                 Pattern = new ResourcePattern
                 {
                     Type = ResourceType.Topic,
@@ -139,7 +140,7 @@ namespace Confluent.Kafka.UnitTests
             Assert.True(aclF1 == aclF2);
             Assert.False(aclF1 != aclF2);
         }
-    
+
         [Fact]
         public void ToStringTest()
         {

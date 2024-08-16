@@ -52,7 +52,8 @@ namespace Confluent.Kafka.UnitTests
 
         private static IList<AclBinding> CopyAclBindings(IList<AclBinding> original)
         {
-            return original.Select((aclBinding) => {
+            return original.Select((aclBinding) =>
+            {
                 return aclBinding.Clone();
             }).ToList().AsReadOnly();
         }
@@ -146,7 +147,8 @@ namespace Confluent.Kafka.UnitTests
                     "Invalid principal",
                     "Invalid host",
                 };
-                var invalidTests = suffixes.Select((suffix) => {
+                var invalidTests = suffixes.Select((suffix) =>
+                {
                     return CopyAclBindings(testAclBindings);
                 }).ToList();
                 invalidTests[0][0].Pattern.Type = ResourceType.Unknown;

@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
                 .SetPartitionsAssignedHandler((c, partitions) =>
                 {
                     assignmentDone = true;
-                    Assert.Equal(1, partitions.Count());
+                    Assert.Single(partitions);
                     Assert.Equal(0, partitions[0].Partition.Value);
                     Assert.Equal(topic1.Name, partitions[0].Topic);
                 }).Build())
@@ -55,17 +55,17 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer1.Commit(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic1.Name, 0, offsetToCommit) }); // commit some offset for consumer
 
                 var committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(10));
-                Assert.Equal(1, committedOffsets.Count);
+                Assert.Single(committedOffsets);
                 Assert.Equal(offsetToCommit, committedOffsets[0].Offset);
 
                 List<TopicPartition> topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic1.Name, 0) };
                 var res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
                 Assert.Equal(groupId1, res.Group);
-                Assert.Equal(1, res.Partitions.Count);
+                Assert.Single(res.Partitions);
                 Assert.Equal(0, res.Partitions[0].Partition.Value);
 
                 committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
-                Assert.Equal(1, committedOffsets.Count);
+                Assert.Single(committedOffsets);
                 Assert.Equal(Offset.Unset, committedOffsets[0].Offset);
 
                 // Ensure consumer is actively subscribed to the topic
@@ -79,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer1.Commit(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic1.Name, 0, offsetToCommit) }); // commit some offset for consumer
 
                 committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(10));
-                Assert.Equal(1, committedOffsets.Count);
+                Assert.Single(committedOffsets);
                 Assert.Equal(offsetToCommit, committedOffsets[0].Offset);
 
                 topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic1.Name, 0) };
@@ -93,12 +93,12 @@ namespace Confluent.Kafka.IntegrationTests
                     var dcgoe = (DeleteConsumerGroupOffsetsException)ex.InnerException;
                     Assert.Equal(ErrorCode.Local_Partial, dcgoe.Error.Code);
                     Assert.Equal(groupId1, dcgoe.Result.Group);
-                    Assert.Equal(1, dcgoe.Result.Partitions.Count);
+                    Assert.Single(dcgoe.Result.Partitions);
                     Assert.Equal(0, dcgoe.Result.Partitions[0].Partition.Value);
                 }
 
                 committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
-                Assert.Equal(1, committedOffsets.Count);
+                Assert.Single(committedOffsets);
                 Assert.Equal(offsetToCommit, committedOffsets[0].Offset); // offset is unchanged as the consumer is actively subscribed to the topic
 
                 consumer1.Unsubscribe();
@@ -107,17 +107,17 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer1.Assign(new List<TopicPartition>() { new TopicPartition(topic2.Name, 0) });
 
                 committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
-                Assert.Equal(1, committedOffsets.Count);
+                Assert.Single(committedOffsets);
                 Assert.Equal(Offset.Unset, committedOffsets[0].Offset);
 
                 topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic2.Name, 0) };
                 res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
                 Assert.Equal(groupId1, res.Group);
-                Assert.Equal(1, res.Partitions.Count);
+                Assert.Single(res.Partitions);
                 Assert.Equal(0, res.Partitions[0].Partition.Value);
 
                 committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
-                Assert.Equal(1, committedOffsets.Count);
+                Assert.Single(committedOffsets);
                 Assert.Equal(Offset.Unset, committedOffsets[0].Offset); // offsets are unchaged after the reset
 
                 // Resetting offset for only one partiton in a multi partition topic
@@ -133,7 +133,7 @@ namespace Confluent.Kafka.IntegrationTests
                 topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic3.Name, 0) };
                 res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
                 Assert.Equal(groupId1, res.Group);
-                Assert.Equal(1, res.Partitions.Count);
+                Assert.Single(res.Partitions);
                 Assert.Equal(0, res.Partitions[0].Partition.Value);
 
                 committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));

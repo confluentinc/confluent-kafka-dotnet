@@ -31,29 +31,29 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
     {
         class Order
         {
-            public DateTime OrderDate {get; set;}
-            
-            public OrderDetails OrderDetails {get; set;}
+            public DateTime OrderDate { get; set; }
+
+            public OrderDetails OrderDetails { get; set; }
         }
-        
+
         class OrderDetails
         {
-            public int Id {get; set;}
-            
-            public Customer Customer {get; set;}
-            
-            public string PaymentId {get; set;}
+            public int Id { get; set; }
+
+            public Customer Customer { get; set; }
+
+            public string PaymentId { get; set; }
         }
-        
+
         class Customer
         {
-            public int Id {get; set;}
+            public int Id { get; set; }
 
-            public string Name {get; set;}
-            
-            public string Email {get; set;}
+            public string Name { get; set; }
+
+            public string Email { get; set; }
         }
-        
+
         private static string Schema1 = @"
 {
     ""$schema"": ""http://json-schema.org/draft-07/schema#"",
@@ -185,7 +185,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     },
                     OrderDate = DateTime.UtcNow
                 };
-                
+
                 using (var producer =
                     new ProducerBuilder<string, Order>(producerConfig)
                         .SetValueSerializer(new JsonSerializer<Order>(schemaRegistry, s2.Schema,
@@ -194,7 +194,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     producer.ProduceAsync(topic.Name, new Message<string, Order> { Key = "test1", Value = order }).Wait();
                 }
-                
+
                 using (var consumer =
                 new ConsumerBuilder<string, Order>(consumerConfig)
                     .SetValueDeserializer(new JsonDeserializer<Order>(sr, s2.Schema,
@@ -211,7 +211,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(order,
                     jsonSchemaGeneratorSettings.ActualSerializerSettings);
                 var jsonObject = JObject.Parse(serializedString);
-                
+
                 using (var producer =
                     new ProducerBuilder<string, JObject>(producerConfig)
                         .SetValueSerializer(new JsonSerializer<JObject>(schemaRegistry, s2.Schema,
@@ -220,7 +220,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     producer.ProduceAsync(topic.Name, new Message<string, JObject> { Key = "test1", Value = jsonObject }).Wait();
                 }
-                
+
                 using (var consumer =
                 new ConsumerBuilder<string, JObject>(consumerConfig)
                     .SetValueDeserializer(new JsonDeserializer<JObject>(sr, s2.Schema,

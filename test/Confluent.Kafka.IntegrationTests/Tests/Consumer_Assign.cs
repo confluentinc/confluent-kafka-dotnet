@@ -36,7 +36,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             int N = 5;
 
-            Action<IConsumer<byte[], byte[]>> test = consumer => {
+            Action<IConsumer<byte[], byte[]>> test = consumer =>
+            {
                 using (var topic = new TemporaryTopic(bootstrapServers, 1))
                 {
                     Util.ProduceNullStringMessages(bootstrapServers, topic.Name, 1, N);
@@ -53,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
                     var cr3 = consumer.Consume(TimeSpan.FromSeconds(10));
                     Assert.Equal(N, cr3.Offset);
                     var p = consumer.Position(new TopicPartition(topic.Name, 0));
-                    Assert.Equal(N+1, p.Value);
+                    Assert.Equal(N + 1, p.Value);
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, Offset.Beginning));
                     var cr4 = consumer.Consume(TimeSpan.FromSeconds(10));
                     Assert.Equal(0, cr4.Offset);
@@ -79,7 +80,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 test(consumer);
             }
-    
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_Assign");
         }

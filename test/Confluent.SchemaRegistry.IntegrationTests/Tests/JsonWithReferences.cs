@@ -46,7 +46,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
   }
 }";
 
-    private static string S2 = @"
+        private static string S2 = @"
     {
   ""$schema"": ""http://json-schema.org/draft-07/schema#"",
   ""$id"": ""http://example.com/product.schema.json"",

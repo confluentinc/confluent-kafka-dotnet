@@ -25,8 +25,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void Equality()
         {
-            var res1 = new CreateAclReport {};
-            var res2 = new CreateAclReport {};
+            var res1 = new CreateAclReport { };
+            var res2 = new CreateAclReport { };
             var res3 = new CreateAclReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", false),

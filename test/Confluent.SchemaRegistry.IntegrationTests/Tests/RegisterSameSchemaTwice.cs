@@ -28,7 +28,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         {
             var topicName = Guid.NewGuid().ToString();
 
-            var testSchema1 = 
+            var testSchema1 =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
@@ -42,8 +42,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var id2 = sr.RegisterSchemaAsync(subject, testSchema1).Result;
 
             Assert.Equal(id1, id2);
-            
-            Assert.True(sr.GetAllSubjectsAsync().Result.Contains(subject));
+
+            Assert.Contains(subject, sr.GetAllSubjectsAsync().Result);
         }
     }
 }

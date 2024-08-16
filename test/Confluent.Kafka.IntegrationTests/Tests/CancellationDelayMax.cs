@@ -65,7 +65,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Subscribe(topic.Name);
 
                 // for the consumer, check that the cancellation token is honored.
-                for (int i=0; i<20; ++i)
+                for (int i = 0; i < 20; ++i)
                 {
                     var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(2));
                     var sw = Stopwatch.StartNew();
@@ -90,7 +90,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // for the producer, make do with just a simple check that this does not throw or hang.
                 var dr = producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 42 }, Value = new byte[] { 255 } }).Result;
-                
+
                 // for the admin client, make do with just simple check that this does not throw or hang.
                 var cr = new Confluent.Kafka.Admin.ConfigResource { Type = ResourceType.Topic, Name = topic.Name };
                 var configs = adminClient.DescribeConfigsAsync(new ConfigResource[] { cr }).Result;

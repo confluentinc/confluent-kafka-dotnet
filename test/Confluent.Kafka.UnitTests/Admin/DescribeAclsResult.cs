@@ -59,8 +59,8 @@ namespace Confluent.Kafka.UnitTests
                 }
             };
 
-            var res1 = new DescribeAclsResult {};
-            var res2 = new DescribeAclsResult {};
+            var res1 = new DescribeAclsResult { };
+            var res2 = new DescribeAclsResult { };
             var res3 = new DescribeAclsResult
             {
                 AclBindings = new List<AclBinding>

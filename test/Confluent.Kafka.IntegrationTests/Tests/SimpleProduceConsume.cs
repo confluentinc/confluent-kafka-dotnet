@@ -64,14 +64,14 @@ namespace Confluent.Kafka.IntegrationTests
                 ConsumeMessage(consumer, produceResult1, testString1);
                 ConsumeMessage(consumer, produceResult2, testString2);
             }
-            
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   SimpleProduceConsume");
         }
 
         private static void ConsumeMessage(IConsumer<byte[], byte[]> consumer, DeliveryResult<Null, string> dr, string testString)
         {
-            consumer.Assign(new List<TopicPartitionOffset>() {dr.TopicPartitionOffset});
+            consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
             var r = consumer.Consume(TimeSpan.FromSeconds(10));
             Assert.NotNull(r?.Message);
             Assert.Equal(testString, r.Message.Value == null ? null : Encoding.UTF8.GetString(r.Message.Value, 0, r.Message.Value.Length));

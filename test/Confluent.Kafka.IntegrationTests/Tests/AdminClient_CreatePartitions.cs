@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var dr1 = producer.ProduceAsync(new TopicPartition(topicName1, 0), new Message<Null, Null>()).Result;
                 var dr2 = producer.ProduceAsync(new TopicPartition(topicName1, 1), new Message<Null, Null>()).Result;
-                
+
                 try
                 {
                     producer.ProduceAsync(new TopicPartition(topicName1, 2), new Message<Null, Null>()).Wait();
@@ -61,8 +61,8 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 catch (AggregateException ex)
                 {
-                    Assert.IsType<ProduceException<Null,Null>>(ex.InnerException);
-                    Assert.True(((ProduceException<Null,Null>)ex.InnerException).Error.IsError);
+                    Assert.IsType<ProduceException<Null, Null>>(ex.InnerException);
+                    Assert.True(((ProduceException<Null, Null>)ex.InnerException).Error.IsError);
                 }
             }
 
@@ -83,8 +83,8 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 catch (AggregateException ex)
                 {
-                    Assert.IsType<ProduceException<Null,Null>>(ex.InnerException);
-                    Assert.True(((ProduceException<Null,Null>)ex.InnerException).Error.IsError);
+                    Assert.IsType<ProduceException<Null, Null>>(ex.InnerException);
+                    Assert.True(((ProduceException<Null, Null>)ex.InnerException).Error.IsError);
                 }
             }
 
@@ -94,10 +94,10 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 adminClient.CreatePartitionsAsync(
-                    new List<PartitionsSpecification> 
+                    new List<PartitionsSpecification>
                     {
-                        new PartitionsSpecification { Topic = topicName2, IncreaseTo = 2, ReplicaAssignments = new List<List<int>> { new List<int> { 0 } } } 
-                    }, 
+                        new PartitionsSpecification { Topic = topicName2, IncreaseTo = 2, ReplicaAssignments = new List<List<int>> { new List<int> { 0 } } }
+                    },
                     new CreatePartitionsOptions { ValidateOnly = true }
                 ).Wait();
             }
@@ -111,10 +111,10 @@ namespace Confluent.Kafka.IntegrationTests
                 try
                 {
                     adminClient.CreatePartitionsAsync(
-                        new List<PartitionsSpecification> 
+                        new List<PartitionsSpecification>
                         {
-                            new PartitionsSpecification { Topic = topicName2, IncreaseTo = 2, ReplicaAssignments = new List<List<int>> { new List<int> { 42 } } } 
-                        }, 
+                            new PartitionsSpecification { Topic = topicName2, IncreaseTo = 2, ReplicaAssignments = new List<List<int>> { new List<int> { 42 } } }
+                        },
                         new CreatePartitionsOptions { ValidateOnly = true }
                     ).Wait();
                     Assert.True(false, "Expecting exception");
@@ -131,8 +131,8 @@ namespace Confluent.Kafka.IntegrationTests
             // more than one.
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                adminClient.CreateTopicsAsync(new TopicSpecification[] 
-                    { 
+                adminClient.CreateTopicsAsync(new TopicSpecification[]
+                    {
                         new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 },
                         new TopicSpecification { Name = topicName6, NumPartitions = 1, ReplicationFactor = 1 }
                     }
@@ -141,7 +141,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // just a simple check there wasn't an exception.
                 adminClient.CreatePartitionsAsync(
-                    new List<PartitionsSpecification> 
+                    new List<PartitionsSpecification>
                     {
                         new PartitionsSpecification { Topic = topicName5, IncreaseTo = 2 },
                         new PartitionsSpecification { Topic = topicName6, IncreaseTo = 3 }

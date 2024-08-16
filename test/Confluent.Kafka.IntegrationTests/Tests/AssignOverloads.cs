@@ -65,7 +65,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var cr = consumer.Consume(TimeSpan.FromSeconds(10));
                 consumer.Commit();
                 Assert.Equal(cr.Message.Value, testString);
-                
+
                 // Determine offset to consume from automatically.
                 consumer.Assign(new List<TopicPartition>() { dr.TopicPartition });
                 cr = consumer.Consume(TimeSpan.FromSeconds(10));

@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             var committedCount = 0;
-            
+
             using (var consumer =
                 new TestConsumerBuilder<byte[], byte[]>(consumerConfig)
                     .SetOffsetsCommittedHandler((_, o) =>

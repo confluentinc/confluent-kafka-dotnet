@@ -1,4 +1,4 @@
-﻿// Copyright 2022 Confluent Inc.
+// Copyright 2022 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,37 +25,37 @@ namespace Confluent.SchemaRegistry
     {
         [DataMember(Name = "name")]
         public string Name { get; set; }
-        
+
         [DataMember(Name = "doc")]
         public string Doc { get; set; }
-        
+
         [DataMember(Name = "kind")]
         public RuleKind Kind { get; set; }
-        
+
         [DataMember(Name = "mode")]
         public RuleMode Mode { get; set; }
-        
+
         [DataMember(Name = "type")]
         public string Type { get; set; }
-        
+
         [DataMember(Name = "tags")]
         public ISet<string> Tags { get; set; }
-        
+
         [DataMember(Name = "params")]
         public IDictionary<string, string> Params { get; set; }
-        
+
         [DataMember(Name = "expr")]
         public string Expr { get; set; }
-        
+
         [DataMember(Name = "onSuccess")]
         public string OnSuccess { get; set; }
-        
+
         [DataMember(Name = "onFailure")]
         public string OnFailure { get; set; }
-        
+
         [DataMember(Name = "disabled")]
         public bool Disabled { get; set; }
-        
+
         /// <summary>
         /// <summary>
         ///     Empty constructor for serialization
@@ -72,8 +72,8 @@ namespace Confluent.SchemaRegistry
             Tags = tags;
             Params = parameters;
         }
-        
-        public Rule(string name, RuleKind kind, RuleMode mode, string type, ISet<string> tags, 
+
+        public Rule(string name, RuleKind kind, RuleMode mode, string type, ISet<string> tags,
             IDictionary<string, string> parameters, string expr, string onSuccess, string onFailure, bool disabled)
         {
             Name = name;
@@ -93,8 +93,8 @@ namespace Confluent.SchemaRegistry
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
             return Name == other.Name && Doc == other.Doc && Kind == other.Kind && Mode == other.Mode &&
-                   Type == other.Type && Utils.SetEquals(Tags, other.Tags) && 
-                   Utils.DictEquals(Params, other.Params) && Expr == other.Expr && 
+                   Type == other.Type && Utils.SetEquals(Tags, other.Tags) &&
+                   Utils.DictEquals(Params, other.Params) && Expr == other.Expr &&
                    OnSuccess == other.OnSuccess && OnFailure == other.OnFailure &&
                    Disabled == other.Disabled;
         }

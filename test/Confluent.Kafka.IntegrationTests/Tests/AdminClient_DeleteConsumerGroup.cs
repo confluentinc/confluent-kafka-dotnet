@@ -1,4 +1,4 @@
-﻿// Copyright 2022 Confluent Inc.
+// Copyright 2022 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ using Confluent.Kafka.TestsCommon;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public partial class Tests 
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AdminClient_DeleteConsumerGroup(string bootstrapServers)
@@ -54,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 try
                 {
-                    admin.DeleteGroupsAsync(new List<string> {groupId2, groupId3}, new DeleteGroupsOptions()).Wait();
+                    admin.DeleteGroupsAsync(new List<string> { groupId2, groupId3 }, new DeleteGroupsOptions()).Wait();
                     Assert.True(false); // expecting exception.
                 }
                 catch (AggregateException ex)

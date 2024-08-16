@@ -59,8 +59,8 @@ namespace Confluent.Kafka.UnitTests
                 }
             };
 
-            var rep1 = new DescribeAclsReport {};
-            var rep2 = new DescribeAclsReport {};
+            var rep1 = new DescribeAclsReport { };
+            var rep2 = new DescribeAclsReport { };
             var rep3 = new DescribeAclsReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", false),

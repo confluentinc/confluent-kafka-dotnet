@@ -62,7 +62,8 @@ namespace Confluent.Kafka.UnitTests
 
         private static IList<AclBindingFilter> CopyAclBindingFilters(IList<AclBindingFilter> original)
         {
-            return original.Select((aclBinding) => {
+            return original.Select((aclBinding) =>
+            {
                 return aclBinding.Clone();
             }).ToList().AsReadOnly();
         }
@@ -148,7 +149,8 @@ namespace Confluent.Kafka.UnitTests
                     "Invalid operation",
                     "Invalid permission type",
                 };
-                var invalidTests = suffixes.Select((suffix) => {
+                var invalidTests = suffixes.Select((suffix) =>
+                {
                     return CopyAclBindingFilters(testAclBindingFilters);
                 }).ToList();
                 invalidTests[0][0].PatternFilter.Type = ResourceType.Unknown;

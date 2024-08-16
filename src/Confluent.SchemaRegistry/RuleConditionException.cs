@@ -37,14 +37,14 @@ namespace Confluent.SchemaRegistry
         public RuleConditionException(Rule rule) : base(getErrorMessage(rule))
         {
         }
-        
+
         private static string getErrorMessage(Rule rule)
         {
             string errMsg = rule.Doc;
             if (string.IsNullOrEmpty(errMsg))
             {
                 string expr = rule.Expr;
-                errMsg = expr != null 
+                errMsg = expr != null
                     ? $"Expr failed: '{expr}'"
                     : $"Condition failed: '{rule.Name}'";
             }

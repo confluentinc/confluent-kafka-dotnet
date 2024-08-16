@@ -40,7 +40,7 @@ namespace Confluent.Kafka.Benchmark
 
             using (var consumer = new ConsumerBuilder<Ignore, Ignore>(consumerConfig).Build())
             {
-                for (var j=0; j<nTests; j += 1)
+                for (var j = 0; j < nTests; j += 1)
                 {
                     Console.WriteLine($"{consumer.Name} consuming from {topic}");
 
@@ -53,7 +53,7 @@ namespace Confluent.Kafka.Benchmark
 
                     var cnt = 0;
 
-                    while (cnt < nMessages-1)
+                    while (cnt < nMessages - 1)
                     {
                         record = consumer.Consume(TimeSpan.FromSeconds(1));
                         if (record != null)
@@ -64,8 +64,8 @@ namespace Confluent.Kafka.Benchmark
 
                     var duration = DateTime.Now.Ticks - startTime;
 
-                    Console.WriteLine($"Consumed {nMessages-1} messages in {duration/10000.0:F0}ms");
-                    Console.WriteLine($"{(nMessages-1) / (duration/10000.0):F0}k msg/s");
+                    Console.WriteLine($"Consumed {nMessages - 1} messages in {duration / 10000.0:F0}ms");
+                    Console.WriteLine($"{(nMessages - 1) / (duration / 10000.0):F0}k msg/s");
                 }
             }
         }

@@ -46,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var alterOptions =
                     new AlterUserScramCredentialsOptions() { RequestTimeout = timeout };
                 List<UserScramCredentialsDescription> descriptions;
-                
+
                 try
                 {
                     await adminClient.DescribeUserScramCredentialsAsync(users, describeOptions);
@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
                     foreach (var description in descriptions)
                     {
                         Assert.Equal(users[0], description.User);
-                        Assert.Equal(ErrorCode.ResourceNotFound,description.Error.Code);
+                        Assert.Equal(ErrorCode.ResourceNotFound, description.Error.Code);
                     }
                 }
 
@@ -82,8 +82,9 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     Assert.Equal(users[0], description.User);
                     Assert.Equal(ErrorCode.NoError, description.Error.Code);
-                    foreach(var credentialinfo in description.ScramCredentialInfos){
-                        Assert.Equal(15000,credentialinfo.Iterations);
+                    foreach (var credentialinfo in description.ScramCredentialInfos)
+                    {
+                        Assert.Equal(15000, credentialinfo.Iterations);
                         Assert.Equal(ScramMechanism.ScramSha256, credentialinfo.Mechanism);
                     }
                 }
@@ -108,7 +109,7 @@ namespace Confluent.Kafka.IntegrationTests
                     foreach (var description in descriptions)
                     {
                         Assert.Equal(users[0], description.User);
-                        Assert.Equal(ErrorCode.ResourceNotFound,description.Error.Code);
+                        Assert.Equal(ErrorCode.ResourceNotFound, description.Error.Code);
                     }
                 }
             }

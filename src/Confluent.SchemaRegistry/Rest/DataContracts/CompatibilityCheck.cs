@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+// Copyright 2016-2017 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ namespace Confluent.SchemaRegistry
     [DataContract]
     internal class CompatibilityCheck
     {
-        [DataMember(Name="is_compatible")]
+        [DataMember(Name = "is_compatible")]
         public bool IsCompatible { get; set; }
 
         public CompatibilityCheck(bool isCompatible)

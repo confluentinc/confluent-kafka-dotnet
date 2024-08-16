@@ -25,7 +25,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
     public class TemporaryTopic : IDisposable
     {
         private string bootstrapServers;
-        
+
         public string Name { get; set; }
 
         public TemporaryTopic(string bootstrapServers, int numPartitions)
