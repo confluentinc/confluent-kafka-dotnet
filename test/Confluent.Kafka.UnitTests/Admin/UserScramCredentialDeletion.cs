@@ -26,7 +26,8 @@ namespace Confluent.Kafka.UnitTests
         public void StringRepresentation()
         {
             // Deletion
-            var deletion = new UserScramCredentialDeletion {
+            var deletion = new UserScramCredentialDeletion
+            {
                 User = "test",
                 Mechanism = ScramMechanism.ScramSha256
             };

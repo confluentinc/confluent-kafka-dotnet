@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     favorite_number = 47,
                     favorite_color = "orange"
                 };
-                
+
                 p.ProduceAsync(topic, new Message<ProduceConsumeUser2, Null> { Key = user }).Wait();
             }
 
@@ -182,7 +182,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 }
             }
         }
-        
+
         /// <summary>
         ///     Test that messages produced with the Avro serializer can be consumed with the
         ///     Avro deserializer (topic name strategy).

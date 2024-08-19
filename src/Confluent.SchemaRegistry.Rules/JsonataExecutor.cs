@@ -1,4 +1,4 @@
-﻿using Jsonata.Net.Native;
+using Jsonata.Net.Native;
 using Jsonata.Net.Native.Json;
 using Jsonata.Net.Native.JsonNet;
 
@@ -12,14 +12,14 @@ namespace Confluent.SchemaRegistry.Rules
         }
 
         public static readonly string RuleType = "JSONATA";
-        
+
         private readonly IDictionary<string, JsonataQuery> cache = new Dictionary<string, JsonataQuery>();
         private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
-        
+
         public JsonataExecutor()
         {
         }
-        
+
         public void Configure(IEnumerable<KeyValuePair<string, string>> config)
         {
         }

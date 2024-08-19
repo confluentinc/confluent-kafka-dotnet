@@ -49,7 +49,7 @@ namespace Confluent.Kafka
         /// </param>
         public void Add(string key, byte[] val)
         {
-            if (key == null) 
+            if (key == null)
             {
                 throw new ArgumentNullException("Kafka message header key cannot be null.");
             }
@@ -107,7 +107,7 @@ namespace Confluent.Kafka
         /// </returns>
         public bool TryGetLastBytes(string key, out byte[] lastHeader)
         {
-            for (int i=headers.Count-1; i>=0; --i)
+            for (int i = headers.Count - 1; i >= 0; --i)
             {
                 if (headers[i].Key == key)
                 {
@@ -141,13 +141,13 @@ namespace Confluent.Kafka
                 this.headers = headers;
             }
 
-            public object Current 
+            public object Current
                 => ((IEnumerator<IHeader>)this).Current;
 
             IHeader IEnumerator<IHeader>.Current
                 => headers.headers[location];
 
-            public void Dispose() {}
+            public void Dispose() { }
 
             public bool MoveNext()
             {

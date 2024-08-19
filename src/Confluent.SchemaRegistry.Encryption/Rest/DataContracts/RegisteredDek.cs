@@ -25,7 +25,7 @@ namespace Confluent.SchemaRegistry.Encryption
         private string keyMaterial;
         private byte[] keyMaterialBytes;
         private byte[] encryptedKeyMaterialBytes;
-        
+
         /// <summary>
         ///     The KEK name for the DEK.
         /// </summary>

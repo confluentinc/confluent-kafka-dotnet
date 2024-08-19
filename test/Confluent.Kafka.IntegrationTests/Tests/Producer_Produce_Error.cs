@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             // serializer case.
 
             int count = 0;
-            Action<DeliveryReport<Null, String>> dh = (DeliveryReport<Null, String> dr) => 
+            Action<DeliveryReport<Null, String>> dh = (DeliveryReport<Null, String> dr) =>
             {
                 Assert.Equal(ErrorCode.Local_UnknownPartition, dr.Error.Code);
                 Assert.False(dr.Error.IsFatal);
@@ -83,7 +83,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                producer.Produce(new TopicPartition(singlePartitionTopic, 42), new Message<byte[], byte[]> { Key = new byte[] { 11 }}, dh2);
+                producer.Produce(new TopicPartition(singlePartitionTopic, 42), new Message<byte[], byte[]> { Key = new byte[] { 11 } }, dh2);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

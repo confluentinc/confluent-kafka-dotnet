@@ -209,7 +209,7 @@ namespace Confluent.SchemaRegistry
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation, value?.ToString()); }
-            
+
         }
 
         ///    <summary>

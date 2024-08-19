@@ -32,13 +32,13 @@ namespace Confluent.Kafka.Admin
         ///    The access control entry filter.
         /// </summary>
         public AccessControlEntryFilter EntryFilter { get; set; }
-        
+
         /// <summary>
         ///     A clone of the AclBindingFilter object 
         /// </summary>
         public AclBindingFilter Clone()
         {
-            var ret = (AclBindingFilter) MemberwiseClone();
+            var ret = (AclBindingFilter)MemberwiseClone();
             ret.PatternFilter = ret.PatternFilter.Clone();
             ret.EntryFilter = ret.EntryFilter.Clone();
             return ret;

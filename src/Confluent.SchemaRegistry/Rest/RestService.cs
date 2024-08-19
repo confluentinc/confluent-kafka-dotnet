@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2018 Confluent Inc.
+// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,14 +69,16 @@ namespace Confluent.SchemaRegistry
                     {
                         client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification))
                         {
-                            BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs)
+                            BaseAddress = new Uri(uri, UriKind.Absolute),
+                            Timeout = TimeSpan.FromMilliseconds(timeoutMs)
                         };
                     }
                     else
                     {
                         client = new HttpClient()
                         {
-                            BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs)
+                            BaseAddress = new Uri(uri, UriKind.Absolute),
+                            Timeout = TimeSpan.FromMilliseconds(timeoutMs)
                         };
                     }
 
@@ -356,12 +358,12 @@ namespace Confluent.SchemaRegistry
                 await RequestAsync<RegisteredSchema>($"subjects/{Uri.EscapeDataString(subject)}/metadata?{getKeyValuePairs(metadata)}&deleted={!ignoreDeletedSchemas}",
                         HttpMethod.Get)
                     .ConfigureAwait(continueOnCapturedContext: false));
-        
+
         private string getKeyValuePairs(IDictionary<string, string> metadata)
         {
             return string.Join("&", metadata.Select(x => $"key={x.Key}&value={x.Value}"));
         }
-        
+
         public async Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize)
             => (await RequestAsync<SchemaId>(
                     $"subjects/{Uri.EscapeDataString(subject)}/versions?normalize={normalize}", HttpMethod.Post,
@@ -399,12 +401,12 @@ namespace Confluent.SchemaRegistry
 
         public async Task<Compatibility> UpdateCompatibilityAsync(string subject, Compatibility compatibility)
             => (await RequestAsync<ServerConfig>(
-                    string.IsNullOrEmpty(subject) ? "config" : $"config/{Uri.EscapeDataString(subject)}", HttpMethod.Put, 
+                    string.IsNullOrEmpty(subject) ? "config" : $"config/{Uri.EscapeDataString(subject)}", HttpMethod.Put,
                     new ServerConfig(compatibility))
                 .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
         public async Task<Compatibility> GetCompatibilityAsync(string subject)
             => (await RequestAsync<ServerConfig>(
-                    string.IsNullOrEmpty(subject) ? "config" : $"config/{Uri.EscapeDataString(subject)}", HttpMethod.Get) 
+                    string.IsNullOrEmpty(subject) ? "config" : $"config/{Uri.EscapeDataString(subject)}", HttpMethod.Get)
                 .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
 
 

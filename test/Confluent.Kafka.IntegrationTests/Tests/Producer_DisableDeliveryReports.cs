@@ -38,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
             byte[] TestValue = new byte[] { 5, 6, 7, 8 };
 
             var producerConfig = new ProducerConfig
-            { 
+            {
                 BootstrapServers = bootstrapServers,
                 EnableDeliveryReports = false,
                 // the below are just a few extra tests that the property is recognized (all 

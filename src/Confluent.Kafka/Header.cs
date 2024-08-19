@@ -41,7 +41,7 @@ namespace Confluent.Kafka
         {
             return val;
         }
-        
+
         /// <summary>
         ///     Create a new Header instance.
         /// </summary>
@@ -53,7 +53,7 @@ namespace Confluent.Kafka
         /// </param>
         public Header(string key, byte[] value)
         {
-            if (key == null) 
+            if (key == null)
             {
                 throw new ArgumentNullException("Kafka message header key cannot be null.");
             }

@@ -27,15 +27,15 @@ namespace Confluent.SchemaRegistry
     public abstract class AsyncSerializer<T, TParsedSchema> : AsyncSerde<TParsedSchema>, IAsyncSerializer<T>
     {
         private const int DefaultInitialBufferSize = 1024;
-        
+
         protected bool autoRegisterSchema = true;
         protected bool normalizeSchemas = false;
-        
+
         protected int initialBufferSize = DefaultInitialBufferSize;
-        
+
         protected HashSet<string> subjectsRegistered = new HashSet<string>();
-        
-        protected AsyncSerializer(ISchemaRegistryClient schemaRegistryClient, SerdeConfig config, 
+
+        protected AsyncSerializer(ISchemaRegistryClient schemaRegistryClient, SerdeConfig config,
             IList<IRuleExecutor> ruleExecutors = null) : base(schemaRegistryClient, config, ruleExecutors)
         {
         }

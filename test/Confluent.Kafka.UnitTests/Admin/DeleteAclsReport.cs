@@ -59,8 +59,8 @@ namespace Confluent.Kafka.UnitTests
                 }
             };
 
-            var rep1 = new DeleteAclsReport {};
-            var rep2 = new DeleteAclsReport {};
+            var rep1 = new DeleteAclsReport { };
+            var rep2 = new DeleteAclsReport { };
             var rep3 = new DeleteAclsReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", false),

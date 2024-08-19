@@ -30,12 +30,12 @@ namespace Confluent.SchemaRegistry
         public void Configure(IEnumerable<KeyValuePair<string, string>> config)
         {
         }
-        
+
         public string Type()
         {
             return ActionType;
         }
-        
+
         public Task Run(RuleContext ctx, object message, RuleException exception = null)
         {
             string msg = "Rule failed: " + ctx.Rule.Name;

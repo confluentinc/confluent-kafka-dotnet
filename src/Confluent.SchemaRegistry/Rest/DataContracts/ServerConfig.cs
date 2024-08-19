@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+// Copyright 2016-2017 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,15 +24,15 @@ namespace Confluent.SchemaRegistry
     {
         [DataMember(Name = "compatibility")]
         public Compatibility CompatibilityLevel { get; }
-        
+
         public ServerConfig(Compatibility compatibilityLevel)
         {
             CompatibilityLevel = compatibilityLevel;
         }
 
-        public override string ToString() 
+        public override string ToString()
             => $"{{compatibility={CompatibilityLevel}}}";
-        
+
         public override bool Equals(object obj)
         {
             if (obj == null || GetType() != obj.GetType())
@@ -42,7 +42,7 @@ namespace Confluent.SchemaRegistry
 
             return CompatibilityLevel == ((ServerConfig)obj).CompatibilityLevel;
         }
-        
+
         public override int GetHashCode()
             => 31 * CompatibilityLevel.GetHashCode();
     }

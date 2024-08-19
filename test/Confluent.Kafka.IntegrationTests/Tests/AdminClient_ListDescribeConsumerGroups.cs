@@ -77,8 +77,10 @@ namespace Confluent.Kafka.IntegrationTests
             const string clientID2 = "test.client.2";
 
             // Create an AdminClient here - we need it throughout the test.
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig {
-                BootstrapServers = bootstrapServers }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig
+            {
+                BootstrapServers = bootstrapServers
+            }).Build())
             {
                 var listOptionsWithTimeout = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
                 var describeOptionsWithTimeout = new Admin.DescribeConsumerGroupsOptions()
@@ -169,8 +171,10 @@ namespace Confluent.Kafka.IntegrationTests
                 // Check the 'States' option by listing Stable consumer groups, which shouldn't
                 // include `groupID`.
                 groups = adminClient.ListConsumerGroupsAsync(new Admin.ListConsumerGroupsOptions()
-                { MatchStates = new List<ConsumerGroupState>() { ConsumerGroupState.Stable },
-                  RequestTimeout = TimeSpan.FromSeconds(30) }).Result;
+                {
+                    MatchStates = new List<ConsumerGroupState>() { ConsumerGroupState.Stable },
+                    RequestTimeout = TimeSpan.FromSeconds(30)
+                }).Result;
                 Assert.Empty(groups.Valid.Where(group => group.GroupId == groupID));
 
                 descResult = adminClient.DescribeConsumerGroupsAsync(

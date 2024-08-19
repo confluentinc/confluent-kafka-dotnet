@@ -24,6 +24,6 @@ namespace Confluent.Kafka
     /// </summary>
     public sealed class Null
     {
-        private Null() {}
+        private Null() { }
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,11 +35,11 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A datum reader cache (one corresponding to each write schema that's been seen)
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<(Avro.Schema, Avro.Schema), DatumReader<GenericRecord>> datumReaderBySchema 
+        private readonly Dictionary<(Avro.Schema, Avro.Schema), DatumReader<GenericRecord>> datumReaderBySchema
             = new Dictionary<(Avro.Schema, Avro.Schema), DatumReader<GenericRecord>>();
-       
+
         public GenericDeserializerImpl(
-            ISchemaRegistryClient schemaRegistryClient, 
+            ISchemaRegistryClient schemaRegistryClient,
             AvroDeserializerConfig config,
             IList<IRuleExecutor> ruleExecutors) : base(schemaRegistryClient, config, ruleExecutors)
         {
@@ -58,7 +58,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 : await Deserialize(context.Topic, context.Headers, data.ToArray(),
                     context.Component == MessageComponentType.Key);
         }
-        
+
         public async Task<GenericRecord> Deserialize(string topic, Headers headers, byte[] array, bool isKey)
         {
             try
@@ -77,12 +77,12 @@ namespace Confluent.SchemaRegistry.Serdes
                         new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic),
                         null)
                     // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                    : schemaRegistryClient == null 
+                    : schemaRegistryClient == null
                         ? null
-                        : isKey 
+                        : isKey
                             ? schemaRegistryClient.ConstructKeySubjectName(topic)
                             : schemaRegistryClient.ConstructValueSubjectName(topic);
-                
+
                 Schema latestSchema = await GetReaderSchema(subject)
                     .ConfigureAwait(continueOnCapturedContext: false);
 
@@ -101,7 +101,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
                     (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
-                    
+
                     if (latestSchema != null)
                     {
                         migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
@@ -126,14 +126,14 @@ namespace Confluent.SchemaRegistry.Serdes
 
                             jsonString = Encoding.UTF8.GetString(jsonStream.ToArray());
                         }
-                        
+
                         JToken json = JToken.Parse(jsonString);
                         json = await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
                             .ContinueWith(t => (JToken)t.Result)
                             .ConfigureAwait(continueOnCapturedContext: false);
                         var latestSchemaAvro = await GetParsedSchema(latestSchema);
                         Avro.IO.Decoder decoder = new JsonDecoder(latestSchemaAvro, json.ToString(Formatting.None));
-                        
+
                         datumReader = new GenericReader<GenericRecord>(latestSchemaAvro, latestSchemaAvro);
                         data = datumReader.Read(default(GenericRecord), decoder);
                     }
@@ -143,8 +143,8 @@ namespace Confluent.SchemaRegistry.Serdes
                         data = datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
                     }
                 }
-                
-                FieldTransformer fieldTransformer = async (ctx, transform, message) => 
+
+                FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                 {
                     return await AvroUtils.Transform(ctx, writerSchema, message, transform).ConfigureAwait(false);
                 };
@@ -165,7 +165,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             return Task.FromResult(Avro.Schema.Parse(schema.SchemaString));
         }
-        
+
         private async Task<DatumReader<GenericRecord>> GetDatumReader(Avro.Schema writerSchema, Avro.Schema readerSchema)
         {
             DatumReader<GenericRecord> datumReader;

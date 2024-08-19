@@ -25,7 +25,7 @@ namespace Confluent.SchemaRegistry
     public interface IFieldTransform : IDisposable
     {
         void Init(RuleContext ctx);
-        
+
         Task<object> Transform(RuleContext ctx, RuleContext.FieldContext fieldCtx, object fieldValue);
     }
 }

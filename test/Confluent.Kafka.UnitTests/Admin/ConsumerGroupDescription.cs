@@ -58,9 +58,9 @@ namespace Confluent.Kafka.UnitTests
                 }
             };
             Assert.Equal(
-                @"{""GroupId"": ""test"", ""Error"": ""NoError"", ""IsSimpleConsumerGroup"": true"+
-                @", ""PartitionAssignor"": ""testAssignor"", ""State"": ""PreparingRebalance"", ""Coordinator"": null" + 
-                @", ""Members"": [{""ClientId"": ""client1"", ""GroupInstanceId"": null" + 
+                @"{""GroupId"": ""test"", ""Error"": ""NoError"", ""IsSimpleConsumerGroup"": true" +
+                @", ""PartitionAssignor"": ""testAssignor"", ""State"": ""PreparingRebalance"", ""Coordinator"": null" +
+                @", ""Members"": [{""ClientId"": ""client1"", ""GroupInstanceId"": null" +
                 @", ""ConsumerId"": ""consumer1"", ""Host"": ""localhost"", ""Assignment"": [{""Topic"": ""test1"", ""Partition"": 0}," +
                 @"{""Topic"": ""test1"", ""Partition"": 1}]}], ""AuthorizedOperations"": [""Create""]}",
                 description.ToString());
@@ -98,10 +98,10 @@ namespace Confluent.Kafka.UnitTests
                 AuthorizedOperations = null
             };
             Assert.Equal(
-                @"{""GroupId"": ""test"", ""Error"": ""NoError"", ""IsSimpleConsumerGroup"": true"+
-                @", ""PartitionAssignor"": ""testAssignor"", ""State"": ""PreparingRebalance"", ""Coordinator"": " + 
+                @"{""GroupId"": ""test"", ""Error"": ""NoError"", ""IsSimpleConsumerGroup"": true" +
+                @", ""PartitionAssignor"": ""testAssignor"", ""State"": ""PreparingRebalance"", ""Coordinator"": " +
                 @"{""Id"": 1, ""Host"": ""localhost"", ""Port"": 9092, ""Rack"": null}" +
-                @", ""Members"": [{""ClientId"": ""client1"", ""GroupInstanceId"": ""groupInstanceId1""" + 
+                @", ""Members"": [{""ClientId"": ""client1"", ""GroupInstanceId"": ""groupInstanceId1""" +
                 @", ""ConsumerId"": ""consumer1"", ""Host"": ""localhost"", ""Assignment"": [" +
                 @"]}], ""AuthorizedOperations"": null}",
                 description.ToString());

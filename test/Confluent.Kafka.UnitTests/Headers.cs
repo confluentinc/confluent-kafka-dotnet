@@ -27,11 +27,11 @@ namespace Confluent.Kafka.UnitTests
         public void Add()
         {
             var hdrs = new Headers();
-            hdrs.Add("aaa", new byte[] { 32, 42 } );
+            hdrs.Add("aaa", new byte[] { 32, 42 });
 
             Assert.Single(hdrs);
             Assert.Equal("aaa", hdrs[0].Key);
-            Assert.Equal(new byte[] {32, 42}, hdrs[0].GetValueBytes());
+            Assert.Equal(new byte[] { 32, 42 }, hdrs[0].GetValueBytes());
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace Confluent.Kafka.UnitTests
         public void NullKey()
         {
             var hdrs = new Headers();
-            Assert.Throws<ArgumentNullException>(() => hdrs.Add(null, new byte[] {}));
+            Assert.Throws<ArgumentNullException>(() => hdrs.Add(null, new byte[] { }));
         }
 
         [Fact]

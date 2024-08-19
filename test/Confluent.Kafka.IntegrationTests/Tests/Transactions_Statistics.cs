@@ -53,7 +53,8 @@ namespace Confluent.Kafka.IntegrationTests
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             using (var producer = new TestProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString(), LingerMs = 0 }).Build())
             using (var consumer = new TestConsumerBuilder<string, string>(cConfig)
-                .SetStatisticsHandler((_, json) => {
+                .SetStatisticsHandler((_, json) =>
+                {
                     var stats = JObject.Parse(json);
                     ls_offset = (int)stats["topics"][topic.Name]["partitions"]["0"]["ls_offset"];
                     hi_offset = (int)stats["topics"][topic.Name]["partitions"]["0"]["hi_offset"];
@@ -77,7 +78,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message2" }).Wait();
                 producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message3" }).Wait();
 
-                for (int i=0; i<10; ++i)
+                for (int i = 0; i < 10; ++i)
                 {
                     consumer.Consume(TimeSpan.FromMilliseconds(500));
                     if (done) { break; }

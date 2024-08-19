@@ -28,7 +28,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
         public static void BasicAuth(Config config)
         {
-            var testSchema1 = 
+            var testSchema1 =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
@@ -75,7 +75,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             // 1.3. credentials specified as SASL_INHERIT.
             using (var sr = new CachedSchemaRegistryClient(
                 new Dictionary<string, string>
-                { 
+                {
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "SASL_INHERIT" },
                     { "sasl.username", config.Username },
@@ -109,7 +109,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             Assert.Throws<ArgumentException>(() =>
             {
                 var sr = new CachedSchemaRegistryClient(new Dictionary<string, string>
-                { 
+                {
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "SASL_INHERIT" },
                     { "schema.registry.basic.auth.user.info", $"{config.Username:config.Password}" }
@@ -119,7 +119,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             Assert.Throws<ArgumentException>(() =>
             {
                 var sr = new CachedSchemaRegistryClient(new Dictionary<string, string>
-                { 
+                {
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "UBUTE_SOURCE" }
                 });
@@ -128,7 +128,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             Assert.Throws<ArgumentException>(() =>
             {
                 var sr = new CachedSchemaRegistryClient(new Dictionary<string, string>
-                { 
+                {
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "NONE" },
                     { "schema.registry.basic.auth.user.info", $"{config.Username:config.Password}" }
@@ -139,8 +139,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             // SR <= 5.3.4 returns Unauthorized with empty Content (HttpRequestException)
             // 5.3.4 < SR <= 5.3.8 returns Unauthorized with message but without error_code (SchemaRegistryException)
             // SR >= 5.40 returns Unauthorized with message and error_code (SchemaRegistryException)
-            var schemaRegistryException = Assert.Throws<SchemaRegistryException>(() => 
-            { 
+            var schemaRegistryException = Assert.Throws<SchemaRegistryException>(() =>
+            {
                 var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.ServerWithAuth });
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);

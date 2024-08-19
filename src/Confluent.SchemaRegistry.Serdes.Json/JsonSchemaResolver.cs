@@ -58,17 +58,19 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     Schema generator setting to use.
         /// </param>
-        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
+        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+        {
             this.schemaRegistryClient = schemaRegistryClient;
             this.root = schema;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
         }
-        
+
         /// <summary>
         ///     Get the resolved JsonSchema instance for the Schema provided to
         ///     the constructor.
         /// </summary>
-        public async Task<JsonSchema> GetResolvedSchema(){
+        public async Task<JsonSchema> GetResolvedSchema()
+        {
             if (resolvedJsonSchema == null)
             {
                 await CreateSchemaDictUtil(root);
@@ -76,7 +78,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             return resolvedJsonSchema;
         }
-        
+
         private async Task CreateSchemaDictUtil(Schema root)
         {
             string rootStr = root.SchemaString;

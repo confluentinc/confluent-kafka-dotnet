@@ -54,8 +54,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
-                
-                Assert.Throws<HttpRequestException>(() => 
+
+                Assert.Throws<HttpRequestException>(() =>
                 {
                     try
                     {

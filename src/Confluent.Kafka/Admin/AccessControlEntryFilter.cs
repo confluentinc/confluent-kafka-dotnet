@@ -43,13 +43,13 @@ namespace Confluent.Kafka.Admin
         ///     The permission type this access control entry filter matches.
         /// </summary>
         public AclPermissionType PermissionType { get; set; }
-        
+
         /// <summary>
         ///     A clone of the AccessControlEntryFilter object 
         /// </summary>
         public AccessControlEntryFilter Clone()
         {
-            return (AccessControlEntryFilter) MemberwiseClone();
+            return (AccessControlEntryFilter)MemberwiseClone();
         }
 
         /// <summary>

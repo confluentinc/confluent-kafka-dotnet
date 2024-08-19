@@ -59,18 +59,18 @@ namespace Confluent.Kafka
         ///     Gets the log level (levels correspond to syslog(3)), lower is worse.
         /// </summary>
         public SyslogLevel Level { get; }
-        
+
         /// <summary>
         ///     Gets the facility (section of librdkafka code) that produced the message.
         /// </summary>
         public string Facility { get; }
-        
+
         /// <summary>
         ///     Gets the log message.
         /// </summary>
         public string Message { get; }
 
-        
+
         // SysLog levels:
         // [0] emergency, [1] alert, [2] critical, [3] error, [4] warning, [5] notice, [6] info, [7] debug.
 

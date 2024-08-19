@@ -67,7 +67,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             .ContinueWith(t => new KeyValuePair<object, object>(it.Key, it.Value)))
                         .ToList();
                     KeyValuePair<object, object>[] entries = await Task.WhenAll(dictTasks).ConfigureAwait(false);
-                    return entries.ToDictionary(it => it.Key, it => it.Value); 
+                    return entries.ToDictionary(it => it.Key, it => it.Value);
                 case Avro.Schema.Type.Record:
                     RecordSchema rs = (RecordSchema)schema;
                     foreach (Field f in rs.Fields)
@@ -86,7 +86,8 @@ namespace Confluent.SchemaRegistry.Serdes
                                     {
                                         throw new RuleConditionException(ctx.Rule);
                                     }
-                                } else
+                                }
+                                else
                                 {
                                     specificRecord.Put(f.Pos, newValue);
                                 }
@@ -122,7 +123,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         ISet<string> ruleTags = ctx.Rule.Tags ?? new HashSet<string>();
                         ISet<string> intersect = new HashSet<string>(fieldContext.Tags);
                         intersect.IntersectWith(ruleTags);
-                        
+
                         if (ruleTags.Count == 0 || intersect.Count != 0)
                         {
                             return await fieldTransform.Transform(ctx, fieldContext, message)
@@ -202,7 +203,7 @@ namespace Confluent.SchemaRegistry.Serdes
             public AvroSpecificWriter(Avro.Schema schema) : base(schema)
             {
             }
-            
+
             public int Resolve(UnionSchema us, object obj)
             {
                 for (int i = 0; i < us.Count; i++)
@@ -212,13 +213,13 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw new AvroException("Cannot find a match for " + obj.GetType() + " in " + us);
             }
         }
-        
+
         private class AvroGenericWriter : DefaultWriter, IUnionResolver
         {
             public AvroGenericWriter(Avro.Schema schema) : base(schema)
             {
             }
-            
+
             public int Resolve(UnionSchema us, object obj)
             {
                 for (int i = 0; i < us.Count; i++)

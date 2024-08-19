@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             // serializer case. 
 
             int count = 0;
-            Action<DeliveryReport<Null, Null>> dh = (DeliveryReport<Null, Null> dr) => 
+            Action<DeliveryReport<Null, Null>> dh = (DeliveryReport<Null, Null> dr) =>
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal(PersistenceStatus.Persisted, dr.Status);
@@ -56,8 +56,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new TestProducerBuilder<Null, Null>(producerConfig).Build())
             {
-                producer.Produce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> {}, dh);
-                producer.Produce(singlePartitionTopic, new Message<Null, Null> {}, dh);
+                producer.Produce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> { }, dh);
+                producer.Produce(singlePartitionTopic, new Message<Null, Null> { }, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -82,8 +82,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                producer.Produce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> {}, dh2);
-                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> {}, dh2);
+                producer.Produce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { }, dh2);
+                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { }, dh2);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

@@ -45,7 +45,7 @@ namespace Confluent.Kafka.UnitTests
                 }
             }
         }
-        
+
         [Fact]
         public async void EmptyTopicCollection()
         {
@@ -54,14 +54,14 @@ namespace Confluent.Kafka.UnitTests
                 foreach (var option in options)
                 {
                     var result = await adminClient.DescribeTopicsAsync(
-                        TopicCollection.OfTopicNames(new List<string> {}),
+                        TopicCollection.OfTopicNames(new List<string> { }),
                         option);
                     Assert.Empty(result.TopicDescriptions);
                 }
             }
         }
 
-        
+
         [Fact]
         public async void WrongTopicNames()
         {
@@ -87,7 +87,7 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public async void WrongRequestTimeoutValue()
         {
-            var topicCollections =  TopicCollection.OfTopicNames(new List<string> {});
+            var topicCollections = TopicCollection.OfTopicNames(new List<string> { });
             var wrongRequestTimeoutValue = new DescribeTopicsOptions
             {
                 RequestTimeout = TimeSpan.FromSeconds(-1)
@@ -104,7 +104,7 @@ namespace Confluent.Kafka.UnitTests
         public async void LocalTimeout()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
+            {
                 BootstrapServers = "localhost:90922",
                 SocketTimeoutMs = 10
             }).Build())
@@ -113,7 +113,7 @@ namespace Confluent.Kafka.UnitTests
                 {
                     var ex = await Assert.ThrowsAsync<KafkaException>(() =>
                         adminClient.DescribeTopicsAsync(
-                            TopicCollection.OfTopicNames(new List<string> {"test"}),
+                            TopicCollection.OfTopicNames(new List<string> { "test" }),
                             option)
                     );
                     Assert.Equal("Failed while waiting for controller: Local: Timed out", ex.Message);

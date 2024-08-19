@@ -47,7 +47,7 @@ namespace Confluent.Kafka.Admin
                 ", \"Mechanism\": ");
             result.Append(Mechanism.ToString().Quote());
             result.Append("}");
-            return  result.ToString();
+            return result.ToString();
         }
     }
 }

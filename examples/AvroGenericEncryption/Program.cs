@@ -1,4 +1,4 @@
-﻿// Copyright 2024 Confluent Inc.
+// Copyright 2024 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ namespace Confluent.Kafka.Examples.AvroGenericEncryption
                     .Build())
             {
                 schemaRegistry.RegisterSchemaAsync(subjectName, schema, true);
-                    
+
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
                 long i = 1;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +10,7 @@ namespace Confluent.SchemaRegistry.Encryption
     public static class KmsClients
     {
         private static IDictionary<string, IKmsClient> clients = new ConcurrentDictionary<string, IKmsClient>();
-        
+
         public static IKmsClient Get(string id)
         {
             return clients[id];

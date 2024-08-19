@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2018 Confluent Inc.
+// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </summary>
         [Obsolete("Superseded by AvroSerializer(ISchemaRegistryClient, AvroSerializerConfig)")]
         public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config)
-        {}
+        { }
 
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schemaRegistryClient = schemaRegistryClient;
             this.config = config;
             this.ruleExecutors = ruleExecutors ?? new List<IRuleExecutor>();
-            
+
             if (config == null) { return; }
 
             var nonAvroConfig = config

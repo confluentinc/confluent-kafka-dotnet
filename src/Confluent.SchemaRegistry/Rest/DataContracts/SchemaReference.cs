@@ -44,7 +44,7 @@ namespace Confluent.SchemaRegistry
         [DataMember(Name = "version")]
         public int Version { get; set; }
 
-        private SchemaReference() {}
+        private SchemaReference() { }
 
         /// <summary>
         ///     Initializes a new instance of the SchemaReference class.

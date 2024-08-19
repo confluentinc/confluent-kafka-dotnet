@@ -53,7 +53,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
 
                 Assert.Equal(bytes1.Length, bytes2.Length);
 
-                for (int i=0; i<bytes1.Length; ++i)
+                for (int i = 0; i < bytes1.Length; ++i)
                 {
                     Assert.Equal(bytes1[i], bytes2[i]);
                 }

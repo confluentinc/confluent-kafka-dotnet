@@ -1,4 +1,4 @@
-﻿// Copyright 2019 Confluent Inc.
+// Copyright 2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ namespace Confluent.Kafka.SyncOverAsync
     {
         static void Main(string[] args)
         {
-            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);   
+            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);
             ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
             ThreadPool.GetMaxThreads(out workerThreads, out completionPortThreads);
             Console.WriteLine($"ThreadPool workerThreads: {workerThreads},  completionPortThreads: {completionPortThreads}");
@@ -67,10 +67,10 @@ namespace Confluent.Kafka.SyncOverAsync
             {
                 BootstrapServers = args[0]
             };
-            
+
             using (var producer = new ProducerBuilder<Null, string>(pConfig)
                 .SetValueSerializer(new SimpleAsyncSerializer().SyncOverAsync()) // may deadlock due to thread pool exhaustion.
-                // .SetValueSerializer(new SimpleSyncSerializer()) // will never deadlock.
+                                                                                 // .SetValueSerializer(new SimpleSyncSerializer()) // will never deadlock.
                 .Build())
             {
                 var topic = Guid.NewGuid().ToString();
@@ -78,7 +78,7 @@ namespace Confluent.Kafka.SyncOverAsync
 
                 // will deadlock if N >= workerThreads.
                 int N = workerThreads;
-                for (int i=0; i<N; ++i)
+                for (int i = 0; i < N; ++i)
                 {
                     // create a unique delivery report handler for each task.
                     Func<int, Action> actionCreator = (taskNumber) =>
@@ -88,7 +88,7 @@ namespace Confluent.Kafka.SyncOverAsync
                             Console.WriteLine($"running task {taskNumber}");
                             object waitObj = new object();
 
-                            Action<DeliveryReport<Null, string>> handler = dr => 
+                            Action<DeliveryReport<Null, string>> handler = dr =>
                             {
                                 // in a deadlock scenario, the delivery handler will
                                 // never execute since execution of the Produce

@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             var numMessages = 5;
             var groupID = Guid.NewGuid().ToString();
 
-            using(var topic = new TemporaryTopic(bootstrapServers, 1))
+            using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
                 // This test needs us to first produce and consume from a topic before we can list the offsets.
                 // 1. Create topic and produce
@@ -64,7 +64,8 @@ namespace Confluent.Kafka.IntegrationTests
 
 
                 // Create an AdminClient here - to test alter while the consumer is still active.
-                var adminClient = new AdminClientBuilder(new AdminClientConfig {
+                var adminClient = new AdminClientBuilder(new AdminClientConfig
+                {
                     BootstrapServers = bootstrapServers,
                 }).Build();
 

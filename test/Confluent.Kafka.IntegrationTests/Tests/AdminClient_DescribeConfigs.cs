@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // topic configs, more than one.
                 // ---
-                results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { 
+                results = adminClient.DescribeConfigsAsync(new List<ConfigResource> {
                     new ConfigResource { Name = singlePartitionTopic, Type = ResourceType.Topic },
                     new ConfigResource { Name = partitionedTopic, Type = ResourceType.Topic }
                 }).Result;
@@ -87,7 +87,7 @@ namespace Confluent.Kafka.IntegrationTests
                 try
                 {
                     results = adminClient.DescribeConfigsAsync(
-                        new List<ConfigResource> 
+                        new List<ConfigResource>
                         {
                             new ConfigResource { Name="invalid.name.for.resource", Type = ResourceType.Broker }
                         }

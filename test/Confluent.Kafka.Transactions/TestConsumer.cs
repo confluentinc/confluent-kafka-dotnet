@@ -7,7 +7,7 @@ namespace Confluent.Kafka.Transactions
     public class TestConsumer
     {
         static TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
-        
+
         string bootstrapServers;
         SimulationConfig conf;
 
@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Transactions
 
                     if (!lasts.ContainsKey(cr.Message.Key)) { lasts.Add(cr.Message.Key, -1); }
                     if (cr.Message.Value == lasts[cr.Message.Key] + 1) { Console.Write("."); }
-                    else { Console.Write($"[producer {cr.Message.Key} expected seq {lasts[cr.Message.Key]+1} but got {cr.Message.Value}]"); break; }
+                    else { Console.Write($"[producer {cr.Message.Key} expected seq {lasts[cr.Message.Key] + 1} but got {cr.Message.Value}]"); break; }
                     Console.Out.Flush();
                     lasts[cr.Message.Key] = cr.Message.Value;
                 }

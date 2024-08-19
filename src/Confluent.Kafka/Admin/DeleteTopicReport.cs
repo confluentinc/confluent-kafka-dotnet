@@ -20,7 +20,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     The result of a request to delete a specific topic.
     /// </summary>
-    public class DeleteTopicReport 
+    public class DeleteTopicReport
     {
         /// <summary>
         ///     The topic.

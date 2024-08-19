@@ -26,7 +26,7 @@ namespace Confluent.Kafka.Admin
         private static EarliestSpec EarliestSpecInstance = new EarliestSpec();
         private static LatestSpec LatestSpecInstance = new LatestSpec();
         private static MaxTimestampSpec MaxTimestampSpecInstance = new MaxTimestampSpec();
-        
+
         /// <summary>
         ///     Used to retrieve the earliest offset available.
         /// </summary>
@@ -62,7 +62,8 @@ namespace Confluent.Kafka.Admin
         ///     that could not correspond to the latest one as timestamps
         ///     can be specified client-side.
         /// </summary>
-        public class MaxTimestampSpec : OffsetSpec {
+        public class MaxTimestampSpec : OffsetSpec
+        {
             internal MaxTimestampSpec()
             {
             }
@@ -132,7 +133,7 @@ namespace Confluent.Kafka.Admin
         {
             return MaxTimestampSpecInstance;
         }
-        
+
         internal abstract long Value();
     }
 }

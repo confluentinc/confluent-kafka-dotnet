@@ -30,7 +30,7 @@ namespace Confluent.Kafka.UnitTests
             var description = new UserScramCredentialsDescription
             {
                 User = "test",
-                ScramCredentialInfos = new List<ScramCredentialInfo> 
+                ScramCredentialInfos = new List<ScramCredentialInfo>
                 {
                     new ScramCredentialInfo()
                     {
@@ -47,7 +47,7 @@ namespace Confluent.Kafka.UnitTests
             };
             Assert.Equal(
                 @"{""User"": ""test"", ""ScramCredentialInfos"": " +
-                @"[{""Mechanism"": ""ScramSha256"", ""Iterations"": 10000}, " + 
+                @"[{""Mechanism"": ""ScramSha256"", ""Iterations"": 10000}, " +
                 @"{""Mechanism"": ""ScramSha512"", ""Iterations"": 5000}], ""Error"": ""Success""}",
                 description.ToString());
 
@@ -55,14 +55,14 @@ namespace Confluent.Kafka.UnitTests
             description = new UserScramCredentialsDescription
             {
                 User = "test",
-                ScramCredentialInfos = new List<ScramCredentialInfo> 
+                ScramCredentialInfos = new List<ScramCredentialInfo>
                 {
                 },
                 Error = ErrorCode.ResourceNotFound
             };
             Assert.Equal(
                 @"{""User"": ""test"", ""ScramCredentialInfos"": [], " +
-                @"""Error"": ""Broker: Request illegally referred to " + 
+                @"""Error"": ""Broker: Request illegally referred to " +
                 @"resource that does not exist""}",
                 description.ToString());
         }

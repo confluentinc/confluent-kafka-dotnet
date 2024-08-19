@@ -26,7 +26,7 @@ namespace Confluent.Kafka
         ///     The header key.
         /// </summary>
         string Key { get; }
-        
+
         /// <summary>
         ///     The serialized header value data.
         /// </summary>

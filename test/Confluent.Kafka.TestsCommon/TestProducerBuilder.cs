@@ -16,7 +16,7 @@ public class TestProducerBuilder<TKey, TValue> : ProducerBuilder<TKey, TValue>
     {
         var producerConfig = new ProducerConfig(
             new Dictionary<string, string>(config))
-        {};
+        { };
         return producerConfig;
     }
 }

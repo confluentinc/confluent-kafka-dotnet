@@ -1,4 +1,4 @@
-﻿// Copyright 20 Confluent Inc.
+// Copyright 20 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             var versions = sr.GetSubjectVersionsAsync(subject).Result;
 
-            Assert.Equal(versions.Count, 2);
+            Assert.Equal(2, versions.Count);
         }
     }
 }

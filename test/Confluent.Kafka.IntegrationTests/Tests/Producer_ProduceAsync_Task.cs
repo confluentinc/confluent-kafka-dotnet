@@ -54,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            for (int i=0; i<2; ++i)
+            for (int i = 0; i < 2; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(PersistenceStatus.Persisted, dr.Status);
@@ -84,14 +84,14 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            for (int i=0; i<2; ++i)
+            for (int i = 0; i < 2; ++i)
             {
                 var dr = drs2[i].Result;
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
-                Assert.Equal($"test key {i+2}", Encoding.UTF8.GetString(dr.Message.Key));
-                Assert.Equal($"test val {i+2}", Encoding.UTF8.GetString(dr.Message.Value));
+                Assert.Equal($"test key {i + 2}", Encoding.UTF8.GetString(dr.Message.Key));
+                Assert.Equal($"test val {i + 2}", Encoding.UTF8.GetString(dr.Message.Value));
                 Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             }
