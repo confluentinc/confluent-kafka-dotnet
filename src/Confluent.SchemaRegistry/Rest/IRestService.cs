@@ -34,7 +34,7 @@ namespace Confluent.SchemaRegistry
         Task<RegisteredSchema> GetLatestWithMetadataAsync(string subject, IDictionary<string, string> metadata, bool ignoreDeletedSchemas);
         Task<Schema> GetSchemaAsync(int id, string format = null);
         Task<Schema> GetSchemaBySubjectAndIdAsync(string subject, int id, string format = null);
-        Task<RegisteredSchema> GetSchemaAsync(string subject, int version);
+        Task<RegisteredSchema> GetSchemaAsync(string subject, int version, bool ignoreDeletedSchemas = true);
         Task<List<string>> GetSubjectsAsync();
         Task<List<int>> GetSubjectVersionsAsync(string subject);
         Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize);
