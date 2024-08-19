@@ -595,7 +595,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <inheritdoc/>
-        public async Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version)
+        public async Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version, bool ignoreDeletedSchemas = true)
         {
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
