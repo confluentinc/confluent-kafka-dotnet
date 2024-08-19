@@ -89,7 +89,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 foreach (var reference in root.References)
                 {
-                    Schema refSchemaRes = await schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version);
+                    Schema refSchemaRes = await schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version, false);
                     await CreateSchemaDictUtil(refSchemaRes);
                 }
             }
