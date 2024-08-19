@@ -244,11 +244,13 @@ namespace Confluent.SchemaRegistry.Serdes
                 case FieldType.Bytes:
                     return RuleContext.Type.Bytes;
                 case FieldType.Int32:
+                case FieldType.SInt32:
                 case FieldType.UInt32:
                 case FieldType.Fixed32:
                 case FieldType.SFixed32:
                     return RuleContext.Type.Int;
                 case FieldType.Int64:
+                case FieldType.SInt64:
                 case FieldType.UInt64:
                 case FieldType.Fixed64:
                 case FieldType.SFixed64:
