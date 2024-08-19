@@ -576,6 +576,13 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AdminOptions_set_match_consumer_group_types(
+                        IntPtr options,
+                        ConsumerGroupType[] groupTypes,
+                        UIntPtr groupTypesCnt);
+
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_NewTopic_new(
                         [MarshalAs(UnmanagedType.LPStr)] string topic,
                         IntPtr num_partitions,
