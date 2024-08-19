@@ -583,27 +583,49 @@ namespace Confluent.Kafka.Examples
         {
             var timeout = TimeSpan.FromSeconds(30);
             var statesList = new List<ConsumerGroupState>();
-            try
+            var groupTypesList = new List<ConsumerGroupType>();
+            var isType = false;
+            var isState = false;
+            for (int i = 0; i < commandArgs.Length; i++)
             {
-                if (commandArgs.Length > 0)
+                if (commandArgs[i] == "-states")
                 {
-                    timeout = TimeSpan.FromSeconds(Int32.Parse(commandArgs[0]));
+                    if (isState)
+                    {
+                        Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                        Environment.ExitCode = 1;
+                        return;
+                    }
+                    isState = true;
                 }
-                if (commandArgs.Length > 1)
+                else if (commandArgs[i] == "-types")
                 {
-                    for (int i = 1; i < commandArgs.Length; i++)
+                    if (isType)
+                    {
+                        Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                        Environment.ExitCode = 1;
+                        return;
+                    }
+                    isType = true;
+                }
+                else
+                {
+                    if (isState)
                     {
                         statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
                     }
+                    else if (isType)
+                    {
+                        groupTypesList.Add(Enum.Parse<ConsumerGroupType>(commandArgs[i]));
+                    }
+                    else
+                    {
+                        Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                        Environment.ExitCode = 1;
+                        return;
+                    }
                 }
             }
-            catch (SystemException)
-            {
-                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [<timeout_seconds> <match_state_1> <match_state_2> ... <match_state_N>]");
-                Environment.ExitCode = 1;
-                return;
-            }
-
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 try
@@ -612,6 +634,7 @@ namespace Confluent.Kafka.Examples
                     {
                         RequestTimeout = timeout,
                         MatchStates = statesList,
+                        MatchGroupTypes = groupTypesList,
                     });
                     Console.WriteLine(result);
                 }

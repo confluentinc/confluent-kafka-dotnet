@@ -300,6 +300,7 @@ namespace Confluent.Kafka.Impl
             _AdminOptions_set_require_stable_offsets = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_require_stable_offsets").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _AdminOptions_set_include_authorized_operations = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_include_authorized_operations").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _AdminOptions_set_match_consumer_group_states = (Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_match_consumer_group_states").CreateDelegate(typeof(Func<IntPtr, ConsumerGroupState[], UIntPtr, IntPtr>));
+            _AdminOptions_set_match_consumer_group_types = (Func<IntPtr, ConsumerGroupType[], UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_match_consumer_group_types").CreateDelegate(typeof(Func<IntPtr, ConsumerGroupType[], UIntPtr, IntPtr>));
             _AdminOptions_set_isolation_level = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_isolation_level").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
 
             _NewTopic_new = (Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_new").CreateDelegate(typeof(Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>));
@@ -410,6 +411,8 @@ namespace Confluent.Kafka.Impl
             _ConsumerGroupListing_group_id = (_ConsumerGroupListing_group_id_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupListing_group_id").CreateDelegate(typeof(_ConsumerGroupListing_group_id_delegate));
             _ConsumerGroupListing_is_simple_consumer_group = (_ConsumerGroupListing_is_simple_consumer_group_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupListing_is_simple_consumer_group").CreateDelegate(typeof(_ConsumerGroupListing_is_simple_consumer_group_delegate));
             _ConsumerGroupListing_state = (_ConsumerGroupListing_state_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupListing_state").CreateDelegate(typeof(_ConsumerGroupListing_state_delegate));
+            _ConsumerGroupListing_type = (_ConsumerGroupListing_type_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupListing_type").CreateDelegate(typeof(_ConsumerGroupListing_type_delegate));
+
             _ListConsumerGroups_result_valid = (_ListConsumerGroups_result_valid_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroups_result_valid").CreateDelegate(typeof(_ListConsumerGroups_result_valid_delegate));
             _ListConsumerGroups_result_errors = (_ListConsumerGroups_result_errors_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroups_result_errors").CreateDelegate(typeof(_ListConsumerGroups_result_errors_delegate));
 
@@ -1340,6 +1343,10 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr AdminOptions_set_match_consumer_group_states(IntPtr options, ConsumerGroupState[] states, UIntPtr statesCnt)
             => _AdminOptions_set_match_consumer_group_states(options, states, statesCnt);
 
+        private static Func<IntPtr, ConsumerGroupType[], UIntPtr, IntPtr> _AdminOptions_set_match_consumer_group_types;
+        internal static IntPtr AdminOptions_set_match_consumer_group_types(IntPtr options, ConsumerGroupType[] groupTypes, UIntPtr groupTypesCnt)
+            => _AdminOptions_set_match_consumer_group_types(options, groupTypes, groupTypesCnt);
+
         private static Func<IntPtr, IntPtr, IntPtr> _AdminOptions_set_isolation_level;
         internal static IntPtr AdminOptions_set_isolation_level(IntPtr options, IntPtr IsolationLevel)
             => _AdminOptions_set_isolation_level(options, IsolationLevel);
@@ -1882,6 +1889,11 @@ namespace Confluent.Kafka.Impl
         private static _ConsumerGroupListing_state_delegate _ConsumerGroupListing_state;
         internal static ConsumerGroupState ConsumerGroupListing_state(IntPtr grplist)
            => _ConsumerGroupListing_state(grplist);
+
+        private delegate ConsumerGroupType _ConsumerGroupListing_type_delegate(IntPtr grplist);
+        private static _ConsumerGroupListing_type_delegate _ConsumerGroupListing_type;
+        internal static ConsumerGroupType ConsumerGroupListing_type(IntPtr grplist)
+           => _ConsumerGroupListing_type(grplist);
 
         private delegate IntPtr _ListConsumerGroups_result_valid_delegate(IntPtr result, out UIntPtr cntp);
         private static _ListConsumerGroups_result_valid_delegate _ListConsumerGroups_result_valid;
