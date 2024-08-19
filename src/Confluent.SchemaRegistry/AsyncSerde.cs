@@ -124,7 +124,7 @@ namespace Confluent.SchemaRegistry
                 visited.Add(reference.Name);
                 if (!schemas.ContainsKey(reference.Name))
                 {
-                    Schema s = await schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version)
+                    Schema s = await schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version, false)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     if (s == null)
                     {
@@ -201,7 +201,7 @@ namespace Confluent.SchemaRegistry
             int version1 = first.Version;
             int version2 = last.Version;
             for (int i = version1 + 1; i < version2; i++) {
-                tasks.Add(schemaRegistryClient.GetRegisteredSchemaAsync(subject, i));
+                tasks.Add(schemaRegistryClient.GetRegisteredSchemaAsync(subject, i, false));
             }
             RegisteredSchema[] schemas = await Task.WhenAll(tasks).ConfigureAwait(continueOnCapturedContext: false);
 

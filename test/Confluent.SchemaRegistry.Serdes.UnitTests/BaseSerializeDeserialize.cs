@@ -61,8 +61,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                         return new Schema(store.Where(x => x.Value == id).First().Key, null, SchemaType.Avro);
                     }
                 });
-            schemaRegistryMock.Setup(x => x.GetRegisteredSchemaAsync(It.IsAny<string>(), It.IsAny<int>())).ReturnsAsync(
-                (string subject, int version) => subjectStore[subject].First(x => x.Version == version)
+            schemaRegistryMock.Setup(x => x.GetRegisteredSchemaAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>())).ReturnsAsync(
+                (string subject, int version, bool ignoreDeletedSchemas) => subjectStore[subject].First(x => x.Version == version)
             );
             schemaRegistryMock.Setup(x => x.GetLatestSchemaAsync(It.IsAny<string>())).ReturnsAsync(
                 (string subject) => subjectStore[subject].Last()

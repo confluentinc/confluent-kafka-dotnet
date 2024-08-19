@@ -194,10 +194,13 @@ namespace Confluent.SchemaRegistry
         /// <param name="version">
         ///     The version number of schema to get.
         /// </param>
+        /// <param name="ignoreDeletedSchemas">
+        ///     Whether or not to ignore deleted schemas.
+        /// </param>
         /// <returns>
         ///     The schema identified by the specified <paramref name="subject" /> and <paramref name="version" />.
         /// </returns>
-        Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version);
+        Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version, bool ignoreDeletedSchemas = true);
 
 
         /// <summary>
