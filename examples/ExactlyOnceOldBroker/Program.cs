@@ -39,9 +39,9 @@ namespace Confluent.Kafka.Examples.Transactions
     ///     consumed from the corresponding input
     ///     partition.
     /// </summary>
-    public class ProducerState<K,V>
+    public class ProducerState<K, V>
     {
-        public IProducer<K,V> Producer { get; set; }
+        public IProducer<K, V> Producer { get; set; }
 
         public Offset Offset { get; set; }
     }
@@ -240,7 +240,8 @@ namespace Confluent.Kafka.Examples.Transactions
             var producerState = new Dictionary<TopicPartition, ProducerState<string, Null>>();
 
             using (var consumer = new ConsumerBuilder<Null, string>(cConfig)
-                .SetPartitionsRevokedHandler((c, partitions) => {
+                .SetPartitionsRevokedHandler((c, partitions) =>
+                {
                     // Note: All handlers (except the log handler) are executed
                     // as a side-effect of, and on the same thread as the Consume
                     // or Close methods. Any exception thrown in a handler (with
@@ -256,7 +257,8 @@ namespace Confluent.Kafka.Examples.Transactions
                     var tasks = new List<Task>();
                     foreach (var p in producerState.Values)
                     {
-                        tasks.Add(Task.Run(() => {
+                        tasks.Add(Task.Run(() =>
+                        {
                             p.Producer.AbortTransaction(DefaultTimeout); // Note: Not cancellable yet.
                             p.Producer.Dispose();
                         }, ct));
@@ -268,7 +270,8 @@ namespace Confluent.Kafka.Examples.Transactions
                     }
                     producerState.Clear();
                 })
-                .SetPartitionsAssignedHandler((c, partitions) => {
+                .SetPartitionsAssignedHandler((c, partitions) =>
+                {
                     Console.WriteLine(
                         "** MapWords consumer group rebalanced. Partition assignment: [" +
                         string.Join(',', partitions.Select(p => p.Partition.Value)) +
@@ -281,7 +284,8 @@ namespace Confluent.Kafka.Examples.Transactions
                     var tasks = new List<Task>();
                     foreach (var tp in partitions)
                     {
-                        tasks.Add(Task.Run(() => {
+                        tasks.Add(Task.Run(() =>
+                        {
                             var pConfig = new ProducerConfig
                             {
                                 BootstrapServers = brokerList,
@@ -485,7 +489,8 @@ namespace Confluent.Kafka.Examples.Transactions
             var producerState = new Dictionary<TopicPartition, ProducerState<string, int>>();
 
             using (var consumer = new ConsumerBuilder<string, Null>(cConfig)
-                .SetPartitionsRevokedHandler((c, partitions) => {
+                .SetPartitionsRevokedHandler((c, partitions) =>
+                {
                     // clear rocksdb state.
                     db.DropColumnFamily("counts");
                     db.CreateColumnFamily(new ColumnFamilyOptions(), "counts");
@@ -493,7 +498,8 @@ namespace Confluent.Kafka.Examples.Transactions
                     var tasks = new List<Task>();
                     foreach (var p in producerState.Values)
                     {
-                        tasks.Add(Task.Run(() => {
+                        tasks.Add(Task.Run(() =>
+                        {
                             p.Producer.AbortTransaction(DefaultTimeout); // Note: Not cancellable yet.
                             p.Producer.Dispose();
                         }, ct));
@@ -505,7 +511,8 @@ namespace Confluent.Kafka.Examples.Transactions
                     Task.WaitAll(tasks.ToArray());
                     producerState.Clear();
                 })
-                .SetPartitionsAssignedHandler((c, partitions) => {
+                .SetPartitionsAssignedHandler((c, partitions) =>
+                {
                     Console.WriteLine(
                         "** AggregateWords consumer group rebalanced. Partition assignment: [" +
                         string.Join(',', partitions.Select(p => p.Partition.Value)) +
@@ -516,7 +523,8 @@ namespace Confluent.Kafka.Examples.Transactions
                     var tasks = new List<Task>();
                     foreach (var tp in partitions)
                     {
-                        tasks.Add(Task.Run(() => {
+                        tasks.Add(Task.Run(() =>
+                        {
                             var pConfig = new ProducerConfig
                             {
                                 BootstrapServers = brokerList,
@@ -553,7 +561,7 @@ namespace Confluent.Kafka.Examples.Transactions
                         var kBytes = Encoding.UTF8.GetBytes(cr.Message.Key);
                         var vBytes = db.Get(kBytes, columnFamily);
                         var v = vBytes == null ? 0 : BitConverter.ToInt32(vBytes);
-                        var updatedV = v+1;
+                        var updatedV = v + 1;
 
                         db.Put(kBytes, BitConverter.GetBytes(updatedV), columnFamily);
 
@@ -628,7 +636,7 @@ namespace Confluent.Kafka.Examples.Transactions
                 {
                     var wc = (BitConverter.ToInt32(it.Value()), Encoding.UTF8.GetString(it.Key()));
                     if (maxWords.Count < N) { maxWords.Add(wc); }
-                    else { if (wc.Item1 > maxWords[N-1].Item1) { maxWords[N-1] = wc; } }
+                    else { if (wc.Item1 > maxWords[N - 1].Item1) { maxWords[N - 1] = wc; } }
                     maxWords.Sort((x, y) => y.Item1.CompareTo(x.Item1));
                     it.Next();
                 }
@@ -656,7 +664,8 @@ namespace Confluent.Kafka.Examples.Transactions
             string mode = args[1];
 
             CancellationTokenSource cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (_, e) => {
+            Console.CancelKeyPress += (_, e) =>
+            {
                 e.Cancel = true; // prevent the process from terminating.
                 cts.Cancel();
             };
@@ -672,7 +681,7 @@ namespace Confluent.Kafka.Examples.Transactions
             if (mode == "gen")
             {
                 try { await Generator_LineInputData(brokerList, cts.Token); }
-                catch (OperationCanceledException) {}
+                catch (OperationCanceledException) { }
                 return;
             }
 

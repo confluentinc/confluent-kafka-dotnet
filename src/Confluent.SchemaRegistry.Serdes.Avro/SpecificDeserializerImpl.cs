@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A datum reader cache (one corresponding to each write schema that's been seen) 
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<(Avro.Schema, Avro.Schema), DatumReader<T>> datumReaderBySchema 
+        private readonly Dictionary<(Avro.Schema, Avro.Schema), DatumReader<T>> datumReaderBySchema
             = new Dictionary<(Avro.Schema, Avro.Schema), DatumReader<T>>();
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
                 );
             }
-            
+
             if (config == null) { return; }
 
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
@@ -111,7 +111,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 : await Deserialize(context.Topic, context.Headers, data.ToArray(),
                     context.Component == MessageComponentType.Key);
         }
-        
+
         public async Task<T> Deserialize(string topic, Headers headers, byte[] array, bool isKey)
         {
             try
@@ -123,16 +123,16 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     throw new InvalidDataException($"Expecting data framing of length 5 bytes or more but total data size is {array.Length} bytes");
                 }
-                
+
                 string subject = this.subjectNameStrategy != null
                     // use the subject name strategy specified in the serializer config if available.
                     ? this.subjectNameStrategy(
                         new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic),
                         null)
                     // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                    : schemaRegistryClient == null 
+                    : schemaRegistryClient == null
                         ? null
-                        : isKey 
+                        : isKey
                             ? schemaRegistryClient.ConstructKeySubjectName(topic)
                             : schemaRegistryClient.ConstructValueSubjectName(topic);
 
@@ -154,7 +154,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
                     (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
-                    
+
                     if (latestSchema != null)
                     {
                         migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
@@ -166,7 +166,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         data = new GenericReader<GenericRecord>(writerSchema, writerSchema)
                             .Read(default(GenericRecord), new BinaryDecoder(stream));
-                        
+
                         string jsonString = null;
                         using (var jsonStream = new MemoryStream())
                         {
@@ -179,13 +179,13 @@ namespace Confluent.SchemaRegistry.Serdes
 
                             jsonString = Encoding.UTF8.GetString(jsonStream.ToArray());
                         }
-                        
+
                         JToken json = JToken.Parse(jsonString);
                         json = await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
                             .ContinueWith(t => (JToken)t.Result)
                             .ConfigureAwait(continueOnCapturedContext: false);
                         Avro.IO.Decoder decoder = new JsonDecoder(ReaderSchema, json.ToString(Formatting.None));
-                        
+
                         datumReader = new SpecificReader<T>(ReaderSchema, ReaderSchema);
                         data = Read(datumReader, decoder);
                     }
@@ -196,7 +196,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                 }
 
-                FieldTransformer fieldTransformer = async (ctx, transform, message) => 
+                FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                 {
                     return await AvroUtils.Transform(ctx, writerSchema, message, transform).ConfigureAwait(false);
                 };
@@ -204,7 +204,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     writerSchemaJson, data, fieldTransformer)
                     .ConfigureAwait(continueOnCapturedContext: false);
 
-                return (T) data;
+                return (T)data;
             }
             catch (AggregateException e)
             {
@@ -216,7 +216,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             return Task.FromResult(Avro.Schema.Parse(schema.SchemaString));
         }
-        
+
         private async Task<DatumReader<T>> GetDatumReader(Avro.Schema writerSchema, Avro.Schema readerSchema)
         {
             DatumReader<T> datumReader = null;

@@ -57,7 +57,7 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var exception = (DescribeAclsException) obj;
+            var exception = (DescribeAclsException)obj;
             if (base.Equals(exception)) return true;
             return Error == exception.Error &&
                    Result == exception.Result;

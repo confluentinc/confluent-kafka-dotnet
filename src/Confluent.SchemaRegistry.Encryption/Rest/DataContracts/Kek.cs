@@ -38,9 +38,9 @@ namespace Confluent.SchemaRegistry.Encryption
         /// <summary>
         ///     The KMS key ID for the KEK
         /// </summary>
-        [DataMember(Name = "kmsKeyId")] 
+        [DataMember(Name = "kmsKeyId")]
         public string KmsKeyId { get; set; }
-        
+
         /// <summary>
         ///     The KMS properties.
         /// </summary>
@@ -50,31 +50,31 @@ namespace Confluent.SchemaRegistry.Encryption
         /// <summary>
         ///     The doc for the KEK.
         /// </summary>
-        [DataMember(Name = "doc")] 
+        [DataMember(Name = "doc")]
         public string Doc { get; set; }
-        
+
         /// <summary>
         ///     Whether the KEK is shared.
         /// </summary>
         [DataMember(Name = "shared")]
         public bool Shared { get; set; }
-        
+
         /// <summary>
         ///     Whether the KEK is deleted.
         /// </summary>
         [DataMember(Name = "deleted")]
         public bool Deleted { get; set; }
-        
+
         public bool Equals(Kek other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Name == other.Name && KmsType == other.KmsType && 
-                   KmsKeyId == other.KmsKeyId && 
-                   Utils.DictEquals(KmsProps, other.KmsProps) && 
+            return Name == other.Name && KmsType == other.KmsType &&
+                   KmsKeyId == other.KmsKeyId &&
+                   Utils.DictEquals(KmsProps, other.KmsProps) &&
                    Doc == other.Doc && Shared == other.Shared && Deleted == other.Deleted;
         }
-        
+
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;

@@ -32,7 +32,8 @@ namespace ConfigGen
         ///     not be automatically extracted.
         /// </summary>
         internal static List<PropertySpecification> RemoveLegacyOrNotRelevant(List<PropertySpecification> props)
-            => props.Where(p => {
+            => props.Where(p =>
+            {
                 // handled as a special case.
                 if (p.Name == "sasl.mechanisms") { return false; }
                 if (p.Name == "sasl.mechanism") { return false; }
@@ -214,7 +215,7 @@ namespace ConfigGen
 
     class PropertySpecification : IComparable
     {
-        public PropertySpecification() {}
+        public PropertySpecification() { }
 
         public PropertySpecification(PropertySpecification other)
         {
@@ -671,7 +672,8 @@ namespace Confluent.Kafka
 
         static List<PropertySpecification> choosePreferredNames(List<PropertySpecification> props)
         {
-            return props.Select(p => {
+            return props.Select(p =>
+            {
                 if (p.AliasFor != null && MappingConfiguration.PreferredNames.ContainsKey(p.AliasFor))
                 {
                     var af = p.AliasFor;

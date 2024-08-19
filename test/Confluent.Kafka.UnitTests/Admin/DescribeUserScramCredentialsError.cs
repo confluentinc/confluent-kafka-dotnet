@@ -66,7 +66,7 @@ namespace Confluent.Kafka.UnitTests
                 }
             }
         }
-        
+
         [Fact]
         public async void EmptyUsers()
         {

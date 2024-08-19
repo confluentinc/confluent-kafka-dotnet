@@ -79,7 +79,7 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     default: false
             /// </summary>
             public const string LatestCompatibilityStrict = "json.serializer.latest.compatibility.strict";
-            
+
             ///     Specifies whether or not the JSON serializer should use the latest subject
             ///     version with the given metadata for serialization.
             ///     WARNING: There is no check that the latest schema is backwards compatible
@@ -135,7 +135,7 @@ namespace Confluent.SchemaRegistry.Serdes
             get { return GetBool(PropertyNames.AutoRegisterSchemas); }
             set { SetObject(PropertyNames.AutoRegisterSchemas, value); }
         }
-        
+
 
         /// <summary>
         ///     Specifies whether to normalize schemas, which will transform schemas
@@ -177,7 +177,7 @@ namespace Confluent.SchemaRegistry.Serdes
             get { return GetBool(PropertyNames.LatestCompatibilityStrict); }
             set { SetObject(PropertyNames.LatestCompatibilityStrict, value); }
         }
-        
+
 
         /// <summary>
         ///     Specifies whether or not the JSON serializer should use the latest schema
@@ -190,7 +190,7 @@ namespace Confluent.SchemaRegistry.Serdes
             get { return GetDictionaryProperty(PropertyNames.UseLatestWithMetadata); }
             set { SetDictionaryProperty(PropertyNames.UseLatestWithMetadata, value); }
         }
-        
+
 
         /// <summary>
         ///     Subject name strategy.

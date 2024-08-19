@@ -59,13 +59,13 @@ namespace Confluent.Kafka.Admin
                 PermissionType = PermissionType
             };
         }
-        
+
         /// <summary>
         ///     A clone of the AccessControlEntry object 
         /// </summary>
         public AccessControlEntry Clone()
         {
-            return (AccessControlEntry) MemberwiseClone();
+            return (AccessControlEntry)MemberwiseClone();
         }
 
         /// <summary>

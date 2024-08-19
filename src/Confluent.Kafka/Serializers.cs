@@ -29,7 +29,7 @@ namespace Confluent.Kafka
         ///     String (UTF8) serializer.
         /// </summary>
         public static ISerializer<string> Utf8 = new Utf8Serializer();
-        
+
         private class Utf8Serializer : ISerializer<string>
         {
             public byte[] Serialize(string data, SerializationContext context)
@@ -173,7 +173,7 @@ namespace Confluent.Kafka
         ///     Byte order is original order.
         /// </remarks>
         public static ISerializer<byte[]> ByteArray = new ByteArraySerializer();
-        
+
         private class ByteArraySerializer : ISerializer<byte[]>
         {
             public byte[] Serialize(byte[] data, SerializationContext context)

@@ -41,7 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             using (var consumer = new TestConsumerBuilder<Null, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant" }).Build())
             {
-                for (int i=0; i<10; ++i)
+                for (int i = 0; i < 10; ++i)
                 {
                     producer.Produce(topic1.Name, new Message<Null, string> { Value = i.ToString() });
                     producer.Produce(topic2.Name, new Message<Null, string> { Value = i.ToString() });

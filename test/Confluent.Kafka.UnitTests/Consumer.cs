@@ -68,20 +68,20 @@ namespace Confluent.Kafka.UnitTests
         {
             // should not throw
             using (var c = new ConsumerBuilder<byte[], byte[]>(new ConsumerConfig
-                {
-                    BootstrapServers = "localhost:666",
-                    GroupId = Guid.NewGuid().ToString(),
-                    IsolationLevel = IsolationLevel.ReadCommitted
-                }).Build())
+            {
+                BootstrapServers = "localhost:666",
+                GroupId = Guid.NewGuid().ToString(),
+                IsolationLevel = IsolationLevel.ReadCommitted
+            }).Build())
             { }
 
             // should not throw
             using (var c = new ConsumerBuilder<byte[], byte[]>(new ConsumerConfig
-                {
-                    BootstrapServers = "localhost:666",
-                    GroupId = Guid.NewGuid().ToString(),
-                    IsolationLevel = IsolationLevel.ReadUncommitted
-                }).Build())
+            {
+                BootstrapServers = "localhost:666",
+                GroupId = Guid.NewGuid().ToString(),
+                IsolationLevel = IsolationLevel.ReadUncommitted
+            }).Build())
             { }
         }
 

@@ -33,7 +33,7 @@ namespace Confluent.Kafka
         ///     A Kafka error.
         /// </param>
         public TopicPartitionError(TopicPartition tp, Error error)
-            : this(tp.Topic, tp.Partition, error) {}
+            : this(tp.Topic, tp.Partition, error) { }
 
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Confluent.Kafka
         /// </returns>
         public override int GetHashCode()
             // x by prime number is quick and gives decent distribution.
-            => (Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Error.GetHashCode();
+            => (Partition.GetHashCode() * 251 + Topic.GetHashCode()) * 251 + Error.GetHashCode();
 
         /// <summary>
         ///     Tests whether TopicPartitionError instance a is equal to TopicPartitionError instance b.

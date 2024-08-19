@@ -1,4 +1,4 @@
-﻿// Copyright 2024 Confluent Inc.
+// Copyright 2024 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,24 +25,24 @@ using System.Security.Cryptography.X509Certificates;
 namespace Confluent.SchemaRegistry.Encryption
 {
     public record KekId(string Name, bool LookupDeletedKeks);
-    
+
     public record DekId(string KekName, string Subject, int? Version, DekFormat? DekFormat, bool LookupDeletedDeks);
-    
+
     /// <summary>
     ///     A caching DEK Registry client.
     /// </summary>
     public class CachedDekRegistryClient : IDekRegistryClient, IDisposable
     {
         private DekRestService restService;
-        
+
         private int identityMapCapacity;
-        
+
         private readonly IDictionary<KekId, RegisteredKek> keks = new Dictionary<KekId, RegisteredKek>();
 
         private readonly IDictionary<DekId, RegisteredDek> deks = new Dictionary<DekId, RegisteredDek>();
 
         private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
-        
+
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
         /// </summary>
@@ -343,7 +343,7 @@ namespace Confluent.SchemaRegistry.Encryption
 
         /// <inheritdoc/>
         public Task<List<int>> GetDekVersionsAsync(string kekName, string subject, DekFormat? algorithm,
-            bool ignoreDeletedDeks) 
+            bool ignoreDeletedDeks)
             => restService.GetDekVersionsAsync(kekName, subject, algorithm, ignoreDeletedDeks);
 
         /// <inheritdoc/>
@@ -413,7 +413,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, true));
             }
         }
-        
+
         /// <summary>
         ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.
         /// </summary>

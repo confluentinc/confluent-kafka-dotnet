@@ -39,7 +39,7 @@ namespace Confluent.Kafka.Transactions
             producer.InitTransactions(DefaultTimeout);
             var currentState = ProducerState.InitState;
 
-            for (int i=0; i<conf.MessageCount;)
+            for (int i = 0; i < conf.MessageCount;)
             {
                 Console.Write($"+{i}");
                 Console.Out.Flush();
@@ -65,7 +65,7 @@ namespace Confluent.Kafka.Transactions
 
                 producer.BeginTransaction();
                 int runLength = random.Next(conf.MaxRunLength);
-                for (int j=0; j<runLength && i < conf.MessageCount; ++j, ++i)
+                for (int j = 0; j < runLength && i < conf.MessageCount; ++j, ++i)
                 {
                     int val = currentState == ProducerState.MakingMessagesToCommit ? lastMessageValue++ : -1;
                     Thread.Sleep((int)(1000 * conf.MaxPauseSeconds));

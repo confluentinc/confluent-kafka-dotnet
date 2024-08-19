@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ namespace ConfluentCloudExample
                     .ContinueWith(task => task.IsFaulted
                         ? $"error producing message: {task.Exception.Message}"
                         : $"produced to: {task.Result.TopicPartitionOffset}");
-                
+
                 // block until all in-flight produce requests have completed (successfully
                 // or otherwise) or 10s has elapsed.
                 producer.Flush(TimeSpan.FromSeconds(10));

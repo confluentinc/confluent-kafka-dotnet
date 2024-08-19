@@ -122,10 +122,10 @@ namespace Confluent.Kafka.UnitTests
                 null,
             }.AsReadOnly(),
         };
-        
+
         private class NewUserScramCredentialAlteration : UserScramCredentialAlteration
         {
-            public ScramMechanism OtherMechanism {get; set;}
+            public ScramMechanism OtherMechanism { get; set; }
         }
 
         private readonly AlterUserScramCredentialsOptions options = new AlterUserScramCredentialsOptions
@@ -149,7 +149,7 @@ namespace Confluent.Kafka.UnitTests
                 }
             }
         }
-        
+
         [Fact]
         public async void NullAlterations()
         {
@@ -166,7 +166,7 @@ namespace Confluent.Kafka.UnitTests
                 }
             }
         }
-        
+
         [Fact]
         public async void InvalidSubclass()
         {
@@ -184,7 +184,7 @@ namespace Confluent.Kafka.UnitTests
                 var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
                                     adminClient.AlterUserScramCredentialsAsync(alterations, options)
                                );
-                Assert.Equal("Every alteration must be either a UserScramCredentialDeletion " + 
+                Assert.Equal("Every alteration must be either a UserScramCredentialDeletion " +
                              "or UserScramCredentialUpsertion", ex.Message);
             }
         }

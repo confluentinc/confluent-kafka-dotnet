@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -136,7 +136,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
-            
+
             // serialize second object
             user = new User
             {
@@ -161,12 +161,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -199,12 +199,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name != 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -231,12 +231,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
                         "typeName == 'STRING' ; value + '-suffix'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -269,12 +269,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null,
                         "name == 'name' ; value == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -307,12 +307,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null,
                         "name == 'name' ; value != 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -341,11 +341,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
             schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
-                {
-                    ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.name"] = new HashSet<string> { "PII" },
-                    ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.picture"] = new HashSet<string> { "PII" }
+            {
+                ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.name"] = new HashSet<string> { "PII" },
+                ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.picture"] = new HashSet<string> { "PII" }
 
-                }, new Dictionary<string, string>(), new HashSet<string>()
+            }, new Dictionary<string, string>(), new HashSet<string>()
             );
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
@@ -370,8 +370,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
             config.Set("rules.secret", "mysecret");
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var serializer = new AvroSerializer<UserWithPic>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
-            var deserializer = new AvroDeserializer<UserWithPic>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+            var serializer = new AvroSerializer<UserWithPic>(schemaRegistryClient, config, new List<IRuleExecutor> { ruleExecutor });
+            var deserializer = new AvroDeserializer<UserWithPic>(schemaRegistryClient, null, new List<IRuleExecutor> { ruleExecutor });
 
             var pic = new byte[] { 1, 2, 3 };
             var user = new UserWithPic()
@@ -403,10 +403,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
             schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
-                {
-                    ["Confluent.Kafka.Examples.AvroSpecific.User.name"] = new HashSet<string> { "PII" },
+            {
+                ["Confluent.Kafka.Examples.AvroSpecific.User.name"] = new HashSet<string> { "PII" },
 
-                }, new Dictionary<string, string>(), new HashSet<string>()
+            }, new Dictionary<string, string>(), new HashSet<string>()
             );
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
@@ -424,7 +424,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -432,8 +432,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
             config.Set("rules.secret", "mysecret");
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var serializer = new AvroSerializer<User>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
-            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+            var serializer = new AvroSerializer<User>(schemaRegistryClient, config, new List<IRuleExecutor> { ruleExecutor });
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, null, new List<IRuleExecutor> { ruleExecutor });
 
             var user = new User()
             {
@@ -513,7 +513,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.Metadata = new Metadata(null, new Dictionary<string, string>
                 {
                     { "application.version", "1"}
-                    
+
                 }, new HashSet<string>()
             );
             store[schemaStr] = 1;
@@ -521,12 +521,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 AutoRegisterSchemas = false,
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "1"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "1" } }
             };
             var deserConfig1 = new AvroDeserializerConfig
             {
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "1"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "1" } }
             };
             var serializer1 = new AvroSerializer<User>(schemaRegistryClient, config1);
             var deserializer1 = new AvroDeserializer<User>(schemaRegistryClient, deserConfig1);
@@ -543,15 +543,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             newSchema.Metadata = new Metadata(null, new Dictionary<string, string>
                 {
                     { "application.version", "2"}
-                    
+
                 }, new HashSet<string>()
             );
             newSchema.RuleSet = new RuleSet(
                 new List<Rule>
                 {
-                    new Rule("myRule1", RuleKind.Transform, RuleMode.Upgrade, "JSONATA", null, 
+                    new Rule("myRule1", RuleKind.Transform, RuleMode.Upgrade, "JSONATA", null,
                         null, rule1To2, null, null, false),
-                    new Rule("myRule2", RuleKind.Transform, RuleMode.Downgrade, "JSONATA", null, 
+                    new Rule("myRule2", RuleKind.Transform, RuleMode.Downgrade, "JSONATA", null,
                         null, rule2To1, null, null, false)
                 }, new List<Rule>()
             );
@@ -559,12 +559,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 AutoRegisterSchemas = false,
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "2"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "2" } }
             };
             var deserConfig2 = new AvroDeserializerConfig
             {
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "2"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "2" } }
             };
             var serializer2 = new AvroSerializer<NewUser>(schemaRegistryClient, config2);
             var deserializer2 = new AvroDeserializer<NewUser>(schemaRegistryClient, deserConfig2);
@@ -581,15 +581,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             newerSchema.Metadata = new Metadata(null, new Dictionary<string, string>
                 {
                     { "application.version", "3"}
-                    
+
                 }, new HashSet<string>()
             );
             newerSchema.RuleSet = new RuleSet(
                 new List<Rule>
                 {
-                    new Rule("myRule1", RuleKind.Transform, RuleMode.Upgrade, "JSONATA", null, 
+                    new Rule("myRule1", RuleKind.Transform, RuleMode.Upgrade, "JSONATA", null,
                         null, rule2To3, null, null, false),
-                    new Rule("myRule2", RuleKind.Transform, RuleMode.Downgrade, "JSONATA", null, 
+                    new Rule("myRule2", RuleKind.Transform, RuleMode.Downgrade, "JSONATA", null,
                         null, rule3To2, null, null, false)
                 }, new List<Rule>()
             );
@@ -597,12 +597,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 AutoRegisterSchemas = false,
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "3"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "3" } }
             };
             var deserConfig3 = new AvroDeserializerConfig
             {
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "3"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "3" } }
             };
             var serializer3 = new AvroSerializer<NewerUser>(schemaRegistryClient, config3);
             var deserializer3 = new AvroDeserializer<NewerUser>(schemaRegistryClient, deserConfig3);
@@ -613,25 +613,25 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 favorite_number = 100,
                 title = "awesome"
             };
-            
+
             store[schemaStr] = 1;
             store[newSchemaStr] = 2;
             store[newerSchemaStr] = 3;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema, newSchema, newerSchema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema, newSchema, newerSchema };
 
             Headers headers = new Headers();
             var bytes = serializer1.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
             ISpecificRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
-            
+
             bytes = serializer2.SerializeAsync(newUser, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
             ISpecificRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
-            
+
             bytes = serializer3.SerializeAsync(newerUser, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
             ISpecificRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
         }
 
-        private void ISpecificRecordDeserializeAllVersions(AvroDeserializer<User> deserializer1, 
-            AvroDeserializer<NewUser> deserializer2, AvroDeserializer<NewerUser> deserializer3, 
+        private void ISpecificRecordDeserializeAllVersions(AvroDeserializer<User> deserializer1,
+            AvroDeserializer<NewUser> deserializer2, AvroDeserializer<NewerUser> deserializer3,
             byte[] bytes, Headers headers, User user)
         {
             var result1 = deserializer1.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
@@ -657,7 +657,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, null);
             var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
@@ -669,9 +669,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user["name"], result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
             Assert.Equal(user["favorite_number"], result["favorite_number"]);
-            
+
             // serialize second object
-            user = new GenericRecord((RecordSchema) User._SCHEMA);
+            user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "cool");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "red");
@@ -692,12 +692,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -706,7 +706,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
             var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
@@ -728,12 +728,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name != 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -741,7 +741,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
@@ -772,7 +772,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
             var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "bob@confluent.com");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
@@ -807,7 +807,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
@@ -824,12 +824,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
                         "typeName == 'STRING' ; value + '-suffix'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -838,7 +838,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
             var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
@@ -860,12 +860,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null,
                         "name == 'name' ; value == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -874,7 +874,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
             var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
@@ -896,12 +896,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null,
                         "name == 'name' ; value != 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -909,7 +909,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
@@ -928,11 +928,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
             schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
-                {
-                    ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.name"] = new HashSet<string> { "PII" },
-                    ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.picture"] = new HashSet<string> { "PII" }
+            {
+                ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.name"] = new HashSet<string> { "PII" },
+                ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.picture"] = new HashSet<string> { "PII" }
 
-                }, new Dictionary<string, string>(), new HashSet<string>()
+            }, new Dictionary<string, string>(), new HashSet<string>()
             );
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
@@ -949,7 +949,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -957,11 +957,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
             config.Set("rules.secret", "mysecret");
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
-            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor> { ruleExecutor });
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null, new List<IRuleExecutor> { ruleExecutor });
 
             var pic = new byte[] { 1, 2, 3 };
-            var user = new GenericRecord((RecordSchema) UserWithPic._SCHEMA);
+            var user = new GenericRecord((RecordSchema)UserWithPic._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
@@ -990,7 +990,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.Metadata = new Metadata(null, new Dictionary<string, string>
                 {
                     { "application.version", "1"}
-                    
+
                 }, new HashSet<string>()
             );
             store[schemaStr] = 1;
@@ -998,17 +998,17 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 AutoRegisterSchemas = false,
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "1"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "1" } }
             };
             var deserConfig1 = new AvroDeserializerConfig
             {
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "1"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "1" } }
             };
             var serializer1 = new AvroSerializer<GenericRecord>(schemaRegistryClient, config1);
             var deserializer1 = new AvroDeserializer<GenericRecord>(schemaRegistryClient, deserConfig1);
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
@@ -1018,15 +1018,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             newSchema.Metadata = new Metadata(null, new Dictionary<string, string>
                 {
                     { "application.version", "2"}
-                    
+
                 }, new HashSet<string>()
             );
             newSchema.RuleSet = new RuleSet(
                 new List<Rule>
                 {
-                    new Rule("myRule1", RuleKind.Transform, RuleMode.Upgrade, "JSONATA", null, 
+                    new Rule("myRule1", RuleKind.Transform, RuleMode.Upgrade, "JSONATA", null,
                         null, rule1To2, null, null, false),
-                    new Rule("myRule2", RuleKind.Transform, RuleMode.Downgrade, "JSONATA", null, 
+                    new Rule("myRule2", RuleKind.Transform, RuleMode.Downgrade, "JSONATA", null,
                         null, rule2To1, null, null, false)
                 }, new List<Rule>()
             );
@@ -1034,17 +1034,17 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 AutoRegisterSchemas = false,
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "2"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "2" } }
             };
             var deserConfig2 = new AvroDeserializerConfig
             {
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "2"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "2" } }
             };
             var serializer2 = new AvroSerializer<GenericRecord>(schemaRegistryClient, config2);
             var deserializer2 = new AvroDeserializer<GenericRecord>(schemaRegistryClient, deserConfig2);
 
-            var newUser = new GenericRecord((RecordSchema) NewUser._SCHEMA);
+            var newUser = new GenericRecord((RecordSchema)NewUser._SCHEMA);
             newUser.Add("full_name", "awesome");
             newUser.Add("favorite_number", 100);
             newUser.Add("favorite_color", "blue");
@@ -1054,15 +1054,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             newerSchema.Metadata = new Metadata(null, new Dictionary<string, string>
                 {
                     { "application.version", "3"}
-                    
+
                 }, new HashSet<string>()
             );
             newerSchema.RuleSet = new RuleSet(
                 new List<Rule>
                 {
-                    new Rule("myRule1", RuleKind.Transform, RuleMode.Upgrade, "JSONATA", null, 
+                    new Rule("myRule1", RuleKind.Transform, RuleMode.Upgrade, "JSONATA", null,
                         null, rule2To3, null, null, false),
-                    new Rule("myRule2", RuleKind.Transform, RuleMode.Downgrade, "JSONATA", null, 
+                    new Rule("myRule2", RuleKind.Transform, RuleMode.Downgrade, "JSONATA", null,
                         null, rule3To2, null, null, false)
                 }, new List<Rule>()
             );
@@ -1070,17 +1070,17 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 AutoRegisterSchemas = false,
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "3"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "3" } }
             };
             var deserConfig3 = new AvroDeserializerConfig
             {
                 UseLatestVersion = false,
-                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "3"} }
+                UseLatestWithMetadata = new Dictionary<string, string> { { "application.version", "3" } }
             };
             var serializer3 = new AvroSerializer<GenericRecord>(schemaRegistryClient, config3);
             var deserializer3 = new AvroDeserializer<GenericRecord>(schemaRegistryClient, deserConfig3);
 
-            var newerUser = new GenericRecord((RecordSchema) NewerUser._SCHEMA);
+            var newerUser = new GenericRecord((RecordSchema)NewerUser._SCHEMA);
             newerUser.Add("title", "awesome");
             newerUser.Add("favorite_number", 100);
             newerUser.Add("favorite_color", "blue");
@@ -1088,21 +1088,21 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             store[schemaStr] = 1;
             store[newSchemaStr] = 2;
             store[newerSchemaStr] = 3;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema, newSchema, newerSchema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema, newSchema, newerSchema };
 
             Headers headers = new Headers();
             var bytes = serializer1.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
             GenericRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
-            
+
             bytes = serializer2.SerializeAsync(newUser, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
             GenericRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
-            
+
             bytes = serializer3.SerializeAsync(newerUser, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
             GenericRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
         }
 
-        private void GenericRecordDeserializeAllVersions(AvroDeserializer<GenericRecord> deserializer1, 
-            AvroDeserializer<GenericRecord> deserializer2, AvroDeserializer<GenericRecord> deserializer3, 
+        private void GenericRecordDeserializeAllVersions(AvroDeserializer<GenericRecord> deserializer1,
+            AvroDeserializer<GenericRecord> deserializer2, AvroDeserializer<GenericRecord> deserializer3,
             byte[] bytes, Headers headers, GenericRecord user)
         {
             var result1 = deserializer1.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;

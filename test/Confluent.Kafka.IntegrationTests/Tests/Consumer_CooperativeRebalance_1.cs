@@ -55,14 +55,17 @@ namespace Confluent.Kafka.IntegrationTests
             using (var topic1 = new TemporaryTopic(bootstrapServers, 1))
             using (var topic2 = new TemporaryTopic(bootstrapServers, 1))
             using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig)
-                .SetPartitionsAssignedHandler((c, p) => {
+                .SetPartitionsAssignedHandler((c, p) =>
+                {
                     assignCount += 1;
                     Assert.Single(p);
                 })
-                .SetPartitionsRevokedHandler((c, p) => {
+                .SetPartitionsRevokedHandler((c, p) =>
+                {
                     revokeCount += 1;
                 })
-                .SetPartitionsLostHandler((c, p) => {
+                .SetPartitionsLostHandler((c, p) =>
+                {
                     lostCount += 1;
                 })
                 .Build())

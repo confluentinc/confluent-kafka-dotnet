@@ -41,7 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers,
             };
 
-            for (int j=0; j<3; ++j)
+            for (int j = 0; j < 3; ++j)
             {
                 using (var topic = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
                 {
@@ -104,7 +104,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                     using (var producer = producerBuilder.Build())
                     {
-                        for (int i=0; i<PARTITION_COUNT; ++i)
+                        for (int i = 0; i < PARTITION_COUNT; ++i)
                         {
                             producer.Produce(
                                 topic.Name,

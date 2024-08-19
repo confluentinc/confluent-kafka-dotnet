@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Amazon;
@@ -12,19 +12,21 @@ namespace Confluent.SchemaRegistry.Encryption.Aws
     {
         private AmazonKeyManagementServiceClient kmsClient;
         private string keyId;
-        
+
         public string KekId { get; }
-        
+
         public AwsKmsClient(string kekId, AWSCredentials credentials)
         {
             KekId = kekId;
-            
-            if (!kekId.StartsWith(AwsKmsDriver.Prefix)) {
-              throw new ArgumentException(string.Format($"key URI must start with {AwsKmsDriver.Prefix}"));
+
+            if (!kekId.StartsWith(AwsKmsDriver.Prefix))
+            {
+                throw new ArgumentException(string.Format($"key URI must start with {AwsKmsDriver.Prefix}"));
             }
             keyId = KekId.Substring(AwsKmsDriver.Prefix.Length);
             string[] tokens = keyId.Split(':');
-            if (tokens.Length < 4) {
+            if (tokens.Length < 4)
+            {
                 throw new ArgumentException("invalid key URI");
             }
             string regionName = tokens[3];
@@ -36,9 +38,9 @@ namespace Confluent.SchemaRegistry.Encryption.Aws
 
         public bool DoesSupport(string uri)
         {
-            return uri.StartsWith(AwsKmsDriver.Prefix); 
+            return uri.StartsWith(AwsKmsDriver.Prefix);
         }
-        
+
         public async Task<byte[]> Encrypt(byte[] plaintext)
         {
             using var dataStream = new MemoryStream(plaintext);

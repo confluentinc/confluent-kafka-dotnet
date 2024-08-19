@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc.
+// Copyright 2024 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,25 +14,27 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Runtime.Serialization;
 
-
-namespace Confluent.SchemaRegistry
+namespace Confluent.Kafka
 {
-    [DataContract]
-    internal class SchemaString
+    /// <summary>
+    ///     Enumerates the different consumer group types.
+    /// </summary>
+    public enum ConsumerGroupType : int
     {
-        [DataMember(Name = "schema")]
-        public string Schema { get; set; }
+        /// <summary>
+        ///     Unknown
+        /// </summary>
+        Unknown = 0,
 
         /// <summary>
-        ///     Empty constructor for serialization
+        ///     Consumer
         /// </summary>
-        private SchemaString() { }
+        Consumer = 1,
 
-        public SchemaString(string schema)
-        {
-            Schema = schema;
-        }
-    }
+        /// <summary>
+        ///     Classic
+        /// </summary>
+        Classic = 2,
+    };
 }

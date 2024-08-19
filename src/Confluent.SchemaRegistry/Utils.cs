@@ -37,7 +37,7 @@ namespace Confluent.SchemaRegistry
             }
             return true;
         }
-        
+
         public static bool DictEquals(IDictionary<string, ISet<string>> a, IDictionary<string, ISet<string>> b)
         {
             if (ReferenceEquals(a, b)) return true;
@@ -62,8 +62,8 @@ namespace Confluent.SchemaRegistry
             }
             return true;
         }
-        
-        
+
+
         public static bool ListEquals<T>(IList<T> a, IList<T> b)
         {
             if (ReferenceEquals(a, b)) return true;

@@ -42,7 +42,7 @@ namespace Confluent.Kafka.UnitTests
                 @"{""User"": ""test"", ""ScramCredentialInfo"": " +
                 @"{""Mechanism"": ""ScramSha256"", ""Iterations"": 10000}}",
                 upsertion.ToString());
-                
+
             // Empty salt
             upsertion = new UserScramCredentialUpsertion
             {

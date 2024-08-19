@@ -35,13 +35,13 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     The topic Id.
         /// </summary>
-        public Uuid TopicId {get; set; }
+        public Uuid TopicId { get; set; }
 
         /// <summary>
         ///     Error, if any, of topic reported by the broker
         /// </summary>
         public Error Error { get; set; }
-        
+
         /// <summary>
         ///      Whether the topic is internal to Kafka.
         ///      An example of an internal topic is the offsets and group management topic: __consumer_offsets.
@@ -57,7 +57,7 @@ namespace Confluent.Kafka.Admin
         ///    AclOperation list (null if not requested or not supported).
         /// </summary>
         public List<AclOperation> AuthorizedOperations { get; set; }
-        
+
         /// <summary>
         ///     Returns a JSON representation of this object.
         /// </summary>

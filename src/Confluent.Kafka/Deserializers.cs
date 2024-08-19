@@ -29,7 +29,7 @@ namespace Confluent.Kafka
         ///     String (UTF8 encoded) deserializer.
         /// </summary>
         public static IDeserializer<string> Utf8 = new Utf8Deserializer();
-        
+
         private class Utf8Deserializer : IDeserializer<string>
         {
             public string Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
@@ -39,11 +39,11 @@ namespace Confluent.Kafka
                     return null;
                 }
 
-                #if NETCOREAPP2_1
+#if NETCOREAPP2_1
                     return Encoding.UTF8.GetString(data);
-                #else
-                    return Encoding.UTF8.GetString(data.ToArray());
-                #endif
+#else
+                return Encoding.UTF8.GetString(data.ToArray());
+#endif
             }
         }
 
@@ -171,11 +171,11 @@ namespace Confluent.Kafka
                 }
                 else
                 {
-                    #if NETCOREAPP2_1
+#if NETCOREAPP2_1
                         return BitConverter.ToSingle(data);
-                    #else
-                        return BitConverter.ToSingle(data.ToArray(), 0);
-                    #endif
+#else
+                    return BitConverter.ToSingle(data.ToArray(), 0);
+#endif
                 }
             }
         }
@@ -219,11 +219,11 @@ namespace Confluent.Kafka
                 }
                 else
                 {
-                    #if NETCOREAPP2_1
+#if NETCOREAPP2_1
                                     return BitConverter.ToDouble(data);
-                    #else
-                                    return BitConverter.ToDouble(data.ToArray(), 0);
-                    #endif
+#else
+                    return BitConverter.ToDouble(data.ToArray(), 0);
+#endif
                 }
             }
         }

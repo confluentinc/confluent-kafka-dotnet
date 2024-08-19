@@ -68,7 +68,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </summary>
         public AvroDeserializerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config.ToDictionary(v => v.Key, v => v.Value)) { }
 
-        
+
         /// <summary>
         ///     Specifies whether or not the Avro deserializer should use the latest subject
         ///     version for serialization.

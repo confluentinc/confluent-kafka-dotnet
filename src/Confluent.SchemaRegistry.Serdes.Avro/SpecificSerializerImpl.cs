@@ -93,7 +93,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 singleSchemaData = ExtractSchemaData(writerType);
             }
-            
+
             if (config == null) { return; }
 
             if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
@@ -108,7 +108,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw new ArgumentException($"AvroSerializer: cannot enable both use.latest.version and auto.register.schemas");
             }
         }
-        
+
         private static SerializerSchemaData ExtractSchemaData(Type writerType)
         {
             SerializerSchemaData serializerSchemaData = new SerializerSchemaData();
@@ -211,10 +211,10 @@ namespace Confluent.SchemaRegistry.Serdes
                         : isKey
                             ? schemaRegistryClient.ConstructKeySubjectName(topic, fullname)
                             : schemaRegistryClient.ConstructValueSubjectName(topic, fullname);
-                    
+
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
-                    
+
                     if (!currentSchemaData.SubjectsRegistered.Contains(subject))
                     {
                         if (latestSchema != null)
@@ -244,13 +244,13 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (latestSchema != null)
                 {
                     var schema = await GetParsedSchema(latestSchema);
-                    FieldTransformer fieldTransformer = async (ctx, transform, message) => 
+                    FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                     {
                         return await AvroUtils.Transform(ctx, schema, message, transform).ConfigureAwait(false);
                     };
                     data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Write, null,
                         latestSchema, data, fieldTransformer)
-                        .ContinueWith(t => (T) t.Result)
+                        .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
@@ -271,7 +271,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw e.InnerException;
             }
         }
-        
+
         protected override Task<Avro.Schema> ParseSchema(Schema schema)
         {
             return Task.FromResult(Avro.Schema.Parse(schema.SchemaString));

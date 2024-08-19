@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Confluent.SchemaRegistry.Encryption.HcVault
@@ -9,11 +9,11 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
         {
             KmsRegistry.RegisterKmsDriver(new HcVaultKmsDriver());
         }
-    
+
         public static readonly string Prefix = "hcvault://";
         public static readonly string TokenId = "token.id";
         public static readonly string Namespace = "namespace";
-        
+
         public string GetKeyUrlPrefix()
         {
             return Prefix;

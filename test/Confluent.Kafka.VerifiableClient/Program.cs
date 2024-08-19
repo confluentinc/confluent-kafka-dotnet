@@ -1,4 +1,4 @@
-﻿// Copyright 2017 Confluent Inc.
+// Copyright 2017 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ namespace Confluent.Kafka.VerifiableClient
         public class LowercaseContractResolver : DefaultContractResolver
         {
             protected override string ResolvePropertyName(string propertyName)
-                => propertyName.Equals("minOffset") || propertyName.Equals("maxOffset") 
-                    ? propertyName 
+                => propertyName.Equals("minOffset") || propertyName.Equals("maxOffset")
+                    ? propertyName
                     : propertyName.ToLower();
         }
     }
@@ -124,7 +124,7 @@ namespace Confluent.Kafka.VerifiableClient
         public VerifiableClientConfig()
         {
             this.Conf = new Dictionary<string, object>
-            { 
+            {
                 { "log.thread.name", true }
             };
         }
@@ -484,7 +484,7 @@ namespace Confluent.Kafka.VerifiableClient
                 results = null;
                 error = ex.Error;
             }
-            
+
             SendOffsetsCommitted(new CommittedOffsets(results, error));
         }
 

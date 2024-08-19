@@ -93,7 +93,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         LastName = "User",
                         NumberWithRange = 7 // range should be between 2 and 5.
                     };
-                    Assert.Throws<ProduceException<string, PersonPoco>>(() => {
+                    Assert.Throws<ProduceException<string, PersonPoco>>(() =>
+                    {
                         try
                         {
                             producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }).Wait();
@@ -114,7 +115,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         // Omit LastName
                         NumberWithRange = 3
                     };
-                    Assert.Throws<AggregateException>(() => {
+                    Assert.Throws<AggregateException>(() =>
+                    {
                         producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }).Wait();
                     });
                 }

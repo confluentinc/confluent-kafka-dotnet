@@ -23,6 +23,6 @@ namespace Confluent.Kafka
     /// </summary>
     public sealed class Ignore
     {
-        private Ignore() {}
+        private Ignore() { }
     }
 }

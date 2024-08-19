@@ -39,9 +39,11 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
                 CheckSetSaslCredentials(producer);
 
-            var consumerConfig = new ConsumerConfig {
+            var consumerConfig = new ConsumerConfig
+            {
                 BootstrapServers = bootstrapServers,
-                GroupId = Guid.NewGuid().ToString() };
+                GroupId = Guid.NewGuid().ToString()
+            };
             using (var consumer = new TestConsumerBuilder<Null, string>(consumerConfig).Build())
                 CheckSetSaslCredentials(consumer);
 

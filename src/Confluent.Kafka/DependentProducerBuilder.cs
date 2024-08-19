@@ -33,7 +33,7 @@ namespace Confluent.Kafka
         ///     The configured client handle.
         /// </summary>
         public Handle Handle { get; set; }
-        
+
         /// <summary>
         ///     The configured key serializer.
         /// </summary>

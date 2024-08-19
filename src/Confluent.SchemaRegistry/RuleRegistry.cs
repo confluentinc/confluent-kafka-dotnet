@@ -29,7 +29,7 @@ namespace Confluent.SchemaRegistry
 
         private static IDictionary<string, IRuleExecutor> ruleExecutors = new Dictionary<string, IRuleExecutor>();
         private static IDictionary<string, IRuleAction> ruleActions = new Dictionary<string, IRuleAction>();
-        
+
         public static void RegisterRuleExecutor(IRuleExecutor executor)
         {
             ruleExecutorsMutex.Wait();
@@ -45,7 +45,7 @@ namespace Confluent.SchemaRegistry
                 ruleExecutorsMutex.Release();
             }
         }
-        
+
         public static bool TryGetRuleExecutor(string name, out IRuleExecutor executor)
         {
             ruleExecutorsMutex.Wait();
@@ -58,7 +58,7 @@ namespace Confluent.SchemaRegistry
                 ruleExecutorsMutex.Release();
             }
         }
-        
+
         public static List<IRuleExecutor> GetRuleExecutors()
         {
             ruleExecutorsMutex.Wait();
@@ -71,7 +71,7 @@ namespace Confluent.SchemaRegistry
                 ruleExecutorsMutex.Release();
             }
         }
-        
+
         public static void RegisterRuleAction(IRuleAction action)
         {
             ruleActionsMutex.Wait();
@@ -87,7 +87,7 @@ namespace Confluent.SchemaRegistry
                 ruleActionsMutex.Release();
             }
         }
-        
+
         public static bool TryGetRuleAction(string name, out IRuleAction action)
         {
             ruleActionsMutex.Wait();
@@ -100,7 +100,7 @@ namespace Confluent.SchemaRegistry
                 ruleActionsMutex.Release();
             }
         }
-        
+
         public static List<IRuleAction> GetRuleActions()
         {
             ruleActionsMutex.Wait();

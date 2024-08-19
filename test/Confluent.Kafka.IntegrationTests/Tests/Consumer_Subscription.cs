@@ -34,7 +34,7 @@ namespace Confluent.Kafka.IntegrationTests
         public void Consumer_Subscription(string bootstrapServers)
         {
             LogToFile("start Consumer_Subscription");
-            
+
             int N = 2;
             var firstProduced = Util.ProduceNullStringMessages(bootstrapServers, singlePartitionTopic, 1, N);
 

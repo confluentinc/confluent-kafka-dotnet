@@ -97,7 +97,7 @@ namespace Confluent.Kafka.UnitTests
                     }
                 }
             };
-            
+
             var expectedString = @"{""TopicDescriptions"": [{""Name"": ""test1"", ""TopicId"": ""AAAAAAAAAAIAAAAAAAAAAw"", ""Error"": ""NoError"", ""IsInternal"": false" +
                 @", ""Partitions"": [{""Partition"": 0, ""Leader"": {""Id"": 0, ""Host"": ""host1"", ""Port"": 9092, ""Rack"": ""rack2""}" +
                 @", ""Replicas"": [{""Id"": 0, ""Host"": ""host2"", ""Port"": 9092, ""Rack"": null}], ""ISR"": []}]" +
@@ -106,7 +106,7 @@ namespace Confluent.Kafka.UnitTests
                 @", ""Partitions"": [{""Partition"": 1, ""Leader"": null, ""Replicas"": []" +
                 @", ""ISR"": [{""Id"": 2, ""Host"": ""host1"", ""Port"": 9093, ""Rack"": ""rack1""}]}]" +
                 @", ""AuthorizedOperations"": null}]}";
-            
+
             Assert.Equal(
                 expectedString,
                 description.ToString());

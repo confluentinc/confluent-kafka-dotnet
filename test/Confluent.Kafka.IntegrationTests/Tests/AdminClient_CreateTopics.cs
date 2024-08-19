@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 adminClient.CreateTopicsAsync(
                     new TopicSpecification[]
-                    { 
+                    {
                         new TopicSpecification { Name = topicName1, NumPartitions = 2, ReplicationFactor = 1 },
                         new TopicSpecification { Name = topicName2, NumPartitions = 12, ReplicationFactor = 1 }
                     }
@@ -69,7 +69,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var deliveryReport1 = producer.ProduceAsync(topicName1, new Message<Null, Null>()).Result;
                 var deliveryReport2 = producer.ProduceAsync(topicName2, new Message<Null, Null>()).Result;
                 var deliveryReport3 = producer.ProduceAsync(topicName3, new Message<Null, Null>()).Result;
-                
+
                 Assert.Equal(topicName1, deliveryReport1.Topic);
                 Assert.Equal(topicName2, deliveryReport2.Topic);
                 Assert.Equal(topicName3, deliveryReport3.Topic);
@@ -82,8 +82,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 try
                 {
-                    adminClient.CreateTopicsAsync(new List<TopicSpecification> 
-                        { 
+                    adminClient.CreateTopicsAsync(new List<TopicSpecification>
+                        {
                             new TopicSpecification { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 },
                             new TopicSpecification { Name = topicName4, NumPartitions = 1, ReplicationFactor = 1 }
                         }
@@ -96,7 +96,7 @@ namespace Confluent.Kafka.IntegrationTests
                 catch (AggregateException ex)
                 {
                     Assert.True(ex.InnerException.GetType() == typeof(CreateTopicsException));
-                    var cte = (CreateTopicsException) ex.InnerException;
+                    var cte = (CreateTopicsException)ex.InnerException;
                     Assert.Equal(2, cte.Results.Count);
                     Assert.Single(cte.Results.Where(r => r.Error.IsError));
                     Assert.Single(cte.Results.Where(r => !r.Error.IsError));
@@ -110,7 +110,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } }, 
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } },
                     new CreateTopicsOptions { ValidateOnly = true, RequestTimeout = TimeSpan.FromSeconds(30) }
                 ).Wait();
 

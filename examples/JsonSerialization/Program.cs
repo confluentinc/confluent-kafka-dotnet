@@ -1,4 +1,4 @@
-﻿// Copyright 2020 Confluent Inc.
+// Copyright 2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -149,11 +149,11 @@ namespace Confluent.Kafka.Examples.JsonSerialization
                 while ((text = Console.ReadLine()) != "q")
                 {
                     User user = new User { Name = text, FavoriteColor = "blue", FavoriteNumber = i++ };
-                    try 
+                    try
                     {
                         await producer.ProduceAsync(topicName, new Message<string, User> { Value = user });
                     }
-                    catch (Exception e) 
+                    catch (Exception e)
                     {
                         Console.WriteLine($"error producing message: {e.Message}");
                     }

@@ -129,7 +129,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
             };
 
-            var validAndInvalidACLs =  new List<AclBinding>
+            var validAndInvalidACLs = new List<AclBinding>
             {
                 new AclBinding()
                 {
@@ -347,7 +347,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var describeAclsResult = await adminClient.DescribeAclsAsync(aclBindingFilters[0], describeAclsOptions);
                 Assert.Equal(new DescribeAclsResult
                 {
-                    AclBindings = new List<AclBinding>{}
+                    AclBindings = new List<AclBinding> { }
                 }, describeAclsResult);
             }
 

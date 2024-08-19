@@ -1,4 +1,4 @@
-﻿// Copyright 2024 Confluent Inc.
+// Copyright 2024 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
                 Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName kekName kmsType kmsKeyId");
                 return;
             }
-            
+
             // Register the KMS drivers and the field encryption executor
             AwsKmsDriver.Register();
             AzureKmsDriver.Register();
@@ -146,7 +146,7 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
                     .Build())
             {
                 schemaRegistry.RegisterSchemaAsync(subjectName, schema, true);
-                    
+
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
                 int i = 1;

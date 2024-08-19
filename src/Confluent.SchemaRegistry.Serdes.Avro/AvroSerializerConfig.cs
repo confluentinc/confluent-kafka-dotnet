@@ -125,8 +125,8 @@ namespace Confluent.SchemaRegistry.Serdes
             get { return GetBool(PropertyNames.AutoRegisterSchemas); }
             set { SetObject(PropertyNames.AutoRegisterSchemas, value); }
         }
-        
-        
+
+
         /// <summary>
         ///     Specifies whether to normalize schemas, which will transform schemas
         ///     to have a consistent format, including ordering properties and references.
@@ -153,7 +153,7 @@ namespace Confluent.SchemaRegistry.Serdes
             get { return GetBool(PropertyNames.UseLatestVersion); }
             set { SetObject(PropertyNames.UseLatestVersion, value); }
         }
-        
+
 
         /// <summary>
         ///     Specifies whether or not the Avro serializer should use the latest subject

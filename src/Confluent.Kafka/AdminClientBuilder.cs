@@ -34,7 +34,7 @@ namespace Confluent.Kafka
         ///     The configured error handler.
         /// </summary>
         internal protected Action<IAdminClient, Error> ErrorHandler { get; set; }
-        
+
         /// <summary>
         ///     The configured log handler.
         /// </summary>

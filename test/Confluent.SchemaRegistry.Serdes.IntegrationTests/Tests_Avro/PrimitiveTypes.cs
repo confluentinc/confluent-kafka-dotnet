@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     producer
-                        .ProduceAsync(bytesTopic, new Message<byte[], byte[]> { Key = new byte[] { 1, 4, 11 }, Value = new byte[] {} })
+                        .ProduceAsync(bytesTopic, new Message<byte[], byte[]> { Key = new byte[] { 1, 4, 11 }, Value = new byte[] { } })
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
@@ -146,7 +146,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     producer
-                        .ProduceAsync(nullTopic, new Message<Null,Null>())
+                        .ProduceAsync(nullTopic, new Message<Null, Null>())
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -40,7 +40,7 @@ namespace Confluent.Kafka.Transactions
 
             var tasks = new List<Task>();
 
-            for (int i=0; i<numProducers; ++i)
+            for (int i = 0; i < numProducers; ++i)
             {
                 var p = new TestProducer(bootstrapServers, i, conf);
                 tasks.Add(Task.Run(() => p.Run()));

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Google.Apis.Auth.OAuth2;
 
@@ -10,14 +10,14 @@ namespace Confluent.SchemaRegistry.Encryption.Gcp
         {
             KmsRegistry.RegisterKmsDriver(new GcpKmsDriver());
         }
-    
+
         public static readonly string Prefix = "gcp-kms://";
         public static readonly string AccountType = "account.type";
         public static readonly string ClientId = "client.id";
         public static readonly string ClientEmail = "client.email";
         public static readonly string PrivateKeyId = "private.key.id";
         public static readonly string PrivateKey = "private.key";
-        
+
         public string GetKeyUrlPrefix()
         {
             return Prefix;

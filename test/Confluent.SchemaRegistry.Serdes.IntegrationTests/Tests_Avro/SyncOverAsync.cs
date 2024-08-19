@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         {
             ThreadPool.GetMaxThreads(out int originalWorkerThreads, out int originalCompletionPortThreads);
 
-            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);   
+            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);
             ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
             ThreadPool.GetMaxThreads(out workerThreads, out completionPortThreads);
 
@@ -47,7 +47,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             {
                 BootstrapServers = bootstrapServers
             };
-            
+
             var schemaRegistryConfig = new SchemaRegistryConfig
             {
                 Url = schemaRegistryServers
@@ -63,8 +63,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 // will deadlock if N >= workerThreads. Set to max number that 
                 // should not deadlock.
-                int N = workerThreads-1;
-                for (int i=0; i<N; ++i)
+                int N = workerThreads - 1;
+                for (int i = 0; i < N; ++i)
                 {
                     Func<int, Action> actionCreator = (taskNumber) =>
                     {
@@ -72,7 +72,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         {
                             object waitObj = new object();
 
-                            Action<DeliveryReport<Null, string>> handler = dr => 
+                            Action<DeliveryReport<Null, string>> handler = dr =>
                             {
                                 Assert.True(dr.Error.Code == ErrorCode.NoError);
 

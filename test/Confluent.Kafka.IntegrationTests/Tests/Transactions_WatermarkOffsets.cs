@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message3" }).Wait();
 
                 WatermarkOffsets wo2 = new WatermarkOffsets(Offset.Unset, Offset.Unset);
-                for (int i=0; i<10; ++i)
+                for (int i = 0; i < 10; ++i)
                 {
                     var cr = consumer.Consume(TimeSpan.FromMilliseconds(500));
                     wo2 = consumer.GetWatermarkOffsets(new TopicPartition(topic.Name, 0));
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.CommitTransaction(TimeSpan.FromSeconds(30));
 
                 WatermarkOffsets wo3 = new WatermarkOffsets(Offset.Unset, Offset.Unset);
-                for (int i=0; i<10; ++i)
+                for (int i = 0; i < 10; ++i)
                 {
                     var cr2 = consumer.Consume(TimeSpan.FromSeconds(500));
                     wo3 = consumer.GetWatermarkOffsets(new TopicPartition(topic.Name, 0));

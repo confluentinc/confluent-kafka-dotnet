@@ -116,7 +116,7 @@ namespace Confluent.Kafka.IntegrationTests
                     adminClient.DeleteTopicsAsync(new List<string> { topicName1, nullTopic });
                     Assert.True(false, "Expected exception.");
                 }
-                catch(ArgumentException ex)
+                catch (ArgumentException ex)
                 {
                     Assert.Contains("topic", ex.Message);
                 }

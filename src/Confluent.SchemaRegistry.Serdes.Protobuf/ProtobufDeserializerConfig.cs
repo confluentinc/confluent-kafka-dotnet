@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
             public const string SubjectNameStrategy = "protobuf.deserializer.subject.name.strategy";
-            
+
             /// <summary>
             ///     Specifies whether or not the Protobuf deserializer should deserialize message indexes
             ///     without zig-zag encoding.
@@ -62,8 +62,8 @@ namespace Confluent.SchemaRegistry.Serdes
             /// </summary>
             public const string UseDeprecatedFormat = "protobuf.deserializer.use.deprecated.format";
         }
-        
-        
+
+
         /// <summary>
         ///     Initialize a new <see cref="ProtobufDeserializerConfig" />.
         /// </summary>
@@ -77,7 +77,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public ProtobufDeserializerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config.ToDictionary(v => v.Key, v => v.Value)) { }
 
 
-        
+
         /// <summary>
         ///     Specifies whether or not the Protobuf deserializer should use the latest subject
         ///     version for serialization.
@@ -133,8 +133,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 else { this.properties[PropertyNames.SubjectNameStrategy] = value.ToString(); }
             }
         }
-        
-        
+
+
         /// <summary>
         ///     Specifies whether the Protobuf deserializer should deserialize message indexes
         ///     without zig-zag encoding.

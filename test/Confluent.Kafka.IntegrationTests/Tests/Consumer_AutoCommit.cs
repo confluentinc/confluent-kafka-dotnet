@@ -74,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Thread.Sleep(TimeSpan.FromSeconds(3));
 
-                var committed = consumer.Committed(new [] { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var committed = consumer.Committed(new[] { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
 
                 // if this was committing, would expect the committed offset to be first committed offset + N
                 // (don't need to subtract 1 since the next message to be consumed is the value that is committed).

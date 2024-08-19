@@ -69,7 +69,7 @@ namespace Confluent.SchemaRegistry.Serdes
             { "google/protobuf/type.proto", GetResource("google.protobuf.type.proto") },
             { "google/protobuf/wrappers.proto", GetResource("google.protobuf.wrappers.proto") }
         };
-        
+
         private static string GetResource(string resourceName)
         {
             var info = Assembly.GetExecutingAssembly().GetName();
@@ -90,10 +90,10 @@ namespace Confluent.SchemaRegistry.Serdes
             }
 
             RuleContext.FieldContext fieldContext = ctx.CurrentField();
-            
-            if (typeof(IList).IsAssignableFrom(message.GetType()) 
-                || (message.GetType().IsGenericType 
-                    && (message.GetType().GetGenericTypeDefinition() == typeof(List<>) 
+
+            if (typeof(IList).IsAssignableFrom(message.GetType())
+                || (message.GetType().IsGenericType
+                    && (message.GetType().GetGenericTypeDefinition() == typeof(List<>)
                         || message.GetType().GetGenericTypeDefinition() == typeof(IList<>))))
             {
                 var tasks = ((IList<object>)message)
@@ -102,9 +102,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 object[] items = await Task.WhenAll(tasks).ConfigureAwait(false);
                 return items.ToList();
             }
-            else if (typeof(IDictionary).IsAssignableFrom(message.GetType()) 
-                     || (message.GetType().IsGenericType 
-                         && (message.GetType().GetGenericTypeDefinition() == typeof(Dictionary<,>) 
+            else if (typeof(IDictionary).IsAssignableFrom(message.GetType())
+                     || (message.GetType().IsGenericType
+                         && (message.GetType().GetGenericTypeDefinition() == typeof(Dictionary<,>)
                              || message.GetType().GetGenericTypeDefinition() == typeof(IDictionary<,>))))
             {
                 return message;
@@ -156,7 +156,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     ISet<string> ruleTags = ctx.Rule.Tags ?? new HashSet<string>();
                     ISet<string> intersect = new HashSet<string>(fieldContext.Tags);
                     intersect.IntersectWith(ruleTags);
-                    
+
                     if (ruleTags.Count == 0 || intersect.Count != 0)
                     {
                         if (message is ByteString)
@@ -300,20 +300,20 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             IDictionary<string, string> allImports = new Dictionary<string, string>(BuiltIns);
             imports?.ToList().ForEach(x => allImports.Add(x.Key, x.Value));
-            
+
             var fds = new FileDescriptorSet();
             fds.FileSystem = new ProtobufImports(allImports);
-            
+
             fds.Add("__root.proto", true, new StringReader(schema));
             foreach (KeyValuePair<string, string> import in allImports)
             {
                 fds.AddImportPath(import.Key);
-                
+
             }
             fds.Process();
             return fds;
-        } 
-        
+        }
+
         class ProtobufImports : IFileSystem
         {
             protected IDictionary<string, string> Imports { get; set; }

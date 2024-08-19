@@ -56,7 +56,7 @@ namespace Confluent.SchemaRegistry.Serdes
     {
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
-        
+
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
         /// <remarks>
@@ -81,7 +81,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, 
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null,
             JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
             : base(schemaRegistryClient, config, ruleExecutors)
         {
@@ -92,7 +92,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 : JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
             this.schemaText = schema.ToJson();
             this.schemaFullname = schema.Title;
-            
+
             if (config == null) { return; }
 
             var nonJsonConfig = config
@@ -135,8 +135,8 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, 
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null) 
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null,
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
             : this(schemaRegistryClient, config, jsonSchemaGeneratorSettings, ruleExecutors)
         {
             foreach (var reference in schema.References)
@@ -193,7 +193,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     latestSchema = await GetReaderSchema(subject, new Schema(schemaText, ReferenceList, SchemaType.Json))
                         .ConfigureAwait(continueOnCapturedContext: false);
-                    
+
                     if (!subjectsRegistered.Contains(subject))
                     {
                         if (latestSchema != null)
@@ -218,7 +218,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     serdeMutex.Release();
                 }
-                
+
                 if (latestSchema != null)
                 {
                     var latestSchemaJson = await GetParsedSchema(latestSchema).ConfigureAwait(false);

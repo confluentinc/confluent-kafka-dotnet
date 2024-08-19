@@ -25,11 +25,11 @@ namespace Confluent.Kafka.Benchmark
     public static class BenchmarkProducer
     {
         private static long BenchmarkProducerImpl(
-            string bootstrapServers, 
-            string topic, 
+            string bootstrapServers,
+            string topic,
             int nMessages,
             int msgSize,
-            int nTests, 
+            int nTests,
             int nHeaders,
             bool useDeliveryHandler,
             string username,
@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Benchmark
                 BootstrapServers = bootstrapServers,
                 QueueBufferingMaxMessages = 2000000,
                 MessageSendMaxRetries = 3,
-                RetryBackoffMs = 500 ,
+                RetryBackoffMs = 500,
                 LingerMs = 100,
                 DeliveryReportFields = "none",
                 SaslUsername = username,
@@ -56,15 +56,15 @@ namespace Confluent.Kafka.Benchmark
             if (nHeaders > 0)
             {
                 headers = new Headers();
-                for (int i=0; i<nHeaders; ++i)
+                for (int i = 0; i < nHeaders; ++i)
                 {
-                    headers.Add($"header-{i+1}", new byte[] { (byte)i, (byte)(i+1), (byte)(i+2), (byte)(i+3) });
+                    headers.Add($"header-{i + 1}", new byte[] { (byte)i, (byte)(i + 1), (byte)(i + 2), (byte)(i + 3) });
                 }
             }
 
             using (var producer = new ProducerBuilder<Null, byte[]>(config).Build())
             {
-                for (var j=0; j<nTests; j += 1)
+                for (var j = 0; j < nTests; j += 1)
                 {
                     Console.WriteLine($"{producer.Name} producing on {topic} " + (useDeliveryHandler ? "[Action<Message>]" : "[Task]"));
 
@@ -80,7 +80,7 @@ namespace Confluent.Kafka.Benchmark
                     {
                         var autoEvent = new AutoResetEvent(false);
                         var msgCount = nMessages;
-                        Action<DeliveryReport<Null, byte[]>> deliveryHandler = (DeliveryReport<Null, byte[]> deliveryReport) => 
+                        Action<DeliveryReport<Null, byte[]>> deliveryHandler = (DeliveryReport<Null, byte[]> deliveryReport) =>
                         {
                             if (deliveryReport.Error.IsError)
                             {
@@ -157,8 +157,8 @@ namespace Confluent.Kafka.Benchmark
 
                     var duration = DateTime.Now.Ticks - startTime;
 
-                    Console.WriteLine($"Produced {nMessages} messages in {duration/10000.0:F0}ms");
-                    Console.WriteLine($"{nMessages / (duration/10000.0):F0}k msg/s");
+                    Console.WriteLine($"Produced {nMessages} messages in {duration / 10000.0:F0}ms");
+                    Console.WriteLine($"{nMessages / (duration / 10000.0):F0}k msg/s");
                 }
 
                 producer.Flush(TimeSpan.FromSeconds(10));

@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 SessionTimeoutMs = 6000,
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
-            
+
             var schemaRegistryConfig = new SchemaRegistryConfig
             {
                 Url = schemaRegistryServers

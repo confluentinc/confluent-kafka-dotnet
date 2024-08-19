@@ -65,7 +65,7 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var exception = (CreateAclsException) obj;
+            var exception = (CreateAclsException)obj;
             if (base.Equals(exception)) return true;
             return this.Error == exception.Error &&
                 (this.Results?.SequenceEqual(exception.Results) ?? exception.Results == null);
@@ -120,7 +120,7 @@ namespace Confluent.Kafka.Admin
             if (Error != null) hash ^= Error.GetHashCode();
             if (Results != null)
             {
-                foreach(CreateAclReport result in Results)
+                foreach (CreateAclReport result in Results)
                 {
                     hash ^= result.GetHashCode();
                 }

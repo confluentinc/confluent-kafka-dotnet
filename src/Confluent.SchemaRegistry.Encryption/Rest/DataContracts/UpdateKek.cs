@@ -32,9 +32,9 @@ namespace Confluent.SchemaRegistry.Encryption
         /// <summary>
         ///     The doc for the KEK.
         /// </summary>
-        [DataMember(Name = "doc")] 
+        [DataMember(Name = "doc")]
         public string Doc { get; set; }
-        
+
         /// <summary>
         ///     Whether the KEK is shared.
         /// </summary>

@@ -52,8 +52,8 @@ namespace Confluent.Kafka.IntegrationTests
             }).Build())
             {
                 var listOptionsWithTimeout = new Admin.ListConsumerGroupsOptions() { RequestTimeout = TimeSpan.FromSeconds(30) };
-                var describeOptionsWithTimeout = new Admin.DescribeClusterOptions() { RequestTimeout = TimeSpan.FromSeconds(30) , IncludeAuthorizedOperations = false};
-                var describeOptionsWithAuthOps = new Admin.DescribeClusterOptions() { RequestTimeout = TimeSpan.FromSeconds(30) , IncludeAuthorizedOperations = true};
+                var describeOptionsWithTimeout = new Admin.DescribeClusterOptions() { RequestTimeout = TimeSpan.FromSeconds(30), IncludeAuthorizedOperations = false };
+                var describeOptionsWithAuthOps = new Admin.DescribeClusterOptions() { RequestTimeout = TimeSpan.FromSeconds(30), IncludeAuthorizedOperations = true };
 
                 var descResult = await adminClient.DescribeClusterAsync(describeOptionsWithTimeout);
 
@@ -62,8 +62,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 descResult = await adminClient.DescribeClusterAsync(describeOptionsWithAuthOps);
                 Assert.Equal(7, descResult.AuthorizedOperations.Count);
-                
-                var clusterACLs =  new List<AclBinding>
+
+                var clusterACLs = new List<AclBinding>
                 {
                     new AclBinding()
                     {
@@ -91,7 +91,7 @@ namespace Confluent.Kafka.IntegrationTests
                     RequestTimeout = TimeSpan.FromSeconds(30)
                 };
                 await adminClient.CreateAclsAsync(clusterACLs, createAclsOptions);
-                
+
                 using (var adminClientUser = new AdminClientBuilder(new AdminClientConfig
                 {
                     SecurityProtocol = SecurityProtocol.SaslPlaintext,
@@ -101,7 +101,7 @@ namespace Confluent.Kafka.IntegrationTests
                     BootstrapServers = bootstrapServers
                 }).Build())
                 {
-                     descResult = await adminClientUser.DescribeClusterAsync(describeOptionsWithAuthOps);
+                    descResult = await adminClientUser.DescribeClusterAsync(describeOptionsWithAuthOps);
                 }
 
                 Assert.NotEmpty(descResult.Nodes);

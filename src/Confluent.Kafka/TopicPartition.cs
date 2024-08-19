@@ -78,7 +78,7 @@ namespace Confluent.Kafka
         /// </returns>
         public override int GetHashCode()
             // x by prime number is quick and gives decent distribution.
-            => Partition.GetHashCode()*251 + Topic.GetHashCode();
+            => Partition.GetHashCode() * 251 + Topic.GetHashCode();
 
         /// <summary>
         ///     Tests whether TopicPartition instance a is equal to TopicPartition instance b.

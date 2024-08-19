@@ -60,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
                         this.ValueSerializer = (ISerializer<V>)(new Utf32Serializer());
                     }
                 }
-                
+
                 return base.Build();
             }
         }
@@ -87,12 +87,12 @@ namespace Confluent.Kafka.IntegrationTests
                         this.KeyDeserializer = (IDeserializer<K>)new Utf32Deserializer();
                     }
                 }
-                
+
                 if (typeof(V) == typeof(string))
                 {
                     if (ValueDeserializer == null)
                     {
-                        this.ValueDeserializer = (IDeserializer<V>) new Utf32Deserializer();
+                        this.ValueDeserializer = (IDeserializer<V>)new Utf32Deserializer();
                     }
                 }
 
@@ -112,13 +112,13 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 dr = p.ProduceAsync(singlePartitionTopic, new Message<string, string> { Key = "abc", Value = "123" }).Result;
             }
-            
+
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
                 GroupId = Guid.NewGuid().ToString()
             };
-        
+
             using (var c = new MyConsumerBuilder<string, string>(consumerConfig).Build())
             {
                 c.Assign(dr.TopicPartitionOffset);
@@ -132,8 +132,8 @@ namespace Confluent.Kafka.IntegrationTests
                 c.Assign(dr.TopicPartitionOffset);
                 var cr = c.Consume(TimeSpan.FromSeconds(10));
                 // check that each character is serialized into 4 bytes.
-                Assert.Equal(3*4, cr.Message.Key.Length);
-                Assert.Equal(3*4, cr.Message.Value.Length);
+                Assert.Equal(3 * 4, cr.Message.Key.Length);
+                Assert.Equal(3 * 4, cr.Message.Value.Length);
             }
 
             Assert.Equal(0, Library.HandleCount);

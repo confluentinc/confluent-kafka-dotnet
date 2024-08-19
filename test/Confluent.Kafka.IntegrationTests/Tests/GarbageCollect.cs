@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
             GC.Collect();
             // if an attempt is made to free an unmanaged resource a second time
             // in an object finalizer, the call to .Collect() will likely segfault.
-            
+
             LogToFile("end   GarbageCollect");
         }
     }

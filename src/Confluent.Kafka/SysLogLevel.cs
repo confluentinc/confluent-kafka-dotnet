@@ -51,12 +51,12 @@ namespace Confluent.Kafka
         ///     Normal, but significant condition.
         /// </summary>
         Notice = 5,
-        
+
         /// <summary>
         ///     Informational message.
         /// </summary>
         Info = 6,
-        
+
         /// <summary>
         ///     Debug-level message.
         /// </summary>

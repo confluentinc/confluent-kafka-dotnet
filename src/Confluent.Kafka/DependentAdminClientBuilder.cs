@@ -30,7 +30,7 @@ namespace Confluent.Kafka
         ///     The configured client handle.
         /// </summary>
         public Handle Handle { get; set; }
-        
+
         /// <summary>
         ///     An underlying librdkafka client handle that the AdminClient.
         /// </summary>

@@ -66,7 +66,7 @@ namespace Confluent.Kafka.UnitTests
                     // Correct input, fail with timeout
                     var ex = await Assert.ThrowsAsync<KafkaException>(() =>
                         adminClient.CreateTopicsAsync(
-                            new List<TopicSpecification>{topic},
+                            new List<TopicSpecification> { topic },
                             options)
                     );
                     Assert.Equal("Failed while waiting for controller: Local: Timed out", ex.Message);

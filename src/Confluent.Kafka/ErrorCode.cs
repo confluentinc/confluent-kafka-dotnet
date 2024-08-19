@@ -153,7 +153,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Assigned partitions (rebalance_cb)
         /// </summary>
-        Local_AssignPartitions=  -175,
+        Local_AssignPartitions = -175,
 
         /// <summary>
         ///     Revoked partitions (rebalance_cb)
@@ -329,7 +329,7 @@ namespace Confluent.Kafka
         ///     No offset to automatically reset to
         /// </summary>
         Local_AutoOffsetReset = -140,
-        
+
         /// <summary>
         ///     Partition log truncation detected
         /// </summary> 
@@ -670,8 +670,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Specified Principal is not valid Owner/Renewer.
         /// </summary>
-        DelegationTokenOwnerMismatch = 63, 
-        
+        DelegationTokenOwnerMismatch = 63,
+
         /// <summary>
         ///     Delegation Token requests are not allowed on this connection.
         /// </summary>

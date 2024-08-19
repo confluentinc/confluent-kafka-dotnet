@@ -36,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
             byte[] TestValue = new byte[] { 5, 6, 7, 8 };
 
             var producerConfig = new ProducerConfig
-            { 
+            {
                 BootstrapServers = bootstrapServers,
                 DeliveryReportFields = "none"
             };
@@ -47,12 +47,12 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var dr = await producer.ProduceAsync(
-                    singlePartitionTopic, 
-                    new Message<byte[], byte[]> 
-                    { 
-                        Key = TestKey, 
-                        Value = TestValue, 
-                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) } 
+                    singlePartitionTopic,
+                    new Message<byte[], byte[]>
+                    {
+                        Key = TestKey,
+                        Value = TestValue,
+                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
                     }
                 );
                 Assert.Equal(TimestampType.NotAvailable, dr.Timestamp.Type);
@@ -68,12 +68,12 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var dr = await producer.ProduceAsync(
-                    singlePartitionTopic, 
+                    singlePartitionTopic,
                     new Message<byte[], byte[]>
-                    { 
-                        Key = TestKey, 
-                        Value = TestValue, 
-                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) } 
+                    {
+                        Key = TestKey,
+                        Value = TestValue,
+                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
                     }
                 );
                 Assert.Equal(TimestampType.NotAvailable, dr.Timestamp.Type);

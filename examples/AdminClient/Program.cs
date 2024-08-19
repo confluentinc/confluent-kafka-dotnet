@@ -92,7 +92,7 @@ namespace Confluent.Kafka.Examples
             {
                 try
                 {
-                    await adminClient.CreateTopicsAsync(new TopicSpecification[] { 
+                    await adminClient.CreateTopicsAsync(new TopicSpecification[] {
                         new TopicSpecification { Name = topicName, ReplicationFactor = 1, NumPartitions = 1 } });
                 }
                 catch (CreateTopicsException e)
@@ -168,23 +168,24 @@ namespace Confluent.Kafka.Examples
         {
             if (args.Length == 0)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> alter-user-scram-alterations " + 
+                Console.WriteLine("usage: .. <bootstrapServers> alter-user-scram-alterations " +
                     "UPSERT <user1> <mechanism1> <iterations1> <password1> <salt1> " +
                     "[UPSERT <user2> <mechanism2> <iterations2> <password2> <salt2> " +
                     "DELETE <user3> <mechanism3> ..]");
                 Environment.ExitCode = 1;
                 return null;
             }
-            
+
             var alterations = new List<UserScramCredentialAlteration>();
-            for (int i = 0; i < args.Length;) {
+            for (int i = 0; i < args.Length;)
+            {
                 string alterationName = args[i];
                 if (alterationName == "UPSERT")
                 {
                     if (i + 5 >= args.Length)
                     {
                         throw new ArgumentException(
-                            $"invalid number of arguments for alteration {alterations.Count},"+
+                            $"invalid number of arguments for alteration {alterations.Count}," +
                             $" expected 5, got {args.Length - i - 1}");
                     }
 
@@ -218,7 +219,7 @@ namespace Confluent.Kafka.Examples
                     if (i + 2 >= args.Length)
                     {
                         throw new ArgumentException(
-                            $"invalid number of arguments for alteration {alterations.Count},"+
+                            $"invalid number of arguments for alteration {alterations.Count}," +
                             $" expected 2, got {args.Length - i - 1}");
                     }
 
@@ -246,34 +247,34 @@ namespace Confluent.Kafka.Examples
         {
             if (args.Length == 0)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> list-offsets <isolation_level> " + 
+                Console.WriteLine("usage: .. <bootstrapServers> list-offsets <isolation_level> " +
                     "<topic1> <partition1> <EARLIEST/LATEST/MAXTIMESTAMP/TIMESTAMP t1> ..");
                 Environment.ExitCode = 1;
                 return null;
             }
-            
+
             var isolationLevel = Enum.Parse<IsolationLevel>(args[0]);
             var topicPartitionOffsetSpecs = new List<TopicPartitionOffsetSpec>();
             for (int i = 1; i < args.Length;)
             {
-                if (args.Length < i+3)
+                if (args.Length < i + 3)
                 {
                     throw new ArgumentException($"Invalid number of arguments for topicPartitionOffsetSpec[{topicPartitionOffsetSpecs.Count}]: {args.Length - i}");
                 }
-                
+
                 string topic = args[i];
                 var partition = Int32.Parse(args[i + 1]);
                 var offsetSpec = args[i + 2];
                 if (offsetSpec == "TIMESTAMP")
                 {
-                    if (args.Length < i+4)
+                    if (args.Length < i + 4)
                     {
                         throw new ArgumentException($"Invalid number of arguments for topicPartitionOffsetSpec[{topicPartitionOffsetSpecs.Count}]: {args.Length - i}");
                     }
-                    
+
                     var timestamp = Int64.Parse(args[i + 3]);
                     i = i + 1;
-                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec
+                    topicPartitionOffsetSpecs.Add(new TopicPartitionOffsetSpec
                     {
                         TopicPartition = new TopicPartition(topic, new Partition(partition)),
                         OffsetSpec = OffsetSpec.ForTimestamp(timestamp)
@@ -281,7 +282,7 @@ namespace Confluent.Kafka.Examples
                 }
                 else if (offsetSpec == "MAX_TIMESTAMP")
                 {
-                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec
+                    topicPartitionOffsetSpecs.Add(new TopicPartitionOffsetSpec
                     {
                         TopicPartition = new TopicPartition(topic, new Partition(partition)),
                         OffsetSpec = OffsetSpec.MaxTimestamp()
@@ -289,7 +290,7 @@ namespace Confluent.Kafka.Examples
                 }
                 else if (offsetSpec == "EARLIEST")
                 {
-                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec
+                    topicPartitionOffsetSpecs.Add(new TopicPartitionOffsetSpec
                     {
                         TopicPartition = new TopicPartition(topic, new Partition(partition)),
                         OffsetSpec = OffsetSpec.Earliest()
@@ -297,7 +298,7 @@ namespace Confluent.Kafka.Examples
                 }
                 else if (offsetSpec == "LATEST")
                 {
-                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec
+                    topicPartitionOffsetSpecs.Add(new TopicPartitionOffsetSpec
                     {
                         TopicPartition = new TopicPartition(topic, new Partition(partition)),
                         OffsetSpec = OffsetSpec.Latest()
@@ -313,9 +314,9 @@ namespace Confluent.Kafka.Examples
             return Tuple.Create(isolationLevel, topicPartitionOffsetSpecs);
         }
 
-       static void PrintListOffsetsResultInfos(List<ListOffsetsResultInfo> ListOffsetsResultInfos)
-       {
-            foreach(var listOffsetsResultInfo in ListOffsetsResultInfos)
+        static void PrintListOffsetsResultInfos(List<ListOffsetsResultInfo> ListOffsetsResultInfos)
+        {
+            foreach (var listOffsetsResultInfo in ListOffsetsResultInfos)
             {
                 Console.WriteLine("  ListOffsetsResultInfo:");
                 Console.WriteLine($"    TopicPartitionOffsetError: {listOffsetsResultInfo.TopicPartitionOffsetError}");
@@ -493,7 +494,7 @@ namespace Confluent.Kafka.Examples
                 {
                     var results = await adminClient.AlterConsumerGroupOffsetsAsync(input);
                     Console.WriteLine("Successfully altered offsets:");
-                    foreach(var groupResult in results)
+                    foreach (var groupResult in results)
                     {
                         Console.WriteLine(groupResult);
                     }
@@ -542,7 +543,7 @@ namespace Confluent.Kafka.Examples
                     return;
                 }
             }
-            if(!tpes.Any())
+            if (!tpes.Any())
             {
                 // In case the list is empty, request offsets for all the partitions.
                 tpes = null;
@@ -556,7 +557,7 @@ namespace Confluent.Kafka.Examples
                 {
                     var result = await adminClient.ListConsumerGroupOffsetsAsync(input);
                     Console.WriteLine("Successfully listed offsets:");
-                    foreach(var groupResult in result)
+                    foreach (var groupResult in result)
                     {
                         Console.WriteLine(groupResult);
                     }
@@ -582,35 +583,58 @@ namespace Confluent.Kafka.Examples
         {
             var timeout = TimeSpan.FromSeconds(30);
             var statesList = new List<ConsumerGroupState>();
-            try
+            var groupTypesList = new List<ConsumerGroupType>();
+            var isType = false;
+            var isState = false;
+            for (int i = 0; i < commandArgs.Length; i++)
             {
-                if (commandArgs.Length > 0)
+                if (commandArgs[i] == "-states")
                 {
-                    timeout = TimeSpan.FromSeconds(Int32.Parse(commandArgs[0]));
+                    if (isState)
+                    {
+                        Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                        Environment.ExitCode = 1;
+                        return;
+                    }
+                    isState = true;
                 }
-                if (commandArgs.Length > 1)
+                else if (commandArgs[i] == "-types")
                 {
-                    for (int i = 1; i < commandArgs.Length; i++)
+                    if (isType)
+                    {
+                        Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                        Environment.ExitCode = 1;
+                        return;
+                    }
+                    isType = true;
+                }
+                else
+                {
+                    if (isState)
                     {
                         statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
                     }
+                    else if (isType)
+                    {
+                        groupTypesList.Add(Enum.Parse<ConsumerGroupType>(commandArgs[i]));
+                    }
+                    else
+                    {
+                        Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                        Environment.ExitCode = 1;
+                        return;
+                    }
                 }
             }
-            catch (SystemException)
-            {
-                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [<timeout_seconds> <match_state_1> <match_state_2> ... <match_state_N>]");
-                Environment.ExitCode = 1;
-                return;
-            }
-
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 try
                 {
                     var result = await adminClient.ListConsumerGroupsAsync(new ListConsumerGroupsOptions()
-                    { 
+                    {
                         RequestTimeout = timeout,
                         MatchStates = statesList,
+                        MatchGroupTypes = groupTypesList,
                     });
                     Console.WriteLine(result);
                 }
@@ -640,7 +664,7 @@ namespace Confluent.Kafka.Examples
             var password = commandArgs[1];
             var includeAuthorizedOperations = (commandArgs[2] == "1");
             var groupNames = commandArgs.Skip(3).ToList();
-            
+
             if (string.IsNullOrWhiteSpace(username))
             {
                 username = null;
@@ -671,7 +695,7 @@ namespace Confluent.Kafka.Examples
             {
                 try
                 {
-                    var descResult = await adminClient.DescribeConsumerGroupsAsync(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout , IncludeAuthorizedOperations = includeAuthorizedOperations});
+                    var descResult = await adminClient.DescribeConsumerGroupsAsync(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout, IncludeAuthorizedOperations = includeAuthorizedOperations });
                     foreach (var group in descResult.ConsumerGroupDescriptions)
                     {
                         Console.WriteLine($"\n  Group: {group.GroupId} {group.Error}");
@@ -705,7 +729,7 @@ namespace Confluent.Kafka.Examples
                 }
             }
         }
-        
+
         static async Task IncrementalAlterConfigsAsync(string bootstrapServers, string[] commandArgs)
         {
             var timeout = TimeSpan.FromSeconds(30);
@@ -720,8 +744,8 @@ namespace Confluent.Kafka.Examples
                 {
                     throw new ArgumentException("invalid arguments length");
                 }
-                
-                for (int i = 1; i < commandArgs.Length; i+=3)
+
+                for (int i = 1; i < commandArgs.Length; i += 3)
                 {
                     var resourceType = Enum.Parse<ResourceType>(commandArgs[i]);
                     var resourceName = commandArgs[i + 1];
@@ -734,14 +758,14 @@ namespace Confluent.Kafka.Examples
                         {
                             throw new ArgumentException($"invalid alteration name \"{config}\"");
                         }
-                        
+
                         var name = nameOpValue[0];
                         var opValue = nameOpValue[1].Split(":");
                         if (opValue.Length != 2)
                         {
                             throw new ArgumentException($"invalid alteration value \"{nameOpValue[1]}\"");
                         }
-                        
+
                         var op = Enum.Parse<AlterConfigOpType>(opValue[0]);
                         var value = opValue[1];
                         configList.Add(new ConfigEntry
@@ -759,7 +783,7 @@ namespace Confluent.Kafka.Examples
                     configResourceList[resource] = configList;
                 }
             }
-            catch (Exception  e) when (
+            catch (Exception e) when (
                 e is ArgumentException ||
                 e is FormatException
             )
@@ -769,7 +793,7 @@ namespace Confluent.Kafka.Examples
                 Environment.ExitCode = 1;
                 return;
             }
-            
+
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 try
@@ -797,7 +821,7 @@ namespace Confluent.Kafka.Examples
         }
 
         static async Task DescribeUserScramCredentialsAsync(string bootstrapServers, string[] commandArgs)
-        {          
+        {
             var users = commandArgs.ToList();
             var timeout = TimeSpan.FromSeconds(30);
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
@@ -874,16 +898,17 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static async Task ListOffsetsAsync(string bootstrapServers, string[] commandArgs) {
+        static async Task ListOffsetsAsync(string bootstrapServers, string[] commandArgs)
+        {
 
             var listOffsetsArgs = ParseListOffsetsArgs(commandArgs);
             if (listOffsetsArgs == null) { return; }
-            
+
             var isolationLevel = listOffsetsArgs.Item1;
             var topicPartitionOffsets = listOffsetsArgs.Item2;
-            
+
             var timeout = TimeSpan.FromSeconds(30);
-            ListOffsetsOptions options = new ListOffsetsOptions(){ RequestTimeout = timeout, IsolationLevel = isolationLevel };
+            ListOffsetsOptions options = new ListOffsetsOptions() { RequestTimeout = timeout, IsolationLevel = isolationLevel };
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
@@ -916,7 +941,7 @@ namespace Confluent.Kafka.Examples
                 foreach (var partition in topic.Partitions)
                 {
                     Console.WriteLine($"    Partition ID: {partition.Partition} with leader: {partition.Leader}");
-                    if(!partition.ISR.Any())
+                    if (!partition.ISR.Any())
                     {
                         Console.WriteLine("      There is no In-Sync-Replica broker for the partition");
                     }
@@ -926,7 +951,7 @@ namespace Confluent.Kafka.Examples
                         Console.WriteLine($"      The In-Sync-Replica brokers are: {isrs}");
                     }
 
-                    if(!partition.Replicas.Any())
+                    if (!partition.Replicas.Any())
                     {
                         Console.WriteLine("      There is no Replica broker for the partition");
                     }
@@ -935,7 +960,7 @@ namespace Confluent.Kafka.Examples
                         string replicas = string.Join("; ", partition.Replicas);
                         Console.WriteLine($"      The Replica brokers are: {replicas}");
                     }
-                    
+
                 }
                 Console.WriteLine($"  Is internal: {topic.IsInternal}");
                 if (includeAuthorizedOperations)
@@ -954,7 +979,7 @@ namespace Confluent.Kafka.Examples
                 Environment.ExitCode = 1;
                 return;
             }
-            
+
             var username = commandArgs[0];
             var password = commandArgs[1];
             var includeAuthorizedOperations = (commandArgs[2] == "1");
@@ -991,7 +1016,7 @@ namespace Confluent.Kafka.Examples
                 {
                     var descResult = await adminClient.DescribeTopicsAsync(
                         TopicCollection.OfTopicNames(topicNames),
-                        new DescribeTopicsOptions() { RequestTimeout = timeout , IncludeAuthorizedOperations = includeAuthorizedOperations});
+                        new DescribeTopicsOptions() { RequestTimeout = timeout, IncludeAuthorizedOperations = includeAuthorizedOperations });
                     PrintTopicDescriptions(descResult.TopicDescriptions, includeAuthorizedOperations);
                 }
                 catch (DescribeTopicsException e)
@@ -1041,11 +1066,11 @@ namespace Confluent.Kafka.Examples
             {
                 try
                 {
-                    var descResult = await adminClient.DescribeClusterAsync(new DescribeClusterOptions() { RequestTimeout = timeout , IncludeAuthorizedOperations = includeAuthorizedOperations});
-                    
+                    var descResult = await adminClient.DescribeClusterAsync(new DescribeClusterOptions() { RequestTimeout = timeout, IncludeAuthorizedOperations = includeAuthorizedOperations });
+
                     Console.WriteLine($"  Cluster Id: {descResult.ClusterId}\n  Controller: {descResult.Controller}");
                     Console.WriteLine("  Nodes:");
-                    foreach(var node in descResult.Nodes)
+                    foreach (var node in descResult.Nodes)
                     {
                         Console.WriteLine($"    {node}");
                     }
@@ -1072,7 +1097,7 @@ namespace Confluent.Kafka.Examples
                         "list-groups", "metadata", "library-version", "create-topic", "create-acls",
                         "list-consumer-groups", "describe-consumer-groups",
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
-                        "incremental-alter-configs", "describe-user-scram-credentials", 
+                        "incremental-alter-configs", "describe-user-scram-credentials",
                         "alter-user-scram-credentials", "describe-topics",
                         "describe-cluster", "list-offsets"
                     }) +

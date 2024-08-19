@@ -36,19 +36,19 @@ namespace Confluent.Kafka.IntegrationTests
         public static TopicPartitionOffset ProduceNullStringMessages(string bootstrapServers, string topic, int size, int number)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
-            
+
             var sb = new StringBuilder(size);
-            for (int i=0; i<size; ++i)
+            for (int i = 0; i < size; ++i)
             {
                 // 01234 ... xyz0123 ...
-                sb.Append((char)(0x30 + i%74));
+                sb.Append((char)(0x30 + i % 74));
             }
             var msg = sb.ToString();
 
             DeliveryResult<Null, string> firstDeliveryReport = null;
             using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
             {
-                for (int i=0; i<number; ++i)
+                for (int i = 0; i < number; ++i)
                 {
                     var dr = producer.ProduceAsync(topic, new Message<Null, string> { Value = msg }).Result;
                     Assert.NotNull(dr);

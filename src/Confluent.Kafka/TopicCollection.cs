@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         private TopicCollection()
         {
         }
-        
+
         /// <summary>
         ///     Topic names.
         /// </summary>

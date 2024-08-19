@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Confluent.Kafka;
 using Avro;
 using Avro.Generic;

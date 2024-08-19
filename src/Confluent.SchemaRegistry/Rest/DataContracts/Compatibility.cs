@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         [EnumMember(Value = "FULL")]
         Full,
-        
+
         /// <summary>
         ///     Forward transitive schema compatibility.
         /// </summary>

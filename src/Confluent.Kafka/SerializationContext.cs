@@ -53,7 +53,7 @@ namespace Confluent.Kafka
         ///     The topic the data is being written to or read from.
         /// </summary>
         public string Topic { get; private set; }
-        
+
         /// <summary>
         ///     The component of the message the serialization operation relates to.
         /// </summary>

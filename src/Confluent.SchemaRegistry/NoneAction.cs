@@ -25,16 +25,16 @@ namespace Confluent.SchemaRegistry
     public class NoneAction : IRuleAction
     {
         public static readonly string ActionType = "NONE";
-        
+
         public void Configure(IEnumerable<KeyValuePair<string, string>> config)
         {
         }
-        
+
         public string Type()
         {
             return ActionType;
         }
-        
+
         public Task Run(RuleContext ctx, object message, RuleException exception = null)
         {
             return Task.CompletedTask;

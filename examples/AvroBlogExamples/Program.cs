@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,14 +41,14 @@ namespace AvroBlogExample
                 new ProducerBuilder<Null, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
                     .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
                     .Build())
-            {   
+            {
                 var logLevelSchema = (Avro.EnumSchema)Avro.Schema.Parse(
                     File.ReadAllText("LogLevel.asvc"));
 
                 var logMessageSchema = (Avro.RecordSchema)Avro.Schema
                     .Parse(File.ReadAllText("LogMessage.V1.asvc")
                         .Replace(
-                            "MessageTypes.LogLevel", 
+                            "MessageTypes.LogLevel",
                             File.ReadAllText("LogLevel.asvc")));
 
                 var record = new GenericRecord(logMessageSchema);
@@ -93,7 +93,8 @@ namespace AvroBlogExample
         static void ConsumeSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
             CancellationTokenSource cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (_, e) => {
+            Console.CancelKeyPress += (_, e) =>
+            {
                 e.Cancel = true; // prevent the process from terminating.
                 cts.Cancel();
             };

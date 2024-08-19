@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Threading.Tasks;
 using VaultSharp;
@@ -14,11 +14,11 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
         private IVaultClient kmsClient;
         private string keyId;
         private string keyName;
-        
+
         public string KekId { get; }
         public string Namespace { get; }
         public string TokenId { get; }
-        
+
         public HcVaultKmsClient(string kekId, string ns, string tokenId)
         {
             if (tokenId == null)
@@ -29,15 +29,16 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
             KekId = kekId;
             Namespace = ns;
             TokenId = tokenId;
-            
-            if (!kekId.StartsWith(HcVaultKmsDriver.Prefix)) {
-              throw new ArgumentException(string.Format($"key URI must start with {HcVaultKmsDriver.Prefix}"));
+
+            if (!kekId.StartsWith(HcVaultKmsDriver.Prefix))
+            {
+                throw new ArgumentException(string.Format($"key URI must start with {HcVaultKmsDriver.Prefix}"));
             }
             keyId = KekId.Substring(HcVaultKmsDriver.Prefix.Length);
             IAuthMethodInfo authMethod = new TokenAuthMethodInfo(tokenId);
             Uri uri = new Uri(keyId);
             keyName = uri.Segments[^1];
-            
+
             var vaultClientSettings = new VaultClientSettings(uri.Scheme + "://" + uri.Authority, authMethod);
             if (ns != null)
             {
@@ -45,12 +46,12 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
             }
             kmsClient = new VaultClient(vaultClientSettings);
         }
-        
+
         public bool DoesSupport(string uri)
         {
             return uri.StartsWith(HcVaultKmsDriver.Prefix);
         }
-        
+
         public async Task<byte[]> Encrypt(byte[] plaintext)
         {
             var encodedPlaintext = Convert.ToBase64String(plaintext);

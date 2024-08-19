@@ -87,7 +87,7 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected Action<IConsumer<TKey, TValue>, CommittedOffsets> OffsetsCommittedHandler { get; set; }
 
-        internal Consumer<TKey,TValue>.Config ConstructBaseConfig(Consumer<TKey, TValue> consumer)
+        internal Consumer<TKey, TValue>.Config ConstructBaseConfig(Consumer<TKey, TValue> consumer)
         {
             return new Consumer<TKey, TValue>.Config
             {

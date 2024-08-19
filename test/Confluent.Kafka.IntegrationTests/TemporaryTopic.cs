@@ -25,11 +25,11 @@ namespace Confluent.Kafka
     public class TemporaryTopic : IDisposable
     {
         private string bootstrapServers;
-        
+
         public string Name { get; set; }
 
         public TemporaryTopic(string bootstrapServers, int numPartitions)
-            : this("dotnet_test_", bootstrapServers, numPartitions) {}
+            : this("dotnet_test_", bootstrapServers, numPartitions) { }
 
         public TemporaryTopic(string prefix, string bootstrapServers, int numPartitions)
         {

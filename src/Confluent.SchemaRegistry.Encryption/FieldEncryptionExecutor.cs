@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,13 +16,13 @@ namespace Confluent.SchemaRegistry.Encryption
         }
 
         public static readonly string RuleType = "ENCRYPT";
-        
+
         public static readonly string EncryptKekName = "encrypt.kek.name";
         public static readonly string EncryptKmsKeyid = "encrypt.kms.key.id";
         public static readonly string EncryptKmsType = "encrypt.kms.type";
         public static readonly string EncryptDekAlgorithm = "encrypt.dek.algorithm";
         public static readonly string EncryptDekExpiryDays = "encrypt.dek.expiry.days";
-        
+
         public static readonly string KmsTypeSuffix = "://";
 
         internal static readonly int LatestVersion = -1;
@@ -38,13 +38,13 @@ namespace Confluent.SchemaRegistry.Encryption
         {
             Clock = new Clock();
         }
-        
+
         public FieldEncryptionExecutor(IDekRegistryClient client, IClock clock)
         {
             Client = client;
             Clock = clock ?? new Clock();
         }
-        
+
         public override void Configure(IEnumerable<KeyValuePair<string, string>> config)
         {
             Configs = config;
@@ -98,7 +98,7 @@ namespace Confluent.SchemaRegistry.Encryption
                     return null;
             }
         }
-        
+
         public override void Dispose()
         {
             if (Client != null)
@@ -121,7 +121,7 @@ namespace Confluent.SchemaRegistry.Encryption
         {
             this.executor = executor;
         }
-        
+
         public void Init(RuleContext ctx)
         {
             cryptor = executor.GetCryptor(ctx);
@@ -151,7 +151,7 @@ namespace Confluent.SchemaRegistry.Encryption
 
             return registeredKek;
         }
-        
+
         private async Task<RegisteredKek> GetOrCreateKek(RuleContext ctx)
         {
             bool isRead = ctx.RuleMode == RuleMode.Read;
@@ -201,7 +201,7 @@ namespace Confluent.SchemaRegistry.Encryption
 
             return kek;
         }
-        
+
         private int GetDekExpiryDays(RuleContext ctx)
         {
             string expiryDays = ctx.GetParameter(FieldEncryptionExecutor.EncryptDekExpiryDays);
@@ -219,7 +219,7 @@ namespace Confluent.SchemaRegistry.Encryption
             }
             return days;
         }
-        
+
         private async Task<RegisteredKek> RetrieveKekFromRegistry(KekId key)
         {
             try
@@ -237,7 +237,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 throw new RuleException($"Failed to retrieve kek {key.Name}", e);
             }
         }
-        
+
         private async Task<RegisteredKek> StoreKekToRegistry(KekId key, string kmsType, string kmsKeyId, bool shared)
         {
             Kek kek = new Kek
@@ -262,7 +262,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 throw new RuleException($"Failed to create kek {key.Name}", e);
             }
         }
-        
+
         private async Task<RegisteredDek> GetOrCreateDek(RuleContext ctx, int? version)
         {
             RegisteredKek kek = await GetKek(ctx).ConfigureAwait(continueOnCapturedContext: false);
@@ -326,9 +326,9 @@ namespace Confluent.SchemaRegistry.Encryption
             return ctx.RuleMode != RuleMode.Read
                 && dekExpiryDays > 0
                 && dek != null
-                && ((double) (now - dek.Timestamp)) / FieldEncryptionExecutor.MillisInDay > dekExpiryDays;
+                && ((double)(now - dek.Timestamp)) / FieldEncryptionExecutor.MillisInDay > dekExpiryDays;
         }
-        
+
         private async Task<RegisteredDek> RetrieveDekFromRegistry(DekId key)
         {
             try
@@ -360,7 +360,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 throw new RuleException($"Failed to retrieve dek for kek {key.KekName}, subject {key.Subject}", e);
             }
         }
-        
+
         private async Task<RegisteredDek> StoreDekToRegistry(DekId key, byte[] encryptedDek)
         {
 
@@ -486,7 +486,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 }
             }
         }
-        
+
         private static IKmsClient GetKmsClient(IEnumerable<KeyValuePair<string, string>> configs, RegisteredKek kek)
         {
             string keyUrl = kek.KmsType + FieldEncryptionExecutor.KmsTypeSuffix + kek.KmsKeyId;

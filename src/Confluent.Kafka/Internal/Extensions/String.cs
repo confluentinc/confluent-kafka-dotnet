@@ -27,7 +27,7 @@ namespace Confluent.Kafka
     /// </summary>
     internal static class StringExtensions
     {
-        internal static Encoding ToEncoding(this string encodingName) 
+        internal static Encoding ToEncoding(this string encodingName)
         {
             switch (encodingName.ToLower())
             {
@@ -49,6 +49,6 @@ namespace Confluent.Kafka
                 b ? "true" : "false";
 
         internal static string Quote(this string str) =>
-                str == null ? "null" : $"\"{str.Replace("\"","\\\"")}\"";
+                str == null ? "null" : $"\"{str.Replace("\"", "\\\"")}\"";
     }
 }

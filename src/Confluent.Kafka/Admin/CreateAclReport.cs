@@ -44,7 +44,7 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var result = (CreateAclReport) obj;
+            var result = (CreateAclReport)obj;
             if (base.Equals(result)) return true;
             return Error == result.Error;
         }
