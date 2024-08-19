@@ -341,7 +341,7 @@ namespace Confluent.SchemaRegistry
 
         public async Task<RegisteredSchema> GetSchemaAsync(string subject, int version, bool ignoreDeletedSchemas = true)
             => SanitizeRegisteredSchema(
-                await RequestAsync<RegisteredSchema>($"subjects/{Uri.EscapeDataString(subject)}/versions/{version}&deleted={!ignoreDeletedSchemas}",
+                await RequestAsync<RegisteredSchema>($"subjects/{Uri.EscapeDataString(subject)}/versions/{version}?deleted={!ignoreDeletedSchemas}",
                         HttpMethod.Get)
                     .ConfigureAwait(continueOnCapturedContext: false));
 
