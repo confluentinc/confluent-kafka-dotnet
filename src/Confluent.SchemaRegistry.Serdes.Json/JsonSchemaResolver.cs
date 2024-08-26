@@ -20,6 +20,9 @@ using System.Threading.Tasks;
 using NJsonSchema;
 using NJsonSchema.Generation;
 using Newtonsoft.Json.Linq;
+#if NET8_0_OR_GREATER
+using NJsonSchema.NewtonsoftJson.Generation;
+#endif
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -112,7 +115,11 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 NJsonSchema.Generation.JsonSchemaResolver schemaResolver =
                     new NJsonSchema.Generation.JsonSchemaResolver(rootObject, this.jsonSchemaGeneratorSettings ??
+#if NET8_0_OR_GREATER
+                        new NewtonsoftJsonSchemaGeneratorSettings());
+#else
                         new JsonSchemaGeneratorSettings());
+#endif
 
                 JsonReferenceResolver referenceResolver =
                     new JsonReferenceResolver(schemaResolver);

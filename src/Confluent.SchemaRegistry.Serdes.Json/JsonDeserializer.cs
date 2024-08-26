@@ -25,7 +25,11 @@ using Confluent.Kafka;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NJsonSchema;
+#if NET8_0_OR_GREATER
+using NJsonSchema.NewtonsoftJson.Generation;
+#else
 using NJsonSchema.Generation;
+#endif
 using NJsonSchema.Validation;
 
 
@@ -53,7 +57,11 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class JsonDeserializer<T> : AsyncDeserializer<T, JsonSchema> where T : class
     {
+#if NET8_0_OR_GREATER
+        private readonly NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
+#else
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
+#endif
         
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
@@ -69,18 +77,30 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
+#if NET8_0_OR_GREATER
+        public JsonDeserializer(IEnumerable<KeyValuePair<string, string>> config = null, NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) :
+#else
         public JsonDeserializer(IEnumerable<KeyValuePair<string, string>> config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) :
+#endif
             this(null, config, jsonSchemaGeneratorSettings)
         {
         }
 
-        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) 
+#if NET8_0_OR_GREATER
+        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null, NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) 
+#else
+        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+#endif
             : this(schemaRegistryClient, config != null ? new JsonDeserializerConfig(config) : null, jsonSchemaGeneratorSettings)
         {
         }
 
         public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, JsonDeserializerConfig config, 
+#if NET8_0_OR_GREATER
+            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
+#else 
             JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null) 
+#endif
             : base(schemaRegistryClient, config, ruleExecutors)
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
@@ -121,7 +141,12 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     JSON schema generator settings.
         /// </param>
         public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, IEnumerable<KeyValuePair<string, string>> config = null,
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) : this(schemaRegistryClient, config, jsonSchemaGeneratorSettings)
+#if NET8_0_OR_GREATER
+            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+#else
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
+#endif
+            : this(schemaRegistryClient, config, jsonSchemaGeneratorSettings)
         {
             JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
@@ -206,7 +231,11 @@ namespace Confluent.SchemaRegistry.Serdes
                         using (var jsonStream = new MemoryStream(array, headerSize, array.Length - headerSize))
                         using (var jsonReader = new StreamReader(jsonStream, Encoding.UTF8))
                         {
+#if NET8_0_OR_GREATER
+                            JToken json = Newtonsoft.Json.JsonConvert.DeserializeObject<JToken>(jsonReader.ReadToEnd(), this.jsonSchemaGeneratorSettings?.SerializerSettings);
+#else
                             JToken json = Newtonsoft.Json.JsonConvert.DeserializeObject<JToken>(jsonReader.ReadToEnd(), this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
+#endif
                             json = await ExecuteMigrations(migrations, isKey, subject, topic, context.Headers, json)
                                 .ContinueWith(t => (JToken)t.Result)
                                 .ConfigureAwait(continueOnCapturedContext: false);
@@ -243,7 +272,11 @@ namespace Confluent.SchemaRegistry.Serdes
                                 }
                             }
 
+#if NET8_0_OR_GREATER
+                            value = Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString, this.jsonSchemaGeneratorSettings?.SerializerSettings);
+#else
                             value = Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
+#endif
                         }
                     }
 
