@@ -22,7 +22,11 @@ using Confluent.Kafka.SyncOverAsync;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
+#if NET8_0_OR_GREATER
 using NJsonSchema.NewtonsoftJson.Generation;
+#else
+using NJsonSchema.Generation;
+#endif
 
 
 namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
@@ -139,7 +143,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
             var sr = new CachedSchemaRegistryClient(schemaRegistryConfig);
 
+#if NET8_0_OR_GREATER
             var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
+#else
+            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+#endif
             {
                 SerializerSettings = new JsonSerializerSettings
                 {
@@ -209,7 +217,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 // Test producing and consuming directly a JObject
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(order,
+#if NET8_0_OR_GREATER
                     jsonSchemaGeneratorSettings.SerializerSettings);
+#else
+                    jsonSchemaGeneratorSettings.ActualSerializerSettings);
+#endif
                 var jsonObject = JObject.Parse(serializedString);
                 
                 using (var producer =
