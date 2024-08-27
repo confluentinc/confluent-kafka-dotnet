@@ -23,7 +23,7 @@ blocks:
       jobs:
         - name: 'Build and test'
           commands:
-            - dotnet restore -p:TargetFramework=net8.0
+            - dotnet restore -p:TargetFrameworks=net8.0
             - make build
             - make test
   - name: 'OSX x64'
@@ -36,7 +36,7 @@ blocks:
         - name: 'Build and test'
           commands:
             - ulimit -n 1024
-            - dotnet restore -p:TargetFramework=net8.0
+            - dotnet restore -p:TargetFrameworks=net8.0
             - make build
             - make test
   - name: 'Windows x64'
@@ -51,7 +51,7 @@ blocks:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 8.0.300 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
-            - dotnet restore -p:TargetFramework=net8.0
+            - dotnet restore -p:TargetFrameworks=net8.0
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj
@@ -70,7 +70,7 @@ blocks:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 8.0.300 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
-            - dotnet restore -p:TargetFramework=net8.0
+            - dotnet restore -p:TargetFrameworks=net8.0
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
@@ -99,7 +99,7 @@ blocks:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 8.0.300 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
-            - dotnet restore -p:TargetFramework=net8.0
+            - dotnet restore -p:TargetFrameworks=net8.0
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --output artifacts
@@ -131,7 +131,7 @@ blocks:
           commands:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
-            - dotnet restore -p:TargetFramework=net8.0
+            - dotnet restore -p:TargetFrameworks=net8.0
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
         - name: 'Build and test with "consumer" protocol'
           commands:
@@ -139,7 +139,7 @@ blocks:
             - sleep 300
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - export TEST_CONSUMER_GROUP_PROTOCOL=consumer
-            - dotnet restore -p:TargetFramework=net8.0
+            - dotnet restore -p:TargetFrameworks=net8.0
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
 
   - name: 'Schema registry and serdes integration tests'
@@ -156,6 +156,6 @@ blocks:
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
-            - dotnet restore -p:TargetFramework=net8.0
+            - dotnet restore -p:TargetFrameworks=net8.0
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
             # - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
