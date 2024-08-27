@@ -23,6 +23,7 @@ blocks:
       jobs:
         - name: 'Build and test'
           commands:
+            - dotnet --global install 8.0.300
             - dotnet restore
             - make build
             - make test
@@ -36,6 +37,7 @@ blocks:
         - name: 'Build and test'
           commands:
             - ulimit -n 1024
+            - dotnet --global install 8.0.300
             - dotnet restore
             - make build
             - make test
@@ -49,8 +51,9 @@ blocks:
         - name: 'Build and test'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 8.0.300 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
+            - dotnet --global install 8.0.300
             - dotnet restore
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj
@@ -68,8 +71,9 @@ blocks:
         - name: 'Build and push artifacts'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 8.0.300 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
+            - dotnet --global install 8.0.300
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
@@ -97,8 +101,9 @@ blocks:
         - name: 'Build and push artifacts'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 8.0.300 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
+            - dotnet --global install 8.0.300
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --output artifacts
@@ -131,6 +136,7 @@ blocks:
           commands:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
+            - dotnet --global install 8.0.300
             - dotnet restore
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
         - name: 'Build and test with "consumer" protocol'
@@ -139,6 +145,7 @@ blocks:
             - sleep 300
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - export TEST_CONSUMER_GROUP_PROTOCOL=consumer
+            - dotnet --global install 8.0.300
             - dotnet restore
             - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
 
@@ -156,6 +163,7 @@ blocks:
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
+            - dotnet --global install 8.0.300
             - dotnet restore
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
             # - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
