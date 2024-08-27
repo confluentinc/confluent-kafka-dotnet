@@ -49,7 +49,7 @@ blocks:
         - name: 'Build and test'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 8.0.300 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
             - dotnet restore
             - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
@@ -68,7 +68,7 @@ blocks:
         - name: 'Build and push artifacts'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 8.0.300 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
@@ -97,7 +97,7 @@ blocks:
         - name: 'Build and push artifacts'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 8.0.300 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
