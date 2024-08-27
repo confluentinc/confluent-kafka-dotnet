@@ -20,8 +20,12 @@ namespace Confluent.SchemaRegistry.Encryption
             {
                 secret = Environment.GetEnvironmentVariable("LOCAL_SECRET");
             }
+            if (secret == null)
+            {
+                throw new ArgumentNullException("Cannot load secret");
+            }
             Secret = secret;
-            cryptor = new Cryptor(DekFormat.AES256_GCM);
+            cryptor = new Cryptor(DekFormat.AES128_GCM);
             byte[] rawKey = Hkdf.DeriveKey(
                 HashAlgorithmName.SHA256, Encoding.UTF8.GetBytes(secret), cryptor.KeySize());
             AesGcmKey aesGcm = new AesGcmKey();
