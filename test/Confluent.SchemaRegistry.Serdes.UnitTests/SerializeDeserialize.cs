@@ -978,6 +978,185 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void GenericRecordFieldEncryptionF1Preserialized()
+        {
+            var schemaStr = "{\"type\":\"record\",\"name\":\"myrecord\"," +
+                            "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
+
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
+                {
+                    ["myrecord.f1"] = new HashSet<string> { "PII" },
+
+                }, new Dictionary<string, string>(), new HashSet<string>()
+            );
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("encryptPII", RuleKind.Transform, RuleMode.WriteRead, "ENCRYPT", new HashSet<string>
+                    {
+                        "PII"
+                    }, new Dictionary<string, string>
+                    {
+                        ["encrypt.kek.name"] = "kek1",
+                        ["encrypt.kms.type"] = "local-kms",
+                        ["encrypt.kms.key.id"] = "mykey"
+                    })
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new AvroDeserializerConfig
+            {
+            };
+            config.Set("rules.secret", "mysecret");
+            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
+
+            kekStore[new KekId("kek1", false)] =
+                new RegisteredKek()
+                {
+                    Name = "kek1",
+                    KmsType = "local-kms",
+                    KmsKeyId = "mykey",
+                };
+            dekStore[new DekId("kek1", "topic-value", 1, DekFormat.AES256_GCM, false)] =
+                new RegisteredDek()
+                {
+                    Subject = "topic-value",
+                    Version = 1,
+                    Algorithm = DekFormat.AES256_GCM,
+                    EncryptedKeyMaterial =
+                        "07V2ndh02DA73p+dTybwZFm7DKQSZN1tEwQh+FoX1DZLk4Yj2LLu4omYjp/84tAg3BYlkfGSz+zZacJHIE4=",
+                };
+            Headers headers = new Headers();
+            byte[] bytes = new byte[]{0, 0, 0, 0, 1, 104, 122, 103, 121, 47, 106, 70, 78, 77, 86, 47, 101, 70, 105, 108, 97, 72, 114, 77, 121, 101, 66, 103, 100, 97, 86, 122, 114, 82, 48, 117, 100, 71, 101, 111, 116, 87, 56, 99, 65, 47, 74, 97, 108, 55, 117, 107, 114, 43, 77, 47, 121, 122};
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("hello world", result["f1"]);
+        }
+
+        [Fact]
+        public void GenericRecordFieldEncryptionDeterministicF1Preserialized()
+        {
+            var schemaStr = "{\"type\":\"record\",\"name\":\"myrecord\"," +
+                            "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
+
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
+                {
+                    ["myrecord.f1"] = new HashSet<string> { "PII" },
+
+                }, new Dictionary<string, string>(), new HashSet<string>()
+            );
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("encryptPII", RuleKind.Transform, RuleMode.WriteRead, "ENCRYPT", new HashSet<string>
+                    {
+                        "PII"
+                    }, new Dictionary<string, string>
+                    {
+                        ["encrypt.kek.name"] = "kek1",
+                        ["encrypt.kms.type"] = "local-kms",
+                        ["encrypt.kms.key.id"] = "mykey",
+                        ["encrypt.dek.algorithm"] = "AES256_SIV",
+                    })
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new AvroDeserializerConfig
+            {
+            };
+            config.Set("rules.secret", "mysecret");
+            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
+
+            kekStore[new KekId("kek1", false)] =
+                new RegisteredKek()
+                {
+                    Name = "kek1",
+                    KmsType = "local-kms",
+                    KmsKeyId = "mykey",
+                };
+            dekStore[new DekId("kek1", "topic-value", 1, DekFormat.AES256_SIV, false)] =
+                new RegisteredDek()
+                {
+                    Subject = "topic-value",
+                    Version = 1,
+                    Algorithm = DekFormat.AES256_SIV,
+                    EncryptedKeyMaterial =
+                        "YSx3DTlAHrmpoDChquJMifmPntBzxgRVdMzgYL82rgWBKn7aUSnG+WIu9ozBNS3y2vXd++mBtK07w4/W/G6w0da39X9hfOVZsGnkSvry/QRht84V8yz3dqKxGMOK5A==",
+                };
+            Headers headers = new Headers();
+            byte[] bytes = new byte[]{0, 0, 0, 0, 1, 72, 68, 54, 89, 116, 120, 114, 108, 66, 110, 107, 84, 87, 87, 57, 78, 54, 86, 98, 107, 51, 73, 73, 110, 106, 87, 72, 56, 49, 120, 109, 89, 104, 51, 107, 52, 100};
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("hello world", result["f1"]);
+        }
+
+        [Fact]
+        public void GenericRecordFieldEncryptionDekRotationF1Preserialized()
+        {
+            var schemaStr = "{\"type\":\"record\",\"name\":\"myrecord\"," +
+                            "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
+
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
+                {
+                    ["myrecord.f1"] = new HashSet<string> { "PII" },
+
+                }, new Dictionary<string, string>(), new HashSet<string>()
+            );
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("encryptPII", RuleKind.Transform, RuleMode.WriteRead, "ENCRYPT", new HashSet<string>
+                    {
+                        "PII"
+                    }, new Dictionary<string, string>
+                    {
+                        ["encrypt.kek.name"] = "kek1",
+                        ["encrypt.kms.type"] = "local-kms",
+                        ["encrypt.kms.key.id"] = "mykey",
+                        ["encrypt.dek.expiry.days"] = "1"
+                    })
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new AvroDeserializerConfig
+            {
+            };
+            config.Set("rules.secret", "mysecret");
+            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
+
+            kekStore[new KekId("kek1", false)] =
+                new RegisteredKek()
+                {
+                    Name = "kek1",
+                    KmsType = "local-kms",
+                    KmsKeyId = "mykey",
+                };
+            dekStore[new DekId("kek1", "topic-value", 1, DekFormat.AES256_GCM, false)] =
+                new RegisteredDek()
+                {
+                    Subject = "topic-value",
+                    Version = 1,
+                    Algorithm = DekFormat.AES256_GCM,
+                    EncryptedKeyMaterial =
+                        "W/v6hOQYq1idVAcs1pPWz9UUONMVZW4IrglTnG88TsWjeCjxmtRQ4VaNe/I5dCfm2zyY9Cu0nqdvqImtUk4=",
+                };
+            Headers headers = new Headers();
+            byte[] bytes = new byte[]{0, 0, 0, 0, 1, 120, 65, 65, 65, 65, 65, 65, 71, 52, 72, 73, 54, 98, 49, 110, 88, 80, 88, 113, 76, 121, 71, 56, 99, 73, 73, 51, 53, 78, 72, 81, 115, 101, 113, 113, 85, 67, 100, 43, 73, 101, 76, 101, 70, 86, 65, 101, 78, 112, 83, 83, 51, 102, 120, 80, 110, 74, 51, 50, 65, 61};
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("hello world", result["f1"]);
+        }
+
+        [Fact]
         public void GenericRecordJSONataFullyCompatible()
         {
             var rule1To2 = "$merge([$sift($, function($v, $k) {$k != 'name'}), {'full_name': $.'name'}])";
