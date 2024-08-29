@@ -6,6 +6,8 @@
     <AssemblyName>Confluent.SchemaRegistry.Serdes.UnitTests</AssemblyName>
     <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\src\Confluent.SchemaRegistry.Serdes.Protobuf\Confluent.SchemaRegistry.Serdes.Protobuf.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
