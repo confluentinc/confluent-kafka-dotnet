@@ -8,6 +8,7 @@ v2.5.3 is a maintenance release with the following fixes and enhancements:
 * Use AES128_GCM in the Local KMS client, for consistency with Java/go
 * Include deleted schemas when getting schemas by subject and version
 * Handle signed ints when transforming Protobuf payloads
+* Allow null SchemaRegistryClient in AsyncSerde constructor
 
 # 2.5.2
 
