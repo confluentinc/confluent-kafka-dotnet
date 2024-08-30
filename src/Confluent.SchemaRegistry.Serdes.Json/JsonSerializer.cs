@@ -24,13 +24,9 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using NJsonSchema;
+using NJsonSchema.Generation;
 using NJsonSchema.Validation;
 using Confluent.Kafka;
-#if NET8_0_OR_GREATER
-using NJsonSchema.NewtonsoftJson.Generation;
-#else
-using NJsonSchema.Generation;
-#endif
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -58,11 +54,7 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class JsonSerializer<T> : AsyncSerializer<T, JsonSchema> where T : class
     {
-#if NET8_0_OR_GREATER
-        private readonly NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-#else
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-#endif
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
         
         private JsonSchemaValidator validator = new JsonSchemaValidator();
@@ -90,23 +82,14 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     JSON schema generator settings.
         /// </param>
         public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, 
-#if NET8_0_OR_GREATER
-            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
-#else
             JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
-#endif
             : base(schemaRegistryClient, config, ruleExecutors)
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
             this.schema = this.jsonSchemaGeneratorSettings == null
-#if NET8_0_OR_GREATER
-                ? NewtonsoftJsonSchemaGenerator.FromType<T>()
-                : NewtonsoftJsonSchemaGenerator.FromType<T>(this.jsonSchemaGeneratorSettings);
-#else
                 ? JsonSchema.FromType<T>()
                 : JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
-#endif
             this.schemaText = schema.ToJson();
             this.schemaFullname = schema.Title;
             
@@ -153,11 +136,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     JSON schema generator settings.
         /// </param>
         public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, 
-#if NET8_0_OR_GREATER
-            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
-#else
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
-#endif
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null) 
             : this(schemaRegistryClient, config, jsonSchemaGeneratorSettings, ruleExecutors)
         {
             foreach (var reference in schema.References)
@@ -175,7 +154,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <summary>
         ///     Serialize an instance of type <typeparamref name="T"/> to a UTF8 encoded JSON 
-        ///     representation. The serialized data is preceded by:
+        ///     represenation. The serialized data is preceeded by:
         ///       1. A "magic byte" (1 byte) that identifies this as a message with
         ///          Confluent Platform framing.
         ///       2. The id of the schema as registered in Confluent's Schema Registry
@@ -190,7 +169,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Context relevant to the serialize operation.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that completes with
+        ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
         public override async Task<byte[]> SerializeAsync(T value, SerializationContext context)
@@ -254,11 +233,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
-#if NET8_0_OR_GREATER
-                var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.SerializerSettings);
-#else
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
-#endif
                 var validationResult = validator.Validate(serializedString, this.schema);
                 if (validationResult.Count > 0)
                 {
