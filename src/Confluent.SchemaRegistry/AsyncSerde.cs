@@ -51,9 +51,11 @@ namespace Confluent.SchemaRegistry
 
             if (config == null) { return; }
 
-            IEnumerable<KeyValuePair<string, string>> ruleConfigs = schemaRegistryClient.Config.Concat(config
+            IEnumerable<KeyValuePair<string, string>> ruleConfigs = config
                 .Select(kv => new KeyValuePair<string, string>(
-                    kv.Key.StartsWith("rules.") ? kv.Key.Substring("rules.".Length) : kv.Key, kv.Value)));
+                    kv.Key.StartsWith("rules.") ? kv.Key.Substring("rules.".Length) : kv.Key, kv.Value));
+            if (schemaRegistryClient != null)
+                ruleConfigs = schemaRegistryClient.Config.Concat(ruleConfigs);
             
             foreach (IRuleExecutor executor in this.ruleExecutors.Concat(RuleRegistry.GetRuleExecutors()))
             {
