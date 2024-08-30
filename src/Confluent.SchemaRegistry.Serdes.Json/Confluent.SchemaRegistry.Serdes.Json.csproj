@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
-    <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.2" />
+    <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.1" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'net8.0' ">

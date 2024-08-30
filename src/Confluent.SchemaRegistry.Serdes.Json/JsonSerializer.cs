@@ -100,13 +100,8 @@ namespace Confluent.SchemaRegistry.Serdes
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
             this.schema = this.jsonSchemaGeneratorSettings == null
-#if NET8_0_OR_GREATER
-                ? NewtonsoftJsonSchemaGenerator.FromType<T>()
-                : NewtonsoftJsonSchemaGenerator.FromType<T>(this.jsonSchemaGeneratorSettings);
-#else
                 ? JsonSchema.FromType<T>()
                 : JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
-#endif
             this.schemaText = schema.ToJson();
             this.schemaFullname = schema.Title;
             
@@ -190,7 +185,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Context relevant to the serialize operation.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that completes with
+        ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
         public override async Task<byte[]> SerializeAsync(T value, SerializationContext context)
