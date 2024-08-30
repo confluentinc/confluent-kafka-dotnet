@@ -25,8 +25,8 @@ blocks:
           commands:
             - wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
             - chmod +x dotnet-install.sh
-            - ./dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet
-            - export PATH="$PATH:/usr/share/dotnet"
+            - ./dotnet-install.sh --channel 8.0 --install-dir $HOME/.dotnet
+            - export PATH="$HOME/.dotnet:$PATH"
             - dotnet --version
             - dotnet restore
             - make build
@@ -42,8 +42,8 @@ blocks:
           commands:
             - wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
             - chmod +x dotnet-install.sh
-            - ./dotnet-install.sh --channel 8.0 --install-dir /usr/local/share/dotnet
-            - export PATH="$PATH:/usr/local/share/dotnet"
+            - ./dotnet-install.sh --channel 8.0 --install-dir $HOME/.dotnet
+            - export PATH="$HOME/.dotnet:$PATH"
             - dotnet --version
             - ulimit -n 1024
             - dotnet restore
@@ -140,8 +140,8 @@ blocks:
           commands:
             - wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
             - chmod +x dotnet-install.sh
-            - ./dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet
-            - export PATH="$PATH:/usr/share/dotnet"
+            - ./dotnet-install.sh --channel 8.0 --install-dir $HOME/.dotnet
+            - export PATH="$HOME/.dotnet:$PATH"
             - dotnet --version
             - dotnet tool update -g docfx
             - docfx doc/docfx.json
@@ -149,8 +149,8 @@ blocks:
           commands:
             - wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
             - chmod +x dotnet-install.sh
-            - ./dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet
-            - export PATH="$PATH:/usr/share/dotnet"
+            - ./dotnet-install.sh --channel 8.0 --install-dir $HOME/.dotnet
+            - export PATH="$HOME/.dotnet:$PATH"
             - dotnet --version
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
@@ -160,8 +160,8 @@ blocks:
           commands:
             - wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
             - chmod +x dotnet-install.sh
-            - ./dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet
-            - export PATH="$PATH:/usr/share/dotnet"
+            - ./dotnet-install.sh --channel 8.0 --install-dir $HOME/.dotnet
+            - export PATH="$HOME/.dotnet:$PATH"
             - dotnet --version
             - cd test/docker && docker-compose -f docker-compose-kraft.yaml up -d && cd ../..
             - sleep 300
@@ -184,8 +184,8 @@ blocks:
           commands:
             - wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
             - chmod +x dotnet-install.sh
-            - ./dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet
-            - export PATH="$PATH:/usr/share/dotnet"
+            - ./dotnet-install.sh --channel 8.0 --install-dir $HOME/.dotnet
+            - export PATH="$HOME/.dotnet:$PATH"
             - dotnet --version
             - cd test/docker && docker-compose up -d && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
