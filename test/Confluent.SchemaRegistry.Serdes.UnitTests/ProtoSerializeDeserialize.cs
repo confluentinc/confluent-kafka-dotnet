@@ -393,5 +393,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.True(pic.SequenceEqual(result.Picture));
         }
 
+        [Fact]
+        public void ProtobufDeserializerWithoutSchemaRegistry()
+        {
+            new ProtobufDeserializer<Person>();
+            Assert.True(true); // if constructor does not throw exception we're ok
+        }
+
     }
 }
