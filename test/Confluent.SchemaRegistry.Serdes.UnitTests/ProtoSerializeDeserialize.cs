@@ -46,11 +46,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             message ReferrerMessage {
 
-                string root_id = 1 [(.confluent.field_meta) = { annotation: ""PII"" }];
-                ReferencedMessage ref = 2 [(.confluent.field_meta).annotation = ""PII""];
+                string root_id = 1 [(confluent.field_meta) = { doc: ""PII"" }];
+                ReferencedMessage ref = 2 [(confluent.field_meta).doc = ""PII""];
 
             }";
-            
+
             string import = @"syntax = ""proto3"";
             package io.confluent.kafka.serializers.protobuf.test;
 
@@ -62,15 +62,20 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             IDictionary<string, string> imports = new Dictionary<string, string>();
             imports["ref.proto"] = import;
+            imports["confluent/meta.proto"] = "doesn't matter, will be overwritten anyway";
 
             var fds = ProtobufUtils.Parse(schema, imports);
-            foreach (var file in fds.Files)
-            {
-                foreach (var messageType in file.MessageTypes)
-                {
-                    Assert.Equal("ReferrerMessage", messageType.Name);
-                }
-            }
+            Assert.Equal(4, fds.Files.Count);
+
+            var fileNames = fds.Files.Select(s => s.Name).ToHashSet();
+            Assert.Contains("__root.proto", fileNames);
+            Assert.Contains("ref.proto", fileNames);
+            Assert.Contains("confluent/meta.proto", fileNames);
+            Assert.Contains("google/protobuf/descriptor.proto", fileNames);
+
+            var rootFile = fds.Files.First(s => s.Name == "__root.proto");
+            Assert.Equal(1, rootFile.MessageTypes.Count);
+            Assert.Equal("ReferrerMessage", rootFile.MessageTypes.First().Name);
         }
 
         [Fact]
@@ -112,12 +117,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -159,12 +164,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name != 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -200,12 +205,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
                         "typeName == 'STRING' ; value + '-suffix'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -247,12 +252,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null,
                         "name == 'name' ; value == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -294,12 +299,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL_FIELD", null, null,
                         "name == 'name' ; value != 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -332,7 +337,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 string name = 3 [(.confluent.field_meta) = { tags: ""PII"" }];
                 bytes picture = 4 [(.confluent.field_meta) = { tags: ""PII"" }];
             }";
-            
+
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Protobuf, null);
             schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
                 {
@@ -356,7 +361,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = false,

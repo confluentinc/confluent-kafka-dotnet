@@ -19,6 +19,7 @@ extern alias ProtobufNet;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -36,11 +37,11 @@ using FieldDescriptorProto = ProtobufNet::Google.Protobuf.Reflection.FieldDescri
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     Protobuf utilities
+    ///   Protobuf utilities (internal utils for processing protobuf resources)
     /// </summary>
-    public static class ProtobufUtils
+    internal static class ProtobufUtils
     {
-        public static IDictionary<string, string> BuiltIns = new Dictionary<string, string>
+        private static IDictionary<string, string> BuiltIns = new Dictionary<string, string>
         {
             { "confluent/meta.proto", GetResource("confluent.meta.proto") },
             { "confluent/type/decimal.proto", GetResource("confluent.type.decimal.proto") },
@@ -68,8 +69,8 @@ namespace Confluent.SchemaRegistry.Serdes
             { "google/protobuf/timestamp.proto", GetResource("google.protobuf.timestamp.proto") },
             { "google/protobuf/type.proto", GetResource("google.protobuf.type.proto") },
             { "google/protobuf/wrappers.proto", GetResource("google.protobuf.wrappers.proto") }
-        };
-        
+        }.ToImmutableDictionary();
+
         private static string GetResource(string resourceName)
         {
             var info = Assembly.GetExecutingAssembly().GetName();
@@ -81,7 +82,7 @@ namespace Confluent.SchemaRegistry.Serdes
             return streamReader.ReadToEnd();
         }
 
-        public static async Task<object> Transform(RuleContext ctx, object desc, object message,
+        internal static async Task<object> Transform(RuleContext ctx, object desc, object message,
             IFieldTransform fieldTransform)
         {
             if (desc == null || message == null)
@@ -90,10 +91,10 @@ namespace Confluent.SchemaRegistry.Serdes
             }
 
             RuleContext.FieldContext fieldContext = ctx.CurrentField();
-            
-            if (typeof(IList).IsAssignableFrom(message.GetType()) 
-                || (message.GetType().IsGenericType 
-                    && (message.GetType().GetGenericTypeDefinition() == typeof(List<>) 
+
+            if (typeof(IList).IsAssignableFrom(message.GetType())
+                || (message.GetType().IsGenericType
+                    && (message.GetType().GetGenericTypeDefinition() == typeof(List<>)
                         || message.GetType().GetGenericTypeDefinition() == typeof(IList<>))))
             {
                 var tasks = ((IList<object>)message)
@@ -102,9 +103,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 object[] items = await Task.WhenAll(tasks).ConfigureAwait(false);
                 return items.ToList();
             }
-            else if (typeof(IDictionary).IsAssignableFrom(message.GetType()) 
-                     || (message.GetType().IsGenericType 
-                         && (message.GetType().GetGenericTypeDefinition() == typeof(Dictionary<,>) 
+            else if (typeof(IDictionary).IsAssignableFrom(message.GetType())
+                     || (message.GetType().IsGenericType
+                         && (message.GetType().GetGenericTypeDefinition() == typeof(Dictionary<,>)
                              || message.GetType().GetGenericTypeDefinition() == typeof(IDictionary<,>))))
             {
                 return message;
@@ -156,7 +157,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     ISet<string> ruleTags = ctx.Rule.Tags ?? new HashSet<string>();
                     ISet<string> intersect = new HashSet<string>(fieldContext.Tags);
                     intersect.IntersectWith(ruleTags);
-                    
+
                     if (ruleTags.Count == 0 || intersect.Count != 0)
                     {
                         if (message is ByteString)
@@ -298,41 +299,35 @@ namespace Confluent.SchemaRegistry.Serdes
             return tags;
         }
 
-        public static FileDescriptorSet Parse(string schema, IDictionary<string, string> imports)
+        internal static FileDescriptorSet Parse(string schema, IDictionary<string, string> imports)
         {
-            IDictionary<string, string> allImports = new Dictionary<string, string>(BuiltIns);
-            imports?.ToList().ForEach(x => allImports.Add(x.Key, x.Value));
-            
-            var fds = new FileDescriptorSet();
-            fds.FileSystem = new ProtobufImports(allImports);
-            
-            fds.Add("__root.proto", true, new StringReader(schema));
-            foreach (KeyValuePair<string, string> import in allImports)
+            var fds = new FileDescriptorSet
             {
-                fds.AddImportPath(import.Key);
-                
-            }
+                FileSystem = new ProtobufImports(imports)
+            };
+            fds.Add("__root.proto", true, new StringReader(schema));
+            fds.AddImportPath(""); // all imports are relative in the filesystem so must make import path just empty string
             fds.Process();
             return fds;
-        } 
-        
-        class ProtobufImports : IFileSystem
+        }
+
+        private class ProtobufImports : IFileSystem
         {
-            protected IDictionary<string, string> Imports { get; set; }
+            private readonly IDictionary<string, string> imports;
 
             public ProtobufImports(IDictionary<string, string> imports)
             {
-                Imports = imports;
+                this.imports = imports;
             }
 
             public bool Exists(string path)
             {
-                return Imports.ContainsKey(path);
+                return BuiltIns.ContainsKey(path) || (imports?.ContainsKey(path) ?? false);
             }
 
             public TextReader OpenText(string path)
             {
-                return new StringReader(Imports[path]);
+                return new StringReader(BuiltIns.TryGetValue(path, out var res) ? res : imports[path]);
             }
         }
     }
