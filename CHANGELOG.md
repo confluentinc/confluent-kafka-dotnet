@@ -5,6 +5,7 @@ v2.5.3 is a maintenance release with the following fixes and enhancements:
 ## Fixes
 
 * Properly handle messages with well-known types in Protobuf serializer
+* Use AES128_GCM in the Local KMS client, for consistency with Java/go
 * Include deleted schemas when getting schemas by subject and version
 * Handle signed ints when transforming Protobuf payloads
 
