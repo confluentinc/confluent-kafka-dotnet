@@ -2,6 +2,10 @@
 
 v2.5.3 is a maintenance release with the following fixes and enhancements:
 
+## Enhancements
+
+* References librdkafka.redist 2.5.3. Refer to the [librdkafka v2.5.3 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.5.3) for more information.
+
 ## Fixes
 
 * Properly handle messages with well-known types in Protobuf serializer
@@ -11,6 +15,18 @@ v2.5.3 is a maintenance release with the following fixes and enhancements:
 * Allow null SchemaRegistryClient in AsyncSerde constructor
 
 # 2.5.2
+
+> [!WARNING]
+Versions 2.5.0, 2.5.1 and 2.5.2 have a regression in which an assert is triggered during **PushTelemetry** call. This happens when no metric is matched on the client side among those requested by broker subscription.
+>
+> You won't face any problem if:
+> * Broker doesn't support [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability).
+> * [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) feature is disabled on the broker side.
+> * [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) feature is disabled on the client side. This is enabled by default. Set configuration `enable.metrics.push` to `false`.
+> * If [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) is enabled on the broker side and there is no subscription configured there.
+> * If [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) is enabled on the broker side with subscriptions that match the [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) metrics defined on the client.
+>
+> Having said this, we strongly recommend using `v2.5.3` and above to not face this regression at all.
 
 ## Fixes
 
