@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -48,13 +49,13 @@ namespace Confluent.Kafka.IntegrationTests
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
                 DeliveryResult<Null, string> dr;
-                using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+                using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
                 {
                     dr = producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = testString }).Result;
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10))); // this isn't necessary.
                 }
 
-                using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
                 {
                     consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
                     var record = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -73,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // Test empty topic case
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 var wo = consumer.QueryWatermarkOffsets(new TopicPartition(topic.Name, 0), TimeSpan.FromSeconds(30));
                 // Refer to WatermarkOffsets class documentation for more information.

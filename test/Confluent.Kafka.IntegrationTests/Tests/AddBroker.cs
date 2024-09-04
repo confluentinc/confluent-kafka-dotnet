@@ -18,6 +18,7 @@
 
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -37,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new ProducerConfig { BootstrapServers = "localhost:65533" };
 
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 try

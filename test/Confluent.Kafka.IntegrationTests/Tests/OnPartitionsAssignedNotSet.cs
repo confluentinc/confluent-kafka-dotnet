@@ -18,6 +18,7 @@
 
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -44,14 +45,14 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             // Producing onto the topic to make sure it exists.
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test string", SerializationContext.Empty) }).Result;
                 Assert.NotEqual(Offset.Unset, dr.Offset);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
                 Assert.Empty(consumer.Assignment);

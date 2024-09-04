@@ -19,6 +19,7 @@
 using System;
 using System.Threading;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -31,6 +32,13 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_Subscription_Regex(string bootstrapServers)
         {
+            if (!TestConsumerGroupProtocol.IsClassic())
+            {
+                LogToFile("KIP 848 subscription still doesn't support " +
+                          "regexes");
+                return;
+            }
+
             LogToFile("start Consumer_Subscription_Regex");
 
             var topicMetadataRefreshPeriodMs = 1000;
@@ -49,7 +57,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var topic1 = new TemporaryTopic(prefix, bootstrapServers, 1))
             using (var topic2 = new TemporaryTopic(prefix, bootstrapServers, 1))
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 Util.ProduceNullStringMessages(bootstrapServers, topic1.Name, 100, 100);
                 Util.ProduceNullStringMessages(bootstrapServers, topic2.Name, 100, 100);

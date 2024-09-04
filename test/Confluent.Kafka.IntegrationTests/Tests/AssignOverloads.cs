@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -48,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             var testString4 = "hello world 4";
 
             DeliveryResult<Null, string> dr, dr3;
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString2 }).Wait();
@@ -57,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<Null, string>(consumerConfig).Build())
             {
                 // Explicitly specify partition offset.
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset) });

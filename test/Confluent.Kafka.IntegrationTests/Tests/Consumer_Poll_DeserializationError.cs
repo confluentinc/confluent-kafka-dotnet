@@ -20,6 +20,7 @@ using System;
 using System.Linq;
 using System.Text;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -38,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             TopicPartitionOffset firstProduced = null;
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var keyData = Encoding.UTF8.GetBytes("key");
                 firstProduced = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Key = keyData }).Result.TopicPartitionOffset;
@@ -57,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // test key deserialization error behavior
             using (var consumer =
-                new ConsumerBuilder<Null, string>(consumerConfig)
+                new TestConsumerBuilder<Null, string>(consumerConfig)
                     .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
@@ -97,7 +98,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // test value deserialization error behavior.
             using (var consumer =
-                new ConsumerBuilder<string, Null>(consumerConfig)
+                new TestConsumerBuilder<string, Null>(consumerConfig)
                     .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);

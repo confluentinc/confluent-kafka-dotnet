@@ -26,7 +26,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///     <see cref="Confluent.SchemaRegistry.Serdes.JsonSerializer{T}" />
     ///     configuration properties.
     /// </summary>
-    public class JsonSerializerConfig : Config
+    public class JsonSerializerConfig : SerdeConfig
     {
         /// <summary>
         ///     Configuration property names specific to 
@@ -79,6 +79,13 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     default: false
             /// </summary>
             public const string LatestCompatibilityStrict = "json.serializer.latest.compatibility.strict";
+            
+            ///     Specifies whether or not the JSON serializer should use the latest subject
+            ///     version with the given metadata for serialization.
+            ///     WARNING: There is no check that the latest schema is backwards compatible
+            ///     with the schema of the object being serialized.
+            /// </summary>
+            public const string UseLatestWithMetadata = "json.serializer.use.latest.with.metadata";
 
             /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
@@ -169,6 +176,19 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             get { return GetBool(PropertyNames.LatestCompatibilityStrict); }
             set { SetObject(PropertyNames.LatestCompatibilityStrict, value); }
+        }
+        
+
+        /// <summary>
+        ///     Specifies whether or not the JSON serializer should use the latest schema
+        ///     with the given metadata for serialization.
+        ///     WARNING: There is no check that the latest schema is backwards compatible
+        ///     with the schema of the object being serialized.
+        /// </summary>
+        public IDictionary<string, string> UseLatestWithMetadata
+        {
+            get { return GetDictionaryProperty(PropertyNames.UseLatestWithMetadata); }
+            set { SetDictionaryProperty(PropertyNames.UseLatestWithMetadata, value); }
         }
         
 

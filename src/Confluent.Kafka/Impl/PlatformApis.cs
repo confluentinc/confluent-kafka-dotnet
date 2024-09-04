@@ -42,20 +42,7 @@ namespace Confluent.Kafka.Impl
                         distroInfo.VersionId = str.Substring(11).Trim('"', '\'');
                 }
             }
-            else if (File.Exists("/etc/redhat-release"))
-            {
-                string[] strArray = File.ReadAllLines("/etc/redhat-release");
-                if (strArray.Length >= 1)
-                {
-                    string str = strArray[0];
-                    if (str.StartsWith("Red Hat Enterprise Linux Server release 6.") || str.StartsWith("CentOS release 6."))
-                    {
-                        distroInfo = new DistroInfo();
-                        distroInfo.Id = "rhel";
-                        distroInfo.VersionId = "6";
-                    }
-                }
-            }
+
             if (distroInfo != null)
                 distroInfo = NormalizeDistroInfo(distroInfo);
             return distroInfo;

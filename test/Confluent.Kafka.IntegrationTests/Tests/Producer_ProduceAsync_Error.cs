@@ -19,6 +19,7 @@
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -39,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
             // serialize case
 
             Task<DeliveryResult<string, string>> drt;
-            using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<string, string>(producerConfig).Build())
             {
                 drt = producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 42),
@@ -74,7 +75,7 @@ namespace Confluent.Kafka.IntegrationTests
             // byte[] case
 
             Task<DeliveryResult<byte[], byte[]>> drt2;
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 drt2 = producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 42),

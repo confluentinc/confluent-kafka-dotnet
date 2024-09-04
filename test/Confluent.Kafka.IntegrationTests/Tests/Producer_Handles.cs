@@ -18,6 +18,7 @@
 
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -37,13 +38,13 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
-                using (var producer1 = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+                using (var producer1 = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
                 using (var producer2 = new DependentProducerBuilder<string, string>(producer1.Handle).Build())
                 using (var producer3 = new DependentProducerBuilder<byte[], byte[]>(producer1.Handle).Build())
                 using (var producer4 = new DependentProducerBuilder<int, string>(producer2.Handle).Build())
                 using (var producer5 = new DependentProducerBuilder<int, int>(producer3.Handle).Build())
                 using (var producer6 = new DependentProducerBuilder<string, byte[]>(producer4.Handle).Build())
-                using (var producer7 = new ProducerBuilder<double, double>(producerConfig).Build())
+                using (var producer7 = new TestProducerBuilder<double, double>(producerConfig).Build())
                 using (var adminClient = new DependentAdminClientBuilder(producer7.Handle).Build())
                 {
                     var r1 = producer1.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 42 }, Value = new byte[] { 33 } }).Result;
@@ -83,7 +84,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var consumerConfig = new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = Guid.NewGuid().ToString() };
 
-                using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 0));
                     var r1 = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -92,7 +93,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(0, r1.Offset);
                 }
 
-                using (var consumer = new ConsumerBuilder<string, string>(consumerConfig).Build())
+                using (var consumer = new TestConsumerBuilder<string, string>(consumerConfig).Build())
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 1));
                     var r2 = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -101,7 +102,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(1, r2.Offset);
                 }
 
-                using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 2));
                     var r3 = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -110,7 +111,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(2, r3.Offset);
                 }
 
-                using (var consumer = new ConsumerBuilder<int, string>(consumerConfig).Build())
+                using (var consumer = new TestConsumerBuilder<int, string>(consumerConfig).Build())
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 3));
                     var r4 = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -119,7 +120,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(3, r4.Offset);
                 }
 
-                using (var consumer = new ConsumerBuilder<int, int>(consumerConfig).Build())
+                using (var consumer = new TestConsumerBuilder<int, int>(consumerConfig).Build())
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 4));
                     var r5 = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -128,7 +129,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(4, r5.Offset);
                 }
 
-                using (var consumer = new ConsumerBuilder<string, byte[]>(consumerConfig).Build())
+                using (var consumer = new TestConsumerBuilder<string, byte[]>(consumerConfig).Build())
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 5));
                     var r6 = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -137,7 +138,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(5, r6.Offset);
                 }
 
-                using (var consumer = new ConsumerBuilder<double, double>(consumerConfig).Build())
+                using (var consumer = new TestConsumerBuilder<double, double>(consumerConfig).Build())
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 6));
                     var r7 = consumer.Consume(TimeSpan.FromSeconds(10));

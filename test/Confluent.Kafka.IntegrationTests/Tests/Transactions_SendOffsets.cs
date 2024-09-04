@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -37,10 +38,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             var groupName = Guid.NewGuid().ToString();
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadCommitted, BootstrapServers = bootstrapServers, GroupId = groupName, EnableAutoCommit = false, Debug="all" }).Build())
+            using (var consumer = new TestConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadCommitted, BootstrapServers = bootstrapServers, GroupId = groupName, EnableAutoCommit = false }).Build())
             {
                 var transactionalId = Guid.NewGuid().ToString();
-                using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = transactionalId }).Build())
+                using (var producer = new TestProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = transactionalId }).Build())
                 {
                     producer.InitTransactions(defaultTimeout);
                     producer.BeginTransaction();
@@ -48,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                     producer.SendOffsetsToTransaction(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic.Name, 0, 73) }, consumer.ConsumerGroupMetadata, TimeSpan.FromSeconds(30));
                     producer.CommitTransaction(defaultTimeout);
                 }
-                using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = transactionalId }).Build())
+                using (var producer = new TestProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = transactionalId }).Build())
                 {
                     // Committing the transaction is not enough to guarantee read after write
                     // of the previously committed offsets, an init transactions is required.

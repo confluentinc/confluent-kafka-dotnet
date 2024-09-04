@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+﻿// Copyright 2024 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Threading.Tasks;
+using System.ComponentModel;
 
-
-namespace Confluent.SchemaRegistry.Serdes
+namespace System.Runtime.CompilerServices
 {
-    internal interface IAvroSerializerImpl<T>
-    {
-        Task<byte[]> Serialize(string topic, T data, bool isKey);
-    }
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    internal static class IsExternalInit { }
 }

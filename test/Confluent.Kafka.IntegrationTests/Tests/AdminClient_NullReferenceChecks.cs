@@ -22,6 +22,7 @@ using System.Linq;
 using System.Threading;
 using Confluent.Kafka.Admin;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -41,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
             Exception createTopicsException = null;
             Exception createPartitionsException = null;
             // test creating a null topic throws a related exception
-            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 try
@@ -57,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test creating a partition with null topic throws exception
-            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 try
@@ -77,7 +78,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.True(createTopicsException.GetType() == createPartitionsException.GetType(), ".CreateTopic and .CreatePartition should have consistent interface for null-related exceptions.");
 
             // test adding a null list of brokers throws null reference exception.
-            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 try
@@ -92,7 +93,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test retrieving metadata for a null topic
-            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 try
@@ -107,7 +108,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // Deleting null topic throws exception
-            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 try
@@ -122,7 +123,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // ListGroup throws exception if group is null
-            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 try

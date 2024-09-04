@@ -691,21 +691,13 @@ namespace Confluent.Kafka.Impl
 #if NET5_0_OR_GREATER
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)] 
 #endif
-            Type nativeMethodCandidateType2,
-#if NET5_0_OR_GREATER
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)] 
-#endif
-            Type nativeMethodCandidateType3)
+            Type nativeMethodCandidateType2)
         {
             if (SetDelegates(nativeMethodCandidateType1))
             {
                 return true;
             }
             if (SetDelegates(nativeMethodCandidateType2))
-            {
-                return true;
-            }
-            if (SetDelegates(nativeMethodCandidateType3))
             {
                 return true;
             }
@@ -764,9 +756,8 @@ namespace Confluent.Kafka.Impl
                 else
                 {
                     TrySetDelegates(
-                        typeof(NativeMethods.NativeMethods_Centos7),
                         typeof(NativeMethods.NativeMethods),
-                        typeof(NativeMethods.NativeMethods_Centos6));
+                        typeof(NativeMethods.NativeMethods_Centos8));
                 }
             }
         }

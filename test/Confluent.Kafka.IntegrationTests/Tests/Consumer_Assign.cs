@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -67,14 +68,14 @@ namespace Confluent.Kafka.IntegrationTests
                 AutoOffsetReset = AutoOffsetReset.Error
             };
 
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 test(consumer);
             }
 
             // committing offsets should have no effect.
             consumerConfig.EnableAutoCommit = true;
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 test(consumer);
             }

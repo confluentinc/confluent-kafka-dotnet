@@ -99,6 +99,15 @@ namespace Confluent.Kafka.IntegrationTests
                     }
                 };
                 adminClient.AlterConfigsAsync(toUpdate).Wait();
+                // Reset to default
+                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
+                {
+                    { 
+                        new ConfigResource { Name = "0", Type = ResourceType.Broker },
+                        new List<ConfigEntry> { new ConfigEntry { Name="num.network.threads", Value="3" } }
+                    }
+                };
+                adminClient.AlterConfigsAsync(toUpdate).Wait();
                 
                 // 6. test updating more than one resource.
                 string topicName2 = Guid.NewGuid().ToString();

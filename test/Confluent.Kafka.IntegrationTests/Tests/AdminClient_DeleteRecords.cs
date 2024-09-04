@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -36,9 +37,9 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var topic1 = new TemporaryTopic(bootstrapServers, 1))
             using (var topic2 = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
-            using (var consumer = new ConsumerBuilder<Null, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant" }).Build())
+            using (var consumer = new TestConsumerBuilder<Null, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant" }).Build())
             {
                 for (int i=0; i<10; ++i)
                 {

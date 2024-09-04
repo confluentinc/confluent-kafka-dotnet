@@ -18,6 +18,7 @@
 
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -48,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             var committedCount = 0;
             
             using (var consumer =
-                new ConsumerBuilder<byte[], byte[]>(consumerConfig)
+                new TestConsumerBuilder<byte[], byte[]>(consumerConfig)
                     .SetOffsetsCommittedHandler((_, o) =>
                     {
                         Assert.Equal(ErrorCode.NoError, o.Error.Code);

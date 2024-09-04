@@ -26,7 +26,7 @@ namespace Confluent.Kafka
     ///     is also provided, but is typically not used.
     /// </summary>
     /// <remarks>
-    ///     A partioner instance may be called in any thread at any time and
+    ///     A partitioner instance may be called in any thread at any time and
     ///     may be called multiple times for the same message/key.
     ///
     ///     A partitioner:

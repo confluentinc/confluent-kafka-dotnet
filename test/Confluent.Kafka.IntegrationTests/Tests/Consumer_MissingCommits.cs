@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -42,8 +43,8 @@ namespace Confluent.Kafka.IntegrationTests
             var commitOffset = 8;
             using (var topic = new TemporaryTopic(bootstrapServers, numPartitions))
             {
-                using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
-                using (var consumer = new ConsumerBuilder<Null, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupId }).Build())
+                using (var producer = new TestProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+                using (var consumer = new TestConsumerBuilder<Null, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupId }).Build())
                 {
                     for (int i=0; i<numPartitions; ++i)
                     {
@@ -66,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     for (int i=0; i<numConsumers; ++i)
                     {
-                        var consumer = new ConsumerBuilder<Null, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupId, AutoOffsetReset = AutoOffsetReset.Earliest, Debug = "all" }).Build();
+                        var consumer = new TestConsumerBuilder<Null, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupId, AutoOffsetReset = AutoOffsetReset.Earliest }).Build();
                         consumers.Add(consumer);
                         consumer.Subscribe(topic.Name);
                     }

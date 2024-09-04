@@ -18,6 +18,7 @@ using System;
 using System.Threading;
 using Newtonsoft.Json.Linq;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -50,8 +51,8 @@ namespace Confluent.Kafka.IntegrationTests
             bool done = false;
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString(), LingerMs = 0 }).Build())
-            using (var consumer = new ConsumerBuilder<string, string>(cConfig)
+            using (var producer = new TestProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString(), LingerMs = 0 }).Build())
+            using (var consumer = new TestConsumerBuilder<string, string>(cConfig)
                 .SetStatisticsHandler((_, json) => {
                     var stats = JObject.Parse(json);
                     ls_offset = (int)stats["topics"][topic.Name]["partitions"]["0"]["ls_offset"];

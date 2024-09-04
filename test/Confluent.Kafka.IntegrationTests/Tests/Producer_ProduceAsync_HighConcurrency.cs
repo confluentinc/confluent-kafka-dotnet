@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -46,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             var pConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             using (var tempTopic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<Null, string>(pConfig)
+            using (var producer = new TestProducerBuilder<Null, string>(pConfig)
                 .SetValueSerializer(new SimpleAsyncSerializer().SyncOverAsync())
                 .Build())
             using (var dProducer = new DependentProducerBuilder<Null, string>(producer.Handle)

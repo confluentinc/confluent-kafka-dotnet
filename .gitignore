@@ -6,6 +6,8 @@ obj/
 *.dylib
 *.csproj.user
 *.xproj.user
+*.sln.*.user
+.idea
 .vs
 .vscode
 todo.txt

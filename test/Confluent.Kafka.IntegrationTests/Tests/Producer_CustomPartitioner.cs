@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -58,12 +59,12 @@ namespace Confluent.Kafka.IntegrationTests
                         Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
                     };
 
-                    ProducerBuilder<string, string> producerBuilder = null;
+                    TestProducerBuilder<string, string> producerBuilder = null;
                     switch (j)
                     {
                         case 0:
                             // Topic level custom partitioner.
-                            producerBuilder = new ProducerBuilder<string, string>(producerConfig);
+                            producerBuilder = new TestProducerBuilder<string, string>(producerConfig);
                             producerBuilder.SetPartitioner(topic.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
                             {
                                 Assert.Equal(topic.Name, topicName);
@@ -73,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
                             break;
                         case 1:
                             // Default custom partitioner
-                            producerBuilder = new ProducerBuilder<string, string>(producerConfig);
+                            producerBuilder = new TestProducerBuilder<string, string>(producerConfig);
                             producerBuilder.SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
                             {
                                 Assert.Equal(topic.Name, topicName);
@@ -88,7 +89,7 @@ namespace Confluent.Kafka.IntegrationTests
                                 BootstrapServers = bootstrapServers,
                                 MessageTimeoutMs = 10000
                             };
-                            producerBuilder = new ProducerBuilder<string, string>(producerConfig2);
+                            producerBuilder = new TestProducerBuilder<string, string>(producerConfig2);
                             producerBuilder.SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
                             {
                                 Assert.Equal(topic.Name, topicName);
@@ -125,7 +126,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             using (var topic = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig)
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig)
                 .SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
                 {
                     Assert.True(keyIsNull);

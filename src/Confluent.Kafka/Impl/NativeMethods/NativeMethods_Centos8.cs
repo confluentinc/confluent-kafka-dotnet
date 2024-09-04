@@ -37,12 +37,12 @@ namespace Confluent.Kafka.Impl.NativeMethods
     ///     these are relatively complex, so we prefer to go with the copy/paste solution
     ///     which is relatively simple.
     /// </remarks>
-    internal class NativeMethods_Centos6
+    internal class NativeMethods_Centos8
     {
 #if NET462
-        public const string DllName = "centos6-librdkafka.so";
+        public const string DllName = "centos8-librdkafka.so";
 #else
-        public const string DllName = "centos6-librdkafka";
+        public const string DllName = "centos8-librdkafka";
 #endif
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

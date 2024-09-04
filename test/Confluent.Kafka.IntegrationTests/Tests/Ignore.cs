@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -37,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             DeliveryResult<byte[], byte[]> dr;
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 // Assume that all these produce calls succeed.
                 dr = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = null }).Result;
@@ -47,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new ConsumerBuilder<Ignore, Ignore>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<Ignore, Ignore>(consumerConfig).Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
@@ -67,7 +68,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(record.Message.Value);
             }
 
-            using (var consumer = new ConsumerBuilder<Ignore, byte[]>(consumerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<Ignore, byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset.Value + 3) });
 

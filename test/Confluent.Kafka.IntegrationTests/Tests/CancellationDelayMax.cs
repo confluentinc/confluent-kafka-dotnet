@@ -21,6 +21,7 @@ using System.Diagnostics;
 using System.Threading;
 using Xunit;
 using Confluent.Kafka.Admin;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -57,8 +58,8 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             using (var topic = new TemporaryTopic(bootstrapServers, 3))
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var adminClient = new AdminClientBuilder(adminClientConfig).Build())
             {
                 consumer.Subscribe(topic.Name);

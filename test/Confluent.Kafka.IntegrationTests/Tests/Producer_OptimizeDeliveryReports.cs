@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -43,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // serializing case. 
 
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic, 
@@ -64,7 +65,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // byte[] case. 
 
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic, 

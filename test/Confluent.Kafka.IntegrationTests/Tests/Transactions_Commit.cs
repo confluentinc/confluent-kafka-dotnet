@@ -18,6 +18,7 @@
 
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -39,8 +40,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
-                using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
-                using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, Debug="all" }).Build())
+                using (var producer = new TestProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
+                using (var consumer = new TestConsumerBuilder<string, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false }).Build())
                 {
                     var wm = consumer.QueryWatermarkOffsets(new TopicPartition(topic.Name, 0), defaultTimeout);
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, wm.High));
@@ -64,8 +65,8 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Commit();
                 }
 
-                using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
-                using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, AutoOffsetReset=AutoOffsetReset.Latest }).Build())
+                using (var producer = new TestProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
+                using (var consumer = new TestConsumerBuilder<string, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, AutoOffsetReset=AutoOffsetReset.Latest }).Build())
                 {
                     consumer.Assign(new TopicPartition(topic.Name, 0));
 

@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -73,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
 
         private static void CreateConsumer(string bootstrapServers, string groupId, string topic)
         {
-            using var consumer = new ConsumerBuilder<Ignore, Ignore>(new ConsumerConfig
+            using var consumer = new TestConsumerBuilder<Ignore, Ignore>(new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
                 GroupId = groupId,

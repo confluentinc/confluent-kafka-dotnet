@@ -18,6 +18,7 @@
 
 using System;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -53,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new ProducerBuilder<Null, Null>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<Null, Null>(producerConfig).Build())
             {
                 producer.Produce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> {}, dh);
                 producer.Produce(singlePartitionTopic, new Message<Null, Null> {}, dh);
@@ -79,7 +80,7 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 producer.Produce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> {}, dh2);
                 producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> {}, dh2);

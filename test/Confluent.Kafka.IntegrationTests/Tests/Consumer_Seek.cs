@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -42,9 +43,9 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var consumer =
-                new ConsumerBuilder<Null, string>(consumerConfig)
+                new TestConsumerBuilder<Null, string>(consumerConfig)
                     .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
                     .Build())
             {
