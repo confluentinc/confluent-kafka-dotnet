@@ -27,7 +27,7 @@ namespace Confluent.SchemaRegistry
         protected readonly int headerSize =  sizeof(int) + sizeof(byte);
         
         protected AsyncDeserializer(ISchemaRegistryClient schemaRegistryClient, SerdeConfig config, 
-            IList<IRuleExecutor> ruleExecutors = null) : base(schemaRegistryClient, config, ruleExecutors)
+            RuleRegistry ruleRegistry = null) : base(schemaRegistryClient, config, ruleRegistry)
         {
         }
         public abstract Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context);

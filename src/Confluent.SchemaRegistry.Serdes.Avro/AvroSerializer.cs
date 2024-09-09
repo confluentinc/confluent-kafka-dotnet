@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry.Serdes
     {
         private ISchemaRegistryClient schemaRegistryClient;
         private AvroSerializerConfig config;
-        private IList<IRuleExecutor> ruleExecutors;
+        private RuleRegistry ruleRegistry;
 
         private IAsyncSerializer<T> serializerImpl;
 
@@ -82,11 +82,11 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Serializer configuration properties (refer to 
         ///     <see cref="AvroSerializerConfig" />)
         /// </param>
-        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, AvroSerializerConfig config = null, IList<IRuleExecutor> ruleExecutors = null)
+        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, AvroSerializerConfig config = null, RuleRegistry ruleRegistry = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.config = config;
-            this.ruleExecutors = ruleExecutors ?? new List<IRuleExecutor>();
+            this.ruleRegistry = ruleRegistry ?? RuleRegistry.GlobalInstance;
             
             if (config == null) { return; }
 
@@ -147,8 +147,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     serializerImpl = typeof(T) == typeof(GenericRecord)
                         ? (IAsyncSerializer<T>)new GenericSerializerImpl(
-                            schemaRegistryClient, config, ruleExecutors)
-                        : new SpecificSerializerImpl<T>(schemaRegistryClient, config, ruleExecutors);
+                            schemaRegistryClient, config, ruleRegistry)
+                        : new SpecificSerializerImpl<T>(schemaRegistryClient, config, ruleRegistry);
                 }
 
                 return await serializerImpl.SerializeAsync(value, context)

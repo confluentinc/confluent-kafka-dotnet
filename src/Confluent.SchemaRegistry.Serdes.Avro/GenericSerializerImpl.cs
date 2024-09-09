@@ -38,7 +38,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public GenericSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             AvroSerializerConfig config,
-            IList<IRuleExecutor> ruleExecutors) : base(schemaRegistryClient, config, ruleExecutors)
+            RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
             if (config == null) { return; }
 
