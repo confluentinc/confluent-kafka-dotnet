@@ -86,7 +86,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public SpecificSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             AvroSerializerConfig config,
-            IList<IRuleExecutor> ruleExecutors) : base(schemaRegistryClient, config, ruleExecutors)
+            RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
             Type writerType = typeof(T);
             if (writerType != typeof(ISpecificRecord))

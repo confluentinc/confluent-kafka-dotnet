@@ -628,11 +628,13 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 UseLatestVersion = true
             };
             config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
+            ruleRegistry.RegisterExecutor(ruleExecutor);
             var serializer = new JsonSerializer<Customer>(schemaRegistryClient, config, null,
-                new List<IRuleExecutor> { ruleExecutor });
+                ruleRegistry);
             var deserializer = new JsonDeserializer<Customer>(schemaRegistryClient, null, null,
-                new List<IRuleExecutor> { ruleExecutor });
+                ruleRegistry);
 
             var user = new Customer
             {

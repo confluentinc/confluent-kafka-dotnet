@@ -368,9 +368,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 UseLatestVersion = true
             };
             config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var serializer = new ProtobufSerializer<PersonWithPic>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
-            var deserializer = new ProtobufDeserializer<PersonWithPic>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var serializer = new ProtobufSerializer<PersonWithPic>(schemaRegistryClient, config, ruleRegistry);
+            var deserializer = new ProtobufDeserializer<PersonWithPic>(schemaRegistryClient, null, ruleRegistry);
 
 
             var pic = new byte[] { 1, 2, 3 };

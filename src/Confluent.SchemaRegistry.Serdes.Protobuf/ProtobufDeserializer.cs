@@ -70,7 +70,7 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         public ProtobufDeserializer(ISchemaRegistryClient schemaRegistryClient, ProtobufDeserializerConfig config, 
-            IList<IRuleExecutor> ruleExecutors = null) : base(schemaRegistryClient, config, ruleExecutors)
+            RuleRegistry ruleRegistry = null) : base(schemaRegistryClient, config, ruleRegistry)
         {
             this.parser = new MessageParser<T>(() => new T());
 

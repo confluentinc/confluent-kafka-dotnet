@@ -82,8 +82,8 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     JSON schema generator settings.
         /// </param>
         public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, 
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null)
-            : base(schemaRegistryClient, config, ruleExecutors)
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, RuleRegistry ruleRegistry = null)
+            : base(schemaRegistryClient, config, ruleRegistry)
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
@@ -136,8 +136,8 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     JSON schema generator settings.
         /// </param>
         public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, 
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null) 
-            : this(schemaRegistryClient, config, jsonSchemaGeneratorSettings, ruleExecutors)
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, RuleRegistry ruleRegistry = null)
+            : this(schemaRegistryClient, config, jsonSchemaGeneratorSettings, ruleRegistry)
         {
             foreach (var reference in schema.References)
             {

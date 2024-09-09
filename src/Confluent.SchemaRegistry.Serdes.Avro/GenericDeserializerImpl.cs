@@ -41,7 +41,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public GenericDeserializerImpl(
             ISchemaRegistryClient schemaRegistryClient, 
             AvroDeserializerConfig config,
-            IList<IRuleExecutor> ruleExecutors) : base(schemaRegistryClient, config, ruleExecutors)
+            RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
             if (config == null) { return; }
 

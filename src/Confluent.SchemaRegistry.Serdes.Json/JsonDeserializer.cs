@@ -80,8 +80,8 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, JsonDeserializerConfig config, 
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, IList<IRuleExecutor> ruleExecutors = null) 
-            : base(schemaRegistryClient, config, ruleExecutors)
+            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, RuleRegistry ruleRegistry = null)
+            : base(schemaRegistryClient, config, ruleRegistry)
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
