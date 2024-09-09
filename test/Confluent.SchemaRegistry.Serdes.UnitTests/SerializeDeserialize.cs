@@ -369,9 +369,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 UseLatestVersion = true
             };
             config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var serializer = new AvroSerializer<UserWithPic>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
-            var deserializer = new AvroDeserializer<UserWithPic>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var serializer = new AvroSerializer<UserWithPic>(schemaRegistryClient, config, ruleRegistry);
+            var deserializer = new AvroDeserializer<UserWithPic>(schemaRegistryClient, null, ruleRegistry);
 
             var pic = new byte[] { 1, 2, 3 };
             var user = new UserWithPic()
@@ -431,9 +433,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 UseLatestVersion = true
             };
             config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var serializer = new AvroSerializer<User>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
-            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var serializer = new AvroSerializer<User>(schemaRegistryClient, config, ruleRegistry);
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, null, ruleRegistry);
 
             var user = new User()
             {
@@ -956,9 +960,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 UseLatestVersion = true
             };
             config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
-            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null, new List<IRuleExecutor>{ ruleExecutor});
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config, ruleRegistry);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null, ruleRegistry);
 
             var pic = new byte[] { 1, 2, 3 };
             var user = new GenericRecord((RecordSchema) UserWithPic._SCHEMA);
@@ -1010,8 +1016,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
             };
             config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, config, ruleRegistry);
 
             kekStore[new KekId("kek1", false)] =
                 new RegisteredKek()
@@ -1070,8 +1078,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
             };
             config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, config, ruleRegistry);
 
             kekStore[new KekId("kek1", false)] =
                 new RegisteredKek()
@@ -1130,8 +1140,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
             };
             config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
             IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
-            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, config, new List<IRuleExecutor>{ ruleExecutor});
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, config, ruleRegistry);
 
             kekStore[new KekId("kek1", false)] =
                 new RegisteredKek()

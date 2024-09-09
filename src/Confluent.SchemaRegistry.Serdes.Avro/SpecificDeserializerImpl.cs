@@ -49,7 +49,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public SpecificDeserializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             AvroDeserializerConfig config,
-            IList<IRuleExecutor> ruleExecutors) : base(schemaRegistryClient, config, ruleExecutors)
+            RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
             if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
             {

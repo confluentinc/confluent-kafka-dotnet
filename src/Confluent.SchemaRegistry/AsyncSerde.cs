@@ -32,7 +32,7 @@ namespace Confluent.SchemaRegistry
     public abstract class AsyncSerde<TParsedSchema>
     {
         protected ISchemaRegistryClient schemaRegistryClient;
-        protected IList<IRuleExecutor> ruleExecutors;
+        protected RuleRegistry ruleRegistry;
         
         protected bool useLatestVersion = false;
         protected bool latestCompatibilityStrict = false;
@@ -44,10 +44,10 @@ namespace Confluent.SchemaRegistry
         private readonly IDictionary<Schema, TParsedSchema> parsedSchemaCache = new Dictionary<Schema, TParsedSchema>();
         private SemaphoreSlim parsedSchemaMutex = new SemaphoreSlim(1);
         
-        protected AsyncSerde(ISchemaRegistryClient schemaRegistryClient, SerdeConfig config, IList<IRuleExecutor> ruleExecutors = null)
+        protected AsyncSerde(ISchemaRegistryClient schemaRegistryClient, SerdeConfig config, RuleRegistry ruleRegistry = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
-            this.ruleExecutors = ruleExecutors ?? new List<IRuleExecutor>();
+            this.ruleRegistry = ruleRegistry ?? RuleRegistry.GlobalInstance;
 
             if (config == null) { return; }
 
@@ -57,7 +57,7 @@ namespace Confluent.SchemaRegistry
             if (schemaRegistryClient != null)
                 ruleConfigs = schemaRegistryClient.Config.Concat(ruleConfigs);
             
-            foreach (IRuleExecutor executor in this.ruleExecutors.Concat(RuleRegistry.GetRuleExecutors()))
+            foreach (IRuleExecutor executor in this.ruleRegistry.GetExecutors())
             {
                 executor.Configure(ruleConfigs); 
             }
@@ -344,7 +344,7 @@ namespace Confluent.SchemaRegistry
 
                 RuleContext ctx = new RuleContext(source, target,
                     subject, topic, headers, isKey, ruleMode, rule, i, rules, fieldTransformer);
-                IRuleExecutor ruleExecutor = GetRuleExecutor(ruleExecutors, rule.Type.ToUpper());
+                IRuleExecutor ruleExecutor = GetRuleExecutor(ruleRegistry, rule.Type.ToUpper());
                 if (ruleExecutor != null)
                 {
                     try
@@ -367,40 +367,31 @@ namespace Confluent.SchemaRegistry
                                 throw new ArgumentException("Unsupported rule kind " + rule.Kind);
                         }
                         await RunAction(ctx, ruleMode, rule, message != null ? rule.OnSuccess : rule.OnFailure,
-                            message, null, message != null ? null : ErrorAction.ActionType)
+                            message, null, message != null ? null : ErrorAction.ActionType,
+                            ruleRegistry)
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                     catch (RuleException ex)
                     {
                         await RunAction(ctx, ruleMode, rule, rule.OnFailure, message, 
-                            ex, ErrorAction.ActionType)
+                            ex, ErrorAction.ActionType, ruleRegistry)
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
                 else
                 {
                     await RunAction(ctx, ruleMode, rule, rule.OnFailure, message, 
-                        new RuleException("Could not find rule executor of type " + rule.Type), ErrorAction.ActionType)
+                        new RuleException("Could not find rule executor of type " + rule.Type),
+                        ErrorAction.ActionType, ruleRegistry)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
             }
             return message;
         }
 
-        private static IRuleExecutor GetRuleExecutor(IList<IRuleExecutor> ruleExecutors, string type)
+        private static IRuleExecutor GetRuleExecutor(RuleRegistry ruleRegistry, string type)
         {
-            if (ruleExecutors != null)
-            {
-                foreach (IRuleExecutor ruleExecutor in ruleExecutors)
-                {
-                    if (ruleExecutor.Type().Equals(type))
-                    {
-                        return ruleExecutor;
-                    }
-                }
-            }
-
-            if (RuleRegistry.TryGetRuleExecutor(type, out IRuleExecutor result))
+            if (ruleRegistry.TryGetExecutor(type, out IRuleExecutor result))
             {
                 return result;
             }
@@ -409,7 +400,8 @@ namespace Confluent.SchemaRegistry
         }
 
         private static async Task RunAction(RuleContext ctx, RuleMode ruleMode, 
-            Rule rule, string action, object message, RuleException ex, string defaultAction)
+            Rule rule, string action, object message, RuleException ex, string defaultAction,
+            RuleRegistry ruleRegistry)
         {
             string actionName = GetRuleActionName(rule, ruleMode, action);
             if (actionName == null)
@@ -418,7 +410,7 @@ namespace Confluent.SchemaRegistry
             }
             if (actionName != null)
             {
-                IRuleAction ruleAction = GetRuleAction(actionName);
+                IRuleAction ruleAction = GetRuleAction(ruleRegistry, actionName);
                 if (ruleAction == null)
                 {
                     throw new SerializationException("Could not find rule action of type " + actionName);
@@ -456,7 +448,7 @@ namespace Confluent.SchemaRegistry
             return actionName;
         }
 
-        private static IRuleAction GetRuleAction(string actionName)
+        private static IRuleAction GetRuleAction(RuleRegistry ruleRegistry, string actionName)
         {
             if (actionName == ErrorAction.ActionType)
             {
@@ -466,7 +458,7 @@ namespace Confluent.SchemaRegistry
             {
                 return new NoneAction();
             }
-            RuleRegistry.TryGetRuleAction(actionName.ToUpper(), out IRuleAction action);
+            ruleRegistry.TryGetAction(actionName.ToUpper(), out IRuleAction action);
             return action;
         }
     }

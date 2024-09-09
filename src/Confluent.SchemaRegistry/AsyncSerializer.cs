@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry
         protected HashSet<string> subjectsRegistered = new HashSet<string>();
         
         protected AsyncSerializer(ISchemaRegistryClient schemaRegistryClient, SerdeConfig config, 
-            IList<IRuleExecutor> ruleExecutors = null) : base(schemaRegistryClient, config, ruleExecutors)
+            RuleRegistry ruleRegistry = null) : base(schemaRegistryClient, config, ruleRegistry)
         {
         }
 

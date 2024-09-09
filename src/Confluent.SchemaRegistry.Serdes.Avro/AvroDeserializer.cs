@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry.Serdes
     {
         private ISchemaRegistryClient schemaRegistryClient;
         private AvroDeserializerConfig config;
-        private IList<IRuleExecutor> ruleExecutors;
+        private RuleRegistry ruleRegistry;
 
         private IAsyncDeserializer<T> deserializerImpl;
 
@@ -64,11 +64,11 @@ namespace Confluent.SchemaRegistry.Serdes
         {
         }
 
-        public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig config = null, IList<IRuleExecutor> ruleExecutors = null)
+        public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig config = null, RuleRegistry ruleRegistry = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.config = config;
-            this.ruleExecutors = ruleExecutors ?? new List<IRuleExecutor>();
+            this.ruleRegistry = ruleRegistry ?? RuleRegistry.GlobalInstance;
             
             if (config == null) { return; }
 
@@ -129,8 +129,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (deserializerImpl == null)
                 {
                     deserializerImpl = (typeof(T) == typeof(GenericRecord))
-                        ? (IAsyncDeserializer<T>)new GenericDeserializerImpl(schemaRegistryClient, config, ruleExecutors)
-                        : new SpecificDeserializerImpl<T>(schemaRegistryClient, config, ruleExecutors);
+                        ? (IAsyncDeserializer<T>)new GenericDeserializerImpl(schemaRegistryClient, config, ruleRegistry)
+                        : new SpecificDeserializerImpl<T>(schemaRegistryClient, config, ruleRegistry);
                 }
 
                 return isNull ? default : await deserializerImpl.DeserializeAsync(data, isNull, context)

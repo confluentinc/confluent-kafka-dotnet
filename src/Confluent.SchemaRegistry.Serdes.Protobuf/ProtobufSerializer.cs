@@ -71,7 +71,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Initialize a new instance of the ProtobufSerializer class.
         /// </summary>
         public ProtobufSerializer(ISchemaRegistryClient schemaRegistryClient, ProtobufSerializerConfig config = null, 
-            IList<IRuleExecutor> ruleExecutors = null) : base(schemaRegistryClient, config, ruleExecutors)
+            RuleRegistry ruleRegistry = null) : base(schemaRegistryClient, config, ruleRegistry)
         {
             if (config == null)
             { 
