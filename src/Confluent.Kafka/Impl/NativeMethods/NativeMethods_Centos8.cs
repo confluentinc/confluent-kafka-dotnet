@@ -569,6 +569,12 @@ namespace Confluent.Kafka.Impl.NativeMethods
                          UIntPtr statesCnt);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AdminOptions_set_match_consumer_group_types(
+                        IntPtr options,
+                        ConsumerGroupType[] groupTypes,
+                        UIntPtr groupTypesCnt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_NewTopic_new(
                         [MarshalAs(UnmanagedType.LPStr)] string topic,
                         IntPtr num_partitions,
@@ -1035,6 +1041,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ConsumerGroupState rd_kafka_ConsumerGroupListing_state(IntPtr grplist);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ConsumerGroupType rd_kafka_ConsumerGroupListing_type(IntPtr grplist);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_ListConsumerGroups_result_valid(IntPtr result, out UIntPtr cntp);

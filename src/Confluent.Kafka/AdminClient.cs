@@ -288,7 +288,8 @@ namespace Confluent.Kafka
                         GroupId = PtrToStringUTF8(Librdkafka.ConsumerGroupListing_group_id(cglPtr)),
                         IsSimpleConsumerGroup =
                             (int)Librdkafka.ConsumerGroupListing_is_simple_consumer_group(cglPtr) == 1,
-                        State = Librdkafka.ConsumerGroupListing_state(cglPtr),
+                        State = (ConsumerGroupState)Librdkafka.ConsumerGroupListing_state(cglPtr),
+                        GroupType = (ConsumerGroupType)Librdkafka.ConsumerGroupListing_type(cglPtr),
                     };
                 }).ToList();
             }
