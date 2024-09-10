@@ -696,12 +696,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null,
                         "message.name == 'awesome'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -720,6 +720,47 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
 
             Assert.Equal("awesome", result["name"]);
+            Assert.Equal(user["favorite_color"], result["favorite_color"]);
+            Assert.Equal(user["favorite_number"], result["favorite_number"]);
+        }
+
+        [Fact]
+        public void GenericRecordCELConditionLogicalType()
+        {
+            var uuid = "550e8400-e29b-41d4-a716-446655440000";
+            var schemaStr = "{\"type\":\"record\",\"name\":\"UserWithPic\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
+                    "\",\"fields\":[{\"name\":\"name\",\"type\":{\"type\":\"string\",\"logicalType\":\"uuid\"}},{\"name\":\"favorite_number\"," +
+                    "\"type\":[\"int\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}," +
+                    "{\"name\":\"picture\",\"type\":[\"null\",\"bytes\"],\"default\":null}]}";
+
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Condition, RuleMode.Write, "CEL", null, null, 
+                        "message.name == '" + uuid + "'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
+
+            var user = new GenericRecord((RecordSchema) Avro.Schema.Parse(schemaStr));
+            user.Add("name", uuid);
+            user.Add("favorite_number", 100);
+            user.Add("favorite_color", "blue");
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal(new Guid(uuid), result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
             Assert.Equal(user["favorite_number"], result["favorite_number"]);
         }
