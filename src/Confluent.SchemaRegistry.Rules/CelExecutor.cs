@@ -246,6 +246,8 @@ namespace Confluent.SchemaRegistry.Rules
                     }
 
                     throw new ArgumentException("Unsupported union type");
+                case Avro.Schema.Type.Logical:
+                    return FindTypeForAvroType((schema as LogicalSchema).BaseSchema);
                 default:
                     throw new ArgumentException("Unsupported type " + type);
             }
