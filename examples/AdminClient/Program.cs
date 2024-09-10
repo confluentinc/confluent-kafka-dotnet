@@ -586,9 +586,9 @@ namespace Confluent.Kafka.Examples
             var groupTypesList = new List<ConsumerGroupType>();
             var isType = false;
             var isState = false;
-            for (int i = 0; i < commandArgs.Length; i++)
+            foreach (var commandArg in commandArgs)
             {
-                if (commandArgs[i] == "-states")
+                if (commandArg == "-states")
                 {
                     if (isState)
                     {
@@ -598,7 +598,7 @@ namespace Confluent.Kafka.Examples
                     }
                     isState = true;
                 }
-                else if (commandArgs[i] == "-types")
+                else if (commandArg == "-types")
                 {
                     if (isType)
                     {
@@ -612,11 +612,29 @@ namespace Confluent.Kafka.Examples
                 {
                     if (isState)
                     {
-                        statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
+                        try
+                        {
+                            statesList.Add(Enum.Parse<ConsumerGroupState>(commandArg));
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                            Environment.ExitCode = 1;
+                            return;
+                        }
                     }
                     else if (isType)
                     {
-                        groupTypesList.Add(Enum.Parse<ConsumerGroupType>(commandArgs[i]));
+                        try
+                        {
+                            groupTypesList.Add(Enum.Parse<ConsumerGroupType>(commandArg));
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [-states <match_state_1> <match_state_2> ... <match_state_N>] [-types <group_type_1> .. <group_type_M>]");
+                            Environment.ExitCode = 1;
+                            return;
+                        }
                     }
                     else
                     {
@@ -636,6 +654,7 @@ namespace Confluent.Kafka.Examples
                         MatchStates = statesList,
                         MatchGroupTypes = groupTypesList,
                     });
+                    Console.WriteLine("The Broker Response depends on the Broker Version Being used, all the Request Options may not be used for the final request");
                     Console.WriteLine(result);
                 }
                 catch (KafkaException e)
