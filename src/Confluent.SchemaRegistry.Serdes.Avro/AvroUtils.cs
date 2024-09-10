@@ -165,6 +165,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 case Avro.Schema.Type.Boolean:
                     return RuleContext.Type.Boolean;
                 case Avro.Schema.Type.Null:
+                    return RuleContext.Type.Null;
+                case Avro.Schema.Type.Logical:
+                    return GetType((schema as LogicalSchema).BaseSchema);
                 default:
                     return RuleContext.Type.Null;
             }
