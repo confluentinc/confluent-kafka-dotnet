@@ -506,21 +506,21 @@ namespace Confluent.Kafka
             IAsyncSerializer<TValue> asyncValueSerializer)
         {
             // setup key serializer.
-            if (typeof(TKey) == typeof(Memory<byte>) || typeof(TKey) == typeof(ReadOnlyMemory<byte>))
+            if (keySerializer == null && asyncKeySerializer == null)
             {
-                if (keySerializer != null || asyncKeySerializer != null)
+                if (defaultSerializers.TryGetValue(typeof(TKey), out object serializer))
                 {
-                    throw new ArgumentNullException(null, "Key serializer should not be specified for Memory<byte>");
+                    this.keySerializer = (ISerializer<TKey>)serializer;
                 }
-            }
-            else if (keySerializer == null && asyncKeySerializer == null)
-            {
-                if (!defaultSerializers.TryGetValue(typeof(TKey), out object serializer))
+                else if (typeof(TValue) == typeof(Memory<byte>) || typeof(TValue) == typeof(ReadOnlyMemory<byte>))
+                {
+                    // Serializers are not used for Memory<byte>.
+                }
+                else
                 {
                     throw new ArgumentNullException(
                         $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.keySerializer = (ISerializer<TKey>)serializer;
             }
             else if (keySerializer == null && asyncKeySerializer != null)
             {
@@ -536,21 +536,22 @@ namespace Confluent.Kafka
             }
 
             // setup value serializer.
-            if (typeof(TValue) == typeof(Memory<byte>) || typeof(TValue) == typeof(ReadOnlyMemory<byte>))
+            if (valueSerializer == null && asyncValueSerializer == null)
             {
-                if (valueSerializer != null || asyncValueSerializer != null)
+                if (defaultSerializers.TryGetValue(typeof(TValue), out object serializer))
                 {
-                    throw new ArgumentNullException(null, "Value serializer should not be specified for Memory<byte>");
+                    this.valueSerializer = (ISerializer<TValue>)serializer;
                 }
-            }
-            else if (valueSerializer == null && asyncValueSerializer == null)
-            {
-                if (!defaultSerializers.TryGetValue(typeof(TValue), out object serializer))
+                else if (typeof(TValue) == typeof(Memory<byte>) || typeof(TValue) == typeof(ReadOnlyMemory<byte>))
+                {
+                    // Serializers are not used for Memory<byte>.
+                }
+                else
                 {
                     throw new ArgumentNullException(
                         $"Value serializer not specified and there is no default serializer defined for type {typeof(TValue).Name}.");
                 }
-                this.valueSerializer = (ISerializer<TValue>)serializer;
+
             }
             else if (valueSerializer == null && asyncValueSerializer != null)
             {
