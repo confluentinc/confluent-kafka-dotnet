@@ -775,13 +775,13 @@ namespace Confluent.Kafka
             {
                 if (keySerializer != null)
                 {
-                    keyBytes = keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))?.AsMemory();
+                    SerializationContext ctx = new(MessageComponentType.Key, topicPartition.Topic, headers);
+                    keyBytes = keySerializer.Serialize(message.Key, ctx)?.AsMemory();
                 }
                 else if (asyncKeySerializer != null)
                 {
-                    keyBytes = (await asyncKeySerializer.SerializeAsync(message.Key,
-                            new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))
-                        .ConfigureAwait(false))?.AsMemory();
+                    SerializationContext ctx = new(MessageComponentType.Key, topicPartition.Topic, headers);
+                    keyBytes = (await asyncKeySerializer.SerializeAsync(message.Key, ctx).ConfigureAwait(false))?.AsMemory();
                 }
                 else if (message.Key is Memory<byte> memory)
                 {
@@ -809,13 +809,13 @@ namespace Confluent.Kafka
             {
                 if (valueSerializer != null)
                 {
-                    valBytes = valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))?.AsMemory();
+                    SerializationContext ctx = new(MessageComponentType.Value, topicPartition.Topic, headers);
+                    valBytes = valueSerializer.Serialize(message.Value, ctx)?.AsMemory();
                 }
                 else if (asyncValueSerializer != null)
                 {
-                    valBytes = (await asyncValueSerializer.SerializeAsync(message.Value,
-                            new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))
-                        .ConfigureAwait(false))?.AsMemory();
+                    SerializationContext ctx = new(MessageComponentType.Value, topicPartition.Topic, headers);
+                    valBytes = (await asyncValueSerializer.SerializeAsync(message.Value, ctx).ConfigureAwait(false))?.AsMemory();
                 }
                 else if (message.Value is Memory<byte> memory)
                 {
@@ -928,7 +928,8 @@ namespace Confluent.Kafka
             {
                 if (keySerializer != null)
                 {
-                    keyBytes = keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))?.AsMemory();
+                    SerializationContext ctx = new(MessageComponentType.Key, topicPartition.Topic, headers);
+                    keyBytes = keySerializer.Serialize(message.Key, ctx)?.AsMemory();
                 }
                 else if (asyncKeySerializer != null)
                 {
@@ -960,7 +961,8 @@ namespace Confluent.Kafka
             {
                 if (valueSerializer != null)
                 {
-                    valBytes = valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))?.AsMemory();
+                    SerializationContext ctx = new(MessageComponentType.Value, topicPartition.Topic, headers);
+                    valBytes = valueSerializer.Serialize(message.Value, ctx)?.AsMemory();
                 }
                 else if (asyncValueSerializer != null)
                 {
