@@ -770,7 +770,7 @@ namespace Confluent.Kafka
         {
             Headers headers = message.Headers ?? new Headers();
 
-            ReadOnlyMemory<byte>? keyBytes = null;
+            ReadOnlyMemory<byte>? keyBytes;
             try
             {
                 if (keySerializer != null)
@@ -791,6 +791,10 @@ namespace Confluent.Kafka
                 {
                     keyBytes = readOnlyMemory;
                 }
+                else // Nullable Memory<byte>
+                {
+                    keyBytes = null;
+                }
             }
             catch (Exception ex)
             {
@@ -804,7 +808,7 @@ namespace Confluent.Kafka
                     ex);
             }
 
-            ReadOnlyMemory<byte>? valBytes = null;
+            ReadOnlyMemory<byte>? valBytes;
             try
             {
                 if (valueSerializer != null)
@@ -824,6 +828,10 @@ namespace Confluent.Kafka
                 else if (message.Value is ReadOnlyMemory<byte> readOnlyMemory)
                 {
                     valBytes = readOnlyMemory;
+                }
+                else // Nullable Memory<byte>
+                {
+                    valBytes = null;
                 }
             }
             catch (Exception ex)
@@ -923,7 +931,7 @@ namespace Confluent.Kafka
 
             Headers headers = message.Headers ?? new Headers();
 
-            ReadOnlyMemory<byte>? keyBytes = null;
+            ReadOnlyMemory<byte>? keyBytes;
             try
             {
                 if (keySerializer != null)
@@ -943,6 +951,10 @@ namespace Confluent.Kafka
                 {
                     keyBytes = readOnlyMemory;
                 }
+                else // Nullable Memory<byte>
+                {
+                    keyBytes = null;
+                }
             }
             catch (Exception ex)
             {
@@ -956,7 +968,7 @@ namespace Confluent.Kafka
                     ex);
             }
 
-            ReadOnlyMemory<byte>? valBytes = null;
+            ReadOnlyMemory<byte>? valBytes;
             try
             {
                 if (valueSerializer != null)
@@ -975,6 +987,10 @@ namespace Confluent.Kafka
                 else if (message.Value is ReadOnlyMemory<byte> readOnlyMemory)
                 {
                     valBytes = readOnlyMemory;
+                }
+                else // Nullable Memory<byte>
+                {
+                    valBytes = null;
                 }
             }
             catch (Exception ex)
