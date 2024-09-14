@@ -557,7 +557,6 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Value serializer not specified and there is no default serializer defined for type {typeof(TValue).Name}.");
                 }
-
             }
             else if (valueSerializer == null && asyncValueSerializer != null)
             {
@@ -776,13 +775,13 @@ namespace Confluent.Kafka
             {
                 if (keySerializer != null)
                 {
-                    byte[] keyBytesArray = keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers));
-                    keyBytes = keyBytesArray == null ? (ReadOnlyMemory<byte>?)null : keyBytesArray;
+                    keyBytes = keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))?.AsMemory();
                 }
                 else if (asyncKeySerializer != null)
                 {
-                    byte[] keyBytesArray = await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers)).ConfigureAwait(false);
-                    keyBytes = keyBytesArray == null ? (ReadOnlyMemory<byte>?)null : keyBytesArray;
+                    keyBytes = (await asyncKeySerializer.SerializeAsync(message.Key,
+                            new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))
+                        .ConfigureAwait(false))?.AsMemory();
                 }
                 else if (message.Key is Memory<byte> memory)
                 {
@@ -810,13 +809,13 @@ namespace Confluent.Kafka
             {
                 if (valueSerializer != null)
                 {
-                    byte[] valueBytesArray = valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers));
-                    valBytes = valueBytesArray == null ? (ReadOnlyMemory<byte>?)null : valueBytesArray;
+                    valBytes = valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))?.AsMemory();
                 }
                 else if (asyncValueSerializer != null)
                 {
-                    byte[] valueBytesArray = await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers)).ConfigureAwait(false);
-                    valBytes = valueBytesArray == null ? (ReadOnlyMemory<byte>?)null : valueBytesArray;
+                    valBytes = (await asyncValueSerializer.SerializeAsync(message.Value,
+                            new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))
+                        .ConfigureAwait(false))?.AsMemory();
                 }
                 else if (message.Value is Memory<byte> memory)
                 {
@@ -929,8 +928,7 @@ namespace Confluent.Kafka
             {
                 if (keySerializer != null)
                 {
-                    byte[] keyBytesArray = keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers));
-                    keyBytes = keyBytesArray == null ? (ReadOnlyMemory<byte>?)null : keyBytesArray;
+                    keyBytes = keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))?.AsMemory();
                 }
                 else if (asyncKeySerializer != null)
                 {
@@ -962,8 +960,7 @@ namespace Confluent.Kafka
             {
                 if (valueSerializer != null)
                 {
-                    byte[] valueBytesArray = valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers));
-                    valBytes = valueBytesArray == null ? (ReadOnlyMemory<byte>?)null : valueBytesArray;
+                    valBytes = valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))?.AsMemory();
                 }
                 else if (asyncValueSerializer != null)
                 {
