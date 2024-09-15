@@ -69,23 +69,23 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             using (var testTopic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new TestProducerBuilder<Null, Memory<byte>>(producerConfig)
+            using (var producer = new TestProducerBuilder<Memory<byte>?, Memory<byte>>(producerConfig)
                 .Build())
-            using (var dProducer = new DependentProducerBuilder<ReadOnlyMemory<byte>, Null>(producer.Handle)
+            using (var dProducer = new DependentProducerBuilder<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>?>(producer.Handle)
                 .Build())
             {
                 Memory<byte> data = new byte[] { 1, 2, 3, 4 };
-                Assert.Throws<ProduceException<Null, Memory<byte>>>(
-                    () => producer.Produce(testTopic.Name, new Message<Null, Memory<byte>> { Value = data }));
+                Assert.Throws<ProduceException<Memory<byte>?, Memory<byte>>>(
+                    () => producer.Produce(testTopic.Name, new Message<Memory<byte>?, Memory<byte>> { Value = data }));
 
-                Assert.Throws<ProduceException<Null, Memory<byte>>>(
-                    () => producer.Produce(testTopic.Name, new Message<Null, Memory<byte>> { Value = data }, dr => { Assert.True(false); }));
+                Assert.Throws<ProduceException<Memory<byte>?, Memory<byte>>>(
+                    () => producer.Produce(testTopic.Name, new Message<Memory<byte>?, Memory<byte>> { Value = data }, dr => { Assert.True(false); }));
 
-                Assert.Throws<ProduceException<ReadOnlyMemory<byte>, Null>>(
-                    () => dProducer.Produce(testTopic.Name, new Message<ReadOnlyMemory<byte>, Null> { Key = data }));
+                Assert.Throws<ProduceException<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>?>>(
+                    () => dProducer.Produce(testTopic.Name, new Message<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>?> { Key = data }));
 
-                Assert.Throws<ProduceException<ReadOnlyMemory<byte>, Null>>(
-                    () => dProducer.Produce(testTopic.Name, new Message<ReadOnlyMemory<byte>, Null> { Key = data }, dr => { Assert.True(false); }));
+                Assert.Throws<ProduceException<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>?>>(
+                    () => dProducer.Produce(testTopic.Name, new Message<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>?> { Key = data }, dr => { Assert.True(false); }));
             }
 
             Assert.Equal(0, Library.HandleCount);
