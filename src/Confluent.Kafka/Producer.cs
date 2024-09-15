@@ -791,7 +791,7 @@ namespace Confluent.Kafka
                 {
                     keyBytes = readOnlyMemory;
                 }
-                else // Nullable Memory<byte>
+                else // Null Memory<byte>?
                 {
                     keyBytes = null;
                 }
@@ -829,7 +829,7 @@ namespace Confluent.Kafka
                 {
                     valBytes = readOnlyMemory;
                 }
-                else // Nullable Memory<byte>
+                else // Null Memory<byte>?
                 {
                     valBytes = null;
                 }
@@ -951,7 +951,7 @@ namespace Confluent.Kafka
                 {
                     keyBytes = readOnlyMemory;
                 }
-                else // Nullable Memory<byte>
+                else // Null Memory<byte>?
                 {
                     keyBytes = null;
                 }
@@ -988,7 +988,7 @@ namespace Confluent.Kafka
                 {
                     valBytes = readOnlyMemory;
                 }
-                else // Nullable Memory<byte>
+                else // Null Memory<byte>?
                 {
                     valBytes = null;
                 }
