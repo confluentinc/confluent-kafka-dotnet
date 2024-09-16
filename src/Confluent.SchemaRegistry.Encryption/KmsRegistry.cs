@@ -98,5 +98,18 @@ namespace Confluent.SchemaRegistry.Encryption
 
             return null;
         }
+
+        public static void ClearKmsClients()
+        {
+            kmsClientsMutex.Wait();
+            try
+            {
+                kmsClients.Clear();
+            }
+            finally
+            {
+                kmsClientsMutex.Release();
+            }
+        }
     }
 }
