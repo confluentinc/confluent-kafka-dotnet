@@ -136,6 +136,50 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
+
+            // serialize second object
+            user = new User
+            {
+                favorite_color = "red",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(user.name, result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
+        public void ISpecificRecordRecordNameStrategy()
+        {
+            var serializerConfig = new AvroSerializerConfig
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Record
+            };
+            var serializer = new AvroSerializer<User>(schemaRegistryClient, serializerConfig);
+            var deserializerConfig = new AvroDeserializerConfig
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Record
+            };
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, deserializerConfig);
+
+            var user = new User
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(user.name, result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
             
             // serialize second object
             user = new User

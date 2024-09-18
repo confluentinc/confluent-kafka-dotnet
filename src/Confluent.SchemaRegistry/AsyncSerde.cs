@@ -63,6 +63,31 @@ namespace Confluent.SchemaRegistry
             }
         }
 
+        protected string GetSubjectName(string topic, bool isKey, string recordType)
+        {
+            try
+            {
+                string subject = this.subjectNameStrategy != null
+                    // use the subject name strategy specified in the serializer config if available.
+                    ? this.subjectNameStrategy(
+                        new SerializationContext(
+                            isKey ? MessageComponentType.Key : MessageComponentType.Value,
+                            topic),
+                        recordType)
+                    // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
+                    : schemaRegistryClient == null
+                        ? null
+                        : isKey
+                            ? schemaRegistryClient.ConstructKeySubjectName(topic, recordType)
+                            : schemaRegistryClient.ConstructValueSubjectName(topic, recordType);
+                return subject;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
         protected async Task<(Schema, TParsedSchema)> GetSchema(string subject, int writerId, string format = null)
         {
             Schema writerSchema = await schemaRegistryClient.GetSchemaBySubjectAndIdAsync(subject, writerId, format)

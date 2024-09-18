@@ -54,11 +54,11 @@ namespace Confluent.SchemaRegistry.Serdes
     public class JsonDeserializer<T> : AsyncDeserializer<T, JsonSchema> where T : class
     {
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-        
+
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
         private JsonSchema schema = null;
-        
+
         /// <summary>
         ///     Initialize a new JsonDeserializer instance.
         /// </summary>
@@ -74,12 +74,12 @@ namespace Confluent.SchemaRegistry.Serdes
         {
         }
 
-        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null) 
+        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
             : this(schemaRegistryClient, config != null ? new JsonDeserializerConfig(config) : null, jsonSchemaGeneratorSettings)
         {
         }
 
-        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, JsonDeserializerConfig config, 
+        public JsonDeserializer(ISchemaRegistryClient schemaRegistryClient, JsonDeserializerConfig config,
             JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, RuleRegistry ruleRegistry = null)
             : base(schemaRegistryClient, config, ruleRegistry)
         {
@@ -108,7 +108,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </param>
         /// <param name="schema">
         ///     Schema to use for validation, used when external
-        ///     schema references are present in the schema. 
+        ///     schema references are present in the schema.
         ///     Populate the References list of the schema for
         ///     the same. Assuming the referenced schemas have
         ///     already been registered in the registry.
@@ -155,24 +155,17 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 throw new InvalidDataException($"Expecting data framing of length 6 bytes or more but total data size is {array.Length} bytes");
             }
-            
+
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
-            string subject = this.subjectNameStrategy != null
-                // use the subject name strategy specified in the serializer config if available.
-                ? this.subjectNameStrategy(
-                    new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic),
-                    null)
-                // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                : schemaRegistryClient == null 
-                    ? null
-                    : isKey 
-                        ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                        : schemaRegistryClient.ConstructValueSubjectName(topic);
-            
-            Schema latestSchema = await GetReaderSchema(subject)
-                .ConfigureAwait(continueOnCapturedContext: false);
-                
+            string subject = GetSubjectName(topic, isKey, null);
+            Schema latestSchema = null;
+            if (subject != null)
+            {
+                latestSchema = await GetReaderSchema(subject)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+            }
+
             try
             {
                 Schema writerSchema = null;
@@ -193,6 +186,15 @@ namespace Confluent.SchemaRegistry.Serdes
                     if (schemaRegistryClient != null)
                     {
                         (writerSchema, writerSchemaJson) = await GetSchema(subject, writerId);
+                        if (subject == null)
+                        {
+                            subject = GetSubjectName(topic, isKey, writerSchemaJson.Title);
+                            if (subject != null)
+                            {
+                                latestSchema = await GetReaderSchema(subject)
+                                    .ConfigureAwait(continueOnCapturedContext: false);
+                            }
+                        }
                     }
                     
                     if (latestSchema != null)

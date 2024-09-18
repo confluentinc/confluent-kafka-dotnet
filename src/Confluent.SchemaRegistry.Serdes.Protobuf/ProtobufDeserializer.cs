@@ -123,18 +123,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
-            string subject = this.subjectNameStrategy != null
-                // use the subject name strategy specified in the serializer config if available.
-                ? this.subjectNameStrategy(
-                    new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic),
-                    null)
-                // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                : schemaRegistryClient == null 
-                    ? null
-                    : isKey 
-                        ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                        : schemaRegistryClient.ConstructValueSubjectName(topic);
-            
+            string subject = GetSubjectName(topic, isKey, null);
+
             // Currently Protobuf does not support migration rules because of lack of support for DynamicMessage
             // See https://github.com/protocolbuffers/protobuf/issues/658
             /*
