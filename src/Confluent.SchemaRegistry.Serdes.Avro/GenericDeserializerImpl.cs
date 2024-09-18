@@ -71,20 +71,13 @@ namespace Confluent.SchemaRegistry.Serdes
                     throw new InvalidDataException($"Expecting data framing of length 5 bytes or more but total data size is {array.Length} bytes");
                 }
 
-                string subject = this.subjectNameStrategy != null
-                    // use the subject name strategy specified in the serializer config if available.
-                    ? this.subjectNameStrategy(
-                        new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic),
-                        null)
-                    // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                    : schemaRegistryClient == null 
-                        ? null
-                        : isKey 
-                            ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                            : schemaRegistryClient.ConstructValueSubjectName(topic);
-                
-                Schema latestSchema = await GetReaderSchema(subject)
-                    .ConfigureAwait(continueOnCapturedContext: false);
+                string subject = GetSubjectName(topic, isKey, null);
+                Schema latestSchema = null;
+                if (subject != null)
+                {
+                    latestSchema = await GetReaderSchema(subject)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                }
 
                 Schema writerSchemaJson;
                 Avro.Schema writerSchema;
@@ -101,7 +94,16 @@ namespace Confluent.SchemaRegistry.Serdes
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
                     (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
-                    
+                    if (subject == null)
+                    {
+                        subject = GetSubjectName(topic, isKey, writerSchema.Fullname);
+                        if (subject != null)
+                        {
+                            latestSchema = await GetReaderSchema(subject)
+                                .ConfigureAwait(continueOnCapturedContext: false);
+                        }
+                    }
+
                     if (latestSchema != null)
                     {
                         migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)

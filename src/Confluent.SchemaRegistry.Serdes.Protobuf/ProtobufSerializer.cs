@@ -257,14 +257,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    subject = this.subjectNameStrategy != null
-                        // use the subject name strategy specified in the serializer config if available.
-                        ? this.subjectNameStrategy(context, fullname)
-                        // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                        : context.Component == MessageComponentType.Key
-                            ? schemaRegistryClient.ConstructKeySubjectName(context.Topic, fullname)
-                            : schemaRegistryClient.ConstructValueSubjectName(context.Topic, fullname);
-
+                    subject = GetSubjectName(context.Topic, context.Component == MessageComponentType.Key, fullname);
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     
