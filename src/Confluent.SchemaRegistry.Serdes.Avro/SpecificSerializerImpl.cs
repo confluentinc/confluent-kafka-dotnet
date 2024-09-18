@@ -204,14 +204,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         fullname = ((Avro.RecordSchema)((ISpecificRecord)data).Schema).Fullname;
                     }
 
-                    subject = this.subjectNameStrategy != null
-                        // use the subject name strategy specified in the serializer config if available.
-                        ? this.subjectNameStrategy(new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic), fullname)
-                        // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                        : isKey
-                            ? schemaRegistryClient.ConstructKeySubjectName(topic, fullname)
-                            : schemaRegistryClient.ConstructValueSubjectName(topic, fullname);
-                    
+                    subject = GetSubjectName(topic, isKey, fullname);
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     

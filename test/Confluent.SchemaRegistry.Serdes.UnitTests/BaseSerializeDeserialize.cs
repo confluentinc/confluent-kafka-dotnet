@@ -44,7 +44,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             testTopic = "topic";
             var schemaRegistryMock = new Mock<ISchemaRegistryClient>();
             schemaRegistryMock.Setup(x => x.ConstructValueSubjectName(testTopic, It.IsAny<string>())).Returns($"{testTopic}-value");
-            schemaRegistryMock.Setup(x => x.RegisterSchemaAsync("topic-value", It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(
+            schemaRegistryMock.Setup(x => x.RegisterSchemaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(
                 (string topic, string schema, bool normalize) => store.TryGetValue(schema, out int id) ? id : store[schema] = store.Count + 1
             );
             schemaRegistryMock.Setup(x => x.GetSchemaBySubjectAndIdAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(
