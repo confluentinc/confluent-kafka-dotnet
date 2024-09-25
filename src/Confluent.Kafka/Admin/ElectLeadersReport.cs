@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            result.Append($"{{\"TopLevelErrorCode\": \"{ErrorCode}\", \"PartitionResults\": [");
+            result.Append($"{{\"ErrorCode\": \"{ErrorCode}\", \"PartitionResults\": [");
             result.Append(string.Join(",", PartitionResults.Select(b => $" {b.ToString()}")));
             result.Append($"]}}");
             return result.ToString();
