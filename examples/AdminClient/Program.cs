@@ -313,6 +313,30 @@ namespace Confluent.Kafka.Examples
             return Tuple.Create(isolationLevel, topicPartitionOffsetSpecs);
         }
 
+        static ElectLeadersRequest ParseElectLeadersArgs(string[] args)
+        {
+            if (args.Length < 3 || (args.Length -1 )%2 != 0)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders electionType(0/1) <topic1> <partition1> ..");
+                Environment.ExitCode = 1;
+                return null;
+            }
+            
+            var electionType = Enum.Parse<ElectionType>(args[0]);
+            var partitions = new List<TopicPartition>();
+            for (int i = 1; i < args.Length; i += 2)
+            {
+                var topic = args[i];
+                var partition = Int32.Parse(args[i + 1]);
+                partitions.Add(new TopicPartition(topic, partition));
+            }
+            return new ElectLeadersRequest
+            {
+                ElectionType = electionType,
+                Partitions = partitions
+            };
+        }
+
        static void PrintListOffsetsResultInfos(List<ListOffsetsResultInfo> ListOffsetsResultInfos)
        {
             foreach(var listOffsetsResultInfo in ListOffsetsResultInfos)
@@ -320,6 +344,15 @@ namespace Confluent.Kafka.Examples
                 Console.WriteLine("  ListOffsetsResultInfo:");
                 Console.WriteLine($"    TopicPartitionOffsetError: {listOffsetsResultInfo.TopicPartitionOffsetError}");
                 Console.WriteLine($"    Timestamp: {listOffsetsResultInfo.Timestamp}");
+            }
+        }
+
+        static void PrintElectLeaderResults(ElectLeadersResult result)
+        {
+            Console.WriteLine("  ElectLeadersResult:");
+            foreach (var partitionResult in result.PartitionResults)
+            {
+                Console.WriteLine($"Election successful in {partitionResult.Topic} {partitionResult.Partition}");
             }
         }
 
@@ -903,6 +936,50 @@ namespace Confluent.Kafka.Examples
                 {
                     Console.WriteLine($"An error occurred listing offsets: {e}");
                     Environment.ExitCode = 1;
+                }
+            }
+        }
+
+        static async Task ElectLeadersAsync(string bootstrapServers, string[] commandArgs)
+        {
+            if (commandArgs.Length < 3 && (commandArgs.Length - 1) % 2 != 0)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders electionType(0/1) <topic1> <partition1> ..");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            var electLeadersRequest = ParseElectLeadersArgs(commandArgs);        
+            var timeout = TimeSpan.FromSeconds(30);
+            ElectLeadersOptions options = new ElectLeadersOptions() { RequestTimeout = timeout };
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var result = await adminClient.ElectLeadersAsync(electLeadersRequest, options);
+                    PrintElectLeaderResults(result);
+                    
+                }
+                catch (ElectLeadersException e)
+                {
+                    Console.WriteLine("One or more elect leaders operations failed.");
+                    for (int i = 0; i < e.Results.PartitionResults.Count; ++i)
+                    {
+                        var result = e.Results.PartitionResults[i];
+                        if (!result.Error.IsError)
+                        {
+                            Console.WriteLine($"Elected leaders operation {i} completed successfully");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"An error occurred in elect leaders operation {i}: Code: {result.Error.Code}" +
+                            $", Reason: {result.Error.Reason}");
+                        }
+                    }
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred calling the ElectLeaders operation: {e.Message}");
                 }
             }
         }

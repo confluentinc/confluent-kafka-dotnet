@@ -2540,7 +2540,6 @@ namespace Confluent.Kafka.Impl
         internal void ElectLeaders(ElectLeadersRequest electLeadersRequest, ElectLeadersOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
-
             var optionsPtr = IntPtr.Zero;
             IntPtr topic_partition_list = IntPtr.Zero;
             IntPtr request = IntPtr.Zero;
@@ -2552,7 +2551,6 @@ namespace Confluent.Kafka.Impl
                 setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
                 setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
                 setOption_completionSource(optionsPtr, completionSourcePtr);
-
                 topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)electLeadersRequest.Partitions.Count());
                 foreach (var topicPartitions in electLeadersRequest.Partitions)
                 {
