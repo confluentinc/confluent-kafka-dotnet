@@ -85,6 +85,15 @@ namespace Confluent.Kafka.Impl
         internal /* rd_kafka_topic_partition_t * */ IntPtr elems;
     };
 
+    [StructLayout(LayoutKind.Sequential)]
+    struct rd_kafka_topic_partition_result
+    {
+        internal string topic;
+        internal int partition;
+        internal ErrorCode errCode;
+        internal string errorStr;
+    }
+
     internal sealed class SafeKafkaHandle : SafeHandleZeroIsInvalid
     {
         private const int RD_KAFKA_PARTITION_UA = -1;
@@ -2524,6 +2533,50 @@ namespace Confluent.Kafka.Impl
                 if (topic_partition_list != IntPtr.Zero)
                 {
                     Librdkafka.topic_partition_list_destroy(topic_partition_list);
+                }
+            }
+        }
+
+        internal void ElectLeaders(ElectLeadersRequest electLeadersRequest, ElectLeadersOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            var optionsPtr = IntPtr.Zero;
+            IntPtr topic_partition_list = IntPtr.Zero;
+            IntPtr request = IntPtr.Zero;
+            try
+            {
+                // Set Admin Options if any.
+                options = options ?? new ElectLeadersOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.ElectLeaders);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)electLeadersRequest.Partitions.Count());
+                foreach (var topicPartitions in electLeadersRequest.Partitions)
+                {
+                    string topic = topicPartitions.Topic;
+                    Partition partition = topicPartitions.Partition;
+                    IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topic, partition);
+                }
+                request = Librdkafka.ElectLeaderRequest_New(electLeadersRequest.ElectionType, topic_partition_list);
+
+                Librdkafka.ElectLeader(handle, request, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+                if (topic_partition_list != IntPtr.Zero)
+                {
+                    Librdkafka.topic_partition_list_destroy(topic_partition_list);
+                }
+                if(request != IntPtr.Zero)
+                {
+                    Librdkafka.ElectLeaderRequest_destroy(request);
                 }
             }
         }
