@@ -1074,7 +1074,7 @@ namespace Confluent.Kafka.Examples
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
                         "incremental-alter-configs", "describe-user-scram-credentials", 
                         "alter-user-scram-credentials", "describe-topics",
-                        "describe-cluster", "list-offsets"
+                        "describe-cluster", "list-offsets", "elect-leaders"
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
@@ -1137,6 +1137,9 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "list-offsets":
                     await ListOffsetsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "elect-leaders":
+                    await ElectLeadersAsync(bootstrapServers, commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");
