@@ -968,11 +968,11 @@ namespace Confluent.Kafka.Examples
                         var result = e.Results.PartitionResults[i];
                         if (!result.Error.IsError)
                         {
-                            Console.WriteLine($"Elected leaders operation {i} completed successfully");
+                            Console.WriteLine($"Elected leaders operation completed successfully for Topic {result.Topic} Partition {result.Partition}");
                         }
                         else
                         {
-                            Console.WriteLine($"An error occurred in elect leaders operation {i}: Code: {result.Error.Code}" +
+                            Console.WriteLine($"An error occurred in elect leaders operation in Topic {result.Topic} Partition {result.Partition}: Code: {result.Error.Code}" +
                             $", Reason: {result.Error.Reason}");
                         }
                     }

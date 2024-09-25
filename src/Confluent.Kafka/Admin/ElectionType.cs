@@ -22,9 +22,9 @@ namespace Confluent.Kafka.Admin
     public enum ElectionType : int
     {
         /// <summary>
-        ///     Preffered Elections
+        ///     Preferred Elections
         ///  </summary>
-        Preffered = 0,
+        Preferred = 0,
 
         /// <summary>
         ///     Unclean Elections
