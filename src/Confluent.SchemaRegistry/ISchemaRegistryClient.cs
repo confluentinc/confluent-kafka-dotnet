@@ -363,5 +363,15 @@ namespace Confluent.SchemaRegistry
         ///      New compatibility type.
         /// </returns>
         Task<Compatibility> UpdateCompatibilityAsync(Compatibility compatibility, string subject = null);
+
+        /// <summary>
+        ///     Clears caches of latest versions.
+        /// </summary>
+        void ClearLatestCaches();
+
+        /// <summary>
+        ///     Clears all caches.
+        /// </summary>
+        void ClearCaches();
     }
 }
