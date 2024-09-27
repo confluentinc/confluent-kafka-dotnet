@@ -718,6 +718,27 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
+        ///     Clears caches of latest versions.
+        /// </summary>
+        public void ClearLatestCaches()
+        {
+            latestVersionBySubject.Clear();
+            latestWithMetadataBySubject.Clear();
+        }
+
+        /// <summary>
+        ///     Clears all caches.
+        /// </summary>
+        public void ClearCaches()
+        {
+            schemaById.Clear();
+            idBySchemaBySubject.Clear();
+            schemaByVersionBySubject.Clear();
+            latestVersionBySubject.Clear();
+            latestWithMetadataBySubject.Clear();
+        }
+
+        /// <summary>
         ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.
         /// </summary>
         public void Dispose()
