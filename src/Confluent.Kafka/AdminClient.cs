@@ -654,7 +654,7 @@ namespace Confluent.Kafka
 
         private ElectLeadersReport extractElectLeadersResults(IntPtr resultPtr)
         {
-            IntPtr partitionsPtr = Librdkafka.ElectionResult_partition(resultPtr, out UIntPtr partitionsCountPtr);
+            IntPtr partitionsPtr = Librdkafka.ElectionResult_partitions(resultPtr, out UIntPtr partitionsCountPtr);
             IntPtr[] partitionsPtrArr = new IntPtr[(int)partitionsCountPtr];
             Marshal.Copy(partitionsPtr, partitionsPtrArr, 0, (int)partitionsCountPtr);
             var result = extractTopicPartitionErrors(partitionsPtrArr, (int)partitionsCountPtr);
@@ -1291,7 +1291,8 @@ namespace Confluent.Kafka
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
-                                        ErrorCode topLevelErrorCode = Librdkafka.ElectionResult_error(eventPtr);
+                                        IntPtr res = Librdkafka.Election_result(eventPtr);
+                                        ErrorCode topLevelErrorCode = Librdkafka.ElectionResult_error(res);
                                         if(topLevelErrorCode != ErrorCode.NoError)
                                         {
                                             Task.Run(() =>
@@ -1299,7 +1300,7 @@ namespace Confluent.Kafka
                                                         new KafkaException(new Error(topLevelErrorCode))));
                                                 break;
                                         }
-                                        ElectLeadersReport report = extractElectLeadersResults(eventPtr);
+                                        ElectLeadersReport report = extractElectLeadersResults(res);
                                         if(report.ErrorCode != ErrorCode.NoError)
                                         {
                                             Task.Run(() =>
