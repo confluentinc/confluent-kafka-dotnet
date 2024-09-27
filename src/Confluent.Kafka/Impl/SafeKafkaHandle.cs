@@ -2558,9 +2558,9 @@ namespace Confluent.Kafka.Impl
                     Partition partition = topicPartitions.Partition;
                     IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topic, partition);
                 }
-                request = Librdkafka.ElectLeaderRequest_New(electLeadersRequest.ElectionType, topic_partition_list);
+                request = Librdkafka.ElectLeadersRequest_New(electLeadersRequest.ElectionType, topic_partition_list);
 
-                Librdkafka.ElectLeader(handle, request, optionsPtr, resultQueuePtr);
+                Librdkafka.ElectLeaders(handle, request, optionsPtr, resultQueuePtr);
             }
             finally
             {
@@ -2574,7 +2574,7 @@ namespace Confluent.Kafka.Impl
                 }
                 if(request != IntPtr.Zero)
                 {
-                    Librdkafka.ElectLeaderRequest_destroy(request);
+                    Librdkafka.ElectLeadersRequest_destroy(request);
                 }
             }
         }

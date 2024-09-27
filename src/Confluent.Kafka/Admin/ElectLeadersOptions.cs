@@ -35,9 +35,8 @@ namespace Confluent.Kafka.Admin
 
         /// <summary>
         ///     The broker's operation timeout - the maximum time to wait for
-        ///     CreatePartitions before returning a result to the application.
-        ///     If set to null, will return immediately upon triggering partition
-        ///     creation.
+        ///     ElectLeaders before returning a result to the application.
+        ///     If set to null, will return immediately upon triggering election.
         /// 
         ///     Default: null
         /// </summary>

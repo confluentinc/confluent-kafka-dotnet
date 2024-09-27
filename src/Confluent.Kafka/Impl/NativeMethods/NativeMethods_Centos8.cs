@@ -1277,16 +1277,19 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_DescribeCluster_result_cluster_id(IntPtr result);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_ElectLeader_new(ElectionType electionType, IntPtr partitions);
+        internal static extern IntPtr rd_kafka_ElectLeaders_new(ElectionType electionType, IntPtr partitions);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void rd_kafka_ElectLeader_destroy(IntPtr electLeader);
+        internal static extern void rd_kafka_ElectLeaders_destroy(IntPtr electLeader);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void rd_kafka_ElectLeader(IntPtr handle, IntPtr electLeaderRequest, IntPtr options, IntPtr resultQueuePtr);
+        internal static extern void rd_kafka_ElectLeaders(IntPtr handle, IntPtr electLeaderRequest, IntPtr options, IntPtr resultQueuePtr);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_ElectionResult_partition(IntPtr result, out UIntPtr cntp);
+        internal static extern IntPtr rd_kafka_ElectionResult_result(IntPtr result_event);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ElectionResult_partitions(IntPtr result, out UIntPtr cntp);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_ElectionResult_error(IntPtr result);
