@@ -141,7 +141,17 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                     else
                     {
-                        datumReader = await GetDatumReader(writerSchema, writerSchema);
+                        Avro.Schema readerSchema;
+                        if (latestSchema != null)
+                        {
+                            var latestSchemaAvro = await GetParsedSchema(latestSchema);
+                            readerSchema = latestSchemaAvro;
+                        }
+                        else
+                        {
+                            readerSchema = writerSchema;
+                        }
+                        datumReader = await GetDatumReader(writerSchema, readerSchema);
                         data = datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
                     }
                 }
@@ -190,7 +200,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         readerSchema = writerSchema;
                     }
-                    datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
+                    datumReader = new GenericReader<GenericRecord>(writerSchema, readerSchema);
                     datumReaderBySchema[(writerSchema, readerSchema)] = datumReader;
                     return datumReader;
                 }

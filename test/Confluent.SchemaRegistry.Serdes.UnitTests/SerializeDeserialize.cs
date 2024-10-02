@@ -717,7 +717,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user["name"], result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
             Assert.Equal(user["favorite_number"], result["favorite_number"]);
-            
+
             // serialize second object
             user = new GenericRecord((RecordSchema) User._SCHEMA);
             user.Add("name", "cool");
@@ -730,6 +730,60 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user["name"], result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
             Assert.Equal(user["favorite_number"], result["favorite_number"]);
+        }
+
+        [Fact]
+        public void GenericRecordSchemaEvolution()
+        {
+            var schemaStr1 = "{\n"
+                             + "  \"name\": \"SchemaEvolution\",\n"
+                             + "  \"type\": \"record\",\n"
+                             + "  \"fields\": [\n"
+                             + "    {\n"
+                             + "      \"name\": \"fieldToDelete\",\n"
+                             + "      \"type\": \"string\"\n"
+                             + "    }\n"
+                             + "  ]\n"
+                             + "}";
+            var schemaStr2 = "{\n"
+                             + "  \"name\": \"SchemaEvolution\",\n"
+                             + "  \"type\": \"record\",\n"
+                             + "  \"fields\": [\n"
+                             + "    {\n"
+                             + "      \"name\": \"newOptionalField\",\n"
+                             + "      \"type\": [\"string\", \"null\"],\n"
+                             + "      \"default\": \"optional\"\n"
+                             + "    }\n"
+                             + "  ]\n"
+                             + "}";
+
+            var schema1 = new RegisteredSchema("topic-value", 1, 1, schemaStr1, SchemaType.Avro, null);
+            var schema2 = new RegisteredSchema("topic-value", 2, 2, schemaStr2, SchemaType.Avro, null);
+            store[schemaStr1] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema1 };
+            var serConfig = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, serConfig);
+            var deserConfig = new AvroDeserializerConfig
+            {
+                UseLatestVersion = true
+            };
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, deserConfig);
+
+            var obj = new GenericRecord((RecordSchema) Avro.Schema.Parse(schemaStr1));
+            obj.Add("fieldToDelete", "bye");
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(obj, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            store[schemaStr2] = 2;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema1, schema2 };
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal(result["newOptionalField"], "optional");
         }
 
         [Fact]
