@@ -1286,13 +1286,13 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern void rd_kafka_ElectLeaders(IntPtr handle, IntPtr electLeaderRequest, IntPtr options, IntPtr resultQueuePtr);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_ElectionResult_result(IntPtr result_event);
+        internal static extern IntPtr rd_kafka_ElectLeaders_result(IntPtr result_event);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_ElectionResult_partitions(IntPtr result, out UIntPtr cntp);
+        internal static extern IntPtr rd_kafka_ElectLeadersResult_partitions(IntPtr result, out UIntPtr cntp);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_ElectionResult_error(IntPtr result);
+        internal static extern ErrorCode rd_kafka_ElectLeadersResult_error(IntPtr result);
 
         //
         // Queues
