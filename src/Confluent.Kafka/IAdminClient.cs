@@ -629,6 +629,34 @@ namespace Confluent.Kafka
             }
             throw new NotImplementedException();
         }
+        
+        /// <summary>
+        ///    Perform Preferred or Unclean leader election for partitions.
+        /// </summary>
+        /// <param name="adminClient">
+        ///     AdminClient interface.
+        /// </param>
+        /// <param name="electLeadersRequest">
+        ///      Contains :
+        ///         ElectionType : The type of election to trigger(Preferred or Unclean).
+        ///         partitions: The partitions for which election has to be performed.
+        /// </param>
+        /// <param name="options">
+        ///      The options to use for this call.
+        /// </param>
+        public static Task<ElectLeadersResult> ElectLeadersAsync(
+            this IAdminClient adminClient,
+            ElectLeadersRequest electLeadersRequest,
+            ElectLeadersOptions options = null)
+        {
+            if (adminClient is AdminClient)
+            {
+                return ((AdminClient) adminClient).ElectLeadersAsync(
+                    electLeadersRequest,
+                    options);
+            }
+            throw new NotImplementedException();
+        }
     }
 
 
