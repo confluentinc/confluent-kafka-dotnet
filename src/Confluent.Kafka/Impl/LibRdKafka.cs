@@ -76,6 +76,7 @@ namespace Confluent.Kafka.Impl
             DescribeTopics = 19,
             DescribeCluster = 20,
             ListOffsets = 21,
+            ElectLeaders = 22,
         }
 
         public enum EventType : int
@@ -109,6 +110,7 @@ namespace Confluent.Kafka.Impl
             DescribeTopics_Result = 0x100000,
             DescribeCluster_Result = 0x200000,
             ListOffsets_Result = 0x400000,
+            ElectLeaders_Result = 0x800000,
         }
 
         // Minimum librdkafka version.
@@ -471,6 +473,13 @@ namespace Confluent.Kafka.Impl
             _TopicPartitionInfo_leader = (_TopicPartitionInfo_leader_delegate)methods.Single(m => m.Name == "rd_kafka_TopicPartitionInfo_leader").CreateDelegate(typeof (_TopicPartitionInfo_leader_delegate));
             _TopicPartitionInfo_partition = (_TopicPartitionInfo_partition_delegate)methods.Single(m => m.Name == "rd_kafka_TopicPartitionInfo_partition").CreateDelegate(typeof (_TopicPartitionInfo_partition_delegate));
             _TopicPartitionInfo_replicas = (_TopicPartitionInfo_replicas_delegate)methods.Single(m => m.Name == "rd_kafka_TopicPartitionInfo_replicas").CreateDelegate(typeof (_TopicPartitionInfo_replicas_delegate));
+
+            _ElectLeadersRequest_new = (_ElectLeadersRequest_new_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeaders_new").CreateDelegate(typeof(_ElectLeadersRequest_new_delegate));
+            _ElectLeadersRequest_destroy = (_ElectLeadersRequest_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeaders_destroy").CreateDelegate(typeof(_ElectLeadersRequest_destroy_delegate));
+            _ElectLeaders = (_ElectLeaders_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeaders").CreateDelegate(typeof(_ElectLeaders_delegate));
+            _ElectLeaders_result = (_ElectLeaders_result_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeaders_result").CreateDelegate(typeof(_ElectLeaders_result_delegate));
+            _ElectLeadersResult_partitions = (_ElectLeadersResult_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeadersResult_partitions").CreateDelegate(typeof(_ElectLeadersResult_partitions_delegate));
+            _ElectLeadersResult_error = (_ElectLeadersResult_error_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeadersResult_error").CreateDelegate(typeof(_ElectLeadersResult_error_delegate));
 
             _DescribeCluster = (_DescribeCluster_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster").CreateDelegate(typeof (_DescribeCluster_delegate));
             _DescribeCluster_result_nodes = (_DescribeCluster_result_nodes_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster_result_nodes").CreateDelegate(typeof (_DescribeCluster_result_nodes_delegate));
@@ -2252,6 +2261,41 @@ namespace Confluent.Kafka.Impl
          private static _DescribeCluster_result_cluster_id_delegate _DescribeCluster_result_cluster_id;
          internal static IntPtr DescribeCluster_result_cluster_id(IntPtr result)
             => _DescribeCluster_result_cluster_id(result);
+        
+
+        //
+        // ElectLeaders
+        //
+
+        private delegate IntPtr _ElectLeadersRequest_new_delegate(ElectionType electionType, IntPtr partitions);
+        private static _ElectLeadersRequest_new_delegate _ElectLeadersRequest_new;
+        internal static IntPtr ElectLeadersRequest_New(ElectionType electionType, IntPtr partitions)
+              => _ElectLeadersRequest_new(electionType, partitions);
+
+        private delegate void _ElectLeadersRequest_destroy_delegate(IntPtr electLeaderRequest);
+        private static _ElectLeadersRequest_destroy_delegate _ElectLeadersRequest_destroy;
+        internal static void ElectLeadersRequest_destroy(IntPtr electLeaderRequest)
+              => _ElectLeadersRequest_destroy(electLeaderRequest);
+
+        private delegate void _ElectLeaders_delegate(IntPtr handle, IntPtr electLeaderRequest, IntPtr options, IntPtr resultQueuePtr);
+        private static _ElectLeaders_delegate _ElectLeaders;
+        internal static void ElectLeaders(IntPtr handle, IntPtr electLeaderRequest, IntPtr options, IntPtr resultQueuePtr)
+              => _ElectLeaders(handle, electLeaderRequest, options, resultQueuePtr);
+
+        private delegate IntPtr _ElectLeaders_result_delegate(IntPtr result_event);
+        private static _ElectLeaders_result_delegate _ElectLeaders_result;
+        internal static IntPtr ElectLeaders_result(IntPtr result_event)
+              => _ElectLeaders_result(result_event);
+
+        private delegate IntPtr _ElectLeadersResult_partitions_delegate(IntPtr result, out UIntPtr cntp);
+        private static _ElectLeadersResult_partitions_delegate _ElectLeadersResult_partitions;
+        internal static IntPtr ElectLeadersResult_partitions(IntPtr result, out UIntPtr cntp)
+              => _ElectLeadersResult_partitions(result, out cntp);
+
+        private delegate ErrorCode _ElectLeadersResult_error_delegate(IntPtr result);
+        private static _ElectLeadersResult_error_delegate _ElectLeadersResult_error;
+        internal static ErrorCode ElectLeadersResult_error(IntPtr result)
+              => _ElectLeadersResult_error(result);
 
         //
         // Queues

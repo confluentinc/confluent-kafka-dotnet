@@ -634,6 +634,36 @@ namespace Confluent.Kafka
             };
         }
 
+        private Tuple<ErrorCode,List<TopicPartitionError>> extractTopicPartitionErrors(IntPtr[] topicPartitionErrorsPtr, int topicPartitionErrorsCount)
+        {
+            ErrorCode err = ErrorCode.NoError;
+            List<TopicPartitionError> topicPartitionErrors = new List<TopicPartitionError>(topicPartitionErrorsCount);
+            for(int i=0;i<topicPartitionErrorsCount;i++){
+                var tpe = Marshal.PtrToStructure<rd_kafka_topic_partition_result>(topicPartitionErrorsPtr[i]);
+                if(tpe.errCode != ErrorCode.NoError){
+                    err = tpe.errCode;
+                }
+                topicPartitionErrors.Add(new TopicPartitionError(
+                                                tpe.topic, 
+                                                new Partition(tpe.partition), 
+                                                new Error(tpe.errCode, tpe.errorStr)));
+            }
+            var result = new Tuple<ErrorCode, List<TopicPartitionError>>(err, topicPartitionErrors);
+            return result;        
+        }
+
+        private ElectLeadersReport extractElectLeadersResults(IntPtr resultPtr)
+        {
+            IntPtr partitionsPtr = Librdkafka.ElectLeadersResult_partitions(resultPtr, out UIntPtr partitionsCountPtr);
+            IntPtr[] partitionsPtrArr = new IntPtr[(int)partitionsCountPtr];
+            Marshal.Copy(partitionsPtr, partitionsPtrArr, 0, (int)partitionsCountPtr);
+            var result = extractTopicPartitionErrors(partitionsPtrArr, (int)partitionsCountPtr);
+            return new ElectLeadersReport{
+                ErrorCode = result.Item1,
+                PartitionResults = result.Item2
+            };
+        }
+
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -1252,6 +1282,41 @@ namespace Confluent.Kafka
                                         }
                                         break;
                                     }
+                                    case Librdkafka.EventType.ElectLeaders_Result:
+                                    {
+                                        if(errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<ElectLeadersResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        IntPtr res = Librdkafka.ElectLeaders_result(eventPtr);
+                                        ErrorCode topLevelErrorCode = Librdkafka.ElectLeadersResult_error(res);
+                                        if(topLevelErrorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<ElectLeadersResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(new Error(topLevelErrorCode))));
+                                                break;
+                                        }
+                                        ElectLeadersReport report = extractElectLeadersResults(res);
+                                        if(report.ErrorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<ElectLeadersResult>)adminClientResult).TrySetException(
+                                                        new ElectLeadersException(report)));
+                                        }
+                                        else
+                                        {
+                                            var result = new ElectLeadersResult(){
+                                                PartitionResults = report.PartitionResults
+                                            };
+                                            Task.Run(() =>
+                                                ((TaskCompletionSource<ElectLeadersResult>)adminClientResult).TrySetResult(result));
+                                        }
+                                        break;
+                                    }
                                     default:
                                         // Should never happen.
                                         throw new InvalidOperationException($"Unknown result type: {type}");
@@ -1303,6 +1368,7 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.DescribeTopics_Result, typeof(TaskCompletionSource<DescribeTopicsResult>) },
             { Librdkafka.EventType.DescribeCluster_Result, typeof(TaskCompletionSource<DescribeClusterResult>) },
             { Librdkafka.EventType.ListOffsets_Result, typeof(TaskCompletionSource<ListOffsetsResult>) },
+            { Librdkafka.EventType.ElectLeaders_Result, typeof(TaskCompletionSource<ElectLeadersResult>) },
         };
 
 
@@ -1776,5 +1842,19 @@ namespace Confluent.Kafka
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
+        
+        /// <summary>
+        ///  Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.ElectLeadersAsync(IAdminClient, ElectLeadersRequest, ElectLeadersOptions)" />
+        /// </summary>
+         public Task<ElectLeadersResult> ElectLeadersAsync(ElectLeadersRequest electLeadersRequest, ElectLeadersOptions options = null)
+        {
+            var completionSource = new TaskCompletionSource<ElectLeadersResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.ElectLeaders(
+                electLeadersRequest, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
     }
 }
