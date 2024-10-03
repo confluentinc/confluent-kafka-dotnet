@@ -654,7 +654,7 @@ namespace Confluent.Kafka
 
         private ElectLeadersReport extractElectLeadersResults(IntPtr resultPtr)
         {
-            IntPtr partitionsPtr = Librdkafka.ElectionResult_partitions(resultPtr, out UIntPtr partitionsCountPtr);
+            IntPtr partitionsPtr = Librdkafka.ElectLeadersResult_partitions(resultPtr, out UIntPtr partitionsCountPtr);
             IntPtr[] partitionsPtrArr = new IntPtr[(int)partitionsCountPtr];
             Marshal.Copy(partitionsPtr, partitionsPtrArr, 0, (int)partitionsCountPtr);
             var result = extractTopicPartitionErrors(partitionsPtrArr, (int)partitionsCountPtr);
@@ -1291,8 +1291,8 @@ namespace Confluent.Kafka
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
-                                        IntPtr res = Librdkafka.Election_result(eventPtr);
-                                        ErrorCode topLevelErrorCode = Librdkafka.ElectionResult_error(res);
+                                        IntPtr res = Librdkafka.ElectLeaders_result(eventPtr);
+                                        ErrorCode topLevelErrorCode = Librdkafka.ElectLeadersResult_error(res);
                                         if(topLevelErrorCode != ErrorCode.NoError)
                                         {
                                             Task.Run(() =>
