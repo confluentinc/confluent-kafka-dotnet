@@ -26,6 +26,11 @@ blocks:
             - dotnet restore
             - make build
             - make test
+        - name: 'Test Native files difference'
+          commands:
+            - "[ $(diff src/Confluent.Kafka/Impl/NativeMethods/{NativeMethods.cs,NativeMethods_Centos6.cs} | wc -l) = 24 ]"
+            - "[ $(diff src/Confluent.Kafka/Impl/NativeMethods/{NativeMethods.cs,NativeMethods_Centos7.cs} | wc -l) = 24 ]"
+            - "[ $(diff src/Confluent.Kafka/Impl/NativeMethods/{NativeMethods.cs,NativeMethods_Alpine.cs} | wc -l) = 24 ]"
   - name: 'OSX x64'
     dependencies: [ ]
     task:
