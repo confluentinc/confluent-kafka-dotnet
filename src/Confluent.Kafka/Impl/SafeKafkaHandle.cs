@@ -1472,6 +1472,15 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        private void setOption_MatchConsumerGroupTypes(IntPtr optionsPtr, ConsumerGroupType[] types)
+        {
+            var error = Librdkafka.AdminOptions_set_match_consumer_group_types(optionsPtr, types, (UIntPtr)types.Count());
+            if (error != IntPtr.Zero)
+            {
+                throw new KafkaException(new Error(error, true));
+            }
+        }
+
         private void setOption_IsolationLevel(IntPtr optionsPtr, IsolationLevel IsolationLevel)
         {
             var rError = Librdkafka.AdminOptions_set_isolation_level(optionsPtr, (IntPtr)(int)IsolationLevel);
@@ -2336,6 +2345,10 @@ namespace Confluent.Kafka.Impl
                 if (options.MatchStates != null)
                 {
                     setOption_MatchConsumerGroupStates(optionsPtr, options.MatchStates.ToArray());
+                }
+                if (options.MatchTypes != null)
+                {
+                    setOption_MatchConsumerGroupTypes(optionsPtr, options.MatchTypes.ToArray());
                 }
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
