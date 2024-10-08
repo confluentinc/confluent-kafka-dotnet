@@ -1,6 +1,12 @@
-# 2.5.3
+# 2.6.0
 
-v2.5.3 is a maintenance release with the following fixes and enhancements:
+## Enhancements
+
+* References librdkafka.redist 2.6.0. Refer to the [librdkafka v2.6.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.6.0) for more information.
+* [KIP-848 EA](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol): Admin API for listing consumer groups now has an optional filter to return only groups of given types (#).
+
+
+# 2.5.3
 
 ## Enhancements
 
