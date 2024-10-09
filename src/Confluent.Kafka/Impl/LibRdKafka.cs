@@ -477,9 +477,9 @@ namespace Confluent.Kafka.Impl
             _ElectLeadersRequest_new = (_ElectLeadersRequest_new_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeaders_new").CreateDelegate(typeof(_ElectLeadersRequest_new_delegate));
             _ElectLeadersRequest_destroy = (_ElectLeadersRequest_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeaders_destroy").CreateDelegate(typeof(_ElectLeadersRequest_destroy_delegate));
             _ElectLeaders = (_ElectLeaders_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeaders").CreateDelegate(typeof(_ElectLeaders_delegate));
-            _ElectLeaders_result = (_ElectLeaders_result_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeaders_result").CreateDelegate(typeof(_ElectLeaders_result_delegate));
-            _ElectLeadersResult_partitions = (_ElectLeadersResult_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeadersResult_partitions").CreateDelegate(typeof(_ElectLeadersResult_partitions_delegate));
-            _ElectLeadersResult_error = (_ElectLeadersResult_error_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeadersResult_error").CreateDelegate(typeof(_ElectLeadersResult_error_delegate));
+            _ElectLeaders_result_partitions = (_ElectLeaders_result_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_ElectLeaders_result_partitions").CreateDelegate(typeof(_ElectLeaders_result_partitions_delegate));
+            _TopicPartitionResult_partition = (_TopicPartitionResult_partition_delegate)methods.Single(m => m.Name == "rd_kafka_topic_partition_result_partition").CreateDelegate(typeof(_TopicPartitionResult_partition_delegate));
+            _TopicPartitionResult_error = (_TopicPartitionResult_error_delegate)methods.Single(m => m.Name == "rd_kafka_topic_partition_result_error").CreateDelegate(typeof(_TopicPartitionResult_error_delegate));
 
             _DescribeCluster = (_DescribeCluster_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster").CreateDelegate(typeof (_DescribeCluster_delegate));
             _DescribeCluster_result_nodes = (_DescribeCluster_result_nodes_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeCluster_result_nodes").CreateDelegate(typeof (_DescribeCluster_result_nodes_delegate));
@@ -2282,20 +2282,20 @@ namespace Confluent.Kafka.Impl
         internal static void ElectLeaders(IntPtr handle, IntPtr electLeaderRequest, IntPtr options, IntPtr resultQueuePtr)
               => _ElectLeaders(handle, electLeaderRequest, options, resultQueuePtr);
 
-        private delegate IntPtr _ElectLeaders_result_delegate(IntPtr result_event);
-        private static _ElectLeaders_result_delegate _ElectLeaders_result;
-        internal static IntPtr ElectLeaders_result(IntPtr result_event)
-              => _ElectLeaders_result(result_event);
+        private delegate IntPtr _ElectLeaders_result_partitions_delegate(IntPtr result, out UIntPtr cntp);
+        private static _ElectLeaders_result_partitions_delegate _ElectLeaders_result_partitions;
+        internal static IntPtr ElectLeaders_result_partitions(IntPtr result, out UIntPtr cntp)
+              => _ElectLeaders_result_partitions(result, out cntp);
 
-        private delegate IntPtr _ElectLeadersResult_partitions_delegate(IntPtr result, out UIntPtr cntp);
-        private static _ElectLeadersResult_partitions_delegate _ElectLeadersResult_partitions;
-        internal static IntPtr ElectLeadersResult_partitions(IntPtr result, out UIntPtr cntp)
-              => _ElectLeadersResult_partitions(result, out cntp);
+        private delegate IntPtr _TopicPartitionResult_partition_delegate(IntPtr result);
+        private static _TopicPartitionResult_partition_delegate _TopicPartitionResult_partition;
+        internal static IntPtr TopicPartitionResult_partition(IntPtr result)
+              => _TopicPartitionResult_partition(result);
 
-        private delegate ErrorCode _ElectLeadersResult_error_delegate(IntPtr result);
-        private static _ElectLeadersResult_error_delegate _ElectLeadersResult_error;
-        internal static ErrorCode ElectLeadersResult_error(IntPtr result)
-              => _ElectLeadersResult_error(result);
+        private delegate IntPtr _TopicPartitionResult_error_delegate(IntPtr result);
+        private static _TopicPartitionResult_error_delegate _TopicPartitionResult_error;
+        internal static IntPtr TopicPartitionResult_error(IntPtr result)
+              => _TopicPartitionResult_error(result);
 
         //
         // Queues

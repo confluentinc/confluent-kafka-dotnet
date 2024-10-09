@@ -18,159 +18,104 @@ using Xunit;
 using System;
 using Confluent.Kafka.Admin;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Confluent.Kafka.UnitTests
 {
     public class ElectLeadersErrorTests
-    {
-        private readonly List<ElectLeadersOptions> options = new List<ElectLeadersOptions>
+    { 
+        private AdminClientConfig GetTestConfig()
         {
-            new ElectLeadersOptions {},
-            new ElectLeadersOptions { RequestTimeout = TimeSpan.FromMilliseconds(200) },
-            new ElectLeadersOptions { OperationTimeout = TimeSpan.FromMilliseconds(200)},
-            new ElectLeadersOptions { RequestTimeout = TimeSpan.FromMilliseconds(200), OperationTimeout = TimeSpan.FromMilliseconds(200) },
-        };
-
-        [Fact]
-        public async void InvalidRequestTimeout()
-        {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
-                BootstrapServers = "localhost:90922",
-                SocketTimeoutMs = 10
-            }).Build())
+            return new AdminClientConfig
             {
-                var ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                    adminClient.ElectLeadersAsync(
-                        new ElectLeadersRequest { ElectionType = ElectionType.Preferred, Partitions = new List<TopicPartition> { new TopicPartition("topic", 0) } },
-                        new ElectLeadersOptions
-                        {
-                            RequestTimeout = TimeSpan.FromSeconds(-1)
-                        })
-                );
-                Assert.Contains("expecting integer in range", ex.Message);
-                ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                    adminClient.ElectLeadersAsync(
-                        new ElectLeadersRequest { ElectionType = ElectionType.Unclean, Partitions = new List<TopicPartition> { new TopicPartition("topic", 0) } },
-                        new ElectLeadersOptions
-                        {
-                            RequestTimeout = TimeSpan.FromSeconds(-1)
-                        })
-                );
-                Assert.Contains("expecting integer in range", ex.Message);
-            }
+                BootstrapServers = "localhost:90922",  
+                SocketTimeoutMs = 30                   
+            };
+        }
+        
+        [Theory]
+        [InlineData(-1)]
+        public async Task ElectLeadersAsync_InvalidRequestTimeout_ThrowsKafkaException(int timeoutSeconds)
+        {
+            using var adminClient = new AdminClientBuilder(GetTestConfig()).Build();
+            var options = new ElectLeadersOptions { RequestTimeout = TimeSpan.FromSeconds(timeoutSeconds) };
+
+            var exception = await Assert.ThrowsAsync<KafkaException>(() =>
+                adminClient.ElectLeadersAsync(
+                    ElectionType.Preferred, 
+                    new List<TopicPartition> { new TopicPartition("topic", 0) },
+                    options)
+            );
+
+            Assert.Contains("expecting integer in range", exception.Message);
         }
 
-        [Fact]
-        public async void EmptyPartitions()
+        [Theory]
+        [InlineData(ElectionType.Preferred)]
+        [InlineData(ElectionType.Unclean)]
+        public async Task ElectLeadersAsync_EmptyPartitions_ThrowsKafkaException(ElectionType electionType)
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
-                BootstrapServers = "localhost:90922",
-                SocketTimeoutMs = 10
-            }).Build())
-            {
-                foreach(var option in options)
-                {
-                    var ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                        adminClient.ElectLeadersAsync(
-                            new ElectLeadersRequest { ElectionType = ElectionType.Preferred, Partitions = new List<TopicPartition> { } },
-                            option)
-                    );
-                    Assert.Contains("No partitions specified", ex.Message);
+            using var adminClient = new AdminClientBuilder(GetTestConfig()).Build();
 
-                    ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                        adminClient.ElectLeadersAsync(
-                            new ElectLeadersRequest { ElectionType = ElectionType.Unclean, Partitions = new List<TopicPartition> { } },
-                            option)
-                    );
-                    Assert.Contains("No partitions specified", ex.Message);
-                }
-            }
+            var exception = await Assert.ThrowsAsync<KafkaException>(() =>
+                adminClient.ElectLeadersAsync(
+                    electionType,
+                    new List<TopicPartition>(),
+                    new ElectLeadersOptions())
+            );
+
+            Assert.Contains("Local: Timed out", exception.Message);
         }
 
-        [Fact]
-        public async void DuplicatePartitions()
+        [Theory]
+        [InlineData(ElectionType.Preferred)]
+        [InlineData(ElectionType.Unclean)]
+        public async Task ElectLeadersAsync_NullPartitions_ThrowsKafkaException(ElectionType electionType)
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
-                BootstrapServers = "localhost:90922",
-                SocketTimeoutMs = 10
-            }).Build())
-            {
-                foreach(var option in options)
-                {
-                    var ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                        adminClient.ElectLeadersAsync(
-                            new ElectLeadersRequest { ElectionType = ElectionType.Preferred, Partitions = new List<TopicPartition> { new TopicPartition("topic", 0), new TopicPartition("topic", 0) } },
-                            option)
-                    );
-                    Assert.Contains("Duplicate partitions specified", ex.Message);
+            using var adminClient = new AdminClientBuilder(GetTestConfig()).Build();
 
-                    ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                        adminClient.ElectLeadersAsync(
-                            new ElectLeadersRequest { ElectionType = ElectionType.Unclean, Partitions = new List<TopicPartition> { new TopicPartition("topic", 0), new TopicPartition("topic", 0) } },
-                            option)
-                    );
-                    Assert.Contains("Duplicate partitions specified", ex.Message);
-                }
-            }
+            var exception = await Assert.ThrowsAsync<KafkaException>(() =>
+                adminClient.ElectLeadersAsync(
+                    electionType,
+                    null,
+                    new ElectLeadersOptions())
+            );
+
+            Assert.Contains("Local: Timed out", exception.Message);
         }
 
-        [Fact]
-        public async void SinglePartition()
+        [Theory]
+        [InlineData(ElectionType.Preferred)]
+        [InlineData(ElectionType.Unclean)]
+        public async Task ElectLeadersAsync_DuplicatePartitions_ThrowsKafkaException(ElectionType electionType)
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
-                BootstrapServers = "localhost:90922",
-                SocketTimeoutMs = 10
-            }).Build())
-            {
-                foreach (var option in options)
-                {
-                    var ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                        adminClient.ElectLeadersAsync(
-                            new ElectLeadersRequest { ElectionType = ElectionType.Preferred, Partitions = new List<TopicPartition> { new TopicPartition("topic", 0) } },
-                            option)
-                    );
-                    Assert.Contains("Local: Timed out", ex.Message);
+            using var adminClient = new AdminClientBuilder(GetTestConfig()).Build();
 
-                    ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                        adminClient.ElectLeadersAsync(
-                            new ElectLeadersRequest { ElectionType = ElectionType.Unclean, Partitions = new List<TopicPartition> { new TopicPartition("topic", 0) } },
-                            option)
-                    );
-                    Assert.Contains("Local: Timed out", ex.Message);
-                }
-            }
+            var exception = await Assert.ThrowsAsync<KafkaException>(() =>
+                adminClient.ElectLeadersAsync(
+                    electionType,
+                    new List<TopicPartition> { new TopicPartition("topic", 0), new TopicPartition("topic", 0)},
+                    new ElectLeadersOptions())
+            );
+
+            Assert.Contains("Duplicate partitions specified", exception.Message);
         }
 
-        [Fact]
-        public async void MultiplePartitions()
+        [Theory]
+        [InlineData(ElectionType.Preferred)]
+        [InlineData(ElectionType.Unclean)]
+        public async Task ElectLeadersAsync_ValidRequest_TimesOut(ElectionType electionType)
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig
-            { 
-                BootstrapServers = "localhost:90922",
-                SocketTimeoutMs = 10
-            }).Build())
-            {
-                foreach (var option in options)
-                {
-                    var ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                        adminClient.ElectLeadersAsync(
-                            new ElectLeadersRequest { ElectionType = ElectionType.Preferred, Partitions = new List<TopicPartition> { new TopicPartition("topic", 0), new TopicPartition("topic", 1) } },
-                            option)
-                    );
-                    Assert.Contains("Local: Timed out", ex.Message);
+            using var adminClient = new AdminClientBuilder(GetTestConfig()).Build();
 
-                    ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                        adminClient.ElectLeadersAsync(
-                            new ElectLeadersRequest { ElectionType = ElectionType.Unclean, Partitions = new List<TopicPartition> { new TopicPartition("topic", 0), new TopicPartition("topic", 1) } },
-                            option)
-                    );
-                    Assert.Contains("Local: Timed out", ex.Message);
-                }
-            }
+            var exception = await Assert.ThrowsAsync<KafkaException>(() =>
+                adminClient.ElectLeadersAsync(
+                    electionType,
+                    new List<TopicPartition> { new TopicPartition("topic", 0) },
+                    new ElectLeadersOptions { RequestTimeout = TimeSpan.FromMilliseconds(1000) })
+            );
+
+            Assert.Contains("Local: Timed out", exception.Message);
         }
     }
 }

@@ -313,9 +313,9 @@ namespace Confluent.Kafka.Examples
             return Tuple.Create(isolationLevel, topicPartitionOffsetSpecs);
         }
 
-        static ElectLeadersRequest ParseElectLeadersArgs(string[] args)
+        static Tuple<ElectionType, List<TopicPartition>> ParseElectLeadersArgs(string[] args)
         {
-            if (args.Length < 3 || (args.Length -1 )%2 != 0)
+            if ((args.Length -1 )%2 != 0)
             {
                 Console.WriteLine("usage: .. <bootstrapServers> elect-leaders electionType(0/1) <topic1> <partition1> ..");
                 Environment.ExitCode = 1;
@@ -324,17 +324,17 @@ namespace Confluent.Kafka.Examples
             
             var electionType = Enum.Parse<ElectionType>(args[0]);
             var partitions = new List<TopicPartition>();
+            if(args.Length == 1){
+                partitions = null;
+                return Tuple.Create(electionType, partitions);
+            }
             for (int i = 1; i < args.Length; i += 2)
             {
                 var topic = args[i];
                 var partition = Int32.Parse(args[i + 1]);
                 partitions.Add(new TopicPartition(topic, partition));
             }
-            return new ElectLeadersRequest
-            {
-                ElectionType = electionType,
-                Partitions = partitions
-            };
+            return Tuple.Create(electionType, partitions);
         }
 
        static void PrintListOffsetsResultInfos(List<ListOffsetsResultInfo> ListOffsetsResultInfos)
@@ -949,14 +949,16 @@ namespace Confluent.Kafka.Examples
                 return;
             }
 
-            var electLeadersRequest = ParseElectLeadersArgs(commandArgs);        
+            var req = ParseElectLeadersArgs(commandArgs);
+            var electionType = req.Item1;
+            var partitions = req.Item2;        
             var timeout = TimeSpan.FromSeconds(30);
             ElectLeadersOptions options = new ElectLeadersOptions() { RequestTimeout = timeout };
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 try
                 {
-                    var result = await adminClient.ElectLeadersAsync(electLeadersRequest, options);
+                    var result = await adminClient.ElectLeadersAsync(electionType, partitions, options);
                     PrintElectLeaderResults(result);
                     
                 }
@@ -979,7 +981,8 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (KafkaException e)
                 {
-                    Console.WriteLine($"An error occurred calling the ElectLeaders operation: {e.Message}");
+                    Console.WriteLine($"An error occurred electing leaders: {e}");
+                    Environment.ExitCode = 1;
                 }
             }
         }
