@@ -85,15 +85,6 @@ namespace Confluent.Kafka.Impl
         internal /* rd_kafka_topic_partition_t * */ IntPtr elems;
     };
 
-    [StructLayout(LayoutKind.Sequential)]
-    struct rd_kafka_topic_partition_result
-    {
-        internal string topic;
-        internal int partition;
-        internal ErrorCode errCode;
-        internal string errorStr;
-    }
-
     internal sealed class SafeKafkaHandle : SafeHandleZeroIsInvalid
     {
         private const int RD_KAFKA_PARTITION_UA = -1;
@@ -2537,7 +2528,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void ElectLeaders(ElectLeadersRequest electLeadersRequest, ElectLeadersOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        internal void ElectLeaders(ElectionType electionType, IEnumerable<TopicPartition> partitions, ElectLeadersOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
             var optionsPtr = IntPtr.Zero;
@@ -2551,14 +2542,16 @@ namespace Confluent.Kafka.Impl
                 setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
                 setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
                 setOption_completionSource(optionsPtr, completionSourcePtr);
-                topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)electLeadersRequest.Partitions.Count());
-                foreach (var topicPartitions in electLeadersRequest.Partitions)
-                {
-                    string topic = topicPartitions.Topic;
-                    Partition partition = topicPartitions.Partition;
-                    IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topic, partition);
+                if(partitions != null){
+                       topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)partitions.Count());
+                        foreach (var topicPartitions in partitions)
+                        {
+                            string topic = topicPartitions.Topic;
+                            Partition partition = topicPartitions.Partition;
+                            IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topic, partition);
+                        }
                 }
-                request = Librdkafka.ElectLeadersRequest_New(electLeadersRequest.ElectionType, topic_partition_list);
+                request = Librdkafka.ElectLeadersRequest_New(electionType, topic_partition_list);
 
                 Librdkafka.ElectLeaders(handle, request, optionsPtr, resultQueuePtr);
             }

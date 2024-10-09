@@ -634,33 +634,49 @@ namespace Confluent.Kafka
             };
         }
 
-        private Tuple<ErrorCode,List<TopicPartitionError>> extractTopicPartitionErrors(IntPtr[] topicPartitionErrorsPtr, int topicPartitionErrorsCount)
-        {
-            ErrorCode err = ErrorCode.NoError;
-            List<TopicPartitionError> topicPartitionErrors = new List<TopicPartitionError>(topicPartitionErrorsCount);
-            for(int i=0;i<topicPartitionErrorsCount;i++){
-                var tpe = Marshal.PtrToStructure<rd_kafka_topic_partition_result>(topicPartitionErrorsPtr[i]);
-                if(tpe.errCode != ErrorCode.NoError){
-                    err = tpe.errCode;
-                }
-                topicPartitionErrors.Add(new TopicPartitionError(
-                                                tpe.topic, 
-                                                new Partition(tpe.partition), 
-                                                new Error(tpe.errCode, tpe.errorStr)));
-            }
-            var result = new Tuple<ErrorCode, List<TopicPartitionError>>(err, topicPartitionErrors);
-            return result;        
-        }
-
         private ElectLeadersReport extractElectLeadersResults(IntPtr resultPtr)
         {
-            IntPtr partitionsPtr = Librdkafka.ElectLeadersResult_partitions(resultPtr, out UIntPtr partitionsCountPtr);
-            IntPtr[] partitionsPtrArr = new IntPtr[(int)partitionsCountPtr];
-            Marshal.Copy(partitionsPtr, partitionsPtrArr, 0, (int)partitionsCountPtr);
-            var result = extractTopicPartitionErrors(partitionsPtrArr, (int)partitionsCountPtr);
-            return new ElectLeadersReport{
-                ErrorCode = result.Item1,
-                PartitionResults = result.Item2
+            IntPtr topicPartitionsPtr = Librdkafka.ElectLeaders_result_partitions(resultPtr, out UIntPtr topicPartitionsCountPtr);
+
+            if ((int)topicPartitionsCountPtr == 0)
+            {
+                return new ElectLeadersReport
+                {
+                    ErrorCode = ErrorCode.NoError,
+                    PartitionResults = new List<TopicPartitionError>()
+                };
+            }
+
+            IntPtr[] topicPartitionsPtrArr = new IntPtr[(int)topicPartitionsCountPtr];
+            Marshal.Copy(topicPartitionsPtr, topicPartitionsPtrArr, 0, (int)topicPartitionsCountPtr);
+
+            ErrorCode reportErrorCode = ErrorCode.NoError;
+            var partitionResults = topicPartitionsPtrArr.Select(ptr =>
+            {
+                IntPtr topic_partition = Librdkafka.TopicPartitionResult_partition(ptr);
+                IntPtr error = Librdkafka.TopicPartitionResult_error(ptr);
+
+                ErrorCode errCode = Librdkafka.error_code(error);
+                var errStr = Librdkafka.error_string(error);
+
+                var tpe = Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
+
+                if(tpe.err != ErrorCode.NoError && reportErrorCode == ErrorCode.NoError)
+                {
+                    reportErrorCode = tpe.err;
+                }
+
+                return new TopicPartitionError(
+                    tpe.topic,
+                    new Partition(tpe.partition),
+                    new Error(errCode, errStr)
+                );
+            }).ToList();
+
+            return new ElectLeadersReport
+            {
+                ErrorCode = reportErrorCode,
+                PartitionResults = partitionResults
             };
         }
 
@@ -1291,16 +1307,7 @@ namespace Confluent.Kafka
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 break;
                                         }
-                                        IntPtr res = Librdkafka.ElectLeaders_result(eventPtr);
-                                        ErrorCode topLevelErrorCode = Librdkafka.ElectLeadersResult_error(res);
-                                        if(topLevelErrorCode != ErrorCode.NoError)
-                                        {
-                                            Task.Run(() =>
-                                                    ((TaskCompletionSource<ElectLeadersResult>)adminClientResult).TrySetException(
-                                                        new KafkaException(new Error(topLevelErrorCode))));
-                                                break;
-                                        }
-                                        ElectLeadersReport report = extractElectLeadersResults(res);
+                                        ElectLeadersReport report = extractElectLeadersResults(eventPtr);
                                         if(report.ErrorCode != ErrorCode.NoError)
                                         {
                                             Task.Run(() =>
@@ -1844,14 +1851,14 @@ namespace Confluent.Kafka
         }
         
         /// <summary>
-        ///  Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.ElectLeadersAsync(IAdminClient, ElectLeadersRequest, ElectLeadersOptions)" />
+        ///  Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.ElectLeadersAsync(IAdminClient, ElectionType, IEnumerable{TopicPartition}, ElectLeadersOptions)" />
         /// </summary>
-         public Task<ElectLeadersResult> ElectLeadersAsync(ElectLeadersRequest electLeadersRequest, ElectLeadersOptions options = null)
+         public Task<ElectLeadersResult> ElectLeadersAsync(ElectionType electionType, IEnumerable<TopicPartition> partitions, ElectLeadersOptions options = null)
         {
             var completionSource = new TaskCompletionSource<ElectLeadersResult>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.ElectLeaders(
-                electLeadersRequest, options, resultQueue,
+                electionType, partitions, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
