@@ -22,12 +22,12 @@ using System.Linq;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///   First error encountered in TopicPartitions
+    ///   Represents the result of an elect leaders request (including error status).
     /// </summary>
     public class ElectLeadersReport
     {
         /// <summary>
-        ///   Operational Error status.
+        ///   First error encountered in TopicPartitions.
         /// </summary>
         internal Error Error { get; set; }
 
