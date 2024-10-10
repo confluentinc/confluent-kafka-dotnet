@@ -393,6 +393,31 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static Tuple<ElectionType, List<TopicPartition>> ParseElectLeadersArgs(string[] args)
+        {
+            if ((args.Length -1 ) % 2 != 0)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders <electionType> <topic1> <partition1> ..");
+                Environment.ExitCode = 1;
+                return null;
+            }
+            
+            var electionType = Enum.Parse<ElectionType>(args[0]);
+            var partitions = new List<TopicPartition>();
+            if(args.Length == 1)
+            {
+                partitions = null;
+                return Tuple.Create(electionType, partitions);
+            }
+            for (int i = 1; i < args.Length; i += 2)
+            {
+                var topic = args[i];
+                var partition = Int32.Parse(args[i + 1]);
+                partitions.Add(new TopicPartition(topic, partition));
+            }
+            return Tuple.Create(electionType, partitions);
+        }
+
        static void PrintListOffsetsResultInfos(List<ListOffsetsResultInfo> ListOffsetsResultInfos)
        {
             foreach(var listOffsetsResultInfo in ListOffsetsResultInfos)
@@ -400,6 +425,20 @@ namespace Confluent.Kafka.Examples
                 Console.WriteLine("  ListOffsetsResultInfo:");
                 Console.WriteLine($"    TopicPartitionOffsetError: {listOffsetsResultInfo.TopicPartitionOffsetError}");
                 Console.WriteLine($"    Timestamp: {listOffsetsResultInfo.Timestamp}");
+            }
+        }
+
+        static void PrintElectLeaderResults(List<TopicPartitionError> topicPartitions)
+        {
+            Console.WriteLine($"ElectLeaders response has {topicPartitions.Count} partition(s):");
+            foreach (var partitionResult in topicPartitions)
+            {
+                if (!partitionResult.Error.IsError)
+                    Console.WriteLine($"Election successful in {partitionResult.Topic} {partitionResult.Partition}");
+                else
+                    Console.WriteLine($"Election failed in {partitionResult.Topic} {partitionResult.Partition}: " +
+                      $"Code: {partitionResult.Error.Code}" +
+                      $", Reason: {partitionResult.Error.Reason}");
             }
         }
 
@@ -978,6 +1017,41 @@ namespace Confluent.Kafka.Examples
                 }
             }
         }
+
+        static async Task ElectLeadersAsync(string bootstrapServers, string[] commandArgs)
+        {
+            if (commandArgs.Length < 3 && (commandArgs.Length - 1) % 2 != 0)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders <electionType> <topic1> <partition1> ..");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            var req = ParseElectLeadersArgs(commandArgs);
+            var electionType = req.Item1;
+            var partitions = req.Item2;        
+            var timeout = TimeSpan.FromSeconds(30);
+            ElectLeadersOptions options = new ElectLeadersOptions() { RequestTimeout = timeout };
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var result = await adminClient.ElectLeadersAsync(electionType, partitions, options);
+                    PrintElectLeaderResults(result.TopicPartitions);
+                    
+                }
+                catch (ElectLeadersException e)
+                {
+                    Console.WriteLine("One or more elect leaders operations failed.");
+                    PrintElectLeaderResults(e.Results.TopicPartitions);
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred electing leaders: {e}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
         static void PrintTopicDescriptions(List<TopicDescription> topicDescriptions, bool includeAuthorizedOperations)
         {
             foreach (var topic in topicDescriptions)
@@ -1146,7 +1220,7 @@ namespace Confluent.Kafka.Examples
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
                         "incremental-alter-configs", "describe-user-scram-credentials", 
                         "alter-user-scram-credentials", "describe-topics",
-                        "describe-cluster", "list-offsets"
+                        "describe-cluster", "list-offsets", "elect-leaders"
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
@@ -1209,6 +1283,9 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "list-offsets":
                     await ListOffsetsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "elect-leaders":
+                    await ElectLeadersAsync(bootstrapServers, commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");
