@@ -2528,6 +2528,50 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        internal void ElectLeaders(ElectionType electionType, IEnumerable<TopicPartition> partitions, ElectLeadersOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+            var optionsPtr = IntPtr.Zero;
+            IntPtr topic_partition_list = IntPtr.Zero;
+            IntPtr request = IntPtr.Zero;
+            try
+            {
+                // Set Admin Options if any.
+                options = new ElectLeadersOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.ElectLeaders);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+                
+                if(partitions != null)
+                {
+                       topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)partitions.Count());
+                        foreach (var topicPartitions in partitions)
+                        {
+                            IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topicPartitions.Topic, topicPartitions.Partition);
+                        }
+                }
+                request = Librdkafka.ElectLeadersRequest_New(electionType, topic_partition_list);
+
+                Librdkafka.ElectLeaders(handle, request, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+                if (topic_partition_list != IntPtr.Zero)
+                {
+                    Librdkafka.topic_partition_list_destroy(topic_partition_list);
+                }
+                if(request != IntPtr.Zero)
+                {
+                    Librdkafka.ElectLeadersRequest_destroy(request);
+                }
+            }
+        }
+
         internal void DescribeTopics(TopicCollection topicCollection, DescribeTopicsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
