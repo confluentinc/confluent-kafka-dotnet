@@ -282,6 +282,7 @@ namespace Confluent.Kafka
                         IsSimpleConsumerGroup =
                             (int)Librdkafka.ConsumerGroupListing_is_simple_consumer_group(cglPtr) == 1,
                         State = Librdkafka.ConsumerGroupListing_state(cglPtr),
+                        Type = Librdkafka.ConsumerGroupListing_type(cglPtr),
                     };
                 }).ToList();
             }
