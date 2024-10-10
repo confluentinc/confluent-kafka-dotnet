@@ -21,19 +21,17 @@ using System.Linq;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///    Result information for all Partitions queried
-    ///    in an ElectLeaderRequest (including error status). 
+    ///     Represents the result of an elect leaders request (including error status).
     ///  </summary>
     public class ElectLeadersReport
     {
         /// <summary>
-        ///    Operational Error if any
+        ///    Operational Error status.
         ///  </summary>
-        public ErrorCode ErrorCode { get; set; }
+        public Error Error { get; set; }
 
         /// <summary>
-        ///   Individual partition results. Atleast one of these partitions
-       ///    will be in error.
+        ///   Individual partition results.
         ///  </summary>
         public List<TopicPartitionError> PartitionResults { get; set; }
 
@@ -46,7 +44,7 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            result.Append($"{{\"ErrorCode\": \"{ErrorCode}\", \"PartitionResults\": [");
+            result.Append($"{{\"Error\": \"{Error.Code}\", \"PartitionResults\": [");
             result.Append(string.Join(",", PartitionResults.Select(b => $" {b.ToString()}")));
             result.Append($"]}}");
             return result.ToString();

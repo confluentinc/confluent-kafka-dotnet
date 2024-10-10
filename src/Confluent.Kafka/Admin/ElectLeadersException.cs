@@ -17,7 +17,7 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///    Represents an error that occured during the ElectLeaders opperation.
+    ///    Represents an error that occured during the ElectLeaders operation.
     ///  </summary>
     public class ElectLeadersException : KafkaException
     {

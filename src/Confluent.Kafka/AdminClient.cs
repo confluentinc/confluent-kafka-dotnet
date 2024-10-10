@@ -642,7 +642,7 @@ namespace Confluent.Kafka
             {
                 return new ElectLeadersReport
                 {
-                    ErrorCode = ErrorCode.NoError,
+                    Error = new Error(ErrorCode.NoError),
                     PartitionResults = new List<TopicPartitionError>()
                 };
             }
@@ -675,7 +675,7 @@ namespace Confluent.Kafka
 
             return new ElectLeadersReport
             {
-                ErrorCode = reportErrorCode,
+                Error = new Error(reportErrorCode),
                 PartitionResults = partitionResults
             };
         }
@@ -1308,7 +1308,7 @@ namespace Confluent.Kafka
                                                 break;
                                         }
                                         ElectLeadersReport report = extractElectLeadersResults(eventPtr);
-                                        if(report.ErrorCode != ErrorCode.NoError)
+                                        if(report.Error.IsError)
                                         {
                                             Task.Run(() =>
                                                     ((TaskCompletionSource<ElectLeadersResult>)adminClientResult).TrySetException(

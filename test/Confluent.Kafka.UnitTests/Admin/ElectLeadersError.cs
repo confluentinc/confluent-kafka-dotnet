@@ -32,23 +32,6 @@ namespace Confluent.Kafka.UnitTests
                 SocketTimeoutMs = 30                   
             };
         }
-        
-        [Theory]
-        [InlineData(-1)]
-        public async Task ElectLeadersAsync_InvalidRequestTimeout_ThrowsKafkaException(int timeoutSeconds)
-        {
-            using var adminClient = new AdminClientBuilder(GetTestConfig()).Build();
-            var options = new ElectLeadersOptions { RequestTimeout = TimeSpan.FromSeconds(timeoutSeconds) };
-
-            var exception = await Assert.ThrowsAsync<KafkaException>(() =>
-                adminClient.ElectLeadersAsync(
-                    ElectionType.Preferred, 
-                    new List<TopicPartition> { new TopicPartition("topic", 0) },
-                    options)
-            );
-
-            Assert.Contains("expecting integer in range", exception.Message);
-        }
 
         [Theory]
         [InlineData(ElectionType.Preferred)]

@@ -19,7 +19,7 @@ using System;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for ElectLeaders method.
+    ///     Options for the "AdminClient.ElectLeaders" method.
     /// </summary>
     public class ElectLeadersOptions
     {
