@@ -33,6 +33,7 @@ namespace Confluent.Kafka.Admin
 
         /// <summary>
         ///   Individual partition results.
+        ///   At least one of these will be in error.
         /// </summary>
         public List<TopicPartitionError> TopicPartitions { get; set; }
 
