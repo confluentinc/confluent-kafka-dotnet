@@ -19,12 +19,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using NJsonSchema;
 using NJsonSchema.Validation;
+using NJsonSchema.Generation;
+using Microsoft.Extensions.Options;
+using System.Text.Json.Serialization;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -41,13 +45,13 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 return message;
             }
-            
+
             RuleContext.FieldContext fieldContext = ctx.CurrentField();
             if (fieldContext != null)
             {
                 fieldContext.Type = GetType(schema);
             }
-            
+
             if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
             {
                 JToken jsonObject = JToken.FromObject(message);
@@ -65,9 +69,9 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             else if (schema.IsArray)
             {
-                bool isList = typeof(IList).IsAssignableFrom(message.GetType()) 
-                              || (message.GetType().IsGenericType 
-                                  && (message.GetType().GetGenericTypeDefinition() == typeof(List<>) 
+                bool isList = typeof(IList).IsAssignableFrom(message.GetType())
+                              || (message.GetType().IsGenericType
+                                  && (message.GetType().GetGenericTypeDefinition() == typeof(List<>)
                                       || message.GetType().GetGenericTypeDefinition() == typeof(IList<>)));
                 if (!isList)
                 {
@@ -125,7 +129,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             ISet<string> ruleTags = ctx.Rule.Tags ?? new HashSet<string>();
                             ISet<string> intersect = new HashSet<string>(fieldContext.Tags);
                             intersect.IntersectWith(ruleTags);
-                            
+
                             if (ruleTags.Count == 0 || intersect.Count != 0)
                             {
                                 return await fieldTransform.Transform(ctx, fieldContext, message)
@@ -191,7 +195,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     SetValue = (instance, value) => propertyInfo.SetValue(instance, value);
                     return;
                 }
-                
+
                 var fieldInfo = type.GetField(fieldName,
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (fieldInfo != null)
@@ -200,7 +204,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     SetValue = (instance, value) => fieldInfo.SetValue(instance, value);
                     return;
                 }
-                
+
                 foreach (PropertyInfo prop in type.GetProperties())
                 {
                     if (prop.IsDefined(typeof(JsonPropertyAttribute)))
@@ -217,7 +221,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
                     }
                 }
-                
+
                 foreach (FieldInfo field in type.GetFields())
                 {
                     if (field.IsDefined(typeof(JsonPropertyAttribute)))
@@ -234,7 +238,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
                     }
                 }
-                
+
                 throw new ArgumentException("Could not find field " + fieldName);
             }
 
@@ -247,6 +251,25 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 SetValue(message, value);
             }
+        }
+
+        public static JsonSerializerOptions SettingsMapping(JsonSchemaGeneratorSettings settings)
+        { //TODO mapping settings using the jsonSchemaGeneratorSettings object
+
+            var options = new JsonSerializerOptions();
+
+            // if (settings.SerializerSettings.ContractResolver is DefaultContractResolver contractResolver)
+            // {
+            //     if (contractResolver.NamingStrategy is CamelCaseNamingStrategy)
+            //     {
+            //         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            //     }
+            // }
+
+            options.PropertyNameCaseInsensitive = true;
+            options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+
+            return options;
         }
     }
 }

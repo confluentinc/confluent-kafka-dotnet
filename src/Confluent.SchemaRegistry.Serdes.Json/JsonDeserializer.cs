@@ -20,10 +20,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NJsonSchema;
 using NJsonSchema.Generation;
 using NJsonSchema.Validation;
@@ -55,6 +54,8 @@ namespace Confluent.SchemaRegistry.Serdes
     {
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
 
+        private readonly JsonSerializerOptions jsonSerializerOptions;
+
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
         private JsonSchema schema = null;
@@ -84,6 +85,7 @@ namespace Confluent.SchemaRegistry.Serdes
             : base(schemaRegistryClient, config, ruleRegistry)
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
+            this.jsonSerializerOptions = JsonUtils.SettingsMapping(jsonSchemaGeneratorSettings);
 
             if (config == null) { return; }
 
@@ -127,6 +129,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
             JsonSchema jsonSchema = utils.GetResolvedSchema().Result;
             this.schema = jsonSchema;
+            this.jsonSerializerOptions = JsonUtils.SettingsMapping(jsonSchemaGeneratorSettings);
         }
 
         /// <summary>
@@ -196,7 +199,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             }
                         }
                     }
-                    
+
                     if (latestSchema != null)
                     {
                         migrations = await GetMigrations(subject, writerSchema, latestSchema)
@@ -208,14 +211,16 @@ namespace Confluent.SchemaRegistry.Serdes
                         using (var jsonStream = new MemoryStream(array, headerSize, array.Length - headerSize))
                         using (var jsonReader = new StreamReader(jsonStream, Encoding.UTF8))
                         {
-                            JToken json = Newtonsoft.Json.JsonConvert.DeserializeObject<JToken>(jsonReader.ReadToEnd(), this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
-                            json = await ExecuteMigrations(migrations, isKey, subject, topic, context.Headers, json)
-                                .ContinueWith(t => (JToken)t.Result)
+                            string jsonString = await jsonReader.ReadToEndAsync();
+                            using JsonDocument jsonDocument = JsonDocument.Parse(jsonString);
+                            JsonElement jsonElement = jsonDocument.RootElement;
+                            jsonElement = (JsonElement)await ExecuteMigrations(migrations, isKey, subject, topic, context.Headers, jsonElement)
+                                .ContinueWith(t => t.Result)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
                             if (schema != null)
                             {
-                                var validationResult = validator.Validate(json, schema);
+                                var validationResult = validator.Validate(jsonElement.GetRawText(), schema);
 
                                 if (validationResult.Count > 0)
                                 {
@@ -224,7 +229,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 }
                             }
 
-                            value = json.ToObject<T>(JsonSerializer.Create());
+                            value = jsonElement.Deserialize<T>(this.jsonSerializerOptions); // TODO not sure why we need this here
                         }
                     }
                     else
@@ -233,7 +238,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         using (var jsonReader = new StreamReader(jsonStream, Encoding.UTF8))
                         {
                             string serializedString = jsonReader.ReadToEnd();
-                    
+
                             if (schema != null)
                             {
                                 var validationResult = validator.Validate(serializedString, schema);
@@ -245,7 +250,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 }
                             }
 
-                            value = Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
+                            value = System.Text.Json.JsonSerializer.Deserialize<T>(serializedString, this.jsonSerializerOptions);
                         }
                     }
 
@@ -263,8 +268,8 @@ namespace Confluent.SchemaRegistry.Serdes
                             writerSchema, value, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
-                } 
-                    
+                }
+
                 return value;
             }
             catch (AggregateException e)
@@ -277,7 +282,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, jsonSchemaGeneratorSettings);
-            
+
             return await utils.GetResolvedSchema();
         }
     }
