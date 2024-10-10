@@ -395,9 +395,9 @@ namespace Confluent.Kafka.Examples
 
         static Tuple<ElectionType, List<TopicPartition>> ParseElectLeadersArgs(string[] args)
         {
-            if ((args.Length -1 )%2 != 0)
+            if ((args.Length -1 ) % 2 != 0)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders electionType(0/1) <topic1> <partition1> ..");
+                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders <electionType> <topic1> <partition1> ..");
                 Environment.ExitCode = 1;
                 return null;
             }
@@ -428,12 +428,17 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static void PrintElectLeaderResults(ElectLeadersResult result)
+        static void PrintElectLeaderResults(List<TopicPartitionError> topicPartitions)
         {
-            Console.WriteLine("  ElectLeadersResult:");
-            foreach (var partitionResult in result.PartitionResults)
+            Console.WriteLine($"ElectLeaders response has {topicPartitions.Count} partition(s):");
+            foreach (var partitionResult in topicPartitions)
             {
-                Console.WriteLine($"Election successful in {partitionResult.Topic} {partitionResult.Partition}");
+                if (!partitionResult.Error.IsError)
+                    Console.WriteLine($"Election successful in {partitionResult.Topic} {partitionResult.Partition}");
+                else
+                    Console.WriteLine($"Election failed in {partitionResult.Topic} {partitionResult.Partition}: " +
+                      $"Code: {partitionResult.Error.Code}" +
+                      $", Reason: {partitionResult.Error.Reason}");
             }
         }
 
@@ -1017,7 +1022,7 @@ namespace Confluent.Kafka.Examples
         {
             if (commandArgs.Length < 3 && (commandArgs.Length - 1) % 2 != 0)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders electionType(0/1) <topic1> <partition1> ..");
+                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders <electionType> <topic1> <partition1> ..");
                 Environment.ExitCode = 1;
                 return;
             }
@@ -1032,25 +1037,13 @@ namespace Confluent.Kafka.Examples
                 try
                 {
                     var result = await adminClient.ElectLeadersAsync(electionType, partitions, options);
-                    PrintElectLeaderResults(result);
+                    PrintElectLeaderResults(result.TopicPartitions);
                     
                 }
                 catch (ElectLeadersException e)
                 {
                     Console.WriteLine("One or more elect leaders operations failed.");
-                    for (int i = 0; i < e.Results.PartitionResults.Count; ++i)
-                    {
-                        var result = e.Results.PartitionResults[i];
-                        if (!result.Error.IsError)
-                        {
-                            Console.WriteLine($"Elected leaders operation completed successfully for Topic {result.Topic} Partition {result.Partition}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"An error occurred in elect leaders operation in Topic {result.Topic} Partition {result.Partition}: Code: {result.Error.Code}" +
-                            $", Reason: {result.Error.Reason}");
-                        }
-                    }
+                    PrintElectLeaderResults(e.Results.TopicPartitions);
                 }
                 catch (KafkaException e)
                 {

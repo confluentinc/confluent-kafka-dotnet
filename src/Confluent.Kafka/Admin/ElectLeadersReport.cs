@@ -18,22 +18,24 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents the result of an elect leaders request (including error status).
-    ///  </summary>
+    ///     First error encountered in TopicPartitions
+    /// </summary>
     public class ElectLeadersReport
     {
         /// <summary>
         ///    Operational Error status.
-        ///  </summary>
-        public Error Error { get; set; }
+        /// </summary>
+        internal Error Error { get; set; }
 
         /// <summary>
-        ///   Individual partition results.
-        ///  </summary>
-        public List<TopicPartitionError> PartitionResults { get; set; }
+        ///    Individual partition results.
+        ///    At least one of these will be in error.
+        ///    </summary>
+        public List<TopicPartitionError> TopicPartitions { get; set; }
 
         /// <summary>
         ///     A Json representation of the object.
@@ -44,8 +46,8 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            result.Append($"{{\"Error\": \"{Error.Code}\", \"PartitionResults\": [");
-            result.Append(string.Join(",", PartitionResults.Select(b => $" {b.ToString()}")));
+            result.Append($"{{\"TopicPartitions\": [");
+            result.Append(string.Join(",", TopicPartitions.Select(b => $" {b.ToString()}")));
             result.Append($"]}}");
             return result.ToString();
         }

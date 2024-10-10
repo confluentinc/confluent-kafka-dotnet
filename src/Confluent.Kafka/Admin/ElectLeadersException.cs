@@ -14,6 +14,9 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Linq;
+
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -28,8 +31,10 @@ namespace Confluent.Kafka.Admin
         ///     The result of the ElectLeaders operation.
         /// </param>
         public ElectLeadersException(ElectLeadersReport report)
-            : base(new Error(ErrorCode.Local_Partial,
-                   "error electing leaders"))
+            :  base(new Error(ErrorCode.Local_Partial,
+                "Some errors occurred electing leaders: [" +
+                string.Join(", ", report.TopicPartitions.Where(tp => tp.Error.IsError)) +
+                "]"))
         {
             this.Results = report;
         }

@@ -14,7 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
-namespace Confluent.Kafka.Admin
+
+namespace Confluent.Kafka
 {
     /// <summary>
     ///     Enumerates the different types of Election types.

@@ -644,7 +644,7 @@ namespace Confluent.Kafka
                 return new ElectLeadersReport
                 {
                     Error = new Error(ErrorCode.NoError),
-                    PartitionResults = new List<TopicPartitionError>()
+                    TopicPartitions = new List<TopicPartitionError>()
                 };
             }
 
@@ -652,7 +652,7 @@ namespace Confluent.Kafka
             Marshal.Copy(topicPartitionsPtr, topicPartitionsPtrArr, 0, (int)topicPartitionsCountPtr);
 
             ErrorCode reportErrorCode = ErrorCode.NoError;
-            var partitionResults = topicPartitionsPtrArr.Select(ptr =>
+            var topicPartitions = topicPartitionsPtrArr.Select(ptr =>
             {
                 IntPtr topic_partition = Librdkafka.TopicPartitionResult_partition(ptr);
                 IntPtr error = Librdkafka.TopicPartitionResult_error(ptr);
@@ -677,7 +677,7 @@ namespace Confluent.Kafka
             return new ElectLeadersReport
             {
                 Error = new Error(reportErrorCode),
-                PartitionResults = partitionResults
+                TopicPartitions = topicPartitions
             };
         }
 
@@ -1317,8 +1317,9 @@ namespace Confluent.Kafka
                                         }
                                         else
                                         {
-                                            var result = new ElectLeadersResult(){
-                                                PartitionResults = report.PartitionResults
+                                            var result = new ElectLeadersResult()
+                                            {
+                                                TopicPartitions = report.TopicPartitions
                                             };
                                             Task.Run(() =>
                                                 ((TaskCompletionSource<ElectLeadersResult>)adminClientResult).TrySetResult(result));

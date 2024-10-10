@@ -16,6 +16,7 @@
 
 using System;
 
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>

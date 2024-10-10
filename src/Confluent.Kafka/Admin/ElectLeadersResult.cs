@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -29,7 +30,7 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///   Individual partition results.
         ///  </summary>
-        public List<TopicPartitionError> PartitionResults { get; set; }
+        public List<TopicPartitionError> TopicPartitions { get; set; }
 
         /// <summary>
         ///     A Json representation of the object.
@@ -40,8 +41,8 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            result.Append($"{{ \"PartitionResults\": [");
-            result.Append(string.Join(",", PartitionResults.Select(b => $" {b.ToString()}")));
+            result.Append($"{{ \"TopicPartitions\": [");
+            result.Append(string.Join(",", TopicPartitions.Select(b => $" {b.ToString()}")));
             result.Append($"]}}");
             return result.ToString();
         }
