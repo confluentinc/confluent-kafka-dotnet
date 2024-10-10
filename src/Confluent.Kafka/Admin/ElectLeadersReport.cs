@@ -22,27 +22,26 @@ using System.Linq;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     First error encountered in TopicPartitions
+    ///   First error encountered in TopicPartitions
     /// </summary>
     public class ElectLeadersReport
     {
         /// <summary>
-        ///    Operational Error status.
+        ///   Operational Error status.
         /// </summary>
         internal Error Error { get; set; }
 
         /// <summary>
-        ///    Individual partition results.
-        ///    At least one of these will be in error.
-        ///    </summary>
+        ///   Individual partition results.
+        /// </summary>
         public List<TopicPartitionError> TopicPartitions { get; set; }
 
         /// <summary>
-        ///     A Json representation of the object.
-        ///  </summary>
-        ///  <returns>
-        ///     A Json representation of the object.
-        ///  </returns>
+        ///   A Json representation of the object.
+        /// </summary>
+        /// <returns>
+        ///   A Json representation of the object.
+        /// </returns>
         public override string ToString()
         {
             var result = new StringBuilder();
