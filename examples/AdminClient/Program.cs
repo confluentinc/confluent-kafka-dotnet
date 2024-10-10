@@ -313,6 +313,86 @@ namespace Confluent.Kafka.Examples
             return Tuple.Create(isolationLevel, topicPartitionOffsetSpecs);
         }
 
+        static bool ParseListConsumerGroupsArgs(string[] commandArgs,
+            ref TimeSpan timeout,
+            ref List<ConsumerGroupState> states,
+            ref List<ConsumerGroupType> types,
+            ref string error)
+        {
+            try
+            {
+                var typeArray = false;
+                var stateArray = false;
+                var lastArray = 0;
+                for (var i = 0; i < commandArgs.Length; i++)
+                {
+                    var commandArg = commandArgs[i];
+                    if (commandArg == "-states")
+                    {
+                        if (stateArray)
+                        {
+                            error = "Cannot pass the states flag (-states) more than once";
+                            return false;
+                        }
+                        stateArray = true;
+                        lastArray = 1;
+                    }
+                    else if (commandArg == "-types")
+                    {
+                        if (typeArray)
+                        {
+                            error = "Cannot pass the types flag (-types) more than once";
+                            return false;
+                        }
+                        typeArray = true;
+                        lastArray = 2;
+                    }
+                    else
+                    {
+                        if (lastArray == 1)
+                        {
+                            try
+                            {
+                                states.Add(Enum.Parse<ConsumerGroupState>(commandArg));
+                            }
+                            catch (Exception)
+                            {
+                                error = $"Invalid state: {commandArg}";
+                                return false;
+                            }
+                        }
+                        else if (lastArray == 2)
+                        {
+                            try
+                            {
+                                types.Add(Enum.Parse<ConsumerGroupType>(commandArg));
+                            }
+                            catch (Exception)
+                            {
+                                 error = $"Invalid type: {commandArg}";
+                                 return false;
+                            }
+                        }
+                        else if (i == 0)
+                        {
+                            timeout = TimeSpan.FromSeconds(int.Parse(commandArg));
+                        }
+                        else
+                        {
+                            error = $"Unknown argument: {commandArg}";
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+            catch (SystemException e)
+            {
+                error = e.Message;
+                return false;
+            }
+        }
+
        static void PrintListOffsetsResultInfos(List<ListOffsetsResultInfo> ListOffsetsResultInfos)
        {
             foreach(var listOffsetsResultInfo in ListOffsetsResultInfos)
@@ -581,24 +661,15 @@ namespace Confluent.Kafka.Examples
         static async Task ListConsumerGroupsAsync(string bootstrapServers, string[] commandArgs)
         {
             var timeout = TimeSpan.FromSeconds(30);
-            var statesList = new List<ConsumerGroupState>();
-            try
+            string error = "";
+            var states = new List<ConsumerGroupState>();
+            var types = new List<ConsumerGroupType>();
+
+            if (!ParseListConsumerGroupsArgs(commandArgs,
+                ref timeout,  ref states, ref types, ref error))
             {
-                if (commandArgs.Length > 0)
-                {
-                    timeout = TimeSpan.FromSeconds(Int32.Parse(commandArgs[0]));
-                }
-                if (commandArgs.Length > 1)
-                {
-                    for (int i = 1; i < commandArgs.Length; i++)
-                    {
-                        statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
-                    }
-                }
-            }
-            catch (SystemException)
-            {
-                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [<timeout_seconds> <match_state_1> <match_state_2> ... <match_state_N>]");
+                Console.WriteLine(error);
+                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [timeout] [-states <match_state_1> .. <match_state_N>] [-types <match_type_1> .. <match_type_M>]");
                 Environment.ExitCode = 1;
                 return;
             }
@@ -610,7 +681,8 @@ namespace Confluent.Kafka.Examples
                     var result = await adminClient.ListConsumerGroupsAsync(new ListConsumerGroupsOptions()
                     { 
                         RequestTimeout = timeout,
-                        MatchStates = statesList,
+                        MatchStates = states,
+                        MatchTypes = types,
                     });
                     Console.WriteLine(result);
                 }
