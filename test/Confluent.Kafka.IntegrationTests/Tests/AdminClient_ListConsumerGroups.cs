@@ -68,34 +68,44 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers
             }).Build())
             {
-                var consumerConfig = new ConsumerConfig
+
+            var consumerConfig = new ConsumerConfig
+            {
+                GroupId = groupId,
+                BootstrapServers = bootstrapServers,
+                SessionTimeoutMs = 6000,
+                ClientId = clientId,
+            };
+            
+            using (var consumer =
+                new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            {
+                try
                 {
-                    GroupId = groupId,
-                    BootstrapServers = bootstrapServers,
-                    SessionTimeoutMs = 6000,
-                    ClientId = clientId,
-                };
-                var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build();
-                consumer.Subscribe(new string[] { partitionedTopic });
-                // Wait for rebalance.
-                consumer.Consume(TimeSpan.FromSeconds(10));
+                    consumer.Subscribe(new string[] { partitionedTopic });
+                    // Wait for rebalance.
+                    consumer.Consume(TimeSpan.FromSeconds(10));
 
-                // Our consumer group should be present with same group type option
-                var groups = adminClient.ListConsumerGroupsAsync(listOptionsWithUsed).Result;
-                Assert.Empty(groups.Valid.Where(group => group.Type != usedType));
-                Assert.Single(groups.Valid.Where(group => group.GroupId == groupId));
-                
-                var group = groups.Valid.Find(group => group.GroupId == groupId);
-                Assert.Equal(ConsumerGroupState.Stable, group.State);
-                Assert.False(group.IsSimpleConsumerGroup);
+                    // Our consumer group should be present with same group type option
+                    var groups = adminClient.ListConsumerGroupsAsync(listOptionsWithUsed).Result;
+                    Assert.Empty(groups.Valid.Where(group => group.Type != usedType));
+                    Assert.Single(groups.Valid.Where(group => group.GroupId == groupId));
+                    
+                    var group = groups.Valid.Find(group => group.GroupId == groupId);
+                    Assert.Equal(ConsumerGroupState.Stable, group.State);
+                    Assert.False(group.IsSimpleConsumerGroup);
 
-                // Our consumer group should not be present with opposite group type option
-                groups = adminClient.ListConsumerGroupsAsync(listOptionsWithOpposite).Result;
-                Assert.Empty(groups.Valid.Where(group => group.Type != oppositeType));
-                Assert.Empty(groups.Valid.Where(group => group.GroupId == groupId));
+                    // Our consumer group should not be present with opposite group type option
+                    groups = adminClient.ListConsumerGroupsAsync(listOptionsWithOpposite).Result;
+                    Assert.Empty(groups.Valid.Where(group => group.Type != oppositeType));
+                    Assert.Empty(groups.Valid.Where(group => group.GroupId == groupId));
+                }
+                finally
+                {
+                    consumer.Close();
+                }
+            }
 
-                consumer.Close();
-                consumer.Dispose();
             }
 
             Assert.Equal(0, Library.HandleCount);
