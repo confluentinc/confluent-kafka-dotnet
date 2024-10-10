@@ -1285,6 +1285,24 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_DescribeCluster_result_cluster_id(IntPtr result);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ElectLeaders_new(ElectionType electionType, IntPtr partitions);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_ElectLeaders_destroy(IntPtr electLeader);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_ElectLeaders(IntPtr handle, IntPtr electLeaderRequest, IntPtr options, IntPtr resultQueuePtr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ElectLeaders_result_partitions(IntPtr result_event, out UIntPtr cntp);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_topic_partition_result_partition(IntPtr result);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_topic_partition_result_error(IntPtr result);
+
         //
         // Queues
         //
