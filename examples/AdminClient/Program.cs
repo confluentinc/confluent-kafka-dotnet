@@ -324,7 +324,8 @@ namespace Confluent.Kafka.Examples
             
             var electionType = Enum.Parse<ElectionType>(args[0]);
             var partitions = new List<TopicPartition>();
-            if(args.Length == 1){
+            if(args.Length == 1)
+            {
                 partitions = null;
                 return Tuple.Create(electionType, partitions);
             }

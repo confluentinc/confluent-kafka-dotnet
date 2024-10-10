@@ -2537,18 +2537,18 @@ namespace Confluent.Kafka.Impl
             try
             {
                 // Set Admin Options if any.
-                options = options ?? new ElectLeadersOptions();
+                options = new ElectLeadersOptions();
                 optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.ElectLeaders);
                 setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
                 setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
                 setOption_completionSource(optionsPtr, completionSourcePtr);
-                if(partitions != null){
+                
+                if(partitions != null)
+                {
                        topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)partitions.Count());
                         foreach (var topicPartitions in partitions)
                         {
-                            string topic = topicPartitions.Topic;
-                            Partition partition = topicPartitions.Partition;
-                            IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topic, partition);
+                            IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topicPartitions.Topic, topicPartitions.Partition);
                         }
                 }
                 request = Librdkafka.ElectLeadersRequest_New(electionType, topic_partition_list);

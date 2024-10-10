@@ -17,7 +17,7 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Enumerates the different types of ACL permission types.
+    ///     Enumerates the different types of Election types.
     /// </summary>
     public enum ElectionType : int
     {
