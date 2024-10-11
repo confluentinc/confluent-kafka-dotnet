@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 using NJsonSchema;
 using NJsonSchema.Generation;
@@ -55,8 +56,10 @@ namespace Confluent.SchemaRegistry.Serdes
     public class JsonSerializer<T> : AsyncSerializer<T, JsonSchema> where T : class
     {
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
+
+        private readonly JsonSerializerOptions jsonSerializerOptions;
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
-        
+
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
         /// <remarks>
@@ -81,18 +84,19 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, 
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null,
             JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, RuleRegistry ruleRegistry = null)
             : base(schemaRegistryClient, config, ruleRegistry)
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
+            this.jsonSerializerOptions = JsonUtils.SettingsMapping(jsonSchemaGeneratorSettings);
 
             this.schema = this.jsonSchemaGeneratorSettings == null
                 ? JsonSchema.FromType<T>()
                 : JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
             this.schemaText = schema.ToJson();
             this.schemaFullname = schema.Title;
-            
+
             if (config == null) { return; }
 
             var nonJsonConfig = config
@@ -135,7 +139,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, 
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null,
             JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, RuleRegistry ruleRegistry = null)
             : this(schemaRegistryClient, config, jsonSchemaGeneratorSettings, ruleRegistry)
         {
@@ -150,6 +154,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schema = jsonSchema;
             this.schemaText = schema.SchemaString;
             this.schemaFullname = jsonSchema.Title;
+            this.jsonSerializerOptions = JsonUtils.SettingsMapping(jsonSchemaGeneratorSettings);
         }
 
         /// <summary>
@@ -186,7 +191,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     subject = GetSubjectName(context.Topic, context.Component == MessageComponentType.Key, this.schemaFullname);
                     latestSchema = await GetReaderSchema(subject, new Schema(schemaText, ReferenceList, SchemaType.Json))
                         .ConfigureAwait(continueOnCapturedContext: false);
-                    
+
                     if (!subjectsRegistered.Contains(subject))
                     {
                         if (latestSchema != null)
@@ -211,7 +216,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     serdeMutex.Release();
                 }
-                
+
                 if (latestSchema != null)
                 {
                     var latestSchemaJson = await GetParsedSchema(latestSchema).ConfigureAwait(false);
@@ -226,7 +231,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
-                var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
+                var serializedString = JsonSerializer.Serialize(value, this.jsonSerializerOptions);
                 var validationResult = validator.Validate(serializedString, this.schema);
                 if (validationResult.Count > 0)
                 {
