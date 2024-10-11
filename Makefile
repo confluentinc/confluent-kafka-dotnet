@@ -10,6 +10,9 @@ EXAMPLE_DIRS=$(shell find ./examples -name '*.csproj' -exec dirname {} \;)
 TEST_DIRS=$(shell find ./test -name '*.csproj'   \;)
 UNIT_TEST_DIRS=$(shell find . -type d -regex '.*UnitTests$$' -exec basename {} \;)
 
+# We want to run tests by default with latest version of .NET
+DEFAULT_TEST_FRAMEWORK?=net8.0
+
 all:
 	@echo "Usage:   make <dotnet-command>"
 	@echo "Example: make build - runs 'dotnet build' for all projects"
@@ -23,4 +26,9 @@ build:
 test:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
 		dotnet test test/$$d/$$d.csproj ; \
+	done)
+
+test-latest:
+	@(for d in $(UNIT_TEST_DIRS) ; do \
+		dotnet test -f $(DEFAULT_TEST_FRAMEWORK) test/$$d/$$d.csproj ; \
 	done)

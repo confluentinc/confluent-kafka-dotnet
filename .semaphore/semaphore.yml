@@ -45,8 +45,7 @@ blocks:
             - sudo chown -R "$(whoami)" "$(brew --caskroom)"
             - brew install --appdir=~/Applications dotnet-sdk
             - dotnet restore -p:TargetFramework=net8.0
-            - make build
-            - make test
+            - make test-latest
   - name: 'Windows x64'
     dependencies: [ ]
     task:
