@@ -16,14 +16,17 @@
     <Title>Confluent.SchemaRegistry.Serdes.Json</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Json</AssemblyName>
     <VersionPrefix>2.6.0</VersionPrefix>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Serdes.Json.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+    <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.2" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net8.0' ">
     <PackageReference Include="NJsonSchema" Version="10.9.0" />
   </ItemGroup>
 
