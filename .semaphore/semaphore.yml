@@ -23,7 +23,10 @@ blocks:
       jobs:
         - name: 'Build and test'
           commands:
+            # TODO: install .NET 8.0 SDK in this agent image
             - sudo apt remove dotnet-sdk* dotnet-host* dotnet* aspnetcore* netstandard* -y
+            # TODO: remove incorrect focal repos from this agent
+            - sudo rm /etc/apt/sources.list.d/*microsoft*
             - sudo apt update && sudo apt install -y dotnet-sdk-8.0
             - dotnet restore
             - make build
@@ -127,13 +130,16 @@ blocks:
       prologue:
         commands:
           - '[[ -z $DOCKERHUB_APIKEY ]] || docker login --username $DOCKERHUB_USER --password $DOCKERHUB_APIKEY'
+          # TODO: install .NET 8.0 SDK in this agent image
           - sudo apt remove dotnet-sdk* dotnet-host* dotnet* aspnetcore* netstandard* -y
+          # TODO: remove incorrect focal repos from this agent
+          - sudo rm /etc/apt/sources.list.d/*microsoft*
           - sudo apt update && sudo apt install -y dotnet-sdk-8.0
       jobs:
         - name: 'Build documentation'
           commands:
-            - dotnet tool update -g docfx
-            - docfx doc/docfx.json
+            - dotnet tool update --tool-path $PWD docfx
+            - ./docfx doc/docfx.json
         - name: 'Build and test with "classic" protocol'
           commands:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
