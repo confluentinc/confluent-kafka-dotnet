@@ -41,6 +41,7 @@ blocks:
         - name: 'Build and test'
           commands:
             - ulimit -n 1024
+            - export HOMEBREW_CASK_OPTS="--appdir=~/Applications"
             - brew install dotnet-sdk
             - dotnet restore -p:TargetFramework=net8.0
             - make build
