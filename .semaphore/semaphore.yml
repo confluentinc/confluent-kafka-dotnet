@@ -41,7 +41,8 @@ blocks:
         - name: 'Build and test'
           commands:
             - ulimit -n 1024
-            - brew install dotnet-sdk
+            - sudo chown -R "$(whoami)" "$(brew --caskroom)"
+            - brew install --appdir=~/Applications dotnet-sdk
             - dotnet restore -p:TargetFramework=net8.0
             - make build
             - make test
@@ -159,5 +160,5 @@ blocks:
             - cd test/docker && docker-compose up -d && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - dotnet restore -p:TargetFramework=net8.0
-            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -f net8.0  -l "console;verbosity=normal" && cd ../..
-            # - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -f net8.0 -l "console;verbosity=normal" && cd ../..
+            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -f net8.0 -l "console;verbosity=normal" && cd ../..
