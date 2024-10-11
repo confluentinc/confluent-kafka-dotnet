@@ -132,8 +132,9 @@ blocks:
       jobs:
         - name: 'Build documentation'
           commands:
-            - dotnet tool update -g docfx
-            - docfx doc/docfx.json
+            - dotnet tool update --tool-path $PWD docfx
+            - env | grep DOTNET
+            - ./docfx doc/docfx.json
         - name: 'Build and test with "classic" protocol'
           commands:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
