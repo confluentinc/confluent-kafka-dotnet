@@ -10,7 +10,10 @@ EXAMPLE_DIRS=$(shell find ./examples -name '*.csproj' -exec dirname {} \;)
 TEST_DIRS=$(shell find ./test -name '*.csproj'   \;)
 UNIT_TEST_DIRS=$(shell find . -type d -regex '.*UnitTests$$' -exec basename {} \;)
 
-DEFAULT_FRAMEWORK?=net6.0
+# We want examples to be able to execute with oldest supported .NET version
+DEFAULT_EXAMPLE_FRAMEWORK?=net6.0
+# We want to run tests by default with latest version of .NET
+DEFAULT_TEST_FRAMEWORK?=net8.0
 
 all:
 	@echo "Usage:   make <dotnet-command>"
@@ -19,10 +22,10 @@ all:
 .PHONY: test
 
 build:
-	for d in $(EXAMPLE_DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ; \
-	for d in $(TEST_DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ;
+	for d in $(EXAMPLE_DIRS) ; do dotnet $@ -f $(DEFAULT_EXAMPLE_FRAMEWORK) $$d; done ; \
+	for d in $(TEST_DIRS) ; do dotnet $@ -f $(DEFAULT_TEST_FRAMEWORK) $$d; done ;
 
 test:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
-		dotnet test -f $(DEFAULT_FRAMEWORK) test/$$d/$$d.csproj ; \
+		dotnet test -f $(DEFAULT_TEST_FRAMEWORK) test/$$d/$$d.csproj ; \
 	done)
