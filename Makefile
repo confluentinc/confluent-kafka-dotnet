@@ -10,8 +10,6 @@ EXAMPLE_DIRS=$(shell find ./examples -name '*.csproj' -exec dirname {} \;)
 TEST_DIRS=$(shell find ./test -name '*.csproj'   \;)
 UNIT_TEST_DIRS=$(shell find . -type d -regex '.*UnitTests$$' -exec basename {} \;)
 
-DEFAULT_FRAMEWORK?=net6.0
-
 all:
 	@echo "Usage:   make <dotnet-command>"
 	@echo "Example: make build - runs 'dotnet build' for all projects"
@@ -19,10 +17,10 @@ all:
 .PHONY: test
 
 build:
-	for d in $(EXAMPLE_DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ; \
-	for d in $(TEST_DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ;
+	for d in $(EXAMPLE_DIRS) ; do dotnet $@ $$d; done ; \
+	for d in $(TEST_DIRS) ; do dotnet $@ $$d; done ;
 
 test:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
-		dotnet test -f $(DEFAULT_FRAMEWORK) test/$$d/$$d.csproj ; \
+		dotnet test test/$$d/$$d.csproj ; \
 	done)
