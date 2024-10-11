@@ -24,8 +24,14 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using NJsonSchema;
-using NJsonSchema.Generation;
+using Newtonsoft.Json;
 using NJsonSchema.Validation;
+#if NET8_0_OR_GREATER
+using NJsonSchema.NewtonsoftJson.Generation;
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.NewtonsoftJson.Generation.NewtonsoftJsonSchemaGeneratorSettings;
+#else
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.Generation.JsonSchemaGeneratorSettings;
+#endif
 using Confluent.Kafka;
 
 
@@ -54,7 +60,7 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class JsonSerializer<T> : AsyncSerializer<T, JsonSchema> where T : class
     {
-        private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
+        private readonly NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private readonly List<SchemaReference> ReferenceList = new List<SchemaReference>();
         
         private JsonSchemaValidator validator = new JsonSchemaValidator();
@@ -69,6 +75,15 @@ namespace Confluent.SchemaRegistry.Serdes
         private string schemaText;
         private string schemaFullname;
 
+        private JsonSerializerSettings jsonSchemaGeneratorSettingsSerializerSettings {
+            get =>
+#if NET8_0_OR_GREATER
+                            this.jsonSchemaGeneratorSettings?.SerializerSettings;
+#else
+                            this.jsonSchemaGeneratorSettings?.ActualSerializerSettings;
+#endif
+        }
+
         /// <summary>
         ///     Initialize a new instance of the JsonSerializer class.
         /// </summary>
@@ -82,14 +97,19 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     JSON schema generator settings.
         /// </param>
         public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, 
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, RuleRegistry ruleRegistry = null)
+            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, RuleRegistry ruleRegistry = null)
             : base(schemaRegistryClient, config, ruleRegistry)
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
             this.schema = this.jsonSchemaGeneratorSettings == null
+#if NET8_0_OR_GREATER
+                ? NewtonsoftJsonSchemaGenerator.FromType<T>()
+                : NewtonsoftJsonSchemaGenerator.FromType<T>(this.jsonSchemaGeneratorSettings);
+#else
                 ? JsonSchema.FromType<T>()
                 : JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
+#endif
             this.schemaText = schema.ToJson();
             this.schemaFullname = schema.Title;
             
@@ -136,7 +156,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     JSON schema generator settings.
         /// </param>
         public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSerializerConfig config = null, 
-            JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, RuleRegistry ruleRegistry = null)
+            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null, RuleRegistry ruleRegistry = null)
             : this(schemaRegistryClient, config, jsonSchemaGeneratorSettings, ruleRegistry)
         {
             foreach (var reference in schema.References)
@@ -154,7 +174,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <summary>
         ///     Serialize an instance of type <typeparamref name="T"/> to a UTF8 encoded JSON 
-        ///     represenation. The serialized data is preceeded by:
+        ///     representation. The serialized data is preceeded by:
         ///       1. A "magic byte" (1 byte) that identifies this as a message with
         ///          Confluent Platform framing.
         ///       2. The id of the schema as registered in Confluent's Schema Registry
@@ -226,7 +246,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
-                var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
+                var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
                 var validationResult = validator.Validate(serializedString, this.schema);
                 if (validationResult.Count > 0)
                 {
