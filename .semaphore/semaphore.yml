@@ -27,7 +27,7 @@ blocks:
             - sudo apt remove dotnet-sdk* dotnet-host* dotnet* aspnetcore* netstandard* -y
             # TODO: remove incorrect focal repos from this agent
             - sudo rm /etc/apt/sources.list.d/*microsoft*
-            - sudo apt update && sudo apt install -y dotnet-sdk-8.0
+            - sudo apt update && sudo apt install -y dotnet-sdk-6.0 dotnet-sdk-8.0
             - dotnet restore
             - make build
             - make test
@@ -41,6 +41,7 @@ blocks:
         - name: 'Build and test'
           commands:
             - ulimit -n 1024
+            # TODO: install .NET 8.0 SDK in this agent image
             - sudo chown -R "$(whoami)" "$(brew --caskroom)"
             - brew install --appdir=~/Applications dotnet-sdk
             - dotnet restore -p:TargetFramework=net8.0
