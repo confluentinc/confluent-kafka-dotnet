@@ -39,7 +39,11 @@ namespace Confluent.Kafka
                     return null;
                 }
 
-                return Encoding.UTF8.GetString(data.ToArray());
+                #if NETCOREAPP2_1
+                    return Encoding.UTF8.GetString(data);
+                #else
+                    return Encoding.UTF8.GetString(data.ToArray());
+                #endif
             }
         }
 
@@ -167,7 +171,11 @@ namespace Confluent.Kafka
                 }
                 else
                 {
-                    return BitConverter.ToSingle(data.ToArray(), 0);
+                    #if NETCOREAPP2_1
+                        return BitConverter.ToSingle(data);
+                    #else
+                        return BitConverter.ToSingle(data.ToArray(), 0);
+                    #endif
                 }
             }
         }
@@ -211,7 +219,11 @@ namespace Confluent.Kafka
                 }
                 else
                 {
-                    return BitConverter.ToDouble(data.ToArray(), 0);
+                    #if NETCOREAPP2_1
+                                    return BitConverter.ToDouble(data);
+                    #else
+                                    return BitConverter.ToDouble(data.ToArray(), 0);
+                    #endif
                 }
             }
         }
