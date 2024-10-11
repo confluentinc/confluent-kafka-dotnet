@@ -41,7 +41,7 @@ blocks:
         - name: 'Build and test'
           commands:
             - ulimit -n 1024
-            - brew install dotnet-sdk
+            - sudo brew install dotnet-sdk
             - dotnet restore -p:TargetFramework=net8.0
             - make build
             - make test
