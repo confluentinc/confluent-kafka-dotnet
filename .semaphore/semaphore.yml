@@ -41,7 +41,9 @@ blocks:
         - name: 'Build and test'
           commands:
             - ulimit -n 1024
-            - brew install dotnet-sdk
+            - export HOMEBREW_CASK_OPTS="--appdir=~/Applications"
+            - sudo chown -R "$(whoami)" "$(brew --caskroom)"
+            - brew install --appdir=~/Applications dotnet-sdk
             - dotnet restore -p:TargetFramework=net8.0
             - make build
             - make test
