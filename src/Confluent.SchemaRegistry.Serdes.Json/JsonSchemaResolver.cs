@@ -18,9 +18,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NJsonSchema;
-using NJsonSchema.Generation;
 using Newtonsoft.Json.Linq;
-
+#if NET8_0_OR_GREATER
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.NewtonsoftJson.Generation.NewtonsoftJsonSchemaGeneratorSettings;
+#else
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.Generation.JsonSchemaGeneratorSettings;
+#endif
 
 namespace Confluent.SchemaRegistry.Serdes
 {
@@ -38,7 +41,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private JsonSchema resolvedJsonSchema;
         private Schema root;
         private ISchemaRegistryClient schemaRegistryClient;
-        private JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
+        private NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private Dictionary<string, Schema> dictSchemaNameToSchema = new Dictionary<string, Schema>();
         private Dictionary<string, JsonSchema> dictSchemaNameToJsonSchema = new Dictionary<string, JsonSchema>();
 
@@ -58,7 +61,8 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     Schema generator setting to use.
         /// </param>
-        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
+        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema,
+            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
             this.schemaRegistryClient = schemaRegistryClient;
             this.root = schema;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
@@ -112,7 +116,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 NJsonSchema.Generation.JsonSchemaResolver schemaResolver =
                     new NJsonSchema.Generation.JsonSchemaResolver(rootObject, this.jsonSchemaGeneratorSettings ??
-                        new JsonSchemaGeneratorSettings());
+                        new NewtonsoftJsonSchemaGeneratorSettings());
 
                 JsonReferenceResolver referenceResolver =
                     new JsonReferenceResolver(schemaResolver);
