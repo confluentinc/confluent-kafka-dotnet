@@ -178,9 +178,9 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 if (writerSchema != null)
                 {
-                    FieldTransformer fieldTransformer = async (ctx, transform, message) =>
+                    FieldTransformer fieldTransformer = async (ctx, transform, messageToTransform) =>
                     {
-                        return await ProtobufUtils.Transform(ctx, fdSet, message, transform).ConfigureAwait(false);
+                        return await ProtobufUtils.Transform(ctx, fdSet, messageToTransform, transform).ConfigureAwait(false);
                     };
                     message = await ExecuteRules(context.Component == MessageComponentType.Key, subject, context.Topic, context.Headers, RuleMode.Read, null,
                         writerSchema, message, fieldTransformer)

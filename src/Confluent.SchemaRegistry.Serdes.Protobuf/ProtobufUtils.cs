@@ -75,11 +75,15 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             var info = Assembly.GetExecutingAssembly().GetName();
             var name = info.Name;
-            using var stream = Assembly
+            using (var stream = Assembly
                 .GetExecutingAssembly()
-                .GetManifestResourceStream($"{name}.proto.{resourceName}");
-            using var streamReader = new StreamReader(stream, Encoding.UTF8);
-            return streamReader.ReadToEnd();
+                .GetManifestResourceStream($"{name}.proto.{resourceName}"))
+            {
+                using (var streamReader = new StreamReader(stream, Encoding.UTF8))
+                {
+                    return streamReader.ReadToEnd();
+                }
+            }
         }
 
         internal static async Task<object> Transform(RuleContext ctx, object desc, object message,
