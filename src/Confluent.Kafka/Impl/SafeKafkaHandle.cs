@@ -296,10 +296,25 @@ namespace Confluent.Kafka.Impl
             }
 
             SafeTopicHandle topicHandle = null;
+
+            #if NET6_0_OR_GREATER
+
+            IntPtr topicStringPtr = Marshal.StringToCoTaskMemUTF8(topic);
+            try
+            {
+                topicHandle = Librdkafka.topic_new(handle, topicStringPtr, config);
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(topicStringPtr);
+            }
+
+            #else
             using (var pinnedString = new Util.Marshal.StringAsPinnedUTF8(topic))
             {
                 topicHandle = Librdkafka.topic_new(handle, pinnedString.Ptr, config);
             }
+            #endif
 
             if (topicHandle.IsInvalid)
             {
