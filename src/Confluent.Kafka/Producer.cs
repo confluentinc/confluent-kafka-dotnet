@@ -279,8 +279,8 @@ namespace Confluent.Kafka
 
         private void ProduceImpl(
             string topic,
-            byte[] val, int valOffset, int valLength,
-            byte[] key, int keyOffset, int keyLength,
+            ReadOnlyMemory<byte>? val,
+            ReadOnlyMemory<byte>? key,
             Timestamp timestamp,
             Partition partition,
             IReadOnlyList<IHeader> headers,
@@ -308,8 +308,8 @@ namespace Confluent.Kafka
 
                 err = KafkaHandle.Produce(
                     topic,
-                    val, valOffset, valLength,
-                    key, keyOffset, keyLength,
+                    val,
+                    key,
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
@@ -325,8 +325,8 @@ namespace Confluent.Kafka
             {
                 err = KafkaHandle.Produce(
                     topic,
-                    val, valOffset, valLength,
-                    key, keyOffset, keyLength,
+                    val,
+                    key,
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
@@ -508,12 +508,22 @@ namespace Confluent.Kafka
             // setup key serializer.
             if (keySerializer == null && asyncKeySerializer == null)
             {
-                if (!defaultSerializers.TryGetValue(typeof(TKey), out object serializer))
+                if (defaultSerializers.TryGetValue(typeof(TKey), out object serializer))
+                {
+                    this.keySerializer = (ISerializer<TKey>)serializer;
+                }
+                else if (typeof(TKey) == typeof(Memory<byte>)
+                         || typeof(TKey) == typeof(ReadOnlyMemory<byte>)
+                         || typeof(TKey) == typeof(Memory<byte>?)
+                         || typeof(TKey) == typeof(ReadOnlyMemory<byte>?))
+                {
+                    // Serializers are not used for Memory<byte>.
+                }
+                else
                 {
                     throw new ArgumentNullException(
                         $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.keySerializer = (ISerializer<TKey>)serializer;
             }
             else if (keySerializer == null && asyncKeySerializer != null)
             {
@@ -531,12 +541,22 @@ namespace Confluent.Kafka
             // setup value serializer.
             if (valueSerializer == null && asyncValueSerializer == null)
             {
-                if (!defaultSerializers.TryGetValue(typeof(TValue), out object serializer))
+                if (defaultSerializers.TryGetValue(typeof(TValue), out object serializer))
+                {
+                    this.valueSerializer = (ISerializer<TValue>)serializer;
+                }
+                else if (typeof(TValue) == typeof(Memory<byte>)
+                         || typeof(TValue) == typeof(ReadOnlyMemory<byte>)
+                         || typeof(TValue) == typeof(Memory<byte>?)
+                         || typeof(TValue) == typeof(ReadOnlyMemory<byte>?))
+                {
+                    // Serializers are not used for Memory<byte>.
+                }
+                else
                 {
                     throw new ArgumentNullException(
                         $"Value serializer not specified and there is no default serializer defined for type {typeof(TValue).Name}.");
                 }
-                this.valueSerializer = (ISerializer<TValue>)serializer;
             }
             else if (valueSerializer == null && asyncValueSerializer != null)
             {
@@ -750,12 +770,31 @@ namespace Confluent.Kafka
         {
             Headers headers = message.Headers ?? new Headers();
 
-            byte[] keyBytes;
+            ReadOnlyMemory<byte>? keyBytes;
             try
             {
-                keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))
-                    : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers)).ConfigureAwait(false);
+                if (keySerializer != null)
+                {
+                    SerializationContext ctx = new(MessageComponentType.Key, topicPartition.Topic, headers);
+                    keyBytes = keySerializer.Serialize(message.Key, ctx)?.AsMemory();
+                }
+                else if (asyncKeySerializer != null)
+                {
+                    SerializationContext ctx = new(MessageComponentType.Key, topicPartition.Topic, headers);
+                    keyBytes = (await asyncKeySerializer.SerializeAsync(message.Key, ctx).ConfigureAwait(false))?.AsMemory();
+                }
+                else if (message.Key is Memory<byte> memory)
+                {
+                    keyBytes = memory;
+                }
+                else if (message.Key is ReadOnlyMemory<byte> readOnlyMemory)
+                {
+                    keyBytes = readOnlyMemory;
+                }
+                else // Null Memory<byte>?
+                {
+                    keyBytes = null;
+                }
             }
             catch (Exception ex)
             {
@@ -769,12 +808,31 @@ namespace Confluent.Kafka
                     ex);
             }
 
-            byte[] valBytes;
+            ReadOnlyMemory<byte>? valBytes;
             try
             {
-                valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))
-                    : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers)).ConfigureAwait(false);
+                if (valueSerializer != null)
+                {
+                    SerializationContext ctx = new(MessageComponentType.Value, topicPartition.Topic, headers);
+                    valBytes = valueSerializer.Serialize(message.Value, ctx)?.AsMemory();
+                }
+                else if (asyncValueSerializer != null)
+                {
+                    SerializationContext ctx = new(MessageComponentType.Value, topicPartition.Topic, headers);
+                    valBytes = (await asyncValueSerializer.SerializeAsync(message.Value, ctx).ConfigureAwait(false))?.AsMemory();
+                }
+                else if (message.Value is Memory<byte> memory)
+                {
+                    valBytes = memory;
+                }
+                else if (message.Value is ReadOnlyMemory<byte> readOnlyMemory)
+                {
+                    valBytes = readOnlyMemory;
+                }
+                else // Null Memory<byte>?
+                {
+                    valBytes = null;
+                }
             }
             catch (Exception ex)
             {
@@ -805,8 +863,8 @@ namespace Confluent.Kafka
 
                     ProduceImpl(
                         topicPartition.Topic,
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                        valBytes,
+                        keyBytes,
                         message.Timestamp, topicPartition.Partition, headers.BackingList,
                         handler);
 
@@ -816,8 +874,8 @@ namespace Confluent.Kafka
                 {
                     ProduceImpl(
                         topicPartition.Topic, 
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                        valBytes,
+                        keyBytes,
                         message.Timestamp, topicPartition.Partition, headers.BackingList, 
                         null);
 
@@ -873,12 +931,30 @@ namespace Confluent.Kafka
 
             Headers headers = message.Headers ?? new Headers();
 
-            byte[] keyBytes;
+            ReadOnlyMemory<byte>? keyBytes;
             try
             {
-                keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))
-                    : throw new InvalidOperationException("Produce called with an IAsyncSerializer key serializer configured but an ISerializer is required.");
+                if (keySerializer != null)
+                {
+                    SerializationContext ctx = new(MessageComponentType.Key, topicPartition.Topic, headers);
+                    keyBytes = keySerializer.Serialize(message.Key, ctx)?.AsMemory();
+                }
+                else if (asyncKeySerializer != null)
+                {
+                    throw new InvalidOperationException("Produce called with an IAsyncSerializer key serializer configured but an ISerializer is required.");
+                }
+                else if (message.Key is Memory<byte> memory)
+                {
+                    keyBytes = memory;
+                }
+                else if (message.Key is ReadOnlyMemory<byte> readOnlyMemory)
+                {
+                    keyBytes = readOnlyMemory;
+                }
+                else // Null Memory<byte>?
+                {
+                    keyBytes = null;
+                }
             }
             catch (Exception ex)
             {
@@ -892,12 +968,30 @@ namespace Confluent.Kafka
                     ex);
             }
 
-            byte[] valBytes;
+            ReadOnlyMemory<byte>? valBytes;
             try
             {
-                valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))
-                    : throw new InvalidOperationException("Produce called with an IAsyncSerializer value serializer configured but an ISerializer is required.");
+                if (valueSerializer != null)
+                {
+                    SerializationContext ctx = new(MessageComponentType.Value, topicPartition.Topic, headers);
+                    valBytes = valueSerializer.Serialize(message.Value, ctx)?.AsMemory();
+                }
+                else if (asyncValueSerializer != null)
+                {
+                    throw new InvalidOperationException("Produce called with an IAsyncSerializer value serializer configured but an ISerializer is required.");
+                }
+                else if (message.Value is Memory<byte> memory)
+                {
+                    valBytes = memory;
+                }
+                else if (message.Value is ReadOnlyMemory<byte> readOnlyMemory)
+                {
+                    valBytes = readOnlyMemory;
+                }
+                else // Null Memory<byte>?
+                {
+                    valBytes = null;
+                }
             }
             catch (Exception ex)
             {
@@ -915,8 +1009,8 @@ namespace Confluent.Kafka
             {
                 ProduceImpl(
                     topicPartition.Topic,
-                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                    valBytes,
+                    keyBytes,
                     message.Timestamp, topicPartition.Partition,
                     headers.BackingList,
                     deliveryHandler == null
