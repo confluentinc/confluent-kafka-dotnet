@@ -20,13 +20,13 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Context relevant to a serialization or deserialization operation.
     /// </summary>
-    public struct SerializationContext
+    public readonly struct SerializationContext
     {
         /// <summary>
         ///     The default SerializationContext value (representing no context defined).
         /// </summary>
         public static SerializationContext Empty
-            => default(SerializationContext);
+            => default;
 
         /// <summary>
         ///     Create a new SerializationContext object instance.
@@ -41,7 +41,7 @@ namespace Confluent.Kafka
         ///     The collection of message headers (or null). Specifying null or an
         ///     empty list are equivalent. The order of headers is maintained, and
         ///     duplicate header keys are allowed.
-        /// </param>       
+        /// </param>
         public SerializationContext(MessageComponentType component, string topic, Headers headers = null)
         {
             Component = component;
@@ -52,18 +52,18 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The topic the data is being written to or read from.
         /// </summary>
-        public string Topic { get; private set; }
-        
+        public string Topic { get; }
+
         /// <summary>
         ///     The component of the message the serialization operation relates to.
         /// </summary>
-        public MessageComponentType Component { get; private set; }
+        public MessageComponentType Component { get; }
 
         /// <summary>
         ///     The collection of message headers (or null). Specifying null or an
         ///     empty list are equivalent. The order of headers is maintained, and
         ///     duplicate header keys are allowed.
         /// </summary>
-        public Headers Headers { get; private set; }
+        public Headers Headers { get; }
     }
 }
