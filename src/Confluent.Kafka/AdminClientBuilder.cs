@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 
 
@@ -40,6 +41,15 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected Action<IAdminClient, LogMessage> LogHandler { get; set; }
 
+#if NET6_0_OR_GREATER
+        /// <summary>
+        ///     The configured statistics handler. Unlike <see cref="StatisticsHandler"/>, this handler gives access
+        ///     to the raw UTF-8 which is more performance friendly to UTF-8 parsers such as System.Text.Json. Also,
+        ///     if <see cref="StatisticsHandler"/> is not set, the JSON string allocation is completely avoided.
+        /// </summary>
+        internal protected ReadOnlySpanAction<byte, IAdminClient> StatisticsUtf8Handler { get; set; }
+#endif
+
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
@@ -64,6 +74,24 @@ namespace Confluent.Kafka
         {
             this.Config = config;
         }
+
+#if NET6_0_OR_GREATER
+        /// <summary>
+        ///     Set the handler to call on statistics events. Unlike <see cref="SetStatisticsHandler"/>, this handler
+        ///     gives access to the raw UTF-8 which is more performance friendly to UTF-8 parsers such as
+        ///     System.Text.Json. Also, it doesn't allocate a potentially large string for the JSON.
+        /// </summary>
+        public AdminClientBuilder SetStatisticsUtf8Handler(
+            ReadOnlySpanAction<byte, IAdminClient> statisticsHandler)
+        {
+            if (this.StatisticsUtf8Handler != null)
+            {
+                throw new InvalidOperationException("Statistics handler may not be specified more than once.");
+            }
+            this.StatisticsUtf8Handler = statisticsHandler;
+            return this;
+        }
+#endif
 
         /// <summary>
         ///     Set the handler to call on statistics events. Statistics are provided
