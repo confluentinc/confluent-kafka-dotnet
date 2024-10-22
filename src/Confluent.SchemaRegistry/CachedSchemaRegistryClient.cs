@@ -64,8 +64,8 @@ namespace Confluent.SchemaRegistry
         private int latestCacheTtlSecs;
         private readonly Dictionary<int, Schema> schemaById = new Dictionary<int, Schema>();
 
-        private readonly Dictionary<string /*subject*/, Dictionary<string, int>> idBySchemaBySubject =
-            new Dictionary<string, Dictionary<string, int>>();
+        private readonly Dictionary<string /*subject*/, Dictionary<Schema, int>> idBySchemaBySubject =
+            new Dictionary<string, Dictionary<Schema, int>>();
 
         private readonly Dictionary<string /*subject*/, Dictionary<int, RegisteredSchema>> schemaByVersionBySubject =
             new Dictionary<string, Dictionary<int, RegisteredSchema>>();
@@ -430,9 +430,9 @@ namespace Confluent.SchemaRegistry
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
+                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<Schema, int> idBySchema))
                 {
-                    idBySchema = new Dictionary<string, int>();
+                    idBySchema = new Dictionary<Schema, int>();
                     this.idBySchemaBySubject.Add(subject, idBySchema);
                 }
 
@@ -440,14 +440,14 @@ namespace Confluent.SchemaRegistry
                 // contains very few elements and the schema string passed in is always the same
                 // instance.
 
-                if (!idBySchema.TryGetValue(schema.SchemaString, out int schemaId))
+                if (!idBySchema.TryGetValue(schema, out int schemaId))
                 {
                     CleanCacheIfFull();
 
                     // throws SchemaRegistryException if schema is not known.
                     var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true, normalize)
                         .ConfigureAwait(continueOnCapturedContext: false);
-                    idBySchema[schema.SchemaString] = registeredSchema.Id;
+                    idBySchema[schema] = registeredSchema.Id;
                     schemaById[registeredSchema.Id] = registeredSchema.Schema;
                     schemaId = registeredSchema.Id;
                 }
@@ -467,9 +467,9 @@ namespace Confluent.SchemaRegistry
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
+                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<Schema, int> idBySchema))
                 {
-                    idBySchema = new Dictionary<string, int>();
+                    idBySchema = new Dictionary<Schema, int>();
                     this.idBySchemaBySubject[subject] = idBySchema;
                 }
 
@@ -477,13 +477,13 @@ namespace Confluent.SchemaRegistry
                 // contains very few elements and the schema string passed in is always
                 // the same instance.
 
-                if (!idBySchema.TryGetValue(schema.SchemaString, out int schemaId))
+                if (!idBySchema.TryGetValue(schema, out int schemaId))
                 {
                     CleanCacheIfFull();
 
                     schemaId = await restService.RegisterSchemaAsync(subject, schema, normalize)
                         .ConfigureAwait(continueOnCapturedContext: false);
-                    idBySchema[schema.SchemaString] = schemaId;
+                    idBySchema[schema] = schemaId;
                 }
 
                 return schemaId;
