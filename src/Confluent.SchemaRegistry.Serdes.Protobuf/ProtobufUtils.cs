@@ -241,7 +241,6 @@ namespace Confluent.SchemaRegistry.Serdes
             if (field.IsRepeated)
             {
                 return RuleContext.Type.Array;
-
             }
 
             switch (field.FieldType)
