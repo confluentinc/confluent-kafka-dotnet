@@ -238,6 +238,11 @@ namespace Confluent.SchemaRegistry.Serdes
                 return RuleContext.Type.Map;
             }
 
+            if (field.IsRepeated)
+            {
+                return RuleContext.Type.Array;
+            }
+
             switch (field.FieldType)
             {
                 case FieldType.Message:
