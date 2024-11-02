@@ -200,9 +200,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 Schema readerSchemaJson = latestSchema ?? writerSchemaJson;
-                Avro.Schema readerSchema = latestSchema != null
-                    ? await GetParsedSchema(latestSchema)
-                    : writerSchema;
+                Avro.Schema readerSchema = latestSchema != null ? await GetParsedSchema(latestSchema) : writerSchema;
                 FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                 {
                     return await AvroUtils.Transform(ctx, readerSchema, message, transform).ConfigureAwait(false);
