@@ -81,6 +81,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 Schema writerSchemaJson;
                 Avro.Schema writerSchema;
+                Schema readerSchemaJson;
+                Avro.Schema readerSchema;
                 GenericRecord data;
                 IList<Migration> migrations = new List<Migration>();
                 using (var stream = new MemoryStream(array))
@@ -133,22 +135,23 @@ namespace Confluent.SchemaRegistry.Serdes
                         json = await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
                             .ContinueWith(t => (JToken)t.Result)
                             .ConfigureAwait(continueOnCapturedContext: false);
-                        var latestSchemaAvro = await GetParsedSchema(latestSchema);
-                        Avro.IO.Decoder decoder = new JsonDecoder(latestSchemaAvro, json.ToString(Formatting.None));
+                        readerSchemaJson = latestSchema;
+                        readerSchema = await GetParsedSchema(readerSchemaJson);
+                        Avro.IO.Decoder decoder = new JsonDecoder(readerSchema, json.ToString(Formatting.None));
                         
-                        datumReader = new GenericReader<GenericRecord>(latestSchemaAvro, latestSchemaAvro);
+                        datumReader = new GenericReader<GenericRecord>(readerSchema, readerSchema);
                         data = datumReader.Read(default(GenericRecord), decoder);
                     }
                     else
                     {
-                        Avro.Schema readerSchema;
                         if (latestSchema != null)
                         {
-                            var latestSchemaAvro = await GetParsedSchema(latestSchema);
-                            readerSchema = latestSchemaAvro;
+                            readerSchemaJson = latestSchema;
+                            readerSchema = await GetParsedSchema(readerSchemaJson);
                         }
                         else
                         {
+                            readerSchemaJson = writerSchemaJson;
                             readerSchema = writerSchema;
                         }
                         datumReader = await GetDatumReader(writerSchema, readerSchema);
@@ -158,10 +161,10 @@ namespace Confluent.SchemaRegistry.Serdes
                 
                 FieldTransformer fieldTransformer = async (ctx, transform, message) => 
                 {
-                    return await AvroUtils.Transform(ctx, writerSchema, message, transform).ConfigureAwait(false);
+                    return await AvroUtils.Transform(ctx, readerSchema, message, transform).ConfigureAwait(false);
                 };
                 data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read, null,
-                    writerSchemaJson, data, fieldTransformer)
+                    readerSchemaJson, data, fieldTransformer)
                     .ContinueWith(t => (GenericRecord)t.Result)
                     .ConfigureAwait(continueOnCapturedContext: false);
 

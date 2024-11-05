@@ -1308,6 +1308,73 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void GenericRecordJSONataWithCEL()
+        {
+            var rule1To2 = "$merge([$sift($, function($v, $k) {$k != 'name'}), {'full_name': $.'name'}])";
+
+            var schemaStr = User._SCHEMA.ToString();
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.Metadata = new Metadata(null, new Dictionary<string, string>
+                {
+                    { "application.version", "1"}
+
+                }, new HashSet<string>()
+            );
+            store[schemaStr] = 1;
+            var config1 = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = false,
+                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "1"} }
+            };
+            var serializer1 = new AvroSerializer<GenericRecord>(schemaRegistryClient, config1);
+
+            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            user.Add("name", "awesome");
+            user.Add("favorite_number", 100);
+            user.Add("favorite_color", "blue");
+
+            var newSchemaStr = NewUser._SCHEMA.ToString();
+            var newSchema = new RegisteredSchema("topic-value", 2, 2, newSchemaStr, SchemaType.Avro, null);
+            newSchema.Metadata = new Metadata(null, new Dictionary<string, string>
+                {
+                    { "application.version", "2"}
+
+                }, new HashSet<string>()
+            );
+            newSchema.RuleSet = new RuleSet(
+                new List<Rule>
+                {
+                    new Rule("myRule1", RuleKind.Transform, RuleMode.Upgrade, "JSONATA", null,
+                        null, rule1To2, null, null, false)
+                }, new List<Rule>
+                {
+                    new Rule("myRule2", RuleKind.Transform, RuleMode.Read, "CEL_FIELD", null,
+                        null, "name == 'full_name' ; value + '-suffix'", null, null, false)
+                }
+            );
+            var deserConfig2 = new AvroDeserializerConfig
+            {
+                UseLatestVersion = false,
+                UseLatestWithMetadata = new Dictionary<string, string>{ { "application.version", "2"} }
+            };
+            var deserializer2 = new AvroDeserializer<GenericRecord>(schemaRegistryClient, deserConfig2);
+
+            store[schemaStr] = 1;
+            store[newSchemaStr] = 2;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema, newSchema };
+
+            Headers headers = new Headers();
+            var bytes = serializer1.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            var result2 = deserializer2.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("awesome-suffix", result2["full_name"]);
+            Assert.Equal(user["favorite_color"], result2["favorite_color"]);
+            Assert.Equal(user["favorite_number"], result2["favorite_number"]);
+        }
+
+        [Fact]
         public void GenericRecordJSONataFullyCompatible()
         {
             var rule1To2 = "$merge([$sift($, function($v, $k) {$k != 'name'}), {'full_name': $.'name'}])";
