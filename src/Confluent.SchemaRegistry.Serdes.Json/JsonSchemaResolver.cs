@@ -16,8 +16,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using NJsonSchema;
+using NJsonSchema.References;
 using Newtonsoft.Json.Linq;
 #if NET8_0_OR_GREATER
 using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.NewtonsoftJson.Generation.NewtonsoftJsonSchemaGeneratorSettings;
@@ -81,20 +85,17 @@ namespace Confluent.SchemaRegistry.Serdes
             return resolvedJsonSchema;
         }
         
-        private async Task CreateSchemaDictUtil(Schema root)
+        private async Task CreateSchemaDictUtil(Schema root, string referenceName = null)
         {
-            string rootStr = root.SchemaString;
-            JObject schema = JObject.Parse(rootStr);
-            string schemaId = (string)schema["$id"];
-            if (schemaId != null && !dictSchemaNameToSchema.ContainsKey(schemaId))
-                this.dictSchemaNameToSchema.Add(schemaId, root);
+            if (referenceName != null && !dictSchemaNameToSchema.ContainsKey(referenceName))
+                this.dictSchemaNameToSchema.Add(referenceName, root);
 
             if (root.References != null)
             {
                 foreach (var reference in root.References)
                 {
                     Schema refSchemaRes = await schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version, false);
-                    await CreateSchemaDictUtil(refSchemaRes);
+                    await CreateSchemaDictUtil(refSchemaRes, reference.Name);
                 }
             }
         }
@@ -118,21 +119,78 @@ namespace Confluent.SchemaRegistry.Serdes
                     new NJsonSchema.Generation.JsonSchemaResolver(rootObject, this.jsonSchemaGeneratorSettings ??
                         new NewtonsoftJsonSchemaGeneratorSettings());
 
-                JsonReferenceResolver referenceResolver =
-                    new JsonReferenceResolver(schemaResolver);
-                foreach (var reference in refers)
-                {
-                    JsonSchema jschema =
-                        dictSchemaNameToJsonSchema[reference.Name];
-                    referenceResolver.AddDocumentReference(reference.Name, jschema);
-                }
-                return referenceResolver;
+                return new CustomJsonReferenceResolver(schemaResolver, rootObject, dictSchemaNameToJsonSchema);
             };
 
             string rootStr = root.SchemaString;
             JObject schema = JObject.Parse(rootStr);
-            string schemaId = (string)schema["$id"];
+            string schemaId = (string)schema["$id"] ?? "";
             return await JsonSchema.FromJsonAsync(rootStr, schemaId, factory);
+        }
+
+        private class CustomJsonReferenceResolver : JsonReferenceResolver
+        {
+            private JsonSchema rootObject;
+            private Dictionary<string, JsonSchema> refs;
+
+            public CustomJsonReferenceResolver(JsonSchemaAppender schemaAppender,
+                JsonSchema rootObject, Dictionary<string, JsonSchema> refs)
+                : base( schemaAppender)
+            {
+                this.rootObject = rootObject;
+                this.refs = refs;
+            }
+
+            public override string ResolveFilePath(string documentPath, string jsonPath)
+            {
+                // override the default behavior to not prepend the documentPath
+                var arr = Regex.Split(jsonPath, @"(?=#)");
+                return arr[0];
+            }
+
+            public override async Task<IJsonReference> ResolveFileReferenceAsync(string filePath, CancellationToken cancellationToken = default)
+            {
+                JsonSchema schema;
+                if (refs.TryGetValue(filePath, out schema))
+                {
+                    return schema;
+                }
+
+                // remove the documentPath and look for the reference
+                var fileName = Path.GetFileName(filePath);
+                if (refs.TryGetValue(fileName, out schema))
+                {
+                    return schema;
+                }
+
+                return await base.ResolveFileReferenceAsync(filePath, cancellationToken);
+            }
+
+            public override async Task<IJsonReference> ResolveUrlReferenceAsync(string url, CancellationToken cancellationToken = default)
+            {
+                JsonSchema schema;
+                if (refs.TryGetValue(url, out schema))
+                {
+                    return schema;
+                }
+
+                var documentPathProvider = rootObject as IDocumentPathProvider;
+                var documentPath = documentPathProvider?.DocumentPath;
+                if (documentPath != null)
+                {
+                    var documentUri = new Uri(documentPath);
+                    var uri = new Uri(url);
+                    var relativeUrl = documentUri.MakeRelativeUri(uri);
+
+                    // remove the documentPath and look for the reference
+                    if (refs.TryGetValue(relativeUrl.ToString(), out schema))
+                    {
+                        return schema;
+                    }
+                }
+
+                return await base.ResolveUrlReferenceAsync(url, cancellationToken);
+            }
         }
     }
 }
