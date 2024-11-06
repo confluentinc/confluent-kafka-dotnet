@@ -72,6 +72,36 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
   }
 }
 ";
+        public string schema1NoId = @"
+{
+  ""$schema"": ""http://json-schema.org/draft-07/schema#"",
+  ""title"": ""Schema1"",
+  ""type"": ""object"",
+  ""properties"": {
+    ""field1"": {
+      ""type"": ""string""
+    },
+    ""field2"": {
+      ""type"": ""integer""
+    },
+    ""field3"": {
+      ""$ref"": ""http://schema2.json#/definitions/field""
+    }
+  }
+}
+";
+        public string schema2NoId = @"
+{
+  ""$schema"": ""http://json-schema.org/draft-07/schema#"",
+  ""title"": ""Schema2"",
+  ""type"": ""object"",
+  ""definitions"": {
+    ""field"": {
+      ""type"": ""boolean""
+    }
+  }
+}
+";
         public class Schema1
         {
             public string Field1 { get; set; }
@@ -244,6 +274,57 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 }
             };
             
+            var jsonSerializer = new JsonSerializer<Schema1>(schemaRegistryClient, registeredSchema1,
+                jsonSerializerConfig, jsonSchemaGeneratorSettings);
+            var jsonDeserializer = new JsonDeserializer<Schema1>(schemaRegistryClient, registeredSchema1);
+            var v = new Schema1
+            {
+                Field1 = "Hello",
+                Field2 = 123,
+                Field3 = true
+            };
+            string expectedJson = "{\"field1\":\"Hello\",\"field2\":123,\"field3\":true}";
+            var bytes = await jsonSerializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.NotNull(bytes);
+            Assert.Equal(expectedJson, Encoding.UTF8.GetString(bytes.AsSpan().Slice(5)));
+
+            var actual = await jsonDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.Equal(v.Field3, actual.Field3);
+        }
+
+        [Fact]
+        public async Task WithJsonSchemaExternalReferencesNoIdAsync()
+        {
+            var subject1 = $"{testTopic}-Schema1";
+            var subject2 = $"{testTopic}-Schema2";
+
+            var registeredSchema2 = new RegisteredSchema(subject2, 1, 1, schema2NoId, SchemaType.Json, null);
+            store[schema2NoId] = 1;
+            subjectStore[subject2] = new List<RegisteredSchema> { registeredSchema2 };
+
+            var refs = new List<SchemaReference> { new SchemaReference("http://schema2.json", subject2, 1) };
+            var registeredSchema1 = new RegisteredSchema(subject1, 1, 2, schema1NoId, SchemaType.Json, refs);
+            store[schema1NoId] = 2;
+            subjectStore[subject1] = new List<RegisteredSchema> { registeredSchema1 };
+
+            var jsonSerializerConfig = new JsonSerializerConfig
+            {
+                UseLatestVersion = true,
+                AutoRegisterSchemas = false,
+                SubjectNameStrategy = SubjectNameStrategy.TopicRecord
+            };
+
+            var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
+            {
+                SerializerSettings = new JsonSerializerSettings
+                {
+                    ContractResolver = new DefaultContractResolver
+                    {
+                        NamingStrategy = new CamelCaseNamingStrategy()
+                    }
+                }
+            };
+
             var jsonSerializer = new JsonSerializer<Schema1>(schemaRegistryClient, registeredSchema1,
                 jsonSerializerConfig, jsonSchemaGeneratorSettings);
             var jsonDeserializer = new JsonDeserializer<Schema1>(schemaRegistryClient, registeredSchema1);
