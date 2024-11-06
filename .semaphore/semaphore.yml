@@ -2,7 +2,7 @@ version: v1.0
 name: 'confluent-kafka-dotnet build pipeline'
 agent:
   machine:
-    type: s1-prod-ubuntu20-04-amd64-1
+    type: s1-prod-ubuntu22-04-amd64-1
 global_job_config:
   prologue:
     commands:
@@ -19,10 +19,15 @@ blocks:
     task:
       agent:
         machine:
-          type: s1-prod-ubuntu20-04-amd64-2
+          type: s1-prod-ubuntu22-04-amd64-2
       jobs:
         - name: 'Build and test'
           commands:
+            # TODO: install .NET 8.0 SDK in this agent image
+            - sudo apt remove dotnet-sdk* dotnet-host* dotnet* aspnetcore* netstandard* -y
+            # TODO: remove incorrect focal repos from this agent
+            - sudo rm /etc/apt/sources.list.d/*microsoft*
+            - sudo apt update && sudo apt install -y dotnet-sdk-6.0 dotnet-sdk-8.0
             - dotnet restore
             - make build
             - make test
@@ -31,14 +36,16 @@ blocks:
     task:
       agent:
         machine:
-          type: s1-prod-macos
+          type: s1-prod-macos-13-5-amd64
       jobs:
         - name: 'Build and test'
           commands:
             - ulimit -n 1024
-            - dotnet restore
-            - make build
-            - make test
+            # TODO: install .NET 8.0 SDK in this agent image
+            - sudo chown -R "$(whoami)" "$(brew --caskroom)"
+            - brew install --appdir=~/Applications dotnet-sdk
+            - dotnet restore -p:TargetFramework=net8.0
+            - make test-latest
   - name: 'Windows x64'
     dependencies: [ ]
     task:
@@ -49,12 +56,12 @@ blocks:
         - name: 'Build and test'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Channel 8.0 -Quality GA -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
             - dotnet restore
-            - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
-            - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj
-            - dotnet test -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj
+            - dotnet test -f net8.0 -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
+            - dotnet test -f net8.0 -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj
+            - dotnet test -f net8.0 -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj
   - name: 'Windows Artifacts on untagged commits'
     run:
       when: "tag !~ '.*'"
@@ -68,19 +75,22 @@ blocks:
         - name: 'Build and push artifacts'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Channel 6.0 -Quality GA -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Channel 8.0 -Quality GA -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
-            - dotnet tool update -g docfx
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption/Confluent.SchemaRegistry.Encryption.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Aws/Confluent.SchemaRegistry.Encryption.Aws.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Azure/Confluent.SchemaRegistry.Encryption.Azure.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Gcp/Confluent.SchemaRegistry.Encryption.Gcp.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.HcVault/Confluent.SchemaRegistry.Encryption.HcVault.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Rules/Confluent.SchemaRegistry.Rules.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
-            - docfx doc/docfx.json
-            - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
-            - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
             - artifact push workflow artifacts
   - name: 'Windows Artifacts on tagged commits'
     run:
@@ -95,45 +105,61 @@ blocks:
         - name: 'Build and push artifacts'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Channel 6.0 -Quality GA -InstallDir C:\dotnet
+            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Channel 8.0 -Quality GA -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
-            - dotnet tool update -g docfx
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption/Confluent.SchemaRegistry.Encryption.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Aws/Confluent.SchemaRegistry.Encryption.Aws.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Azure/Confluent.SchemaRegistry.Encryption.Azure.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.Gcp/Confluent.SchemaRegistry.Encryption.Gcp.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.HcVault/Confluent.SchemaRegistry.Encryption.HcVault.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Rules/Confluent.SchemaRegistry.Rules.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --output artifacts
-            - docfx doc/docfx.json
-            - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
-            - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
             - artifact push workflow artifacts
-  - name: 'Integration tests'
+  - name: 'Integration tests and documentation'
     dependencies: [ ]
     task:
       agent:
         machine:
-          type: s1-prod-ubuntu20-04-amd64-2
+          type: s1-prod-ubuntu22-04-amd64-2
+      prologue:
+        commands:
+          - '[[ -z $DOCKERHUB_APIKEY ]] || docker login --username $DOCKERHUB_USER --password $DOCKERHUB_APIKEY'
+          # TODO: install .NET 8.0 SDK in this agent image
+          - sudo apt remove dotnet-sdk* dotnet-host* dotnet* aspnetcore* netstandard* -y
+          # TODO: remove incorrect focal repos from this agent
+          - sudo rm /etc/apt/sources.list.d/*microsoft*
+          - sudo apt update && sudo apt install -y dotnet-sdk-8.0
       jobs:
-        - name: 'Build and test'
+        - name: 'Build documentation'
+          commands:
+            - dotnet tool update --tool-path $PWD docfx
+            - ./docfx doc/docfx.json
+        - name: 'Build and test with "classic" protocol'
           commands:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
-            - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
-            - dotnet restore
-            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
-  - name: 'Schema registry and serdes integration tests'
-    dependencies: [ ]
-    task:
-      agent:
-        machine:
-          type: s1-prod-ubuntu20-04-amd64-2
-      jobs:
-        - name: 'Build and test'
+            - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
+            - dotnet restore -p:TargetFramework=net8.0
+            - cd test/Confluent.Kafka.IntegrationTests && dotnet test -f net8.0 -l "console;verbosity=normal" && cd ../..
+        - name: 'Build and test with "consumer" protocol'
+          commands:
+            - cd test/docker && docker-compose -f docker-compose-kraft.yaml up -d && cd ../..
+            - sleep 300
+            - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
+            - export TEST_CONSUMER_GROUP_PROTOCOL=consumer
+            - dotnet restore -p:TargetFramework=net8.0
+            - cd test/Confluent.Kafka.IntegrationTests && dotnet test  -f net8.0  -l "console;verbosity=normal" && cd ../..
+        - name: 'Schema registry and serdes integration tests'
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
-            - export SEMAPHORE_SKIP_FLAKY_TETSTS='true'
-	    - export SEMAPHORE_SKIP_KNOWN_FAILING_TESTS='true'
-            - dotnet restore
-            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
-            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -l "console;verbosity=normal" && cd ../..
+            - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
+            - export SEMAPHORE_SKIP_KNOWN_FAILING_TESTS='true'
+            - dotnet restore -p:TargetFramework=net8.0
+            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -f net8.0 -l "console;verbosity=normal" && cd ../..
+            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -f net8.0 -l "console;verbosity=normal" && cd ../..

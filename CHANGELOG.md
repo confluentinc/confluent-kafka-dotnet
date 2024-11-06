@@ -1,13 +1,96 @@
+# 2.6.0
+
+## Enhancements
+
+* References librdkafka.redist 2.6.0. Refer to the [librdkafka v2.6.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.6.0) for more information.
+* [KIP-848 EA](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol): Admin API for listing consumer groups now has an optional filter to return only groups of given types (#2323).
+* [KIP-460](https://cwiki.apache.org/confluence/display/KAFKA/KIP-460%3A+Admin+Leader+Election+RPC) Admin Leader Election RPC (#2320)
+* .NET 8 support with NJsonSchema 11 (#2314)
+
+
+# 2.5.3
+
+## Enhancements
+
+* References librdkafka.redist 2.5.3. Refer to the [librdkafka v2.5.3 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.5.3) for more information.
+
+## Fixes
+
+* Properly handle messages with well-known types in Protobuf serializer
+* Use AES128_GCM in the Local KMS client, for consistency with Java/go
+* Include deleted schemas when getting schemas by subject and version
+* Handle signed ints when transforming Protobuf payloads
+* Allow null SchemaRegistryClient in AsyncSerde constructor
+
+# 2.5.2
+
+> [!WARNING]
+Versions 2.5.0, 2.5.1 and 2.5.2 have a regression in which an assert is triggered during **PushTelemetry** call. This happens when no metric is matched on the client side among those requested by broker subscription.
+>
+> You won't face any problem if:
+> * Broker doesn't support [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability).
+> * [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) feature is disabled on the broker side.
+> * [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) feature is disabled on the client side. This is enabled by default. Set configuration `enable.metrics.push` to `false`.
+> * If [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) is enabled on the broker side and there is no subscription configured there.
+> * If [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) is enabled on the broker side with subscriptions that match the [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) metrics defined on the client.
+>
+> Having said this, we strongly recommend using `v2.5.3` and above to not face this regression at all.
+
+## Fixes
+
+- Fix CSFLE (client-side field-level encryption) to use the Google Tink format for DEKs for interoperability with clients in other languages (Java, go, etc.).
+- Improve error when specifying an invalid KMS type for CSFLE
+- Enhance CSFLE examples with KMS configuration settings
+
+
+# 2.5.1
+
+## Fixes
+
+- Fix CSFLE (client-side field-level encryption) when using Azure Key Vault by specifying RsaOaep256 (instead of RsaOaep) for interoperability with clients in other languages (Java, go, etc.).
+- Fix AvroSerializer configuration to allow using schema normalization.
+- Upgrade Azure Identity library to 1.11.4 to address a vulnerability in previous versions.
+
+
+# 2.5.0
+
+## Enhancements
+
+- References librdkafka.redist 2.5.0. Refer to the [librdkafka v2.5.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.5.0) for more information.
+- Add support for metadata and ruleSet in the schema registry client, which together support data 
+contracts.
+- Add support for CSFLE (client-side field-level encryption) for AWS, Azure, GCP, and HashiCorp 
+Vault.  See the encryption examples in the examples directory.
+- Add support for CEL, CEL_FIELD, and JSONata rules.
+
+## Fixes
+
+- Switch license expression and other repo information. (#2192, @thompson-tomo)
+
+
+# 2.4.0
+
+## Enhancements
+
+- References librdkafka.redist 2.4.0. Refer to the [librdkafka v2.4.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.4.0) for more information.
+- [KIP-848 EA](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol): Added KIP-848 based new consumer group rebalance protocol.
+  Integration tests running with the new consumer group protocol. The feature is an **Early Access**: not production ready. Please refer
+  [detailed doc](https://github.com/confluentinc/librdkafka/blob/master/INTRODUCTION.md#next-generation-of-the-consumer-group-protocol-kip-848) for more information. (#2212).
+
+
 # 2.3.0
 
 ## Enhancements
 
 - References librdkafka.redist 2.3.0. Refer to the [librdkafka v2.3.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.3.0) for more information.
+- [KIP-430](https://cwiki.apache.org/confluence/display/KAFKA/KIP-430+-+Return+Authorized+Operations+in+Describe+Responses):
+  Return authorized operations in describe responses (#2021, @jainruchir).
+- [KIP-396](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=97551484): Added support for ListOffsets Admin API (#2086).
+- Add `Rack` to the `Node` type, so AdminAPI calls can expose racks for brokers (currently, all Describe
+  Responses) (#2021, @jainruchir).
 - Added support for external JSON schemas in `JsonSerializer` and `JsonDeserializer` (#2042).
 - Added compatibility methods to CachedSchemaRegistryClient ([ISBronny](https://github.com/ISBronny), #2097).
 - Add support for AdminAPI `DescribeCluster()` and `DescribeTopics()` (#2021, @jainruchir).
-- [KIP-430](https://cwiki.apache.org/confluence/display/KAFKA/KIP-430+-+Return+Authorized+Operations+in+Describe+Responses):
-  Return authorized operations in describe responses (#2021, @jainruchir).
 
 
 # 2.2.0
@@ -86,7 +169,7 @@ OpenSSL 3.0.x upgrade in librdkafka requires a major version bump, as some legac
 **Note: There were no 2.0.0 and 2.0.1 releases.**
 
 
-# 1.9.3 
+# 1.9.3
 
 ## Enhancements
 
@@ -94,7 +177,7 @@ OpenSSL 3.0.x upgrade in librdkafka requires a major version bump, as some legac
 
 ## Fixes
 
-- Schema Registry authentication now works with passwords that contain the ':' character ([luismedel](https://github.com/luismedel)). 
+- Schema Registry authentication now works with passwords that contain the ':' character ([luismedel](https://github.com/luismedel)).
 - Added missing librdkafka internal and broker error codes to the `ErrorCode` enum.
 
 
@@ -157,7 +240,7 @@ for a complete list of changes, enhancements, fixes and upgrade considerations.
 
 # 1.8.1
 
-## Enhancements 
+## Enhancements
 
 - Updated `NJsonSchema` to v10.5.2.
 
@@ -306,7 +389,7 @@ Version 1.6.0 and 1.6.1 were not released.
 ## Changes
 
 - Some internal improvements to the `Consmer` (thanks to [@andypook](https://github.com/AndyPook)).
-- BREAKING CHANGE: `net452` is no longer a target framework of `Confluent.SchemaRegistry` or `Confluent.SchemaRegistry.Serdes` due to the switch to the official Apache Avro package which only targets `netstandard2.0`. 
+- BREAKING CHANGE: `net452` is no longer a target framework of `Confluent.SchemaRegistry` or `Confluent.SchemaRegistry.Serdes` due to the switch to the official Apache Avro package which only targets `netstandard2.0`.
 - Marked properties on `ConsumeResult` that simply delegate to the corresponding properties on `ConsumeResult.Message` as obsolete.
 
 ## Fixes
@@ -348,7 +431,7 @@ Version 1.6.0 and 1.6.1 were not released.
 ## Bugs
 
   **WARNING: There is an issue with SASL GSSAPI authentication on Windows with this release. This is resolved in v1.2.1.**
-	
+
 ## Enhancements
 
 - References librdkafka v1.2.0. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.2.0) for more information. Headline feature is consumer side support for transactions.
@@ -412,7 +495,7 @@ Feature highlights:
     - Non-blocking support for async serializers.
     - Very flexible:
       - e.g. can be easily extended to support header serialization.
-  - Capability to specify custom timestamps when producing messages. 
+  - Capability to specify custom timestamps when producing messages.
   - Message persistence status support.
   - Renamed ProduceAsync variants with a callback to Produce.
 - Consumer improvements:
@@ -529,7 +612,7 @@ Feature highlights:
 
 - Revamped producer and consumer serialization functionality.
   - There are now two types of serializer and deserializer: `ISerializer<T>` / `IAsyncSerializer<T>` and `IDeserializer<T>` / `IAsyncDeserializer<T>`.
-    - `ISerializer<T>`/`IDeserializer<T>` are appropriate for most use cases. 
+    - `ISerializer<T>`/`IDeserializer<T>` are appropriate for most use cases.
     - `IAsyncSerializer<T>`/`IAsyncDeserializer<T>` are async friendly, but less performant (they return `Task`s).
   - Changed the name of `Confluent.Kafka.Avro` to `Confluent.SchemaRegistry.Serdes` (Schema Registry may support other serialization formats in the future).
   - Added an example demonstrating working with protobuf serialized data.
@@ -545,7 +628,7 @@ Feature highlights:
   - Notable features: idempotent producer, sparse connections, KIP-62 (max.poll.interval.ms).
   - Note: End of partition notification is now disabled by default (enable using the `EnablePartitionEof` config property).
 - Removed the `Consumer.OnPartitionEOF` event in favor notifying of partition eof via `ConsumeResult.IsPartitionEOF`.
-- Removed `ErrorEvent` class and added `IsFatal` to `Error` class. 
+- Removed `ErrorEvent` class and added `IsFatal` to `Error` class.
   - The `IsFatal` flag is now set appropriately for all errors (previously it was always set to `false`).
 - Added `PersistenceStatus` property to `DeliveryResult`, which provides information on the persitence status of the message.
 
@@ -583,7 +666,7 @@ Feature highlights:
   - Producers can utilize the underlying librdkafka handle from other Producers (replaces the 0.11.x `GetSerializingProducer` method on the `Producer` class).
   - `AdminClient` can utilize the underlying librdkafka handle from other `AdminClient`s, `Producer`s or `Consumer`s.
 - `IDeserializer` now exposes message data via `ReadOnlySpan<byte>`, directly referencing librdkafka allocated memory. This results in a considerable (up to 2x) performance increase and reduced memory.
-- Most blocking operations now accept a `CancellationToken` parameter. 
+- Most blocking operations now accept a `CancellationToken` parameter.
   - TODO: in some cases there is no backing implementation yet.
 - .NET Specific configuration parameters are all specified/documented in the `ConfigPropertyNames` class.
 
@@ -609,7 +692,7 @@ Feature highlights:
 - `Commit` errors are reported via an exception and method return values have correspondingly changed.
 - `ListGroups`, `ListGroup`, `GetWatermarkOffsets`, `QueryWatermarkOffsets`, and `GetMetadata` have been removed from `Producer` and `Consumer` and exposed only via `AdminClient`.
 - Added `Consumer.Close`.
-- Various methods that formerly returned `TopicPartitionOffsetError` / `TopicPartitionError` now return `TopicPartitionOffset` / `TopicPartition` and throw an exception in 
+- Various methods that formerly returned `TopicPartitionOffsetError` / `TopicPartitionError` now return `TopicPartitionOffset` / `TopicPartition` and throw an exception in
   case of error (with a `Result` property of type `TopicPartitionOffsetError` / `TopicPartitionError`).
 
 

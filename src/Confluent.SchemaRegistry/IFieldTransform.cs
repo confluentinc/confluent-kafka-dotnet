@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2022 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +14,18 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
-
-namespace Confluent.SchemaRegistry.Serdes
+namespace Confluent.SchemaRegistry
 {
-    internal interface IAvroDeserializerImpl<T>
+    public delegate Task<object> FieldTransformer(RuleContext ctx, IFieldTransform fieldTransform, object message);
+
+    public interface IFieldTransform : IDisposable
     {
-        Task<T> Deserialize(string topic, byte[] array);
+        void Init(RuleContext ctx);
+        
+        Task<object> Transform(RuleContext ctx, RuleContext.FieldContext fieldCtx, object fieldValue);
     }
 }

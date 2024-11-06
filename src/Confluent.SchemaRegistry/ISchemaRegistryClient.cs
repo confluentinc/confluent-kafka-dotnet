@@ -27,6 +27,12 @@ namespace Confluent.SchemaRegistry
     public interface ISchemaRegistryClient : IDisposable
     {
         /// <summary>
+        ///     The client config.
+        /// </summary>
+        IEnumerable<KeyValuePair<string, string>> Config { get; }
+
+
+        /// <summary>
         ///     The maximum capacity of the local schema cache.
         /// </summary>
         int MaxCachedSchemas { get; }
@@ -135,6 +141,28 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
+        ///     Gets the schema uniquely identified by <paramref name="subject"> and <paramref name="id" />.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject.
+        /// </param>
+        /// <param name="id">
+        ///     The unique id of schema to get.
+        /// </param>
+        /// <param name="format">
+        ///     The format of the schema to get. Currently, the only supported
+        ///     value is "serialized", and this is only valid for protobuf
+        ///     schemas. If 'serialized', the SchemaString property of the returned
+        ///     value will be a base64 encoded protobuf file descriptor. If null,
+        ///     SchemaString will be human readable text.
+        /// </param>
+        /// <returns>
+        ///     The schema identified by <paramref name="id" />.
+        /// </returns>
+        Task<Schema> GetSchemaBySubjectAndIdAsync(string subject, int id, string format = null);
+
+
+        /// <summary>
         ///     Get the registered schema details (including version and id)
         ///     given a subject name and schema, or throw an exception if
         ///     the schema is not registered against the subject.
@@ -166,10 +194,13 @@ namespace Confluent.SchemaRegistry
         /// <param name="version">
         ///     The version number of schema to get.
         /// </param>
+        /// <param name="ignoreDeletedSchemas">
+        ///     Whether or not to ignore deleted schemas.
+        /// </param>
         /// <returns>
         ///     The schema identified by the specified <paramref name="subject" /> and <paramref name="version" />.
         /// </returns>
-        Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version);
+        Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version, bool ignoreDeletedSchemas = true);
 
 
         /// <summary>
@@ -199,6 +230,18 @@ namespace Confluent.SchemaRegistry
         ///     The latest schema registered against <paramref name="subject" />.
         /// </returns>
         Task<RegisteredSchema> GetLatestSchemaAsync(string subject);
+
+
+        /// <summary>
+        ///     Get the latest schema with the given metadata registered against the specified <paramref name="subject" />.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to get the latest associated schema for.
+        /// </param>
+        /// <returns>
+        ///     The latest schema with the given metadata registered against <paramref name="subject" />.
+        /// </returns>
+        Task<RegisteredSchema> GetLatestWithMetadataAsync(string subject, IDictionary<string, string> metadata, bool ignoreDeletedSchemas);
 
 
         /// <summary>
@@ -320,5 +363,15 @@ namespace Confluent.SchemaRegistry
         ///      New compatibility type.
         /// </returns>
         Task<Compatibility> UpdateCompatibilityAsync(Compatibility compatibility, string subject = null);
+
+        /// <summary>
+        ///     Clears caches of latest versions.
+        /// </summary>
+        void ClearLatestCaches();
+
+        /// <summary>
+        ///     Clears all caches.
+        /// </summary>
+        void ClearCaches();
     }
 }

@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 // Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
+
 #pragma warning disable CS0618
 #pragma warning disable CS0612
 
@@ -23,8 +24,9 @@ using System.Threading.Tasks;
 using System.Linq;
 using System;
 using System.Threading;
-using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using Confluent.Kafka;
+using Microsoft.Extensions.Caching.Memory;
 
 
 namespace Confluent.SchemaRegistry
@@ -36,6 +38,7 @@ namespace Confluent.SchemaRegistry
     ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, Schema, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, string, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSchemaAsync(int, string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaBySubjectAndIdAsync(string, int, string)" />
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, Schema, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int)" />
@@ -54,12 +57,22 @@ namespace Confluent.SchemaRegistry
     {
         private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
 
+        private IEnumerable<KeyValuePair<string, string>> config;
+
         private IRestService restService;
         private int identityMapCapacity;
+        private int latestCacheTtlSecs;
         private readonly Dictionary<int, Schema> schemaById = new Dictionary<int, Schema>();
 
-        private readonly Dictionary<string /*subject*/, Dictionary<string, int>> idBySchemaBySubject = new Dictionary<string, Dictionary<string, int>>();
-        private readonly Dictionary<string /*subject*/, Dictionary<int, RegisteredSchema>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, RegisteredSchema>>();
+        private readonly Dictionary<string /*subject*/, Dictionary<Schema, int>> idBySchemaBySubject =
+            new Dictionary<string, Dictionary<Schema, int>>();
+
+        private readonly Dictionary<string /*subject*/, Dictionary<int, RegisteredSchema>> schemaByVersionBySubject =
+            new Dictionary<string, Dictionary<int, RegisteredSchema>>();
+
+        private readonly MemoryCache latestVersionBySubject = new MemoryCache(new MemoryCacheOptions());
+        
+        private readonly MemoryCache latestWithMetadataBySubject = new MemoryCache(new MemoryCacheOptions());
 
         private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
 
@@ -78,6 +91,11 @@ namespace Confluent.SchemaRegistry
         public const int DefaultMaxCachedSchemas = 1000;
 
         /// <summary>
+        ///     The default TTL for caches holding latest schemas.
+        /// </summary>
+        public const int DefaultLatestCacheTtlSecs = -1;
+
+        /// <summary>
         ///     The default SSL server certificate verification for Schema Registry REST API calls.
         /// </summary>
         public const bool DefaultEnableSslCertificateVerification = true;
@@ -92,35 +110,50 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Topic;
 
+        
+        /// <inheritdoc />
+        public IEnumerable<KeyValuePair<string, string>> Config
+            => config;
+
+
         /// <inheritdoc />
         public int MaxCachedSchemas
             => identityMapCapacity;
 
 
         [Obsolete]
-        private static SubjectNameStrategyDelegate GetKeySubjectNameStrategy(IEnumerable<KeyValuePair<string, string>> config)
+        private static SubjectNameStrategyDelegate GetKeySubjectNameStrategy(
+            IEnumerable<KeyValuePair<string, string>> config)
         {
-            var keySubjectNameStrategyString = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy).Value ?? "";
+            var keySubjectNameStrategyString = config.FirstOrDefault(prop =>
+                                                   prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames
+                                                       .SchemaRegistryKeySubjectNameStrategy).Value ??
+                                               "";
             SubjectNameStrategy keySubjectNameStrategy = SubjectNameStrategy.Topic;
             if (keySubjectNameStrategyString != "" &&
                 !Enum.TryParse<SubjectNameStrategy>(keySubjectNameStrategyString, out keySubjectNameStrategy))
             {
                 throw new ArgumentException($"Unknown KeySubjectNameStrategy: {keySubjectNameStrategyString}");
             }
+
             return keySubjectNameStrategy.ToDelegate();
         }
 
 
         [Obsolete]
-        private static SubjectNameStrategyDelegate GetValueSubjectNameStrategy(IEnumerable<KeyValuePair<string, string>> config)
+        private static SubjectNameStrategyDelegate GetValueSubjectNameStrategy(
+            IEnumerable<KeyValuePair<string, string>> config)
         {
-            var valueSubjectNameStrategyString = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy).Value ?? "";
+            var valueSubjectNameStrategyString = config.FirstOrDefault(prop =>
+                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy)
+                .Value ?? "";
             SubjectNameStrategy valueSubjectNameStrategy = SubjectNameStrategy.Topic;
             if (valueSubjectNameStrategyString != "" &&
                 !Enum.TryParse<SubjectNameStrategy>(valueSubjectNameStrategyString, out valueSubjectNameStrategy))
             {
                 throw new ArgumentException($"Unknown ValueSubjectNameStrategy: {valueSubjectNameStrategyString}");
             }
+
             return valueSubjectNameStrategy.ToDelegate();
         }
 
@@ -133,31 +166,75 @@ namespace Confluent.SchemaRegistry
         /// <param name="authenticationHeaderValueProvider">
         ///     The authentication header value provider
         /// </param>
-        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider)
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config,
+            IAuthenticationHeaderValueProvider authenticationHeaderValueProvider)
         {
             if (config == null)
             {
                 throw new ArgumentNullException("config properties must be specified.");
             }
+            
+            this.config = config;
 
             keySubjectNameStrategy = GetKeySubjectNameStrategy(config);
             valueSubjectNameStrategy = GetValueSubjectNameStrategy(config);
 
-            var schemaRegistryUrisMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl);
-            if (schemaRegistryUrisMaybe.Value == null) { throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl} configuration property must be specified."); }
+            var schemaRegistryUrisMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl);
+            if (schemaRegistryUrisMaybe.Value == null)
+            {
+                throw new ArgumentException(
+                    $"{SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl} configuration property must be specified.");
+            }
+
             var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
 
-            var timeoutMsMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs);
+            var timeoutMsMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs);
             int timeoutMs;
-            try { timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : Convert.ToInt32(timeoutMsMaybe.Value); }
-            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs} must be an integer."); }
+            try
+            {
+                timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : Convert.ToInt32(timeoutMsMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs} must be an integer.");
+            }
 
-            var identityMapCapacityMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas);
-            try { this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : Convert.ToInt32(identityMapCapacityMaybe.Value); }
-            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas} must be an integer."); }
+            var identityMapCapacityMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas);
+            try
+            {
+                this.identityMapCapacity = identityMapCapacityMaybe.Value == null
+                    ? DefaultMaxCachedSchemas
+                    : Convert.ToInt32(identityMapCapacityMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas} must be an integer.");
+            }
 
-            var basicAuthSource = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource).Value ?? "";
-            var basicAuthInfo = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo).Value ?? "";
+            var latestCacheTtlSecsMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs);
+            try
+            {
+                this.latestCacheTtlSecs = latestCacheTtlSecsMaybe.Value == null
+                    ? DefaultLatestCacheTtlSecs
+                    : Convert.ToInt32(latestCacheTtlSecsMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs} must be an integer.");
+            }
+            
+            var basicAuthSource = config.FirstOrDefault(prop =>
+                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource)
+                .Value ?? "";
+            var basicAuthInfo = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo).Value ?? "";
 
             string username = null;
             string password = null;
@@ -169,8 +246,10 @@ namespace Confluent.SchemaRegistry
                     var userPass = basicAuthInfo.Split(new char[] { ':' }, 2);
                     if (userPass.Length != 2)
                     {
-                        throw new ArgumentException($"Configuration property {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} must be of the form 'username:password'.");
+                        throw new ArgumentException(
+                            $"Configuration property {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} must be of the form 'username:password'.");
                     }
+
                     username = userPass[0];
                     password = userPass[1];
                 }
@@ -179,42 +258,53 @@ namespace Confluent.SchemaRegistry
             {
                 if (basicAuthInfo != "")
                 {
-                    throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} as also specified.");
+                    throw new ArgumentException(
+                        $"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} as also specified.");
                 }
+
                 var saslUsername = config.FirstOrDefault(prop => prop.Key == "sasl.username");
                 var saslPassword = config.FirstOrDefault(prop => prop.Key == "sasl.password");
                 if (saslUsername.Value == null)
                 {
-                    throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.username' property not specified.");
+                    throw new ArgumentException(
+                        $"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.username' property not specified.");
                 }
+
                 if (saslPassword.Value == null)
                 {
-                    throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.password' property not specified.");
+                    throw new ArgumentException(
+                        $"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.password' property not specified.");
                 }
+
                 username = saslUsername.Value;
                 password = saslPassword.Value;
             }
             else
             {
-                throw new ArgumentException($"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
+                throw new ArgumentException(
+                    $"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
 
             if (authenticationHeaderValueProvider != null)
             {
                 if (username != null || password != null)
                 {
-                    throw new ArgumentException($"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
+                    throw new ArgumentException(
+                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
                 }
             }
             else
             {
                 if (username != null && password == null)
                 {
-                    throw new ArgumentException($"Invalid authentication header value provider configuration: Basic authentication username specified, but password not specified");
+                    throw new ArgumentException(
+                        $"Invalid authentication header value provider configuration: Basic authentication username specified, but password not specified");
                 }
+
                 if (username == null && password != null)
                 {
-                    throw new ArgumentException($"Invalid authentication header value provider configuration: Basic authentication password specified, but username not specified");
+                    throw new ArgumentException(
+                        $"Invalid authentication header value provider configuration: Basic authentication password specified, but username not specified");
                 }
                 else if (username != null && password != null)
                 {
@@ -232,25 +322,37 @@ namespace Confluent.SchemaRegistry
                 if (property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystoreLocation &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification)
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystoreLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification)
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
             }
 
-            var sslVerificationMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification);
+            var sslVerificationMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification);
             bool sslVerify;
-            try { sslVerify = sslVerificationMaybe.Value == null ? DefaultEnableSslCertificateVerification : bool.Parse(sslVerificationMaybe.Value); }
-            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
+            try
+            {
+                sslVerify = sslVerificationMaybe.Value == null
+                    ? DefaultEnableSslCertificateVerification
+                    : bool.Parse(sslVerificationMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool.");
+            }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
+                SetSslConfig(config), sslVerify);
         }
 
         /// <summary>
@@ -260,11 +362,9 @@ namespace Confluent.SchemaRegistry
         ///     Configuration properties.
         /// </param>
         public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config)
-            : this (config, null)
+            : this(config, null)
         {
-
         }
-
 
 
         /// <remarks>
@@ -290,45 +390,49 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Add certificates for SSL handshake.
+        ///     Add certificates for SSL handshake.
         /// </summary>
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        private List<X509Certificate2> SetSslConfig(IEnumerable<KeyValuePair<string, string>> config)
-        {
-            var certificates = new List<X509Certificate2>();
+        private List<X509Certificate2> SetSslConfig(IEnumerable<KeyValuePair<string, string>> config)
+        {
+            var certificates = new List<X509Certificate2>();
 
-            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
-            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
-            if (!String.IsNullOrEmpty(certificateLocation))
-            {
-                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
-            }
+            var certificateLocation = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
+            var certificatePassword = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
+            if (!String.IsNullOrEmpty(certificateLocation))
+            {
+                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
+            }
 
-            var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value ?? "";
-            if (!String.IsNullOrEmpty(caLocation))
-            {
-                certificates.Add(new X509Certificate2(caLocation));
-            }
+            var caLocation =
+                config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation)
+                    .Value ?? "";
+            if (!String.IsNullOrEmpty(caLocation))
+            {
+                certificates.Add(new X509Certificate2(caLocation));
+            }
 
-            return certificates;
-        }
+            return certificates;
+        }
 
         /// <inheritdoc/>
         public Task<int> GetSchemaIdAsync(string subject, string avroSchema, bool normalize = false)
             => GetSchemaIdAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro), normalize);
 
-        
+
         /// <inheritdoc/>
         public async Task<int> GetSchemaIdAsync(string subject, Schema schema, bool normalize = false)
         {
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
+                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<Schema, int> idBySchema))
                 {
-                    idBySchema = new Dictionary<string, int>();
+                    idBySchema = new Dictionary<Schema, int>();
                     this.idBySchemaBySubject.Add(subject, idBySchema);
                 }
 
@@ -336,13 +440,14 @@ namespace Confluent.SchemaRegistry
                 // contains very few elements and the schema string passed in is always the same
                 // instance.
 
-                if (!idBySchema.TryGetValue(schema.SchemaString, out int schemaId))
+                if (!idBySchema.TryGetValue(schema, out int schemaId))
                 {
                     CleanCacheIfFull();
 
                     // throws SchemaRegistryException if schema is not known.
-                    var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true, normalize).ConfigureAwait(continueOnCapturedContext: false);
-                    idBySchema[schema.SchemaString] = registeredSchema.Id;
+                    var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true, normalize)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                    idBySchema[schema] = registeredSchema.Id;
                     schemaById[registeredSchema.Id] = registeredSchema.Schema;
                     schemaId = registeredSchema.Id;
                 }
@@ -362,9 +467,9 @@ namespace Confluent.SchemaRegistry
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
+                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<Schema, int> idBySchema))
                 {
-                    idBySchema = new Dictionary<string, int>();
+                    idBySchema = new Dictionary<Schema, int>();
                     this.idBySchemaBySubject[subject] = idBySchema;
                 }
 
@@ -372,12 +477,13 @@ namespace Confluent.SchemaRegistry
                 // contains very few elements and the schema string passed in is always
                 // the same instance.
 
-                if (!idBySchema.TryGetValue(schema.SchemaString, out int schemaId))
+                if (!idBySchema.TryGetValue(schema, out int schemaId))
                 {
                     CleanCacheIfFull();
 
-                    schemaId = await restService.RegisterSchemaAsync(subject, schema, normalize).ConfigureAwait(continueOnCapturedContext: false);
-                    idBySchema[schema.SchemaString] = schemaId;
+                    schemaId = await restService.RegisterSchemaAsync(subject, schema, normalize)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                    idBySchema[schema] = schemaId;
                 }
 
                 return schemaId;
@@ -392,7 +498,7 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public Task<int> RegisterSchemaAsync(string subject, string avroSchema, bool normalize = false)
             => RegisterSchemaAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro), normalize);
-    
+
 
         /// <summary>
         ///     Check if the given schema string matches a given format name.
@@ -402,7 +508,10 @@ namespace Confluent.SchemaRegistry
             // if a format isn't specified, then assume text is desired.
             if (format == null)
             {
-                try { Convert.FromBase64String(schemaString); }
+                try
+                {
+                    Convert.FromBase64String(schemaString);
+                }
                 catch (Exception)
                 {
                     return true; // Base64 conversion failed, infer the schemaString format is text.
@@ -417,18 +526,23 @@ namespace Confluent.SchemaRegistry
                     throw new ArgumentException($"Invalid schema format was specified: {format}.");
                 }
 
-                try { Convert.FromBase64String(schemaString); }
+                try
+                {
+                    Convert.FromBase64String(schemaString);
+                }
                 catch (Exception)
                 {
                     return false;
                 }
+
                 return true;
             }
         }
 
 
         /// <inheritdoc/>
-        public Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas, bool normalize = false)
+        public Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas,
+            bool normalize = false)
             => restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas, normalize);
 
 
@@ -438,10 +552,12 @@ namespace Confluent.SchemaRegistry
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.schemaById.TryGetValue(id, out Schema schema) || !checkSchemaMatchesFormat(format, schema.SchemaString))
+                if (!this.schemaById.TryGetValue(id, out Schema schema) ||
+                    !checkSchemaMatchesFormat(format, schema.SchemaString))
                 {
                     CleanCacheIfFull();
-                    schema = (await restService.GetSchemaAsync(id, format).ConfigureAwait(continueOnCapturedContext: false));
+                    schema = (await restService.GetSchemaAsync(id, format)
+                        .ConfigureAwait(continueOnCapturedContext: false));
                     schemaById[id] = schema;
                 }
 
@@ -455,14 +571,39 @@ namespace Confluent.SchemaRegistry
 
 
         /// <inheritdoc/>
-        public async Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version)
+        public async Task<Schema> GetSchemaBySubjectAndIdAsync(string subject, int id, string format = null)
+        {
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
+            {
+                if (!this.schemaById.TryGetValue(id, out Schema schema) ||
+                    !checkSchemaMatchesFormat(format, schema.SchemaString))
+                {
+                    CleanCacheIfFull();
+                    schema = (await restService.GetSchemaBySubjectAndIdAsync(subject, id, format)
+                        .ConfigureAwait(continueOnCapturedContext: false));
+                    schemaById[id] = schema;
+                }
+
+                return schema;
+            }
+            finally
+            {
+                cacheMutex.Release();
+            }
+        }
+
+
+        /// <inheritdoc/>
+        public async Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version, bool ignoreDeletedSchemas = true)
         {
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
                 CleanCacheIfFull();
 
-                if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, RegisteredSchema> schemaByVersion))
+                if (!schemaByVersionBySubject.TryGetValue(subject,
+                        out Dictionary<int, RegisteredSchema> schemaByVersion))
                 {
                     schemaByVersion = new Dictionary<int, RegisteredSchema>();
                     schemaByVersionBySubject[subject] = schemaByVersion;
@@ -470,7 +611,8 @@ namespace Confluent.SchemaRegistry
 
                 if (!schemaByVersion.TryGetValue(version, out RegisteredSchema schema))
                 {
-                    schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(continueOnCapturedContext: false);
+                    schema = await restService.GetSchemaAsync(subject, version)
+                        .ConfigureAwait(continueOnCapturedContext: false);
                     schemaByVersion[version] = schema;
                     schemaById[schema.Id] = schema.Schema;
                 }
@@ -485,15 +627,48 @@ namespace Confluent.SchemaRegistry
 
 
         /// <inheritdoc/>
-        [Obsolete("Superseded by GetRegisteredSchemaAsync(string subject, int version). This method will be removed in a future release.")]
+        [Obsolete(
+            "Superseded by GetRegisteredSchemaAsync(string subject, int version). This method will be removed in a future release.")]
         public async Task<string> GetSchemaAsync(string subject, int version)
             => (await GetRegisteredSchemaAsync(subject, version)).SchemaString;
 
 
         /// <inheritdoc/>
         public async Task<RegisteredSchema> GetLatestSchemaAsync(string subject)
-            => await restService.GetLatestSchemaAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+        {
+            RegisteredSchema schema;
+            if (!latestVersionBySubject.TryGetValue(subject, out schema))
+            {
+                schema = await restService.GetLatestSchemaAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+                MemoryCacheEntryOptions opts = new MemoryCacheEntryOptions();
+                if (latestCacheTtlSecs > 0)
+                {
+                    opts.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(latestCacheTtlSecs);
+                }
 
+                latestVersionBySubject.Set(subject, schema, opts);
+            }
+            return schema;
+        }
+
+        public async Task<RegisteredSchema> GetLatestWithMetadataAsync(string subject,
+            IDictionary<string, string> metadata, bool ignoreDeletedSchemas)
+        {
+            var key = (subject, metadata, ignoreDeletedSchemas);
+            RegisteredSchema schema;
+            if (!latestWithMetadataBySubject.TryGetValue(key, out schema))
+            {
+                schema =  await restService.GetLatestWithMetadataAsync(subject, metadata, ignoreDeletedSchemas).ConfigureAwait(continueOnCapturedContext: false);
+                MemoryCacheEntryOptions opts = new MemoryCacheEntryOptions();
+                if (latestCacheTtlSecs > 0)
+                {
+                    opts.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(latestCacheTtlSecs);
+                }
+
+                latestWithMetadataBySubject.Set(key, schema, opts);
+            }
+            return schema;
+        }
 
         /// <inheritdoc/>
         public Task<List<string>> GetAllSubjectsAsync()
@@ -507,22 +682,27 @@ namespace Confluent.SchemaRegistry
 
         /// <inheritdoc/>
         public async Task<bool> IsCompatibleAsync(string subject, Schema schema)
-            => await restService.TestLatestCompatibilityAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
+            => await restService.TestLatestCompatibilityAsync(subject, schema)
+                .ConfigureAwait(continueOnCapturedContext: false);
 
 
         /// <inheritdoc/>
         public async Task<bool> IsCompatibleAsync(string subject, string avroSchema)
-            => await restService.TestLatestCompatibilityAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro)).ConfigureAwait(continueOnCapturedContext: false);
+            => await restService
+                .TestLatestCompatibilityAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro))
+                .ConfigureAwait(continueOnCapturedContext: false);
 
 
         /// <inheritdoc />
-        [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
+        [Obsolete(
+            "SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructKeySubjectName(string topic, string recordType = null)
             => keySubjectNameStrategy(new SerializationContext(MessageComponentType.Key, topic), recordType);
 
 
         /// <inheritdoc />
-        [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
+        [Obsolete(
+            "SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructValueSubjectName(string topic, string recordType = null)
             => valueSubjectNameStrategy(new SerializationContext(MessageComponentType.Value, topic), recordType);
 
@@ -536,6 +716,27 @@ namespace Confluent.SchemaRegistry
             => await restService.UpdateCompatibilityAsync(subject, compatibility)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
+
+        /// <summary>
+        ///     Clears caches of latest versions.
+        /// </summary>
+        public void ClearLatestCaches()
+        {
+            latestVersionBySubject.Clear();
+            latestWithMetadataBySubject.Clear();
+        }
+
+        /// <summary>
+        ///     Clears all caches.
+        /// </summary>
+        public void ClearCaches()
+        {
+            schemaById.Clear();
+            idBySchemaBySubject.Clear();
+            schemaByVersionBySubject.Clear();
+            latestVersionBySubject.Clear();
+            latestWithMetadataBySubject.Clear();
+        }
 
         /// <summary>
         ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.
@@ -561,6 +762,5 @@ namespace Confluent.SchemaRegistry
                 restService.Dispose();
             }
         }
-
     }
 }

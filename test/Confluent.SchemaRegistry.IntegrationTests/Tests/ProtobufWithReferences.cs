@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 
@@ -25,23 +26,30 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
         public static void ProtobufWithReferences(Config config)
         {
-            bool skipKnownFailingTests = semaphoreSkipKnownFailingTests();
-            if (skipKnownFailingTests)
-            {
-                // FIXME : The Tests always Fails !!
-                return;
-            }
             var srInitial = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
-            var testSchemaBase64 = Confluent.Kafka.Examples.Protobuf.Person.Descriptor.File.SerializedData.ToBase64();
+            var testSchemaBase64PersonName = Confluent.Kafka.Examples.Protobuf.PersonName.Descriptor.File.SerializedData.ToBase64();
+            var testSchemaBase64Person = Confluent.Kafka.Examples.Protobuf.Person.Descriptor.File.SerializedData.ToBase64();
             var topicName = Guid.NewGuid().ToString();
             var subjectInitial = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
             var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName + "2", null);
 
-            // check that registering a base64 protobuf schema works.
-            var id1 = srInitial.RegisterSchemaAsync(subjectInitial, new Schema(testSchemaBase64, SchemaType.Protobuf)).Result;
+            // check that registering a base64 protobuf schema works, first with the referenced schema
+            var PersonName = "confluent.kafka.examples.protobuf.PersonName";
+            var id1 = srInitial.RegisterSchemaAsync(PersonName, new Schema(testSchemaBase64PersonName, SchemaType.Protobuf)).Result;
+            var sc1 = srInitial.GetSchemaAsync(id1).Result;
+            Assert.NotNull(sc1);
+            
+            // then with the schema that references it
+            var refs = new List<SchemaReference> { new SchemaReference(PersonName, PersonName, 1) };
+            var id2 = sr.RegisterSchemaAsync(subjectInitial, new Schema(testSchemaBase64Person, refs, SchemaType.Protobuf)).Result;
+            var sc2 = sr.GetSchemaAsync(id2).Result;
+            Assert.NotNull(sc2);
 
-            var sc = srInitial.GetSchemaAsync(id1).Result;
+            // then with the schema that references it and a different subject
+            var id3 = sr.RegisterSchemaAsync(subject, new Schema(testSchemaBase64Person, refs, SchemaType.Protobuf)).Result;
+            var sc3 = sr.GetSchemaAsync(id3).Result;
+            Assert.NotNull(sc3);
         }
     }
 }

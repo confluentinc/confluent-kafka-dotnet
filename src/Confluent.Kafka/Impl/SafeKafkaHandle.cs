@@ -1472,6 +1472,25 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        private void setOption_MatchConsumerGroupTypes(IntPtr optionsPtr, ConsumerGroupType[] types)
+        {
+            var error = Librdkafka.AdminOptions_set_match_consumer_group_types(optionsPtr, types, (UIntPtr)types.Count());
+            if (error != IntPtr.Zero)
+            {
+                throw new KafkaException(new Error(error, true));
+            }
+        }
+
+        private void setOption_IsolationLevel(IntPtr optionsPtr, IsolationLevel IsolationLevel)
+        {
+            var rError = Librdkafka.AdminOptions_set_isolation_level(optionsPtr, (IntPtr)(int)IsolationLevel);
+            var error = new Error(rError, true);
+            if (error.Code != ErrorCode.NoError)
+            {
+                throw new KafkaException(error);
+            }
+        }
+
         private void setOption_completionSource(IntPtr optionsPtr, IntPtr completionSourcePtr)
             => Librdkafka.AdminOptions_set_opaque(optionsPtr, completionSourcePtr);
 
@@ -2327,6 +2346,10 @@ namespace Confluent.Kafka.Impl
                 {
                     setOption_MatchConsumerGroupStates(optionsPtr, options.MatchStates.ToArray());
                 }
+                if (options.MatchTypes != null)
+                {
+                    setOption_MatchConsumerGroupTypes(optionsPtr, options.MatchTypes.ToArray());
+                }
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
                 // Call ListConsumerGroups (async).
@@ -2374,6 +2397,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
         }
+
         internal void DescribeUserScramCredentials(IEnumerable<string> users, DescribeUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
@@ -2408,6 +2432,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
         }
+
         internal void AlterUserScramCredentials(IEnumerable<UserScramCredentialAlteration> alterations, AlterUserScramCredentialsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
@@ -2473,9 +2498,89 @@ namespace Confluent.Kafka.Impl
                 {
                     Librdkafka.UserScramCredentialAlteration_destroy(c_alterationsPtr[i]);
                 }
+            }
+        }
+
+        internal void ListOffsets(IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsets, ListOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+            var optionsPtr = IntPtr.Zero;
+            var topic_partition_list = IntPtr.Zero;
+            try
+            {
+                // set Admin Options if any
+                options = options ?? new ListOffsetsOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.ListOffsets);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_IsolationLevel(optionsPtr, options.IsolationLevel);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)topicPartitionOffsets.Count());
+                foreach(var topicPartitionOffset in topicPartitionOffsets)
+                {
+                    string topic = topicPartitionOffset.TopicPartition.Topic;
+                    Partition partition = topicPartitionOffset.TopicPartition.Partition;
+                    IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topic, partition);
+                    Marshal.WriteInt64(
+                        topic_partition,
+                        (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                        topicPartitionOffset.OffsetSpec.Value());
+                }
+                Librdkafka.ListOffsets(handle, topic_partition_list, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
                 if (optionsPtr != IntPtr.Zero)
                 {
                     Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+                if (topic_partition_list != IntPtr.Zero)
+                {
+                    Librdkafka.topic_partition_list_destroy(topic_partition_list);
+                }
+            }
+        }
+
+        internal void ElectLeaders(ElectionType electionType, IEnumerable<TopicPartition> partitions, ElectLeadersOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+            var optionsPtr = IntPtr.Zero;
+            IntPtr topic_partition_list = IntPtr.Zero;
+            IntPtr request = IntPtr.Zero;
+            try
+            {
+                // Set Admin Options if any.
+                options = new ElectLeadersOptions();
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.ElectLeaders);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+                
+                if(partitions != null)
+                {
+                       topic_partition_list = Librdkafka.topic_partition_list_new((IntPtr)partitions.Count());
+                        foreach (var topicPartitions in partitions)
+                        {
+                            IntPtr topic_partition = Librdkafka.topic_partition_list_add(topic_partition_list, topicPartitions.Topic, topicPartitions.Partition);
+                        }
+                }
+                request = Librdkafka.ElectLeadersRequest_New(electionType, topic_partition_list);
+
+                Librdkafka.ElectLeaders(handle, request, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+                if (topic_partition_list != IntPtr.Zero)
+                {
+                    Librdkafka.topic_partition_list_destroy(topic_partition_list);
+                }
+                if(request != IntPtr.Zero)
+                {
+                    Librdkafka.ElectLeadersRequest_destroy(request);
                 }
             }
         }
@@ -2483,11 +2588,6 @@ namespace Confluent.Kafka.Impl
         internal void DescribeTopics(TopicCollection topicCollection, DescribeTopicsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
-
-            if (topicCollection.Topics.Count() == 0)
-            {
-                throw new ArgumentException("at least one topic should be provided to DescribeTopics");
-            }
 
             var optionsPtr = IntPtr.Zero;
             var topicCollectionPtr = IntPtr.Zero;

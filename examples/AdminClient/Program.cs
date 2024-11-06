@@ -242,6 +242,206 @@ namespace Confluent.Kafka.Examples
             return alterations;
         }
 
+        static Tuple<IsolationLevel, List<TopicPartitionOffsetSpec>> ParseListOffsetsArgs(string[] args)
+        {
+            if (args.Length == 0)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> list-offsets <isolation_level> " + 
+                    "<topic1> <partition1> <EARLIEST/LATEST/MAXTIMESTAMP/TIMESTAMP t1> ..");
+                Environment.ExitCode = 1;
+                return null;
+            }
+            
+            var isolationLevel = Enum.Parse<IsolationLevel>(args[0]);
+            var topicPartitionOffsetSpecs = new List<TopicPartitionOffsetSpec>();
+            for (int i = 1; i < args.Length;)
+            {
+                if (args.Length < i+3)
+                {
+                    throw new ArgumentException($"Invalid number of arguments for topicPartitionOffsetSpec[{topicPartitionOffsetSpecs.Count}]: {args.Length - i}");
+                }
+                
+                string topic = args[i];
+                var partition = Int32.Parse(args[i + 1]);
+                var offsetSpec = args[i + 2];
+                if (offsetSpec == "TIMESTAMP")
+                {
+                    if (args.Length < i+4)
+                    {
+                        throw new ArgumentException($"Invalid number of arguments for topicPartitionOffsetSpec[{topicPartitionOffsetSpecs.Count}]: {args.Length - i}");
+                    }
+                    
+                    var timestamp = Int64.Parse(args[i + 3]);
+                    i = i + 1;
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec
+                    {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = OffsetSpec.ForTimestamp(timestamp)
+                    });
+                }
+                else if (offsetSpec == "MAX_TIMESTAMP")
+                {
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec
+                    {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = OffsetSpec.MaxTimestamp()
+                    });
+                }
+                else if (offsetSpec == "EARLIEST")
+                {
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec
+                    {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = OffsetSpec.Earliest()
+                    });
+                }
+                else if (offsetSpec == "LATEST")
+                {
+                    topicPartitionOffsetSpecs.Add( new TopicPartitionOffsetSpec
+                    {
+                        TopicPartition = new TopicPartition(topic, new Partition(partition)),
+                        OffsetSpec = OffsetSpec.Latest()
+                    });
+                }
+                else
+                {
+                    throw new ArgumentException(
+                            "offsetSpec can be EARLIEST, LATEST, MAX_TIMESTAMP or TIMESTAMP T1.");
+                }
+                i = i + 3;
+            }
+            return Tuple.Create(isolationLevel, topicPartitionOffsetSpecs);
+        }
+
+        static bool ParseListConsumerGroupsArgs(string[] commandArgs,
+            ref TimeSpan timeout,
+            ref List<ConsumerGroupState> states,
+            ref List<ConsumerGroupType> types,
+            ref string error)
+        {
+            try
+            {
+                var typeArray = false;
+                var stateArray = false;
+                var lastArray = 0;
+                for (var i = 0; i < commandArgs.Length; i++)
+                {
+                    var commandArg = commandArgs[i];
+                    if (commandArg == "-states")
+                    {
+                        if (stateArray)
+                        {
+                            error = "Cannot pass the states flag (-states) more than once";
+                            return false;
+                        }
+                        stateArray = true;
+                        lastArray = 1;
+                    }
+                    else if (commandArg == "-types")
+                    {
+                        if (typeArray)
+                        {
+                            error = "Cannot pass the types flag (-types) more than once";
+                            return false;
+                        }
+                        typeArray = true;
+                        lastArray = 2;
+                    }
+                    else
+                    {
+                        if (lastArray == 1)
+                        {
+                            try
+                            {
+                                states.Add(Enum.Parse<ConsumerGroupState>(commandArg));
+                            }
+                            catch (Exception)
+                            {
+                                error = $"Invalid state: {commandArg}";
+                                return false;
+                            }
+                        }
+                        else if (lastArray == 2)
+                        {
+                            try
+                            {
+                                types.Add(Enum.Parse<ConsumerGroupType>(commandArg));
+                            }
+                            catch (Exception)
+                            {
+                                 error = $"Invalid type: {commandArg}";
+                                 return false;
+                            }
+                        }
+                        else if (i == 0)
+                        {
+                            timeout = TimeSpan.FromSeconds(int.Parse(commandArg));
+                        }
+                        else
+                        {
+                            error = $"Unknown argument: {commandArg}";
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+            catch (SystemException e)
+            {
+                error = e.Message;
+                return false;
+            }
+        }
+
+        static Tuple<ElectionType, List<TopicPartition>> ParseElectLeadersArgs(string[] args)
+        {
+            if ((args.Length -1 ) % 2 != 0)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders <electionType> <topic1> <partition1> ..");
+                Environment.ExitCode = 1;
+                return null;
+            }
+            
+            var electionType = Enum.Parse<ElectionType>(args[0]);
+            var partitions = new List<TopicPartition>();
+            if(args.Length == 1)
+            {
+                partitions = null;
+                return Tuple.Create(electionType, partitions);
+            }
+            for (int i = 1; i < args.Length; i += 2)
+            {
+                var topic = args[i];
+                var partition = Int32.Parse(args[i + 1]);
+                partitions.Add(new TopicPartition(topic, partition));
+            }
+            return Tuple.Create(electionType, partitions);
+        }
+
+       static void PrintListOffsetsResultInfos(List<ListOffsetsResultInfo> ListOffsetsResultInfos)
+       {
+            foreach(var listOffsetsResultInfo in ListOffsetsResultInfos)
+            {
+                Console.WriteLine("  ListOffsetsResultInfo:");
+                Console.WriteLine($"    TopicPartitionOffsetError: {listOffsetsResultInfo.TopicPartitionOffsetError}");
+                Console.WriteLine($"    Timestamp: {listOffsetsResultInfo.Timestamp}");
+            }
+        }
+
+        static void PrintElectLeaderResults(List<TopicPartitionError> topicPartitions)
+        {
+            Console.WriteLine($"ElectLeaders response has {topicPartitions.Count} partition(s):");
+            foreach (var partitionResult in topicPartitions)
+            {
+                if (!partitionResult.Error.IsError)
+                    Console.WriteLine($"Election successful in {partitionResult.Topic} {partitionResult.Partition}");
+                else
+                    Console.WriteLine($"Election failed in {partitionResult.Topic} {partitionResult.Partition}: " +
+                      $"Code: {partitionResult.Error.Code}" +
+                      $", Reason: {partitionResult.Error.Reason}");
+            }
+        }
+
         static async Task CreateAclsAsync(string bootstrapServers, string[] commandArgs)
         {
             List<AclBinding> aclBindings;
@@ -500,24 +700,15 @@ namespace Confluent.Kafka.Examples
         static async Task ListConsumerGroupsAsync(string bootstrapServers, string[] commandArgs)
         {
             var timeout = TimeSpan.FromSeconds(30);
-            var statesList = new List<ConsumerGroupState>();
-            try
+            string error = "";
+            var states = new List<ConsumerGroupState>();
+            var types = new List<ConsumerGroupType>();
+
+            if (!ParseListConsumerGroupsArgs(commandArgs,
+                ref timeout,  ref states, ref types, ref error))
             {
-                if (commandArgs.Length > 0)
-                {
-                    timeout = TimeSpan.FromSeconds(Int32.Parse(commandArgs[0]));
-                }
-                if (commandArgs.Length > 1)
-                {
-                    for (int i = 1; i < commandArgs.Length; i++)
-                    {
-                        statesList.Add(Enum.Parse<ConsumerGroupState>(commandArgs[i]));
-                    }
-                }
-            }
-            catch (SystemException)
-            {
-                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [<timeout_seconds> <match_state_1> <match_state_2> ... <match_state_N>]");
+                Console.WriteLine(error);
+                Console.WriteLine("usage: .. <bootstrapServers> list-consumer-groups [timeout] [-states <match_state_1> .. <match_state_N>] [-types <match_type_1> .. <match_type_M>]");
                 Environment.ExitCode = 1;
                 return;
             }
@@ -529,7 +720,8 @@ namespace Confluent.Kafka.Examples
                     var result = await adminClient.ListConsumerGroupsAsync(new ListConsumerGroupsOptions()
                     { 
                         RequestTimeout = timeout,
-                        MatchStates = statesList,
+                        MatchStates = states,
+                        MatchTypes = types,
                     });
                     Console.WriteLine(result);
                 }
@@ -793,11 +985,79 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static async Task ListOffsetsAsync(string bootstrapServers, string[] commandArgs) {
+
+            var listOffsetsArgs = ParseListOffsetsArgs(commandArgs);
+            if (listOffsetsArgs == null) { return; }
+            
+            var isolationLevel = listOffsetsArgs.Item1;
+            var topicPartitionOffsets = listOffsetsArgs.Item2;
+            
+            var timeout = TimeSpan.FromSeconds(30);
+            ListOffsetsOptions options = new ListOffsetsOptions(){ RequestTimeout = timeout, IsolationLevel = isolationLevel };
+
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var listOffsetsResult = await adminClient.ListOffsetsAsync(topicPartitionOffsets, options);
+                    Console.WriteLine("ListOffsetsResult:");
+                    PrintListOffsetsResultInfos(listOffsetsResult.ResultInfos);
+                }
+                catch (ListOffsetsException e)
+                {
+                    Console.WriteLine("ListOffsetsReport:");
+                    Console.WriteLine($"  Error: {e.Error}");
+                    PrintListOffsetsResultInfos(e.Result.ResultInfos);
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred listing offsets: {e}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
+
+        static async Task ElectLeadersAsync(string bootstrapServers, string[] commandArgs)
+        {
+            if (commandArgs.Length < 3 && (commandArgs.Length - 1) % 2 != 0)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> elect-leaders <electionType> <topic1> <partition1> ..");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            var req = ParseElectLeadersArgs(commandArgs);
+            var electionType = req.Item1;
+            var partitions = req.Item2;        
+            var timeout = TimeSpan.FromSeconds(30);
+            ElectLeadersOptions options = new ElectLeadersOptions() { RequestTimeout = timeout };
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var result = await adminClient.ElectLeadersAsync(electionType, partitions, options);
+                    PrintElectLeaderResults(result.TopicPartitions);
+                    
+                }
+                catch (ElectLeadersException e)
+                {
+                    Console.WriteLine("One or more elect leaders operations failed.");
+                    PrintElectLeaderResults(e.Results.TopicPartitions);
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred electing leaders: {e}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
         static void PrintTopicDescriptions(List<TopicDescription> topicDescriptions, bool includeAuthorizedOperations)
         {
             foreach (var topic in topicDescriptions)
             {
                 Console.WriteLine($"\n  Topic: {topic.Name} {topic.Error}");
+                Console.WriteLine($"  Topic Id: {topic.TopicId}");
                 Console.WriteLine($"  Partitions:");
                 foreach (var partition in topic.Partitions)
                 {
@@ -956,12 +1216,11 @@ namespace Confluent.Kafka.Examples
                 Console.WriteLine(
                     "usage: .. <bootstrapServers> " + String.Join("|", new string[] {
                         "list-groups", "metadata", "library-version", "create-topic", "create-acls",
-                        "describe-acls", "delete-acls",
                         "list-consumer-groups", "describe-consumer-groups",
                         "list-consumer-group-offsets", "alter-consumer-group-offsets",
                         "incremental-alter-configs", "describe-user-scram-credentials", 
                         "alter-user-scram-credentials", "describe-topics",
-                        "describe-cluster"
+                        "describe-cluster", "list-offsets", "elect-leaders"
                     }) +
                     " ..");
                 Environment.ExitCode = 1;
@@ -1021,6 +1280,12 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "describe-cluster":
                     await DescribeClusterAsync(bootstrapServers, commandArgs);
+                    break;
+                case "list-offsets":
+                    await ListOffsetsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "elect-leaders":
+                    await ElectLeadersAsync(bootstrapServers, commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");

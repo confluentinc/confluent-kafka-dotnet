@@ -282,6 +282,7 @@ namespace Confluent.Kafka
                         IsSimpleConsumerGroup =
                             (int)Librdkafka.ConsumerGroupListing_is_simple_consumer_group(cglPtr) == 1,
                         State = Librdkafka.ConsumerGroupListing_state(cglPtr),
+                        Type = Librdkafka.ConsumerGroupListing_type(cglPtr),
                     };
                 }).ToList();
             }
@@ -486,6 +487,7 @@ namespace Confluent.Kafka
             {
 
                 var topicName = PtrToStringUTF8(Librdkafka.TopicDescription_name(topicPtr));
+                var topicId = Librdkafka.TopicDescription_topic_id(topicPtr);
                 var error = new Error(Librdkafka.TopicDescription_error(topicPtr), false);
                 var isInternal = Librdkafka.TopicDescription_is_internal(topicPtr) != IntPtr.Zero;
                 List<AclOperation> authorizedOperations = extractAuthorizedOperations(
@@ -497,6 +499,7 @@ namespace Confluent.Kafka
                 return new TopicDescription()
                 {
                     Name = topicName,
+                    TopicId = extractUuid(topicId),
                     Error = error,
                     AuthorizedOperations = authorizedOperations,
                     IsInternal = isInternal,
@@ -509,6 +512,19 @@ namespace Confluent.Kafka
             }).ToList();
             return result;
         }
+
+        private Uuid extractUuid(IntPtr uuidPtr)
+        {
+            if (uuidPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            return new Uuid(
+                Librdkafka.Uuid_most_significant_bits(uuidPtr),
+                Librdkafka.Uuid_least_significant_bits(uuidPtr)
+            );
+        } 
         
         private Node extractNode(IntPtr nodePtr)
         {
@@ -576,6 +592,92 @@ namespace Confluent.Kafka
                 Controller = controller,
                 AuthorizedOperations = authorizedOperations,
                 Nodes = nodes
+            };
+        }
+
+        private ListOffsetsReport extractListOffsetsReport(IntPtr resultPtr)
+        {
+            var resultInfosPtr = Librdkafka.ListOffsets_result_infos(resultPtr, out UIntPtr resulInfosCntPtr);
+            
+            IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resulInfosCntPtr];
+            if ((int)resulInfosCntPtr > 0)
+            {
+                Marshal.Copy(resultInfosPtr, resultResponsesPtrArr, 0, (int)resulInfosCntPtr);
+            }            
+            
+            ErrorCode reportErrorCode = ErrorCode.NoError;
+            var listOffsetsResultInfos = resultResponsesPtrArr.Select(resultResponsePtr => 
+            {
+                long timestamp = Librdkafka.ListOffsetsResultInfo_timestamp(resultResponsePtr);
+                IntPtr c_topic_partition = Librdkafka.ListOffsetsResultInfo_topic_partition(resultResponsePtr);
+                var tp = Marshal.PtrToStructure<rd_kafka_topic_partition>(c_topic_partition);
+                ErrorCode code = tp.err;
+                Error error = new Error(code);
+                if ((code != ErrorCode.NoError) && (reportErrorCode == ErrorCode.NoError))
+                {
+                    reportErrorCode = code;
+                }
+                return new ListOffsetsResultInfo
+                {
+                    Timestamp = timestamp,
+                    TopicPartitionOffsetError = new TopicPartitionOffsetError(
+                        tp.topic,
+                        new Partition(tp.partition),
+                        new Offset(tp.offset),
+                        error)
+                };
+            }).ToList();
+
+            return new ListOffsetsReport
+            {
+                ResultInfos = listOffsetsResultInfos,
+                Error = new Error(reportErrorCode)
+            };
+        }
+
+        private ElectLeadersReport extractElectLeadersResults(IntPtr resultPtr)
+        {
+            IntPtr topicPartitionsPtr = Librdkafka.ElectLeaders_result_partitions(resultPtr, out UIntPtr topicPartitionsCountPtr);
+
+            if ((int)topicPartitionsCountPtr == 0)
+            {
+                return new ElectLeadersReport
+                {
+                    Error = new Error(ErrorCode.NoError),
+                    TopicPartitions = new List<TopicPartitionError>()
+                };
+            }
+
+            IntPtr[] topicPartitionsPtrArr = new IntPtr[(int)topicPartitionsCountPtr];
+            Marshal.Copy(topicPartitionsPtr, topicPartitionsPtrArr, 0, (int)topicPartitionsCountPtr);
+
+            ErrorCode reportErrorCode = ErrorCode.NoError;
+            var topicPartitions = topicPartitionsPtrArr.Select(ptr =>
+            {
+                IntPtr topic_partition = Librdkafka.TopicPartitionResult_partition(ptr);
+                IntPtr error = Librdkafka.TopicPartitionResult_error(ptr);
+
+                ErrorCode errCode = Librdkafka.error_code(error);
+                var errStr = Librdkafka.error_string(error);
+
+                var tpe = Marshal.PtrToStructure<rd_kafka_topic_partition>(topic_partition);
+
+                if(tpe.err != ErrorCode.NoError && reportErrorCode == ErrorCode.NoError)
+                {
+                    reportErrorCode = tpe.err;
+                }
+
+                return new TopicPartitionError(
+                    tpe.topic,
+                    new Partition(tpe.partition),
+                    new Error(errCode, errStr)
+                );
+            }).ToList();
+
+            return new ElectLeadersReport
+            {
+                Error = new Error(reportErrorCode),
+                TopicPartitions = topicPartitions
             };
         }
 
@@ -1172,6 +1274,58 @@ namespace Confluent.Kafka
                                             ((TaskCompletionSource<DescribeClusterResult>)adminClientResult).TrySetResult(res));
                                         break;
                                     }
+                                    case Librdkafka.EventType.ListOffsets_Result:
+                                    {
+                                        if (errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        ListOffsetsReport report = extractListOffsetsReport(eventPtr);
+                                        if (report.Error.IsError)
+                                        {
+                                            Task.Run(() => 
+                                                ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetException(
+                                                    new ListOffsetsException(report)));
+                                        }
+                                        else
+                                        {
+                                            var result = new ListOffsetsResult() { ResultInfos = report.ResultInfos };
+                                            Task.Run(() =>
+                                                ((TaskCompletionSource<ListOffsetsResult>)adminClientResult).TrySetResult(
+                                                    result));
+                                        }
+                                        break;
+                                    }
+                                    case Librdkafka.EventType.ElectLeaders_Result:
+                                    {
+                                        if(errorCode != ErrorCode.NoError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<ElectLeadersResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                        }
+                                        ElectLeadersReport report = extractElectLeadersResults(eventPtr);
+                                        if(report.Error.IsError)
+                                        {
+                                            Task.Run(() =>
+                                                    ((TaskCompletionSource<ElectLeadersResult>)adminClientResult).TrySetException(
+                                                        new ElectLeadersException(report)));
+                                        }
+                                        else
+                                        {
+                                            var result = new ElectLeadersResult()
+                                            {
+                                                TopicPartitions = report.TopicPartitions
+                                            };
+                                            Task.Run(() =>
+                                                ((TaskCompletionSource<ElectLeadersResult>)adminClientResult).TrySetResult(result));
+                                        }
+                                        break;
+                                    }
                                     default:
                                         // Should never happen.
                                         throw new InvalidOperationException($"Unknown result type: {type}");
@@ -1222,6 +1376,8 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.AlterUserScramCredentials_Result, typeof(TaskCompletionSource<Null>) },
             { Librdkafka.EventType.DescribeTopics_Result, typeof(TaskCompletionSource<DescribeTopicsResult>) },
             { Librdkafka.EventType.DescribeCluster_Result, typeof(TaskCompletionSource<DescribeClusterResult>) },
+            { Librdkafka.EventType.ListOffsets_Result, typeof(TaskCompletionSource<ListOffsetsResult>) },
+            { Librdkafka.EventType.ElectLeaders_Result, typeof(TaskCompletionSource<ElectLeadersResult>) },
         };
 
 
@@ -1683,5 +1839,31 @@ namespace Confluent.Kafka
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.ListOffsetsAsync(IAdminClient, IEnumerable{TopicPartitionOffsetSpec}, ListOffsetsOptions)" />
+        /// </summary>
+        public Task<ListOffsetsResult> ListOffsetsAsync(IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsetSpecs,ListOffsetsOptions options = null) {
+            var completionSource = new TaskCompletionSource<ListOffsetsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.ListOffsets(
+                topicPartitionOffsetSpecs, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+        
+        /// <summary>
+        ///  Refer to <see cref="Confluent.Kafka.IAdminClientExtensions.ElectLeadersAsync(IAdminClient, ElectionType, IEnumerable{TopicPartition}, ElectLeadersOptions)" />
+        /// </summary>
+         public Task<ElectLeadersResult> ElectLeadersAsync(ElectionType electionType, IEnumerable<TopicPartition> partitions, ElectLeadersOptions options = null)
+        {
+            var completionSource = new TaskCompletionSource<ElectLeadersResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.ElectLeaders(
+                electionType, partitions, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
     }
 }
