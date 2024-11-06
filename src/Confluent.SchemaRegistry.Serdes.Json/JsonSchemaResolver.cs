@@ -21,8 +21,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using NJsonSchema;
-using Newtonsoft.Json.Linq;
 using NJsonSchema.References;
+using Newtonsoft.Json.Linq;
 #if NET8_0_OR_GREATER
 using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.NewtonsoftJson.Generation.NewtonsoftJsonSchemaGeneratorSettings;
 #else
