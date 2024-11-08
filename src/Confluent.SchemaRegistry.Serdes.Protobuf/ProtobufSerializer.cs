@@ -58,12 +58,6 @@ namespace Confluent.SchemaRegistry.Serdes
         private bool useDeprecatedFormat;
         private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy;
 
-        /// <remarks>
-        ///     A given schema is uniquely identified by a schema id, even when
-        ///     registered against multiple subjects.
-        /// </remarks>
-        private int? schemaId;
-
         private byte[] indexArray;
 
 
@@ -252,6 +246,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 string fullname = value.Descriptor.FullName;
 
+                int schemaId = 0;
                 string subject;
                 RegisteredSchema latestSchema = null;
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
@@ -310,7 +305,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 using (var writer = new BinaryWriter(stream))
                 {
                     stream.WriteByte(Constants.MagicByte);
-                    writer.Write(IPAddress.HostToNetworkOrder(schemaId.Value));
+                    writer.Write(IPAddress.HostToNetworkOrder(schemaId));
                     writer.Write(this.indexArray);
                     value.WriteTo(stream);
                     return stream.ToArray();
