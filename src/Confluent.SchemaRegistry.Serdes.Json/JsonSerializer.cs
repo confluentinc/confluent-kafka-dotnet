@@ -65,12 +65,6 @@ namespace Confluent.SchemaRegistry.Serdes
         
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
-        /// <remarks>
-        ///     A given schema is uniquely identified by a schema id, even when
-        ///     registered against multiple subjects.
-        /// </remarks>
-        private int? schemaId;
-
         private JsonSchema schema;
         private string schemaText;
         private string schemaFullname;
@@ -198,6 +192,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             try
             {
+                int schemaId = 0;
                 string subject;
                 RegisteredSchema latestSchema = null;
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
@@ -207,23 +202,21 @@ namespace Confluent.SchemaRegistry.Serdes
                     latestSchema = await GetReaderSchema(subject, new Schema(schemaText, ReferenceList, SchemaType.Json))
                         .ConfigureAwait(continueOnCapturedContext: false);
                     
-                    if (!subjectsRegistered.Contains(subject))
+                    if (latestSchema != null)
                     {
-                        if (latestSchema != null)
-                        {
-                            schemaId = latestSchema.Id;
-                        }
-                        else
-                        {
-                            // first usage: register/get schema to check compatibility
-                            schemaId = autoRegisterSchema
-                                ? await schemaRegistryClient.RegisterSchemaAsync(subject,
-                                        new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false)
-                                : await schemaRegistryClient.GetSchemaIdAsync(subject,
-                                        new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
-                        }
+                        schemaId = latestSchema.Id;
+                    }
+                    else if (!subjectsRegistered.Contains(subject))
+                    {
+                        // first usage: register/get schema to check compatibility
+                        schemaId = autoRegisterSchema
+                            ? await schemaRegistryClient.RegisterSchemaAsync(subject,
+                                    new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false)
+                            : await schemaRegistryClient.GetSchemaIdAsync(subject,
+                                    new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false);
+
                         subjectsRegistered.Add(subject);
                     }
                 }
@@ -257,7 +250,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 using (var writer = new BinaryWriter(stream))
                 {
                     stream.WriteByte(Constants.MagicByte);
-                    writer.Write(IPAddress.HostToNetworkOrder(schemaId.Value));
+                    writer.Write(IPAddress.HostToNetworkOrder(schemaId));
                     writer.Write(System.Text.Encoding.UTF8.GetBytes(serializedString));
                     return stream.ToArray();
                 }
