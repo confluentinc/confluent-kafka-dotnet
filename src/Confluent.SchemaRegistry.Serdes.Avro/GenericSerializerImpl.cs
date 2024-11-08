@@ -139,39 +139,40 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         schemaId = latestSchema.Id;
                     }
-                    else
+                    else if (!registeredSchemas.Contains(subjectSchemaPair))
                     {
-                        if (!registeredSchemas.Contains(subjectSchemaPair))
+                        int newSchemaId;
+
+                        // first usage: register/get schema to check compatibility
+                        if (autoRegisterSchema)
                         {
-                            int newSchemaId;
-
-                            // first usage: register/get schema to check compatibility
-                            if (autoRegisterSchema)
-                            {
-                                newSchemaId = await schemaRegistryClient
-                                    .RegisterSchemaAsync(subject, writerSchemaString, normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
-                            }
-                            else
-                            {
-                                newSchemaId = await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString, normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
-                            }
-
-                            if (!schemaIds.ContainsKey(writerSchemaString))
-                            {
-                                schemaIds.Add(writerSchemaString, newSchemaId);
-                            }
-                            else if (schemaIds[writerSchemaString] != newSchemaId)
-                            {
-                                schemaIds.Clear();
-                                registeredSchemas.Clear();
-                                throw new KafkaException(new Error(isKey ? ErrorCode.Local_KeySerialization : ErrorCode.Local_ValueSerialization, $"Duplicate schema registration encountered: Schema ids {schemaIds[writerSchemaString]} and {newSchemaId} are associated with the same schema."));
-                            }
-
-                            registeredSchemas.Add(subjectSchemaPair);
+                            newSchemaId = await schemaRegistryClient
+                                .RegisterSchemaAsync(subject, writerSchemaString, normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false);
+                        }
+                        else
+                        {
+                            newSchemaId = await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString, normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false);
                         }
 
+                        if (!schemaIds.ContainsKey(writerSchemaString))
+                        {
+                            schemaIds.Add(writerSchemaString, newSchemaId);
+                        }
+                        else if (schemaIds[writerSchemaString] != newSchemaId)
+                        {
+                            schemaIds.Clear();
+                            registeredSchemas.Clear();
+                            throw new KafkaException(new Error(isKey ? ErrorCode.Local_KeySerialization : ErrorCode.Local_ValueSerialization, $"Duplicate schema registration encountered: Schema ids {schemaIds[writerSchemaString]} and {newSchemaId} are associated with the same schema."));
+                        }
+
+                        registeredSchemas.Add(subjectSchemaPair);
+
+                        schemaId = schemaIds[writerSchemaString];
+                    }
+                    else
+                    {
                         schemaId = schemaIds[writerSchemaString];
                     }
                 }
