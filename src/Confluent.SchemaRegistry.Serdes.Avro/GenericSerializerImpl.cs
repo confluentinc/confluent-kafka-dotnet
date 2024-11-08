@@ -31,7 +31,7 @@ namespace Confluent.SchemaRegistry.Serdes
 {
     internal class GenericSerializerImpl : AsyncSerializer<GenericRecord, Avro.Schema>
     {
-        private Dictionary<Avro.RecordSchema, string> knownSchemas = new Dictionary<global::Avro.RecordSchema, string>();
+        private Dictionary<Avro.Schema, string> knownSchemas = new Dictionary<global::Avro.Schema, string>();
         private HashSet<KeyValuePair<string, string>> registeredSchemas = new HashSet<KeyValuePair<string, string>>();
         private Dictionary<string, int> schemaIds = new Dictionary<string, int>();
 
@@ -90,7 +90,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 int schemaId;
                 string subject;
                 RegisteredSchema latestSchema = null;
-                Avro.RecordSchema writerSchema;
+                Avro.Schema writerSchema;
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
@@ -132,19 +132,19 @@ namespace Confluent.SchemaRegistry.Serdes
                     // object reference, not value.
 
                     subject = GetSubjectName(topic, isKey, data.Schema.Fullname);
+                    var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
-                        
-                    var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
-                    if (!registeredSchemas.Contains(subjectSchemaPair))
+                    if (latestSchema != null)
                     {
-                        int newSchemaId;
-                        if (latestSchema != null)
+                        schemaId = latestSchema.Id;
+                    }
+                    else
+                    {
+                        if (!registeredSchemas.Contains(subjectSchemaPair))
                         {
-                            newSchemaId = latestSchema.Id;
-                        }
-                        else
-                        {
+                            int newSchemaId;
+
                             // first usage: register/get schema to check compatibility
                             if (autoRegisterSchema)
                             {
@@ -157,22 +157,23 @@ namespace Confluent.SchemaRegistry.Serdes
                                 newSchemaId = await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString, normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
                             }
+
+                            if (!schemaIds.ContainsKey(writerSchemaString))
+                            {
+                                schemaIds.Add(writerSchemaString, newSchemaId);
+                            }
+                            else if (schemaIds[writerSchemaString] != newSchemaId)
+                            {
+                                schemaIds.Clear();
+                                registeredSchemas.Clear();
+                                throw new KafkaException(new Error(isKey ? ErrorCode.Local_KeySerialization : ErrorCode.Local_ValueSerialization, $"Duplicate schema registration encountered: Schema ids {schemaIds[writerSchemaString]} and {newSchemaId} are associated with the same schema."));
+                            }
+
+                            registeredSchemas.Add(subjectSchemaPair);
                         }
 
-                        if (!schemaIds.ContainsKey(writerSchemaString))
-                        {
-                            schemaIds.Add(writerSchemaString, newSchemaId);
-                        }
-                        else if (schemaIds[writerSchemaString] != newSchemaId)
-                        {
-                            schemaIds.Clear();
-                            registeredSchemas.Clear();
-                            throw new KafkaException(new Error(isKey ? ErrorCode.Local_KeySerialization : ErrorCode.Local_ValueSerialization, $"Duplicate schema registration encountered: Schema ids {schemaIds[writerSchemaString]} and {newSchemaId} are associated with the same schema."));
-                        }
-
-                        registeredSchemas.Add(subjectSchemaPair);
+                        schemaId = schemaIds[writerSchemaString];
                     }
-                    schemaId = schemaIds[writerSchemaString];
                 }
                 finally
                 {
@@ -181,10 +182,10 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 if (latestSchema != null)
                 {
-                    var schema = await GetParsedSchema(latestSchema);
+                    writerSchema = await GetParsedSchema(latestSchema);
                     FieldTransformer fieldTransformer = async (ctx, transform, message) => 
                     {
-                        return await AvroUtils.Transform(ctx, schema, message, transform).ConfigureAwait(false);
+                        return await AvroUtils.Transform(ctx, writerSchema, message, transform).ConfigureAwait(false);
                     };
                     data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Write, null,
                         latestSchema, data, fieldTransformer)
