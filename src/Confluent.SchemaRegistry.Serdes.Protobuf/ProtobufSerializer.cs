@@ -261,32 +261,29 @@ namespace Confluent.SchemaRegistry.Serdes
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     
-                    if (!subjectsRegistered.Contains(subject))
+                    if (latestSchema != null)
                     {
-                        if (latestSchema != null)
-                        {
-                            schemaId = latestSchema.Id;
-                        }
-                        else
-                        {
-                            var references =
-                                await RegisterOrGetReferences(value.Descriptor.File, context, autoRegisterSchema, skipKnownTypes)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
+                        schemaId = latestSchema.Id;
+                    }
+                    else if (!subjectsRegistered.Contains(subject))
+                    {
+                        var references =
+                            await RegisterOrGetReferences(value.Descriptor.File, context, autoRegisterSchema, skipKnownTypes)
+                                .ConfigureAwait(continueOnCapturedContext: false);
 
-                            // first usage: register/get schema to check compatibility
-                            schemaId = autoRegisterSchema
-                                ? await schemaRegistryClient.RegisterSchemaAsync(subject,
-                                        new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
-                                            SchemaType.Protobuf), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false)
-                                : await schemaRegistryClient.GetSchemaIdAsync(subject,
-                                        new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
-                                            SchemaType.Protobuf), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
+                        // first usage: register/get schema to check compatibility
+                        schemaId = autoRegisterSchema
+                            ? await schemaRegistryClient.RegisterSchemaAsync(subject,
+                                    new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
+                                        SchemaType.Protobuf), normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false)
+                            : await schemaRegistryClient.GetSchemaIdAsync(subject,
+                                    new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
+                                        SchemaType.Protobuf), normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false);
 
-                            // note: different values for schemaId should never be seen here.
-                            // TODO: but fail fast may be better here.
-                        }
+                        // note: different values for schemaId should never be seen here.
+                        // TODO: but fail fast may be better here.
 
                         subjectsRegistered.Add(subject);
                     }
