@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Reflection;
 using System.Threading.Tasks;
 using Avro.IO;
 using Avro.Specific;
@@ -208,23 +207,20 @@ namespace Confluent.SchemaRegistry.Serdes
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     
-                    if (!currentSchemaData.SubjectsRegistered.Contains(subject))
+                    if (latestSchema != null)
                     {
-                        if (latestSchema != null)
-                        {
-                            currentSchemaData.WriterSchemaId = latestSchema.Id;
-                        }
-                        else
-                        {
-                            // first usage: register/get schema to check compatibility
-                            currentSchemaData.WriterSchemaId = autoRegisterSchema
-                                ? await schemaRegistryClient
-                                    .RegisterSchemaAsync(subject, currentSchemaData.WriterSchemaString, normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false)
-                                : await schemaRegistryClient
-                                    .GetSchemaIdAsync(subject, currentSchemaData.WriterSchemaString, normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
-                        }
+                        currentSchemaData.WriterSchemaId = latestSchema.Id;
+                    }
+                    else if (!currentSchemaData.SubjectsRegistered.Contains(subject))
+                    {
+                        // first usage: register/get schema to check compatibility
+                        currentSchemaData.WriterSchemaId = autoRegisterSchema
+                            ? await schemaRegistryClient
+                                .RegisterSchemaAsync(subject, currentSchemaData.WriterSchemaString, normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false)
+                            : await schemaRegistryClient
+                                .GetSchemaIdAsync(subject, currentSchemaData.WriterSchemaString, normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false);
 
                         currentSchemaData.SubjectsRegistered.Add(subject);
                     }

@@ -207,23 +207,21 @@ namespace Confluent.SchemaRegistry.Serdes
                     latestSchema = await GetReaderSchema(subject, new Schema(schemaText, ReferenceList, SchemaType.Json))
                         .ConfigureAwait(continueOnCapturedContext: false);
                     
-                    if (!subjectsRegistered.Contains(subject))
+                    if (latestSchema != null)
                     {
-                        if (latestSchema != null)
-                        {
-                            schemaId = latestSchema.Id;
-                        }
-                        else
-                        {
-                            // first usage: register/get schema to check compatibility
-                            schemaId = autoRegisterSchema
-                                ? await schemaRegistryClient.RegisterSchemaAsync(subject,
-                                        new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false)
-                                : await schemaRegistryClient.GetSchemaIdAsync(subject,
-                                        new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
-                        }
+                        schemaId = latestSchema.Id;
+                    }
+                    else if (!subjectsRegistered.Contains(subject))
+                    {
+                        // first usage: register/get schema to check compatibility
+                        schemaId = autoRegisterSchema
+                            ? await schemaRegistryClient.RegisterSchemaAsync(subject,
+                                    new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false)
+                            : await schemaRegistryClient.GetSchemaIdAsync(subject,
+                                    new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false);
+
                         subjectsRegistered.Add(subject);
                     }
                 }
