@@ -52,7 +52,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///                            a single 0 byte as an optimization.
     ///                         2. The protobuf serialized data.
     /// </remarks>
-    public class ProtobufSerializer<T> : AsyncSerializer<T, FileDescriptorSet> where T : IMessage<T>, new()
+    public class ProtobufSerializer<T> : AsyncSerializer<T, FileDescriptorSet>  where T : IMessage<T>, new()
     {
         private bool skipKnownTypes;
         private bool useDeprecatedFormat;
@@ -70,11 +70,11 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <summary>
         ///     Initialize a new instance of the ProtobufSerializer class.
         /// </summary>
-        public ProtobufSerializer(ISchemaRegistryClient schemaRegistryClient, ProtobufSerializerConfig config = null,
+        public ProtobufSerializer(ISchemaRegistryClient schemaRegistryClient, ProtobufSerializerConfig config = null, 
             RuleRegistry ruleRegistry = null) : base(schemaRegistryClient, config, ruleRegistry)
         {
             if (config == null)
-            {
+            { 
                 this.referenceSubjectNameStrategy = ReferenceSubjectNameStrategy.ReferenceName.ToDelegate();
                 return;
             }
@@ -115,7 +115,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 var prevMd = currentMd;
                 currentMd = currentMd.ContainingType;
                 bool foundNested = false;
-                for (int i = 0; i < currentMd.NestedTypes.Count; ++i)
+                for (int i=0; i<currentMd.NestedTypes.Count; ++i)
                 {
                     if (currentMd.NestedTypes[i].ClrType == prevMd.ClrType)
                     {
@@ -132,7 +132,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             // Add the index of the root MessageDescriptor in the FileDescriptor.
             bool foundDescriptor = false;
-            for (int i = 0; i < md.File.MessageTypes.Count; ++i)
+            for (int i=0; i<md.File.MessageTypes.Count; ++i)
             {
                 if (md.File.MessageTypes[i].ClrType == currentMd.ClrType)
                 {
@@ -163,15 +163,15 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         result.WriteVarint((uint)indices.Count);
                     }
-                    for (int i = 0; i < indices.Count; ++i)
+                    for (int i=0; i<indices.Count; ++i)
                     {
                         if (useDeprecatedFormat)
                         {
-                            result.WriteUnsignedVarint((uint)indices[indices.Count - i - 1]);
+                            result.WriteUnsignedVarint((uint)indices[indices.Count-i-1]);
                         }
                         else
                         {
-                            result.WriteVarint((uint)indices[indices.Count - i - 1]);
+                            result.WriteVarint((uint)indices[indices.Count-i-1]);
                         }
                     }
                 }
@@ -187,14 +187,14 @@ namespace Confluent.SchemaRegistry.Serdes
         private async Task<List<SchemaReference>> RegisterOrGetReferences(FileDescriptor fd, SerializationContext context, bool autoRegisterSchema, bool skipKnownTypes)
         {
             var tasks = new List<Task<SchemaReference>>();
-            for (int i = 0; i < fd.Dependencies.Count; ++i)
+            for (int i=0; i<fd.Dependencies.Count; ++i)
             {
                 FileDescriptor fileDescriptor = fd.Dependencies[i];
                 if (skipKnownTypes && fileDescriptor.Name.StartsWith("google/protobuf/"))
                 {
                     continue;
                 }
-
+                
                 Func<FileDescriptor, Task<SchemaReference>> t = async (dependency) => {
                     var dependencyReferences = await RegisterOrGetReferences(dependency, context, autoRegisterSchema, skipKnownTypes).ConfigureAwait(continueOnCapturedContext: false);
                     var subject = referenceSubjectNameStrategy(context, dependency.Name);
@@ -260,33 +260,30 @@ namespace Confluent.SchemaRegistry.Serdes
                     subject = GetSubjectName(context.Topic, context.Component == MessageComponentType.Key, fullname);
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
-
-                    if (!subjectsRegistered.Contains(subject))
+                    
+                    if (latestSchema != null)
                     {
-                        if (latestSchema != null)
-                        {
-                            schemaId = latestSchema.Id;
-                        }
-                        else
-                        {
-                            var references =
-                                await RegisterOrGetReferences(value.Descriptor.File, context, autoRegisterSchema, skipKnownTypes)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
+                        schemaId = latestSchema.Id;
+                    }
+                    else if (!subjectsRegistered.Contains(subject))
+                    {
+                        var references =
+                            await RegisterOrGetReferences(value.Descriptor.File, context, autoRegisterSchema, skipKnownTypes)
+                                .ConfigureAwait(continueOnCapturedContext: false);
 
-                            // first usage: register/get schema to check compatibility
-                            schemaId = autoRegisterSchema
-                                ? await schemaRegistryClient.RegisterSchemaAsync(subject,
-                                        new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
-                                            SchemaType.Protobuf), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false)
-                                : await schemaRegistryClient.GetSchemaIdAsync(subject,
-                                        new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
-                                            SchemaType.Protobuf), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
+                        // first usage: register/get schema to check compatibility
+                        schemaId = autoRegisterSchema
+                            ? await schemaRegistryClient.RegisterSchemaAsync(subject,
+                                    new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
+                                        SchemaType.Protobuf), normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false)
+                            : await schemaRegistryClient.GetSchemaIdAsync(subject,
+                                    new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
+                                        SchemaType.Protobuf), normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false);
 
-                            // note: different values for schemaId should never be seen here.
-                            // TODO: but fail fast may be better here.
-                        }
+                        // note: different values for schemaId should never be seen here.
+                        // TODO: but fail fast may be better here.
 
                         subjectsRegistered.Add(subject);
                     }
