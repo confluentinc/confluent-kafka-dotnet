@@ -2,7 +2,7 @@
 
 ## Enhancements
 
-* Fix for continuing support to .NET Framework 4.6.2+ in core client library (#).
+* Fix to continue supporting .NET Framework 4.6.2+ in core client library (#2342).
 
 
 # 2.6.0
