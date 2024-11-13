@@ -274,5 +274,10 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+        /// <summary>
+        /// Custom reference subject name strategy resolver.
+        /// Ensure <seealso cref="ReferenceSubjectNameStrategy.Custom"/> is set for this to take effect.
+        /// </summary>
+        public ICustomReferenceSubjectNameStrategy CustomReferenceSubjectNameStrategy { get; set; } = null;
     }
 }
