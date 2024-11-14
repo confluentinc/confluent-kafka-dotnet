@@ -270,13 +270,15 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
                 if (writerSchema != null)
                 {
+                    Schema readerSchemaJson = latestSchema ?? writerSchema;
+                    JsonSchema readerSchema = latestSchema != null ? await GetParsedSchema(latestSchema) : writerSchemaJson;
                     FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                     {
-                        return await JsonUtils.Transform(ctx, writerSchemaJson, "$", message, transform).ConfigureAwait(false);
+                        return await JsonUtils.Transform(ctx, readerSchema, "$", message, transform).ConfigureAwait(false);
                     };
                     value = await ExecuteRules(context.Component == MessageComponentType.Key, subject,
                             context.Topic, context.Headers, RuleMode.Read, null,
-                            writerSchema, value, fieldTransformer)
+                            readerSchemaJson, value, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 } 

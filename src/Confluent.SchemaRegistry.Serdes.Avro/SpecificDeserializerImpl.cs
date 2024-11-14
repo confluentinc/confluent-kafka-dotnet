@@ -199,12 +199,14 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                 }
 
-                FieldTransformer fieldTransformer = async (ctx, transform, message) => 
+                Schema readerSchemaJson = latestSchema ?? writerSchemaJson;
+                Avro.Schema readerSchema = latestSchema != null ? await GetParsedSchema(latestSchema) : writerSchema;
+                FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                 {
-                    return await AvroUtils.Transform(ctx, writerSchema, message, transform).ConfigureAwait(false);
+                    return await AvroUtils.Transform(ctx, readerSchema, message, transform).ConfigureAwait(false);
                 };
                 data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read, null,
-                    writerSchemaJson, data, fieldTransformer)
+                    readerSchemaJson, data, fieldTransformer)
                     .ConfigureAwait(continueOnCapturedContext: false);
 
                 return (T) data;

@@ -65,7 +65,7 @@ namespace Confluent.SchemaRegistry.Rules
                         { "fullName", fieldCtx.FullName },
                         { "name", fieldCtx.Name },
                         { "typeName", fieldCtx.Type.ToString().ToUpper() },
-                        { "tags", fieldCtx.Tags },
+                        { "tags", fieldCtx.Tags.ToList() },
                         { "message", message }
                     }
                 );
