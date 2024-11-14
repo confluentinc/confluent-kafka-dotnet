@@ -96,7 +96,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
                 ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()
-                : config.ReferenceSubjectNameStrategy.Value.ToDelegate();
+                : config.ReferenceSubjectNameStrategy.Value.ToDelegate(config.CustomReferenceSubjectNameStrategy);
 
             if (this.useLatestVersion && this.autoRegisterSchema)
             {
