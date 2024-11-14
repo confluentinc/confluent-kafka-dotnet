@@ -18,7 +18,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
     <PackageReference Include="Moq" Version="4.18.2" />
     <PackageReference Include="Google.Protobuf" Version="3.26.1" />
-    <PackageReference Include="Apache.Avro" Version="1.11.3" />
+    <PackageReference Include="Apache.Avro" Version="1.12.0" />
     <PackageReference Include="System.Runtime" Version="4.3" />
   </ItemGroup>
 
