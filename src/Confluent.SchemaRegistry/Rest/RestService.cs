@@ -65,25 +65,9 @@ namespace Confluent.SchemaRegistry
             this.clients = schemaRegistryUrl
                 .Split(',')
                 .Select(SanitizeUri) // need http or https - use http if not present.
-                .Select(uri =>
+                .Select(uri => new HttpClient(CreateHandler(certificates, enableSslCertificateVerification, sslCaCertificate))
                 {
-                    HttpClient client;
-                    if (certificates.Count > 0)
-                    {
-                        client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification, sslCaCertificate))
-                        {
-                            BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs)
-                        };
-                    }
-                    else
-                    {
-                        client = new HttpClient()
-                        {
-                            BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs)
-                        };
-                    }
-
-                    return client;
+                    BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs)
                 })
                 .ToList();
         }
@@ -98,9 +82,6 @@ namespace Confluent.SchemaRegistry
             bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate)
         {
             var handler = new HttpClientHandler();
-            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-
-            certificates.ForEach(c => handler.ClientCertificates.Add(c));
 
             if (!enableSslCertificateVerification)
             {
@@ -115,7 +96,6 @@ namespace Confluent.SchemaRegistry
                         return true;
                     }
 
-                    
                     //The second element of the chain should be the issuer of the certificate
                     if (chain.ChainElements.Count < 2)
                     {
@@ -141,7 +121,13 @@ namespace Confluent.SchemaRegistry
                     return true; 
                 };
             }
-        
+
+            if (certificates.Count > 0)
+            {
+                handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+                certificates.ForEach(c => handler.ClientCertificates.Add(c));
+            }
+
             return handler;
         }
 
