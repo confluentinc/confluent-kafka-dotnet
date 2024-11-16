@@ -58,14 +58,14 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public RestService(string schemaRegistryUrl, int timeoutMs,
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null)
+            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null)
         {
             this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
 
             this.clients = schemaRegistryUrl
                 .Split(',')
                 .Select(SanitizeUri) // need http or https - use http if not present.
-                .Select(uri => new HttpClient(CreateHandler(certificates, enableSslCertificateVerification, sslCaCertificate))
+                .Select(uri => new HttpClient(CreateHandler(certificates, enableSslCertificateVerification, sslCaCertificate, proxy))
                 {
                     BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs)
                 })
@@ -79,9 +79,15 @@ namespace Confluent.SchemaRegistry
         }
 
         private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate)
+            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate,
+            IWebProxy proxy)
         {
             var handler = new HttpClientHandler();
+
+            if (proxy != null)
+            {
+                handler.Proxy = proxy;
+            }
 
             if (!enableSslCertificateVerification)
             {
