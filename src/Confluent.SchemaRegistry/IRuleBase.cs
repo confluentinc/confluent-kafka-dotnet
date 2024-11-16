@@ -28,7 +28,9 @@ namespace Confluent.SchemaRegistry
         ///     Configure the rule executor or action
         /// </summary>
         /// <param name="config"></param>
-        void Configure(IEnumerable<KeyValuePair<string, string>> config);
+        /// <param name="client"></param>
+        void Configure(IEnumerable<KeyValuePair<string, string>> config,
+            ISchemaRegistryClient client = null);
         
         /// <summary>
         ///     The type of rule executor or action

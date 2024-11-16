@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 
@@ -30,6 +31,18 @@ namespace Confluent.SchemaRegistry
         ///     The client config.
         /// </summary>
         IEnumerable<KeyValuePair<string, string>> Config { get; }
+
+
+        /// <summary>
+        ///     The authentication header provider.
+        /// </summary>
+        IAuthenticationHeaderValueProvider AuthHeaderProvider { get; }
+
+
+        /// <summary>
+        ///     The web proxy.
+        /// </summary>
+        IWebProxy Proxy { get; }
 
 
         /// <summary>
@@ -141,7 +154,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     Gets the schema uniquely identified by <paramref name="subject"> and <paramref name="id" />.
+        ///     Gets the schema uniquely identified by <paramref name="subject" /> and <paramref name="id" />.
         /// </summary>
         /// <param name="subject">
         ///     The subject.
@@ -237,6 +250,12 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         /// <param name="subject">
         ///     The subject to get the latest associated schema for.
+        /// </param>
+        /// <param name="metadata">
+        ///     The metadata to search for.
+        /// </param>
+        /// <param name="ignoreDeletedSchemas">
+        ///     Whether to ignore deleted schemas.
         /// </param>
         /// <returns>
         ///     The latest schema with the given metadata registered against <paramref name="subject" />.
