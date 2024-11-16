@@ -31,6 +31,55 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </summary>
     public static class AvroUtils
     {
+        /// <summary>
+        ///     Resolves named schemas referenced by the provided schema recursively.
+        /// </summary>
+        /// <param name="schema">
+        ///     Schema to resolve named schemas for.
+        /// </param>
+        /// <param name="schemaRegistryClient">
+        ///     SchemaRegistryClient to use for retrieval.
+        /// </param>
+        /// <returns>
+        ///     A SchemaNames object containing the resolved named schemas.
+        /// </returns>
+        public static async Task<SchemaNames> ResolveNamedSchema(Schema schema, ISchemaRegistryClient schemaRegistryClient)
+        {
+            var namedSchemas = new SchemaNames();
+
+            if (schema.References != null)
+            {
+                foreach (var reference in schema.References)
+                {
+                    var referencedSchema = await schemaRegistryClient
+                        .GetRegisteredSchemaAsync(reference.Subject, reference.Version, false)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+
+                    var refNamedSchemas = await ResolveNamedSchema(referencedSchema, schemaRegistryClient)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+
+                    var parsedSchema = (NamedSchema) Avro.Schema.Parse(referencedSchema.SchemaString, refNamedSchemas);
+
+                    // Add all schemas from refNamedSchemas to namedSchemas
+                    foreach (var kvp in refNamedSchemas.Names)
+                    {
+                        if (!namedSchemas.Contains(kvp.Key))
+                        {
+                            namedSchemas.Add(kvp.Key, kvp.Value);
+                        }
+                    }
+
+                    // Add the current parsed schema
+                    if (!namedSchemas.Contains(parsedSchema.SchemaName))
+                    {
+                        namedSchemas.Add(parsedSchema.SchemaName, parsedSchema);
+                    }
+                }
+            }
+
+            return namedSchemas;
+        }
+
         public static async Task<object> Transform(RuleContext ctx, Avro.Schema schema, object message,
             IFieldTransform fieldTransform)
         {
