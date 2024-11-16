@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
-using System.ComponentModel;
+using System.Net;
 using System.Threading;
 using System.Security.Cryptography.X509Certificates;
 
@@ -31,7 +31,7 @@ namespace Confluent.SchemaRegistry.Encryption
     /// <summary>
     ///     A caching DEK Registry client.
     /// </summary>
-    public class CachedDekRegistryClient : IDekRegistryClient, IDisposable
+    public class CachedDekRegistryClient : IDekRegistryClient
     {
         private DekRestService restService;
         
@@ -71,12 +71,16 @@ namespace Confluent.SchemaRegistry.Encryption
         /// <param name="authenticationHeaderValueProvider">
         ///     The authentication header value provider
         /// </param>
+        /// <param name="proxy">
+        ///     The proxy server to use for connections
+        /// </param>
         public CachedDekRegistryClient(IEnumerable<KeyValuePair<string, string>> config,
-            IAuthenticationHeaderValueProvider authenticationHeaderValueProvider)
+            IAuthenticationHeaderValueProvider authenticationHeaderValueProvider,
+            IWebProxy proxy = null)
         {
             if (config == null)
             {
-                throw new ArgumentNullException("config properties must be specified.");
+                throw new ArgumentNullException("config");
             }
             var schemaRegistryUrisMaybe = config.FirstOrDefault(prop =>
                 prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl);
@@ -237,16 +241,8 @@ namespace Confluent.SchemaRegistry.Encryption
             }
 
             var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
-            if (string.IsNullOrEmpty(sslCaLocation))
-            {
-                this.restService = new DekRestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
-                    SetSslConfig(config), sslVerify);
-            }
-            else
-            {
-                this.restService = new DekRestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
-                    SetSslConfig(config), sslVerify, new X509Certificate2(sslCaLocation));
-            }
+            var sslCaCertificate = string.IsNullOrEmpty(sslCaLocation) ? null : new X509Certificate2(sslCaLocation);
+            this.restService = new DekRestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify, sslCaCertificate, proxy);
         }
 
         /// <summary>

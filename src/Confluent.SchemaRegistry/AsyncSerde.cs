@@ -59,7 +59,7 @@ namespace Confluent.SchemaRegistry
             
             foreach (IRuleExecutor executor in this.ruleRegistry.GetExecutors())
             {
-                executor.Configure(ruleConfigs); 
+                executor.Configure(ruleConfigs, schemaRegistryClient);
             }
         }
 
@@ -297,6 +297,7 @@ namespace Confluent.SchemaRegistry
         /// <param name="source"></param>
         /// <param name="target"></param>
         /// <param name="message"></param>
+        /// <param name="fieldTransformer"></param>
         /// <returns></returns>
         /// <exception cref="RuleConditionException"></exception>
         /// <exception cref="ArgumentException"></exception>
