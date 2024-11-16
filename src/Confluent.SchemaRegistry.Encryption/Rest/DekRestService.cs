@@ -29,9 +29,9 @@ namespace Confluent.SchemaRegistry.Encryption
         /// </summary>
         public DekRestService(string schemaRegistryUrl, int timeoutMs,
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification) :
+            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null) :
             base(schemaRegistryUrl, timeoutMs, authenticationHeaderValueProvider, certificates,
-                enableSslCertificateVerification)
+                enableSslCertificateVerification, sslCaCertificate)
         {
         }
 

@@ -236,8 +236,17 @@ namespace Confluent.SchemaRegistry.Encryption
                     $"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool.");
             }
 
-            this.restService = new DekRestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
-                SetSslConfig(config), sslVerify);
+            var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
+            if (string.IsNullOrEmpty(sslCaLocation))
+            {
+                this.restService = new DekRestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
+                    SetSslConfig(config), sslVerify);
+            }
+            else
+            {
+                this.restService = new DekRestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
+                    SetSslConfig(config), sslVerify, new X509Certificate2(sslCaLocation));
+            }
         }
 
         /// <summary>
@@ -289,14 +298,6 @@ namespace Confluent.SchemaRegistry.Encryption
             if (!String.IsNullOrEmpty(certificateLocation))
             {
                 certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
-            }
-
-            var caLocation =
-                config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation)
-                    .Value ?? "";
-            if (!String.IsNullOrEmpty(caLocation))
-            {
-                certificates.Add(new X509Certificate2(caLocation));
             }
 
             return certificates;
