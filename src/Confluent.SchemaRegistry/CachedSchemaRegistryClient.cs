@@ -355,7 +355,8 @@ namespace Confluent.SchemaRegistry
             if (string.IsNullOrEmpty(sslCaLocation))
             {
                 this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
-            } else
+            }
+            else
             {
                 this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify, new X509Certificate2(sslCaLocation));
             }
