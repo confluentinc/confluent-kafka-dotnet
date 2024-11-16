@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Net;
 using System.Threading;
 using System.Security.Cryptography.X509Certificates;
 using Confluent.Kafka;
@@ -166,8 +167,12 @@ namespace Confluent.SchemaRegistry
         /// <param name="authenticationHeaderValueProvider">
         ///     The authentication header value provider
         /// </param>
+        /// <param name="proxy">
+        ///     The proxy server to use for connections
+        /// </param>
         public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config,
-            IAuthenticationHeaderValueProvider authenticationHeaderValueProvider)
+            IAuthenticationHeaderValueProvider authenticationHeaderValueProvider,
+            IWebProxy proxy = null)
         {
             if (config == null)
             {
@@ -352,13 +357,8 @@ namespace Confluent.SchemaRegistry
             }
 
             var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
-            if (string.IsNullOrEmpty(sslCaLocation))
-            {
-                this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
-            } else
-            {
-                this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify, new X509Certificate2(sslCaLocation));
-            }
+            var sslCaCertificate = string.IsNullOrEmpty(sslCaLocation) ? null : new X509Certificate2(sslCaLocation);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify, sslCaCertificate, proxy);
         }
 
         /// <summary>
@@ -372,6 +372,20 @@ namespace Confluent.SchemaRegistry
         {
         }
 
+        /// <summary>
+        ///     Initialize a new instance of the SchemaRegistryClient class.
+        /// </summary>
+        /// <param name="config">
+        ///     Configuration properties.
+        /// </param>
+        /// <param name="proxy">
+        ///     The proxy server to use for connections
+        /// </param>
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config, IWebProxy proxy)
+            : this(config, null, proxy)
+        {
+
+        }
 
         /// <remarks>
         ///     This is to make sure memory doesn't explode in the case of incorrect usage.
