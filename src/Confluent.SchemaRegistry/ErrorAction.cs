@@ -27,7 +27,8 @@ namespace Confluent.SchemaRegistry
     {
         public static readonly string ActionType = "ERROR";
 
-        public void Configure(IEnumerable<KeyValuePair<string, string>> config)
+        public void Configure(IEnumerable<KeyValuePair<string, string>> config,
+            ISchemaRegistryClient client = null)
         {
         }
         

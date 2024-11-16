@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
@@ -29,9 +30,9 @@ namespace Confluent.SchemaRegistry.Encryption
         /// </summary>
         public DekRestService(string schemaRegistryUrl, int timeoutMs,
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification) :
+            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null) :
             base(schemaRegistryUrl, timeoutMs, authenticationHeaderValueProvider, certificates,
-                enableSslCertificateVerification)
+                enableSslCertificateVerification, sslCaCertificate, proxy)
         {
         }
 
