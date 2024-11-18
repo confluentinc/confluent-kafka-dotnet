@@ -21,7 +21,8 @@ namespace Confluent.SchemaRegistry
 {
     public abstract class FieldRuleExecutor : IRuleExecutor
     {
-        public abstract void Configure(IEnumerable<KeyValuePair<string, string>> config);
+        public abstract void Configure(IEnumerable<KeyValuePair<string, string>> config,
+            ISchemaRegistryClient client = null);
         
         public abstract string Type();
 

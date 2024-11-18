@@ -42,7 +42,7 @@ namespace Confluent.SchemaRegistry
     ///      - <see cref="CachedSchemaRegistryClient.GetSchemaBySubjectAndIdAsync(string, int, string)" />
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, Schema, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string, bool)" />
-    ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int, bool)" />
     ///
     ///     The following method calls do NOT cache results:
     ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool, bool)" />
@@ -54,11 +54,13 @@ namespace Confluent.SchemaRegistry
     ///      - <see cref="CachedSchemaRegistryClient.GetCompatibilityAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.UpdateCompatibilityAsync(Compatibility, string)" />
     /// </summary>
-    public class CachedSchemaRegistryClient : ISchemaRegistryClient, IDisposable
+    public class CachedSchemaRegistryClient : ISchemaRegistryClient
     {
         private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
 
         private IEnumerable<KeyValuePair<string, string>> config;
+        private IAuthenticationHeaderValueProvider authHeaderProvider;
+        private IWebProxy proxy;
 
         private IRestService restService;
         private int identityMapCapacity;
@@ -115,6 +117,16 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc />
         public IEnumerable<KeyValuePair<string, string>> Config
             => config;
+
+
+        /// <inheritdoc />
+        public IAuthenticationHeaderValueProvider AuthHeaderProvider
+            => authHeaderProvider;
+
+
+        /// <inheritdoc />
+        public IWebProxy Proxy
+            => proxy;
 
 
         /// <inheritdoc />
@@ -176,10 +188,12 @@ namespace Confluent.SchemaRegistry
         {
             if (config == null)
             {
-                throw new ArgumentNullException("config properties must be specified.");
+                throw new ArgumentNullException("config");
             }
             
             this.config = config;
+            this.authHeaderProvider = authenticationHeaderValueProvider;
+            this.proxy = proxy;
 
             keySubjectNameStrategy = GetKeySubjectNameStrategy(config);
             valueSubjectNameStrategy = GetValueSubjectNameStrategy(config);
@@ -663,6 +677,7 @@ namespace Confluent.SchemaRegistry
             return schema;
         }
 
+        /// <inheritdoc/>
         public async Task<RegisteredSchema> GetLatestWithMetadataAsync(string subject,
             IDictionary<string, string> metadata, bool ignoreDeletedSchemas)
         {
