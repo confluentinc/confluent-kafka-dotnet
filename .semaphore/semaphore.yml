@@ -41,11 +41,16 @@ blocks:
         - name: 'Build and test'
           commands:
             - ulimit -n 1024
-            # TODO: install .NET 8.0 SDK in this agent image
-            - sudo chown -R "$(whoami)" "$(brew --caskroom)"
-            - brew install --appdir=~/Applications dotnet@8
+            - curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir ~/.dotnet
+            - export DOTNET_ROOT=$HOME/.dotnet
+            - export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
+            - dotnet --version
+            - dotnet --list-sdks
+            - export DOTNET_MULTILEVEL_LOOKUP=0
+            - export MSBuildSDKsPath=$DOTNET_ROOT/sdk/$(dotnet --version)/Sdks
+            - dotnet --version
             - dotnet restore -p:TargetFramework=net8.0
-            - make test-latest
+            - make test-latest  
   - name: 'Windows x64'
     dependencies: [ ]
     task:
