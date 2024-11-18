@@ -89,6 +89,21 @@ namespace Confluent.SchemaRegistry
         public const int DefaultTimeout = 30000;
 
         /// <summary>
+        ///     The default maximum number of retries.
+        /// </summary>
+        public const int DefaultMaxRetries = RestService.DefaultMaxRetries;
+
+        /// <summary>
+        ///     The default time to wait for the first retry.
+        /// </summary>
+        public const int DefaultRetriesWaitMs = RestService.DefaultRetriesWaitMs;
+
+        /// <summary>
+        ///     The default time to wait for any retry.
+        /// </summary>
+        public const int DefaultRetriesMaxWaitMs = RestService.DefaultRetriesMaxWaitMs;
+
+        /// <summary>
         ///     The default maximum capacity of the local schema cache.
         /// </summary>
         public const int DefaultMaxCachedSchemas = 1000;
@@ -221,6 +236,45 @@ namespace Confluent.SchemaRegistry
                     $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs} must be an integer.");
             }
 
+            var maxRetriesMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries);
+            int maxRetries;
+            try
+            {
+                maxRetries = maxRetriesMaybe.Value == null ? DefaultMaxRetries : Convert.ToInt32(maxRetriesMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries} must be an integer.");
+            }
+
+            var retriesWaitMsMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs);
+            int retriesWaitMs;
+            try
+            {
+                retriesWaitMs = retriesWaitMsMaybe.Value == null ? DefaultRetriesWaitMs : Convert.ToInt32(retriesWaitMsMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs} must be an integer.");
+            }
+
+            var retriesMaxWaitMsMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs);
+            int retriesMaxWaitMs;
+            try
+            {
+                retriesMaxWaitMs = retriesMaxWaitMsMaybe.Value == null ? DefaultRetriesMaxWaitMs : Convert.ToInt32(retriesMaxWaitMsMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs} must be an integer.");
+            }
+
             var identityMapCapacityMaybe = config.FirstOrDefault(prop =>
                 prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas);
             try
@@ -340,6 +394,9 @@ namespace Confluent.SchemaRegistry
 
                 if (property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
@@ -372,7 +429,8 @@ namespace Confluent.SchemaRegistry
 
             var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
             var sslCaCertificate = string.IsNullOrEmpty(sslCaLocation) ? null : new X509Certificate2(sslCaLocation);
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify, sslCaCertificate, proxy);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
+                SetSslConfig(config), sslVerify, sslCaCertificate, proxy, maxRetries, retriesWaitMs);
         }
 
         /// <summary>
