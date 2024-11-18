@@ -63,6 +63,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private JsonSchema schema = null;
 
+        private bool validate = true;
+
         private JsonSerializerSettings jsonSchemaGeneratorSettingsSerializerSettings {
             get =>
 #if NET8_0_OR_GREATER
@@ -110,6 +112,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.Validate!= null) { this.validate= config.Validate.Value; }
         }
 
         /// <summary>
@@ -228,10 +231,9 @@ namespace Confluent.SchemaRegistry.Serdes
                                 .ContinueWith(t => (JToken)t.Result)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
-                            if (schema != null)
+                            if (schema != null && validate)
                             {
                                 var validationResult = validator.Validate(json, schema);
-
                                 if (validationResult.Count > 0)
                                 {
                                     throw new InvalidDataException("Schema validation failed for properties: [" +

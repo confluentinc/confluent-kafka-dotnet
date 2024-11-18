@@ -75,6 +75,8 @@ namespace Confluent.SchemaRegistry.Serdes
         private string schemaText;
         private string schemaFullname;
 
+        private bool validate = true;
+
         private JsonSerializerSettings jsonSchemaGeneratorSettingsSerializerSettings {
             get =>
 #if NET8_0_OR_GREATER
@@ -129,6 +131,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.LatestCompatibilityStrict != null) { this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.Validate!= null) { this.validate= config.Validate.Value; }
 
             if (this.useLatestVersion && this.autoRegisterSchema)
             {
@@ -245,10 +248,13 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
-                var validationResult = validator.Validate(serializedString, this.schema);
-                if (validationResult.Count > 0)
+                if (validate)
                 {
-                    throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
+                    var validationResult = validator.Validate(serializedString, this.schema);
+                    if (validationResult.Count > 0)
+                    {
+                        throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
+                    }
                 }
 
                 using (var stream = new MemoryStream(initialBufferSize))
