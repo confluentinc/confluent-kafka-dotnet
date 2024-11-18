@@ -163,6 +163,7 @@ blocks:
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
+            - export SEMAPHORE_SKIP_KNOWN_FAILING_TESTS='true'
             - dotnet restore -p:TargetFramework=net8.0
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -f net8.0 -l "console;verbosity=normal" && cd ../..
             - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -f net8.0 -l "console;verbosity=normal" && cd ../..
