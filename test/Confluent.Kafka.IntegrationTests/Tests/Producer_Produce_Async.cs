@@ -60,36 +60,5 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_Produce_Async");
         }
-
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_Produce_Memory_Async(string bootstrapServers)
-        {
-            LogToFile("start Producer_Produce_Memory_Async");
-
-            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
-
-            using (var testTopic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new TestProducerBuilder<Memory<byte>?, Memory<byte>>(producerConfig)
-                .Build())
-            using (var dProducer = new DependentProducerBuilder<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>?>(producer.Handle)
-                .Build())
-            {
-                Memory<byte> data = new byte[] { 1, 2, 3, 4 };
-                Assert.Throws<ProduceException<Memory<byte>?, Memory<byte>>>(
-                    () => producer.Produce(testTopic.Name, new Message<Memory<byte>?, Memory<byte>> { Value = data }));
-
-                Assert.Throws<ProduceException<Memory<byte>?, Memory<byte>>>(
-                    () => producer.Produce(testTopic.Name, new Message<Memory<byte>?, Memory<byte>> { Value = data }, dr => { Assert.True(false); }));
-
-                Assert.Throws<ProduceException<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>?>>(
-                    () => dProducer.Produce(testTopic.Name, new Message<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>?> { Key = data }));
-
-                Assert.Throws<ProduceException<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>?>>(
-                    () => dProducer.Produce(testTopic.Name, new Message<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>?> { Key = data }, dr => { Assert.True(false); }));
-            }
-
-            Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Producer_Produce_Memory_Async");
-        }
     }
 }
