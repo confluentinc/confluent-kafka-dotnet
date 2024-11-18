@@ -34,6 +34,14 @@ namespace Confluent.SchemaRegistry
 
         private static readonly string acceptHeader = string.Join(", ", Versions.PreferredResponseTypes);
 
+        public const int DefaultMaxRetries = 2;
+
+        public const int DefaultRetriesWaitMs = 1000;
+
+        public const int DefaultRetriesMaxWaitMs = 20000;
+
+        private static Random random = new Random();
+
         /// <summary>
         ///     The index of the last client successfully used (or random if none worked).
         /// </summary>
@@ -51,15 +59,24 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         private readonly IAuthenticationHeaderValueProvider authenticationHeaderValueProvider;
 
+        private int maxRetries;
+
+        private int retriesWaitMs;
+
+        private int retriesMaxWaitMs;
 
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
         public RestService(string schemaRegistryUrl, int timeoutMs,
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null)
+            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null,
+            int maxRetries = DefaultMaxRetries, int retriesWaitMs = DefaultRetriesWaitMs,
+            int retriesMaxWaithMs = DefaultRetriesMaxWaitMs)
         {
             this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
+            this.maxRetries = maxRetries;
+            this.retriesWaitMs = retriesWaitMs;
 
             this.clients = schemaRegistryUrl
                 .Split(',')
@@ -91,11 +108,11 @@ namespace Confluent.SchemaRegistry
             if (!enableSslCertificateVerification)
             {
                 handler.ServerCertificateCustomValidationCallback = (_, __, ___, ____) => { return true; };
-            } 
+            }
             else  if (sslCaCertificate != null)
             {
-                handler.ServerCertificateCustomValidationCallback = (_, __, chain, policyErrors) => { 
-                    
+                handler.ServerCertificateCustomValidationCallback = (_, __, chain, policyErrors) => {
+
                     if (policyErrors == SslPolicyErrors.None)
                     {
                         return true;
@@ -105,7 +122,7 @@ namespace Confluent.SchemaRegistry
                     if (chain.ChainElements.Count < 2)
                     {
                         return false;
-                    }                 
+                    }
                     var connectionCertHash = chain.ChainElements[1].Certificate.GetCertHash();
 
 
@@ -123,7 +140,7 @@ namespace Confluent.SchemaRegistry
                             return false;
                         }
                     }
-                    return true; 
+                    return true;
                 };
             }
 
@@ -205,12 +222,9 @@ namespace Confluent.SchemaRegistry
 
                 try
                 {
-                    response = await clients[clientIndex]
-                        .SendAsync(createRequest())
-                        .ConfigureAwait(continueOnCapturedContext: false);
+                    response = await SendRequest(clients[clientIndex], createRequest);
 
-                    if (response.StatusCode == HttpStatusCode.OK ||
-                        response.StatusCode == HttpStatusCode.NoContent)
+                    if (IsSuccess((int)response.StatusCode))
                     {
                         lock (lastClientUsedLock)
                         {
@@ -293,6 +307,44 @@ namespace Confluent.SchemaRegistry
             throw new HttpRequestException(aggregatedErrorMessage);
         }
 
+        private async Task<HttpResponseMessage> SendRequest(
+            HttpClient client, Func<HttpRequestMessage> createRequest)
+        {
+            HttpResponseMessage response = null;
+            for (int i = 0; i < maxRetries; i++)
+            {
+                response = await client
+                    .SendAsync(createRequest())
+                    .ConfigureAwait(continueOnCapturedContext: false);
+                if (IsSuccess((int)response.StatusCode) || !IsRetriable((int)response.StatusCode) || i >= maxRetries)
+                {
+                    return response;
+                }
+
+                await Task.Delay(CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i));
+            }
+            return response;
+        }
+
+        private static bool IsSuccess(int statusCode)
+        {
+            return statusCode >= 200 && statusCode < 300;
+        }
+
+        private static bool IsRetriable(int statusCode)
+        {
+            return statusCode == 408 || statusCode == 429 ||
+                   statusCode == 500 || statusCode == 502 || statusCode == 503 || statusCode == 504;
+        }
+
+        protected static int CalculateRetryDelay(int baseDelayMs, int maxDelayMs, int retriesAttempted)
+        {
+            double jitter;
+            lock (random) {
+                jitter = random.NextDouble();
+            }
+            return Convert.ToInt32(Math.Min(jitter * Math.Pow(2, retriesAttempted) * baseDelayMs, maxDelayMs));
+        }
 
         /// <remarks>
         ///     Used for end points that return a json object { ... }
