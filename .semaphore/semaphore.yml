@@ -43,7 +43,7 @@ blocks:
             - ulimit -n 1024
             # TODO: install .NET 8.0 SDK in this agent image
             - sudo chown -R "$(whoami)" "$(brew --caskroom)"
-            - brew install --appdir=~/Applications dotnet-sdk@8.0
+            - brew install --appdir=~/Applications dotnet@8
             - dotnet restore -p:TargetFramework=net8.0
             - make test-latest
   - name: 'Windows x64'
