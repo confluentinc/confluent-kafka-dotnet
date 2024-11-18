@@ -45,12 +45,20 @@ namespace Confluent.SchemaRegistry.Encryption
             Clock = clock ?? new Clock();
         }
         
-        public override void Configure(IEnumerable<KeyValuePair<string, string>> config)
+        public override void Configure(IEnumerable<KeyValuePair<string, string>> config,
+            ISchemaRegistryClient client = null)
         {
             Configs = config;
             if (Client == null)
             {
-                Client = new CachedDekRegistryClient(Configs);
+                if (client != null)
+                {
+                    Client = new CachedDekRegistryClient(Configs, client.AuthHeaderProvider, client.Proxy);
+                }
+                else
+                {
+                    Client = new CachedDekRegistryClient(Configs);
+                }
             }
         }
 
