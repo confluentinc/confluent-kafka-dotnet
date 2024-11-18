@@ -2,6 +2,7 @@
 
 ## Enhancements
 
+* References librdkafka.redist 2.6.1. Refer to the [librdkafka v2.6.1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.6.1) for more information.
 * Fix to continue supporting .NET Framework 4.6.2+ in core client library (#2342).
 
 
