@@ -72,11 +72,12 @@ namespace Confluent.SchemaRegistry
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
             bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null,
             int maxRetries = DefaultMaxRetries, int retriesWaitMs = DefaultRetriesWaitMs,
-            int retriesMaxWaithMs = DefaultRetriesMaxWaitMs)
+            int retriesMaxWaitMs = DefaultRetriesMaxWaitMs)
         {
             this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
             this.maxRetries = maxRetries;
             this.retriesWaitMs = retriesWaitMs;
+            this.retriesMaxWaitMs = retriesMaxWaitMs;
 
             this.clients = schemaRegistryUrl
                 .Split(',')
