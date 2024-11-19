@@ -166,11 +166,14 @@ namespace Confluent.SchemaRegistry
             return schemas;
         }
 
-        protected async Task<IList<Migration>> GetMigrations(string subject, Schema writerSchema, Schema readerSchema)
+        protected async Task<IList<Migration>> GetMigrations(string subject, Schema writer, RegisteredSchema readerSchema)
         {
+            var writerSchema = await schemaRegistryClient.LookupSchemaAsync(subject, writer, false, false)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
             RuleMode migrationMode;
-            Schema first;
-            Schema last;
+            RegisteredSchema first;
+            RegisteredSchema last;
             IList<Migration> migrations = new List<Migration>();
             if (writerSchema.Version < readerSchema.Version)
             {
@@ -217,7 +220,7 @@ namespace Confluent.SchemaRegistry
             return migrations;
         }
 
-        private async Task<IList<Schema>> GetSchemasBetween(string subject, Schema first, Schema last)
+        private async Task<IList<Schema>> GetSchemasBetween(string subject, RegisteredSchema first, RegisteredSchema last)
         {
             if (last.Version - first.Version <= 1)
             {

@@ -175,7 +175,7 @@ namespace Confluent.SchemaRegistry.Serdes
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
             string subject = GetSubjectName(topic, isKey, null);
-            Schema latestSchema = null;
+            RegisteredSchema latestSchema = null;
             if (subject != null)
             {
                 latestSchema = await GetReaderSchema(subject)
