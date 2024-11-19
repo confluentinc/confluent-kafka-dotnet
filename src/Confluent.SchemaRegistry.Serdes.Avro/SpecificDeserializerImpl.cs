@@ -126,7 +126,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 string subject = GetSubjectName(topic, isKey, null);
-                Schema latestSchema = null;
+                RegisteredSchema latestSchema = null;
                 if (subject != null)
                 {
                     latestSchema = await GetReaderSchema(subject)

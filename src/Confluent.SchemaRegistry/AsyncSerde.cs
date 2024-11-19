@@ -166,8 +166,11 @@ namespace Confluent.SchemaRegistry
             return schemas;
         }
 
-        protected async Task<IList<Migration>> GetMigrations(string subject, Schema writerSchema, Schema readerSchema)
+        protected async Task<IList<Migration>> GetMigrations(string subject, Schema writer, RegisteredSchema readerSchema)
         {
+            var writerSchema = await schemaRegistryClient.LookupSchemaAsync(subject, writer, false, false)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
             RuleMode migrationMode;
             Schema first;
             Schema last;
