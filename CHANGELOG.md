@@ -3,7 +3,16 @@
 ## Enhancements
 
 * References librdkafka.redist 2.6.1. Refer to the [librdkafka v2.6.1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.6.1) for more information.
+
+## Fixes
+
 * Fix to continue supporting .NET Framework 4.6.2+ in core client library (#2342).
+* Fix JSON Schema handling to not require use of `$id` (#2339).
+* Update Caching.Memory to 8.0.1 to address CVE (#23440.
+* Added Qualified and Custom reference name strategy approaches for protobuf references (#2345).
+* Fix validate of SSL CA certs in Schema Registry client (#2346).
+* Skip SSL certs validation when configured in Schema Registry client (#2347).
+* Allow proxy to be specified in Schema Registry client (#2348).
 
 
 # 2.6.0
