@@ -41,19 +41,19 @@ namespace Confluent.SchemaRegistry
         ///     The subject the schema is registered against.
         /// </summary>
         [DataMember(Name = "subject")]
-        public override string Subject { get; set; }
+        public new string Subject { get; set; }
 
         /// <summary>
         ///     The schema version.
         /// </summary>
         [DataMember(Name = "version")]
-        public override int Version { get; set; }
+        public new int Version { get; set; }
 
         /// <summary>
         ///     Unique identifier of the schema.
         /// </summary>
         [DataMember(Name = "id")]
-        public override int Id { get; set; }
+        public new int Id { get; set; }
 
         /// <summary>
         ///     The unregistered schema corresponding to this schema.
