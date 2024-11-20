@@ -16,10 +16,18 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using NJsonSchema;
-using NJsonSchema.Generation;
+using NJsonSchema.References;
 using Newtonsoft.Json.Linq;
-
+#if NET8_0_OR_GREATER
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.NewtonsoftJson.Generation.NewtonsoftJsonSchemaGeneratorSettings;
+#else
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.Generation.JsonSchemaGeneratorSettings;
+#endif
 
 namespace Confluent.SchemaRegistry.Serdes
 {
@@ -37,70 +45,12 @@ namespace Confluent.SchemaRegistry.Serdes
         private JsonSchema resolvedJsonSchema;
         private Schema root;
         private ISchemaRegistryClient schemaRegistryClient;
-        private JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
+        private NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private Dictionary<string, Schema> dictSchemaNameToSchema = new Dictionary<string, Schema>();
         private Dictionary<string, JsonSchema> dictSchemaNameToJsonSchema = new Dictionary<string, JsonSchema>();
 
-        private void CreateSchemaDictUtil(Schema root)
-        {
-            string root_str = root.SchemaString;
-            JObject schema = JObject.Parse(root_str);
-            string schemaId = (string)schema["$id"];
-            if (!dictSchemaNameToSchema.ContainsKey(schemaId))
-                this.dictSchemaNameToSchema.Add(schemaId, root);
-
-            foreach (var reference in root.References)
-            {
-                Schema ref_schema_res = this.schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version).Result;
-                CreateSchemaDictUtil(ref_schema_res);
-            }
-        }
-
-        private JsonSchema GetSchemaUtil(Schema root)
-        {
-            List<SchemaReference> refers = root.References;
-            foreach (var x in refers)
-            {
-                if (!dictSchemaNameToJsonSchema.ContainsKey(x.Name))
-                    dictSchemaNameToJsonSchema.Add(
-                        x.Name, GetSchemaUtil(dictSchemaNameToSchema[x.Name]));
-            }
-
-            Func<JsonSchema, JsonReferenceResolver> factory;
-            factory = rootObject =>
-            {
-                NJsonSchema.Generation.JsonSchemaResolver schemaResolver =
-                    new NJsonSchema.Generation.JsonSchemaResolver(rootObject, this.jsonSchemaGeneratorSettings ??
-                        new JsonSchemaGeneratorSettings());
-
-                JsonReferenceResolver referenceResolver =
-                    new JsonReferenceResolver(schemaResolver);
-                foreach (var reference in refers)
-                {
-                    JsonSchema jschema =
-                        dictSchemaNameToJsonSchema[reference.Name];
-                    referenceResolver.AddDocumentReference(reference.Name, jschema);
-                }
-                return referenceResolver;
-            };
-
-            string root_str = root.SchemaString;
-            JObject schema = JObject.Parse(root_str);
-            string schemaId = (string)schema["$id"];
-            JsonSchema root_schema = JsonSchema.FromJsonAsync(root_str, schemaId, factory).Result;
-            return root_schema;
-        }
-
         /// <summary>
-        ///     Get the resolved JsonSchema instance for the Schema provided to
-        ///     the constructor.
-        /// </summary>
-        public JsonSchema GetResolvedSchema(){
-            return this.resolvedJsonSchema;
-        }
-
-        /// <summary>
-        ///     Initialize a new instance of the JsonSerDesSchemaUtils class.
+        ///     Initialize a new instance of the JsonSchemaResolver class.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///     Confluent Schema Registry client instance that would be used to fetch
@@ -115,12 +65,132 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="jsonSchemaGeneratorSettings">
         ///     Schema generator setting to use.
         /// </param>
-        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
+        public JsonSchemaResolver(ISchemaRegistryClient schemaRegistryClient, Schema schema,
+            NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null){
             this.schemaRegistryClient = schemaRegistryClient;
             this.root = schema;
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
-            CreateSchemaDictUtil(root);
-            this.resolvedJsonSchema = GetSchemaUtil(root);
+        }
+        
+        /// <summary>
+        ///     Get the resolved JsonSchema instance for the Schema provided to
+        ///     the constructor.
+        /// </summary>
+        public async Task<JsonSchema> GetResolvedSchema(){
+            if (resolvedJsonSchema == null)
+            {
+                await CreateSchemaDictUtil(root);
+                resolvedJsonSchema = await GetSchemaUtil(root);
+            }
+            return resolvedJsonSchema;
+        }
+        
+        private async Task CreateSchemaDictUtil(Schema root, string referenceName = null)
+        {
+            if (referenceName != null && !dictSchemaNameToSchema.ContainsKey(referenceName))
+                this.dictSchemaNameToSchema.Add(referenceName, root);
+
+            if (root.References != null)
+            {
+                foreach (var reference in root.References)
+                {
+                    Schema refSchemaRes = await schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version, false);
+                    await CreateSchemaDictUtil(refSchemaRes, reference.Name);
+                }
+            }
+        }
+
+        private async Task<JsonSchema> GetSchemaUtil(Schema root)
+        {
+            List<SchemaReference> refers = root.References ?? new List<SchemaReference>();
+            foreach (var x in refers)
+            {
+                if (!dictSchemaNameToJsonSchema.ContainsKey(x.Name))
+                {
+                    var jsonSchema = await GetSchemaUtil(dictSchemaNameToSchema[x.Name]);
+                    dictSchemaNameToJsonSchema.Add(x.Name, jsonSchema);
+                }
+            }
+
+            Func<JsonSchema, JsonReferenceResolver> factory;
+            factory = rootObject =>
+            {
+                NJsonSchema.Generation.JsonSchemaResolver schemaResolver =
+                    new NJsonSchema.Generation.JsonSchemaResolver(rootObject, this.jsonSchemaGeneratorSettings ??
+                        new NewtonsoftJsonSchemaGeneratorSettings());
+
+                return new CustomJsonReferenceResolver(schemaResolver, rootObject, dictSchemaNameToJsonSchema);
+            };
+
+            string rootStr = root.SchemaString;
+            JObject schema = JObject.Parse(rootStr);
+            string schemaId = (string)schema["$id"] ?? "";
+            return await JsonSchema.FromJsonAsync(rootStr, schemaId, factory);
+        }
+
+        private class CustomJsonReferenceResolver : JsonReferenceResolver
+        {
+            private JsonSchema rootObject;
+            private Dictionary<string, JsonSchema> refs;
+
+            public CustomJsonReferenceResolver(JsonSchemaAppender schemaAppender,
+                JsonSchema rootObject, Dictionary<string, JsonSchema> refs)
+                : base( schemaAppender)
+            {
+                this.rootObject = rootObject;
+                this.refs = refs;
+            }
+
+            public override string ResolveFilePath(string documentPath, string jsonPath)
+            {
+                // override the default behavior to not prepend the documentPath
+                var arr = Regex.Split(jsonPath, @"(?=#)");
+                return arr[0];
+            }
+
+            public override async Task<IJsonReference> ResolveFileReferenceAsync(string filePath, CancellationToken cancellationToken = default)
+            {
+                JsonSchema schema;
+                if (refs.TryGetValue(filePath, out schema))
+                {
+                    return schema;
+                }
+
+                // remove the documentPath and look for the reference
+                var fileName = Path.GetFileName(filePath);
+                if (refs.TryGetValue(fileName, out schema))
+                {
+                    return schema;
+                }
+
+                return await base.ResolveFileReferenceAsync(filePath, cancellationToken);
+            }
+
+            public override async Task<IJsonReference> ResolveUrlReferenceAsync(string url, CancellationToken cancellationToken = default)
+            {
+                JsonSchema schema;
+                if (refs.TryGetValue(url, out schema))
+                {
+                    return schema;
+                }
+
+                var documentPathProvider = rootObject as IDocumentPathProvider;
+                var documentPath = documentPathProvider?.DocumentPath;
+                if (documentPath != null)
+                {
+                    var documentUri = new Uri(documentPath);
+                    var uri = new Uri(url);
+                    var relativeUrl = documentUri.MakeRelativeUri(uri);
+
+                    // remove the documentPath and look for the reference
+                    if (refs.TryGetValue(relativeUrl.ToString(), out schema))
+                    {
+                        return schema;
+                    }
+                }
+
+                return await base.ResolveUrlReferenceAsync(url, cancellationToken);
+            }
         }
     }
 }

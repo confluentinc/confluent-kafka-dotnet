@@ -37,12 +37,12 @@ namespace Confluent.Kafka.Impl.NativeMethods
     ///     these are relatively complex, so we prefer to go with the copy/paste solution
     ///     which is relatively simple.
     /// </remarks>
-    internal class NativeMethods_Centos6
+    internal class NativeMethods_Centos8
     {
 #if NET462
-        public const string DllName = "centos6-librdkafka.so";
+        public const string DllName = "centos8-librdkafka.so";
 #else
-        public const string DllName = "centos6-librdkafka";
+        public const string DllName = "centos8-librdkafka";
 #endif
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -569,6 +569,12 @@ namespace Confluent.Kafka.Impl.NativeMethods
                         UIntPtr statesCnt);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AdminOptions_set_match_consumer_group_types(
+                        IntPtr options,
+                        ConsumerGroupType[] types,
+                        UIntPtr typesCnt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_NewTopic_new(
                         [MarshalAs(UnmanagedType.LPStr)] string topic,
                         IntPtr num_partitions,
@@ -1037,6 +1043,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern ConsumerGroupState rd_kafka_ConsumerGroupListing_state(IntPtr grplist);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ConsumerGroupType rd_kafka_ConsumerGroupListing_type(IntPtr grplist);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_ListConsumerGroups_result_valid(IntPtr result, out UIntPtr cntp);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1275,6 +1284,24 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_DescribeCluster_result_cluster_id(IntPtr result);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ElectLeaders_new(ElectionType electionType, IntPtr partitions);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_ElectLeaders_destroy(IntPtr electLeader);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_ElectLeaders(IntPtr handle, IntPtr electLeaderRequest, IntPtr options, IntPtr resultQueuePtr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ElectLeaders_result_partitions(IntPtr result_event, out UIntPtr cntp);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_topic_partition_result_partition(IntPtr result);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_topic_partition_result_error(IntPtr result);
 
         //
         // Queues

@@ -1,0 +1,9 @@
+syntax = "proto3";
+package example;
+
+message PersonWithPic {
+    string favorite_color = 1;
+    int32 favorite_number = 2;
+    string name = 3;
+    bytes picture = 4;
+}

@@ -1,3 +1,90 @@
+# 2.6.1
+
+## Enhancements
+
+* References librdkafka.redist 2.6.1. Refer to the [librdkafka v2.6.1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.6.1) for more information.
+
+## Fixes
+
+* Fix to continue supporting .NET Framework 4.6.2+ in core client library (#2342).
+* Fix JSON Schema handling to not require use of `$id` (#2339).
+* Update Caching.Memory to 8.0.1 to address CVE (#23440.
+* Added Qualified and Custom reference name strategy approaches for protobuf references (#2345).
+* Fix validate of SSL CA certs in Schema Registry client (#2346).
+* Skip SSL certs validation when configured in Schema Registry client (#2347).
+* Allow proxy to be specified in Schema Registry client (#2348).
+
+
+# 2.6.0
+
+## Enhancements
+
+* References librdkafka.redist 2.6.0. Refer to the [librdkafka v2.6.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.6.0) for more information.
+* [KIP-848 EA](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol): Admin API for listing consumer groups now has an optional filter to return only groups of given types (#2323).
+* [KIP-460](https://cwiki.apache.org/confluence/display/KAFKA/KIP-460%3A+Admin+Leader+Election+RPC) Admin Leader Election RPC (#2320)
+* .NET 8 support with NJsonSchema 11 (#2314)
+
+
+# 2.5.3
+
+## Enhancements
+
+* References librdkafka.redist 2.5.3. Refer to the [librdkafka v2.5.3 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.5.3) for more information.
+
+## Fixes
+
+* Properly handle messages with well-known types in Protobuf serializer
+* Use AES128_GCM in the Local KMS client, for consistency with Java/go
+* Include deleted schemas when getting schemas by subject and version
+* Handle signed ints when transforming Protobuf payloads
+* Allow null SchemaRegistryClient in AsyncSerde constructor
+
+# 2.5.2
+
+> [!WARNING]
+Versions 2.5.0, 2.5.1 and 2.5.2 have a regression in which an assert is triggered during **PushTelemetry** call. This happens when no metric is matched on the client side among those requested by broker subscription.
+>
+> You won't face any problem if:
+> * Broker doesn't support [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability).
+> * [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) feature is disabled on the broker side.
+> * [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) feature is disabled on the client side. This is enabled by default. Set configuration `enable.metrics.push` to `false`.
+> * If [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) is enabled on the broker side and there is no subscription configured there.
+> * If [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) is enabled on the broker side with subscriptions that match the [KIP-714](https://cwiki.apache.org/confluence/display/KAFKA/KIP-714%3A+Client+metrics+and+observability) metrics defined on the client.
+>
+> Having said this, we strongly recommend using `v2.5.3` and above to not face this regression at all.
+
+## Fixes
+
+- Fix CSFLE (client-side field-level encryption) to use the Google Tink format for DEKs for interoperability with clients in other languages (Java, go, etc.).
+- Improve error when specifying an invalid KMS type for CSFLE
+- Enhance CSFLE examples with KMS configuration settings
+
+
+# 2.5.1
+
+## Fixes
+
+- Fix CSFLE (client-side field-level encryption) when using Azure Key Vault by specifying RsaOaep256 (instead of RsaOaep) for interoperability with clients in other languages (Java, go, etc.).
+- Fix AvroSerializer configuration to allow using schema normalization.
+- Upgrade Azure Identity library to 1.11.4 to address a vulnerability in previous versions.
+
+
+# 2.5.0
+
+## Enhancements
+
+- References librdkafka.redist 2.5.0. Refer to the [librdkafka v2.5.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.5.0) for more information.
+- Add support for metadata and ruleSet in the schema registry client, which together support data 
+contracts.
+- Add support for CSFLE (client-side field-level encryption) for AWS, Azure, GCP, and HashiCorp 
+Vault.  See the encryption examples in the examples directory.
+- Add support for CEL, CEL_FIELD, and JSONata rules.
+
+## Fixes
+
+- Switch license expression and other repo information. (#2192, @thompson-tomo)
+
+
 # 2.4.0
 
 ## Enhancements

@@ -22,7 +22,11 @@ using Confluent.Kafka.SyncOverAsync;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
-using NJsonSchema.Generation;
+#if NET8_0_OR_GREATER
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.NewtonsoftJson.Generation.NewtonsoftJsonSchemaGeneratorSettings;
+#else
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.Generation.JsonSchemaGeneratorSettings;
+#endif
 
 
 namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
@@ -122,6 +126,17 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
     },
     ""required"": [ ""name"", ""id""]
 }";
+
+        private static JsonSerializerSettings JsonSchemaGeneratorSettingsSerializerSettings(
+            NewtonsoftJsonSchemaGeneratorSettings newtonsoftJsonSchemaGeneratorSettings
+        )
+        {
+#if NET8_0_OR_GREATER
+                            return newtonsoftJsonSchemaGeneratorSettings?.SerializerSettings;
+#else
+                            return newtonsoftJsonSchemaGeneratorSettings?.ActualSerializerSettings;
+#endif
+        }
         /// <summary>
         ///     Test Use References. 
         /// </summary>
@@ -139,7 +154,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
             var sr = new CachedSchemaRegistryClient(schemaRegistryConfig);
 
-            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
             {
                 SerializerSettings = new JsonSerializerSettings
                 {
@@ -209,7 +224,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 // Test producing and consuming directly a JObject
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(order,
-                    jsonSchemaGeneratorSettings.ActualSerializerSettings);
+                    JsonSchemaGeneratorSettingsSerializerSettings(jsonSchemaGeneratorSettings)
+                );
                 var jsonObject = JObject.Parse(serializedString);
                 
                 using (var producer =

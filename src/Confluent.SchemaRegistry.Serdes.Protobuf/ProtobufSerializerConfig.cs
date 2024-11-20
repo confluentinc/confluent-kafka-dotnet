@@ -26,7 +26,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///     <see cref="Confluent.SchemaRegistry.Serdes.ProtobufSerializer{T}" />
     ///     configuration properties.
     /// </summary>
-    public class ProtobufSerializerConfig : Config
+    public class ProtobufSerializerConfig : SerdeConfig
     {
         /// <summary>
         ///     Configuration property names specific to 
@@ -70,6 +70,14 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     default: false
             /// </summary>
             public const string UseLatestVersion = "protobuf.serializer.use.latest.version";
+
+            /// <summary>
+            ///     Specifies whether or not the Protobuf serializer should use the latest subject
+            ///     version for serialization.
+            ///     WARNING: There is no check that the latest schema is backwards compatible
+            ///     with the schema of the object being serialized.
+            /// </summary>
+            public const string UseLatestWithMetadata = "protobuf.serializer.use.latest.with.metadata";
 
             /// <summary>
             ///     Specifies whether or not the Protobuf serializer should skip known types
@@ -171,6 +179,19 @@ namespace Confluent.SchemaRegistry.Serdes
         
 
         /// <summary>
+        ///     Specifies whether or not the Protobuf serializer should use the latest subject
+        ///     version with the given metadata for serialization.
+        ///     WARNING: There is no check that the latest schema is backwards compatible
+        ///     with the schema of the object being serialized.
+        /// </summary>
+        public IDictionary<string, string> UseLatestWithMetadata
+        {
+            get { return GetDictionaryProperty(PropertyNames.UseLatestWithMetadata); }
+            set { SetDictionaryProperty(PropertyNames.UseLatestWithMetadata, value); }
+        }
+        
+
+        /// <summary>
         ///     Specifies whether or not the Protobuf serializer should skip known types
         ///     when resolving dependencies.
         ///
@@ -253,5 +274,10 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+        /// <summary>
+        /// Custom reference subject name strategy resolver.
+        /// Ensure <seealso cref="ReferenceSubjectNameStrategy.Custom"/> is set for this to take effect.
+        /// </summary>
+        public ICustomReferenceSubjectNameStrategy CustomReferenceSubjectNameStrategy { get; set; } = null;
     }
 }

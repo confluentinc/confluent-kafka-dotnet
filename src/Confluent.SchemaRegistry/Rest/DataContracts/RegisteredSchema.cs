@@ -62,7 +62,7 @@ namespace Confluent.SchemaRegistry
         {
             get
             {
-                return new Schema(SchemaString, References, SchemaType);
+                return new Schema(SchemaString, References, SchemaType, Metadata, RuleSet);
             }
         }
 
@@ -135,10 +135,10 @@ namespace Confluent.SchemaRegistry
         {
             if (this.hashCode == null)
             {
-                int h = Subject.GetHashCode();
+                int h = base.GetHashCode();
                 h = 31 * h + Version;
                 h = 31 * h + Id;
-                h = 31 * h + SchemaString.GetHashCode();
+                h = 31 * h + Subject.GetHashCode();
                 this.hashCode = h;
             }
             return this.hashCode.Value;
@@ -206,9 +206,8 @@ namespace Confluent.SchemaRegistry
         ///     otherwise, false. If other is null, the method returns false.
         /// </returns>
         public bool Equals(RegisteredSchema other)
-            => Version == other.Version &&
+            => base.Equals(other) && Version == other.Version &&
                Id == other.Id &&
-               Subject == other.Subject &&
-               SchemaString == other.SchemaString;
+               Subject == other.Subject;
     }
 }

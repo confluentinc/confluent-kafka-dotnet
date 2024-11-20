@@ -26,7 +26,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///     <see cref="Confluent.SchemaRegistry.Serdes.AvroSerializer{T}" />
     ///     configuration properties.
     /// </summary>
-    public class AvroSerializerConfig : Config
+    public class AvroSerializerConfig : SerdeConfig
     {
         /// <summary>
         ///     Configuration property names specific to 
@@ -70,6 +70,12 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     default: false
             /// </summary>
             public const string UseLatestVersion = "avro.serializer.use.latest.version";
+
+            /// <summary>
+            ///     Specifies whether or not the Avro serializer should use the latest subject
+            ///     version with the given metadata for serialization.
+            /// </summary>
+            public const string UseLatestWithMetadata = "avro.serializer.use.latest.with.metadata";
 
             /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
@@ -146,6 +152,19 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             get { return GetBool(PropertyNames.UseLatestVersion); }
             set { SetObject(PropertyNames.UseLatestVersion, value); }
+        }
+        
+
+        /// <summary>
+        ///     Specifies whether or not the Avro serializer should use the latest subject
+        ///     version with the given metadata for serialization.
+        ///     WARNING: There is no check that the latest schema is backwards compatible
+        ///     with the schema of the object being serialized.
+        /// </summary>
+        public IDictionary<string, string> UseLatestWithMetadata
+        {
+            get { return GetDictionaryProperty(PropertyNames.UseLatestWithMetadata); }
+            set { SetDictionaryProperty(PropertyNames.UseLatestWithMetadata, value); }
         }
 
 
