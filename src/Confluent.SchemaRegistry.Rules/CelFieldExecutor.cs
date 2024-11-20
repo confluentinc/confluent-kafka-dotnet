@@ -22,7 +22,8 @@ namespace Confluent.SchemaRegistry.Rules
         public override string Type() => RuleType;
 
 
-        public override void Configure(IEnumerable<KeyValuePair<string, string>> config)
+        public override void Configure(IEnumerable<KeyValuePair<string, string>> config,
+            ISchemaRegistryClient client = null)
         {
         }
         

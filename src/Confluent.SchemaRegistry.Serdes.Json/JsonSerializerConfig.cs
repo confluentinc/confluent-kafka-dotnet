@@ -92,6 +92,13 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
             public const string SubjectNameStrategy = "json.serializer.subject.name.strategy";
+
+            /// <summary>
+            ///     Specifies whether to validate payloads against the schema.
+            ///
+            ///     default: true
+            /// </summary>
+            public const string Validate= "json.serializer.validate";
         }
 
 
@@ -220,5 +227,17 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+
+        /// <summary>
+        ///     Specifies whether or not the JSON serializer should attempt to
+        ///     validate the payload against the schema.
+        ///
+        ///     default: true
+        /// </summary>
+        public bool? Validate
+        {
+            get { return GetBool(PropertyNames.Validate); }
+            set { SetObject(PropertyNames.Validate, value); }
+        }
     }
 }

@@ -45,6 +45,28 @@ namespace Confluent.SchemaRegistry
             public const string SchemaRegistryRequestTimeoutMs = "schema.registry.request.timeout.ms";
 
             /// <summary>
+            ///     Specifies the maximum number of retries for a request.
+            ///
+            ///     default: 3
+            /// </summary>
+            public const string SchemaRegistryMaxRetries = "schema.registry.max.retries";
+
+            /// <summary>
+            ///     Specifies the maximum time to wait for the first retry.
+            ///     When jitter is applied, the actual wait may be less.
+            ///
+            ///     default: 1000
+            /// </summary>
+            public const string SchemaRegistryRetriesWaitMs = "schema.registry.retries.wait.ms";
+
+            /// <summary>
+            ///     Specifies the maximum time to wait any retry.
+            ///
+            ///     default: 20000
+            /// </summary>
+            public const string SchemaRegistryRetriesMaxWaitMs = "schema.registry.retries.max.wait.ms";
+
+            /// <summary>
             ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
             ///     should cache locally.
             ///
@@ -185,6 +207,39 @@ namespace Confluent.SchemaRegistry
         {
             get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs, value?.ToString()); }
+        }
+
+        /// <summary>
+        ///     Specifies the maximum number of retries for a request.
+        ///
+        ///     default: 3
+        /// </summary>
+        public int? MaxRetries
+        {
+            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries, value?.ToString()); }
+        }
+
+        /// <summary>
+        ///     Specifies the time to wait for the first retry.
+        ///
+        ///     default: 1000
+        /// </summary>
+        public int? RetriesWaitMs
+        {
+            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs, value?.ToString()); }
+        }
+
+        /// <summary>
+        ///     Specifies the time to wait for any retry.
+        ///
+        ///     default: 20000
+        /// </summary>
+        public int? RetriesMaxWaitMs
+        {
+            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs, value?.ToString()); }
         }
 
         ///    <summary>

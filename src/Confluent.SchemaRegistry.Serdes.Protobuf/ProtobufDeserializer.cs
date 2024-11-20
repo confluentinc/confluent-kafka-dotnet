@@ -128,7 +128,7 @@ namespace Confluent.SchemaRegistry.Serdes
             // Currently Protobuf does not support migration rules because of lack of support for DynamicMessage
             // See https://github.com/protocolbuffers/protobuf/issues/658
             /*
-            Schema latestSchema = await SerdeUtils.GetReaderSchema(schemaRegistryClient, subject, useLatestWithMetadata, useLatestVersion)
+            RegisteredSchema latestSchema = await SerdeUtils.GetReaderSchema(schemaRegistryClient, subject, useLatestWithMetadata, useLatestVersion)
                 .ConfigureAwait(continueOnCapturedContext: false);
             */
 

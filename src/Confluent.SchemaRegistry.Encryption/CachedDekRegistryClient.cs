@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
-using System.ComponentModel;
+using System.Net;
 using System.Threading;
 using System.Security.Cryptography.X509Certificates;
 
@@ -31,7 +31,7 @@ namespace Confluent.SchemaRegistry.Encryption
     /// <summary>
     ///     A caching DEK Registry client.
     /// </summary>
-    public class CachedDekRegistryClient : IDekRegistryClient, IDisposable
+    public class CachedDekRegistryClient : IDekRegistryClient
     {
         private DekRestService restService;
         
@@ -47,6 +47,21 @@ namespace Confluent.SchemaRegistry.Encryption
         ///     The default timeout value for Schema Registry REST API calls.
         /// </summary>
         public const int DefaultTimeout = 30000;
+
+        /// <summary>
+        ///     The default maximum number of retries.
+        /// </summary>
+        public const int DefaultMaxRetries = RestService.DefaultMaxRetries;
+
+        /// <summary>
+        ///     The default time to wait for the first retry.
+        /// </summary>
+        public const int DefaultRetriesWaitMs = RestService.DefaultRetriesWaitMs;
+
+        /// <summary>
+        ///     The default time to wait for any retry.
+        /// </summary>
+        public const int DefaultRetriesMaxWaitMs = RestService.DefaultRetriesMaxWaitMs;
 
         /// <summary>
         ///     The default maximum capacity of the local cache.
@@ -71,12 +86,16 @@ namespace Confluent.SchemaRegistry.Encryption
         /// <param name="authenticationHeaderValueProvider">
         ///     The authentication header value provider
         /// </param>
+        /// <param name="proxy">
+        ///     The proxy server to use for connections
+        /// </param>
         public CachedDekRegistryClient(IEnumerable<KeyValuePair<string, string>> config,
-            IAuthenticationHeaderValueProvider authenticationHeaderValueProvider)
+            IAuthenticationHeaderValueProvider authenticationHeaderValueProvider,
+            IWebProxy proxy = null)
         {
             if (config == null)
             {
-                throw new ArgumentNullException("config properties must be specified.");
+                throw new ArgumentNullException("config");
             }
             var schemaRegistryUrisMaybe = config.FirstOrDefault(prop =>
                 prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl);
@@ -99,6 +118,45 @@ namespace Confluent.SchemaRegistry.Encryption
             {
                 throw new ArgumentException(
                     $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs} must be an integer.");
+            }
+
+            var maxRetriesMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries);
+            int maxRetries;
+            try
+            {
+                maxRetries = maxRetriesMaybe.Value == null ? DefaultMaxRetries : Convert.ToInt32(maxRetriesMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries} must be an integer.");
+            }
+
+            var retriesWaitMsMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs);
+            int retriesWaitMs;
+            try
+            {
+                retriesWaitMs = retriesWaitMsMaybe.Value == null ? DefaultRetriesWaitMs : Convert.ToInt32(retriesWaitMsMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs} must be an integer.");
+            }
+
+            var retriesMaxWaitMsMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs);
+            int retriesMaxWaitMs;
+            try
+            {
+                retriesMaxWaitMs = retriesMaxWaitMsMaybe.Value == null ? DefaultRetriesMaxWaitMs : Convert.ToInt32(retriesMaxWaitMsMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs} must be an integer.");
             }
 
             var identityMapCapacityMaybe = config.FirstOrDefault(prop =>
@@ -206,6 +264,9 @@ namespace Confluent.SchemaRegistry.Encryption
 
                 if (property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
@@ -236,8 +297,10 @@ namespace Confluent.SchemaRegistry.Encryption
                     $"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool.");
             }
 
+            var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
+            var sslCaCertificate = string.IsNullOrEmpty(sslCaLocation) ? null : new X509Certificate2(sslCaLocation);
             this.restService = new DekRestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
-                SetSslConfig(config), sslVerify);
+                    SetSslConfig(config), sslVerify, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs);
         }
 
         /// <summary>
@@ -289,14 +352,6 @@ namespace Confluent.SchemaRegistry.Encryption
             if (!String.IsNullOrEmpty(certificateLocation))
             {
                 certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
-            }
-
-            var caLocation =
-                config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation)
-                    .Value ?? "";
-            if (!String.IsNullOrEmpty(caLocation))
-            {
-                certificates.Add(new X509Certificate2(caLocation));
             }
 
             return certificates;

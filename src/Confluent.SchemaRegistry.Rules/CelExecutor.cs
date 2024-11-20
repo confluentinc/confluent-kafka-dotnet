@@ -34,7 +34,8 @@ namespace Confluent.SchemaRegistry.Rules
         {
         }
 
-        public void Configure(IEnumerable<KeyValuePair<string, string>> config)
+        public void Configure(IEnumerable<KeyValuePair<string, string>> config,
+            ISchemaRegistryClient client = null)
         {
         }
 
