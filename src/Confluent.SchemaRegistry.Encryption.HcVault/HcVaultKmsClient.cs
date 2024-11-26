@@ -21,11 +21,6 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
         
         public HcVaultKmsClient(string kekId, string ns, string tokenId)
         {
-            if (tokenId == null)
-            {
-                tokenId = Environment.GetEnvironmentVariable("VAULT_TOKEN");
-                ns = Environment.GetEnvironmentVariable("VAULT_NAMESPACE");
-            }
             KekId = kekId;
             Namespace = ns;
             TokenId = tokenId;

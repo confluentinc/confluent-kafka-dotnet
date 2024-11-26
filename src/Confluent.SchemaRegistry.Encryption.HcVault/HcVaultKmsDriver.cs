@@ -23,6 +23,11 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
         {
             config.TryGetValue(TokenId, out string tokenId);
             config.TryGetValue(Namespace, out string ns);
+            if (tokenId == null)
+            {
+                tokenId = Environment.GetEnvironmentVariable("VAULT_TOKEN");
+                ns = Environment.GetEnvironmentVariable("VAULT_NAMESPACE");
+            }
             return new HcVaultKmsClient(keyUrl, ns, tokenId);
         }
     }
