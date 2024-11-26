@@ -22,32 +22,32 @@ using System.Threading.Tasks;
 
 namespace Confluent.Kafka
 {
-	/// <summary>
-	/// Defines a high-level Apache Kafka producer client without serialization capable of producing pre-serialized messages. 
-	/// </summary>
-	public interface IProducer : IClient
-	{
-		/// <summary>
-		/// Asynchronously send a single <b>preserialized</b> message to a Kafka topic. 
-		/// </summary>
+    /// <summary>
+    /// Defines a high-level Apache Kafka producer client without serialization capable of producing pre-serialized messages. 
+    /// </summary>
+    public interface IProducer : IClient
+    {
+        /// <summary>
+        /// Asynchronously send a single <b>preserialized</b> message to a Kafka topic. 
+        /// </summary>
         /// <remarks>
         /// Use this method to produce with minimal allocations.
         /// </remarks>
-		/// <param name="topic">The topic to produce message to.</param>
-		/// <param name="partition">The partition to produce to or <c>Partition.Any</c> to use configured partitioner.</param>
-		/// <param name="key">Serialized message key or <c>null</c>.</param>
-		/// <param name="value">Serialized message value or <c>null</c>.</param>
-		/// <param name="headers">Message headers or <c>null</c> to produce message without headers.</param>
-		/// <param name="timestamp"></param>
-		/// <returns>Result of produce.</returns>
-		Task<ProduceResult> ProduceAsync(string topic, Partition partition, ArraySegment<byte>? key, ArraySegment<byte>? value, IReadOnlyList<IHeader> headers, Timestamp timestamp);
-	}
+        /// <param name="topic">The topic to produce message to.</param>
+        /// <param name="partition">The partition to produce to or <c>Partition.Any</c> to use configured partitioner.</param>
+        /// <param name="key">Serialized message key or <c>null</c>.</param>
+        /// <param name="value">Serialized message value or <c>null</c>.</param>
+        /// <param name="headers">Message headers or <c>null</c> to produce message without headers.</param>
+        /// <param name="timestamp"></param>
+        /// <returns>Result of produce.</returns>
+        Task<ProduceResult> ProduceAsync(string topic, Partition partition, ArraySegment<byte>? key, ArraySegment<byte>? value, IReadOnlyList<IHeader> headers, Timestamp timestamp);
+    }
 
-	/// <summary>
-	///     Defines a high-level Apache Kafka producer client
-	///     that provides key and value serialization.
-	/// </summary>
-	public interface IProducer<TKey, TValue> : IProducer
+    /// <summary>
+    ///     Defines a high-level Apache Kafka producer client
+    ///     that provides key and value serialization.
+    /// </summary>
+    public interface IProducer<TKey, TValue> : IProducer
     {
         /// <summary>
         ///     Asynchronously send a single message to a
@@ -122,42 +122,42 @@ namespace Confluent.Kafka
             Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken));
 
-		/// <summary>
-		///     Asynchronously send a single message to a
-		///     Kafka topic. The partition the message is sent
-		///     to is determined by the partitioner defined
-		///     using the 'partitioner' configuration property.
-		/// </summary>
-		/// <param name="topic">
-		///     The topic to produce the message to.
-		/// </param>
-		/// <param name="message">
-		///     The message to produce.
-		/// </param>
-		/// <param name="deliveryHandler">
-		///     A delegate that will be called
-		///     with a delivery report corresponding to the
-		///     produce request (if enabled).
-		/// </param>
-		/// <exception cref="Confluent.Kafka.ProduceException{TKey,TValue}">
-		///     Thrown in response to any error that is known
-		///     immediately (excluding user application logic
-		///     errors), for example ErrorCode.Local_QueueFull.
-		///     Asynchronous notification of unsuccessful produce
-		///     requests is made available via the <paramref name="deliveryHandler" />
-		///     parameter (if specified). The Error property of
-		///     the exception / delivery report provides more
-		///     detailed information.
-		/// </exception>
-		/// <exception cref="System.ArgumentException">
-		///     Thrown in response to invalid argument values.
-		/// </exception>
-		/// <exception cref="System.InvalidOperationException">
-		///     Thrown in response to error conditions that
-		///     reflect an error in the application logic of
-		///     the calling application.
-		/// </exception>
-		void Produce(
+        /// <summary>
+        ///     Asynchronously send a single message to a
+        ///     Kafka topic. The partition the message is sent
+        ///     to is determined by the partitioner defined
+        ///     using the 'partitioner' configuration property.
+        /// </summary>
+        /// <param name="topic">
+        ///     The topic to produce the message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <param name="deliveryHandler">
+        ///     A delegate that will be called
+        ///     with a delivery report corresponding to the
+        ///     produce request (if enabled).
+        /// </param>
+        /// <exception cref="Confluent.Kafka.ProduceException{TKey,TValue}">
+        ///     Thrown in response to any error that is known
+        ///     immediately (excluding user application logic
+        ///     errors), for example ErrorCode.Local_QueueFull.
+        ///     Asynchronous notification of unsuccessful produce
+        ///     requests is made available via the <paramref name="deliveryHandler" />
+        ///     parameter (if specified). The Error property of
+        ///     the exception / delivery report provides more
+        ///     detailed information.
+        /// </exception>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown in response to invalid argument values.
+        /// </exception>
+        /// <exception cref="System.InvalidOperationException">
+        ///     Thrown in response to error conditions that
+        ///     reflect an error in the application logic of
+        ///     the calling application.
+        /// </exception>
+        void Produce(
             string topic,
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);
@@ -561,5 +561,5 @@ namespace Confluent.Kafka
         ///     Thrown on all other errors.
         /// </exception>
         void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, TimeSpan timeout);
-	}
+    }
 }
