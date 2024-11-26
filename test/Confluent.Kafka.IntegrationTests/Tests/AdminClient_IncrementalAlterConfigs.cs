@@ -127,7 +127,6 @@ namespace Confluent.Kafka.IntegrationTests
 
                 if(!TestConsumerGroupProtocol.IsClassic()) {
                     // 8. test updating ResourceType.Group
-                    Console.WriteLine("Testing IncrementalAlterConfigs for consumer group");
                     string groupName = Guid.NewGuid().ToString();
                     LogToFile($"Testing IncrementalAlterConfigs for consumer group {groupName}");
                     var groupConfigResource = new ConfigResource { Name = groupName, Type = ResourceType.Group };
