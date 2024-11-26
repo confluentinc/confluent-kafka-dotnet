@@ -22,6 +22,14 @@ namespace Confluent.SchemaRegistry.Encryption
         public IKmsClient NewKmsClient(IDictionary<string, string> config, string keyUrl)
         {
             config.TryGetValue(Secret, out string secret);
+            if (secret == null)
+            {
+                secret = Environment.GetEnvironmentVariable("LOCAL_SECRET");
+            }
+            if (secret == null)
+            {
+                throw new ArgumentNullException("Cannot load secret");
+            }
             return new LocalKmsClient(secret);
         }
     }
