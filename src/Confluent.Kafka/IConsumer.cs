@@ -54,6 +54,18 @@ namespace Confluent.Kafka
         ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout);
 
         /// <summary>
+        /// Poll for new messages / events. Blocks until a consume result is availble or until timeout period has elapsed.
+        /// </summary>
+        /// <remarks>
+        /// This overload takes the result instance as parameter to allow reuse of result and contained message instances.
+        /// </remarks>
+        /// <param name="millisecondsTimeout"></param>
+        /// <param name="result">Mandatory result instance to be filled with next message/EOF.</param>
+        /// <returns>True if <c>result</c> was filled with message or EOF, false if timeout elapsed.</returns>
+        bool Consume(int millisecondsTimeout, ConsumeResult<TKey, TValue> result);
+
+
+        /// <summary>
         ///     Poll for new messages / events. Blocks
         ///     until a consume result is available or the
         ///     operation has been cancelled.

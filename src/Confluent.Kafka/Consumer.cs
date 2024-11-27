@@ -766,6 +766,19 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
+            ConsumeResult<TKey, TValue> result = new();
+            if (!Consume(millisecondsTimeout, result))
+                return null;
+            return result;
+        }
+
+
+        /// <inheritdoc/>
+        public bool Consume(int millisecondsTimeout, ConsumeResult<TKey, TValue> result)
+        {
+            if (result == null)
+                throw new ArgumentNullException(nameof(result));
+
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
 
             if (this.handlerException != null)
@@ -781,7 +794,7 @@ namespace Confluent.Kafka
 
             if (msgPtr == IntPtr.Zero)
             {
-                return null;
+                return false;
             }
 
             try
@@ -806,14 +819,12 @@ namespace Confluent.Kafka
 
                 if (msg.err == ErrorCode.Local_PartitionEOF)
                 {
-                    return new ConsumeResult<TKey, TValue>
-                    {
-                        TopicPartitionOffset = new TopicPartitionOffset(topic,
-                            msg.partition, msg.offset,
-                            msgLeaderEpoch),
-                        Message = null,
-                        IsPartitionEOF = true
-                    };
+                    result.IsPartitionEOF = true;
+                    result.Topic = topic;
+                    result.Partition = msg.partition;
+                    result.Offset = msg.offset;
+                    result.LeaderEpoch = msgLeaderEpoch;
+                    return true;
                 }
 
                 long timestampUnix = 0;
@@ -827,7 +838,9 @@ namespace Confluent.Kafka
                 Headers headers = null;
                 if (enableHeaderMarshaling)
                 {
-                    headers = new Headers();
+                    headers = result.Message?.Headers ?? new Headers();
+                    headers.Clear();
+
                     Librdkafka.message_headers(msgPtr, out IntPtr hdrsPtr);
                     if (hdrsPtr != IntPtr.Zero)
                     {
@@ -938,20 +951,18 @@ namespace Confluent.Kafka
                         ex);
                 }
 
-                return new ConsumeResult<TKey, TValue> 
-                {
-                    TopicPartitionOffset = new TopicPartitionOffset(topic,
-                        msg.partition, msg.offset,
-                        msgLeaderEpoch),
-                    Message = new Message<TKey, TValue>
-                    {
-                        Timestamp = timestamp,
-                        Headers = headers,
-                        Key = key,
-                        Value = val
-                    },
-                    IsPartitionEOF = false
-                };
+                result.Topic = topic;
+                result.Partition = msg.partition;
+                result.Offset = msg.offset;
+                result.LeaderEpoch = msgLeaderEpoch;
+
+                result.Message ??= new Message<TKey, TValue>();
+                result.Message.Timestamp = timestamp;
+                result.Message.Headers = headers;
+                result.Message.Key = key;
+                result.Message.Value = val;
+                result.IsPartitionEOF = false;
+                return true;
             }
             finally
             {
