@@ -16,14 +16,6 @@ namespace Confluent.SchemaRegistry.Encryption
 
         public LocalKmsClient(string secret)
         {
-            if (secret == null)
-            {
-                secret = Environment.GetEnvironmentVariable("LOCAL_SECRET");
-            }
-            if (secret == null)
-            {
-                throw new ArgumentNullException("Cannot load secret");
-            }
             Secret = secret;
             cryptor = new Cryptor(DekFormat.AES128_GCM);
             byte[] rawKey = Hkdf.DeriveKey(
