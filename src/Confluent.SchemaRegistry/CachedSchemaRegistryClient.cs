@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Threading;
 using System.Security.Cryptography.X509Certificates;
@@ -65,7 +66,7 @@ namespace Confluent.SchemaRegistry
         private IRestService restService;
         private int identityMapCapacity;
         private int latestCacheTtlSecs;
-        private readonly Dictionary<int, Schema> schemaById = new Dictionary<int, Schema>();
+        private readonly ConcurrentDictionary<int, Schema> schemaById = new ConcurrentDictionary<int, Schema>();
 
         private readonly Dictionary<string /*subject*/, Dictionary<Schema, int>> idBySchemaBySubject =
             new Dictionary<string, Dictionary<Schema, int>>();
@@ -657,11 +658,15 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public async Task<Schema> GetSchemaBySubjectAndIdAsync(string subject, int id, string format = null)
         {
+            if (this.schemaById.TryGetValue(id, out Schema schema) && checkSchemaMatchesFormat(format, schema.SchemaString))
+            {
+                return schema;
+            }
+            
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.schemaById.TryGetValue(id, out Schema schema) ||
-                    !checkSchemaMatchesFormat(format, schema.SchemaString))
+                if (!this.schemaById.TryGetValue(id, out schema) || !checkSchemaMatchesFormat(format, schema.SchemaString))
                 {
                     CleanCacheIfFull();
                     schema = (await restService.GetSchemaBySubjectAndIdAsync(subject, id, format)
