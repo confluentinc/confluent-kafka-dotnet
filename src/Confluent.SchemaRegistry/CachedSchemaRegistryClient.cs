@@ -592,16 +592,8 @@ namespace Confluent.SchemaRegistry
             // if a format isn't specified, then assume text is desired.
             if (format == null)
             {
-                try
-                {
-                    Convert.FromBase64String(schemaString);
-                }
-                catch (Exception)
-                {
-                    return true; // Base64 conversion failed, infer the schemaString format is text.
-                }
-
-                return false; // Base64 conversion succeeded, so infer the schamaString format is base64.
+                // If schemaString is not Base64, infer the schemaString format is text.
+                return !Utils.IsBase64String(schemaString);
             }
             else
             {
@@ -609,17 +601,8 @@ namespace Confluent.SchemaRegistry
                 {
                     throw new ArgumentException($"Invalid schema format was specified: {format}.");
                 }
-
-                try
-                {
-                    Convert.FromBase64String(schemaString);
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-
-                return true;
+                
+                return Utils.IsBase64String(schemaString);
             }
         }
 
