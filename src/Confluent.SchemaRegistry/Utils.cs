@@ -20,6 +20,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Confluent.Kafka;
 
+#if NET8_0_OR_GREATER
+using System.Buffers.Text;
+#endif
 
 namespace Confluent.SchemaRegistry
 {
@@ -69,6 +72,23 @@ namespace Confluent.SchemaRegistry
             if (ReferenceEquals(a, b)) return true;
             if (a == null || b == null) return false;
             return a.SequenceEqual(b);
+        }
+        
+        internal static bool IsBase64String(string value)
+        {
+#if NET8_0_OR_GREATER
+            return Base64.IsValid(value);
+#else
+            try
+            {
+                _ = Convert.FromBase64String(value);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+#endif
         }
     }
 }
