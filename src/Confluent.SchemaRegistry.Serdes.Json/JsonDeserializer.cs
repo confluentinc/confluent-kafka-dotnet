@@ -251,7 +251,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         {
                             string serializedString = jsonReader.ReadToEnd();
                     
-                            if (schema != null)
+                            if (schema != null && validate)
                             {
                                 var validationResult = validator.Validate(serializedString, schema);
 
