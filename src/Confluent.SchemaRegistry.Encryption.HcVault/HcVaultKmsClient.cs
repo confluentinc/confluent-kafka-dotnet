@@ -48,7 +48,7 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
         
         public bool DoesSupport(string uri)
         {
-            return uri.StartsWith(HcVaultKmsDriver.Prefix);
+            return KekId == uri;
         }
         
         public async Task<byte[]> Encrypt(byte[] plaintext)
