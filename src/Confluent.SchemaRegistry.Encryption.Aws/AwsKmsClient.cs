@@ -12,7 +12,6 @@ namespace Confluent.SchemaRegistry.Encryption.Aws
     {
         private AmazonKeyManagementServiceClient kmsClient;
         private string keyId;
-
         public string KekId { get; }
         
         public AwsKmsClient(string kekId, AWSCredentials credentials)
