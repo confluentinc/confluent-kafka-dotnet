@@ -83,6 +83,8 @@ namespace Confluent.Kafka.UnitTests
         public void TryGetLast_NotExist()
         {
             var hdrs = new Headers();
+            Assert.False(hdrs.TryGetLastBytes("my-header-2", out byte[] _));
+
             hdrs.Add(new Header("my-header", new byte[] { 42 }));
 
             Assert.False(hdrs.TryGetLastBytes("my-header-2", out byte[] val));
@@ -107,6 +109,8 @@ namespace Confluent.Kafka.UnitTests
         public void Remove()
         {
             var hdrs = new Headers();
+            hdrs.Remove("not-present");
+
             hdrs.Add(new Header("my-header", new byte[] { 42 }));
             hdrs.Add(new Header("my-header", new byte[] { 44 }));
             hdrs.Add(new Header("my-header-2", new byte[] { 45 }));
@@ -151,6 +155,9 @@ namespace Confluent.Kafka.UnitTests
         public void Enumerator()
         {
             var hdrs = new Headers();
+
+            Assert.Empty(hdrs);
+
             hdrs.Add(new Header("my-header", new byte[] { 42 }));
             hdrs.Add(new Header("my-header", new byte[] { 44 }));
             hdrs.Add(new Header("my-header-2", new byte[] { 45 }));
@@ -176,5 +183,16 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal(3, cnt);
         }
 
+        [Fact]
+        public void BackingList()
+        {
+            var hdrs = new Headers();
+            hdrs.Clear();
+            Assert.Empty(hdrs.BackingList);
+            hdrs.Add("A", null);
+            Assert.Single(hdrs.BackingList);
+            hdrs.Clear();
+            Assert.Empty(hdrs);
+        }
     }
 }
