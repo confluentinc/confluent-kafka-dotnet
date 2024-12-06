@@ -142,6 +142,11 @@ namespace Confluent.SchemaRegistry
                 .ConfigureAwait(continueOnCapturedContext: false);
             return result;
         }
+
+        protected virtual bool IgnoreReference(string name)
+        {
+            return false;
+        }
         
         private async Task<IDictionary<string, string>> ResolveReferences(
             Schema schema, IDictionary<string, string> schemas, ISet<string> visited)
@@ -149,7 +154,7 @@ namespace Confluent.SchemaRegistry
             IList<SchemaReference> references = schema.References;
             foreach (SchemaReference reference in references)
             {
-                if (visited.Contains(reference.Name))
+                if (IgnoreReference(reference.Name) || visited.Contains(reference.Name))
                 {
                     continue;
                 }
