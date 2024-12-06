@@ -54,7 +54,7 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class ProtobufSerializer<T> : AsyncSerializer<T, FileDescriptorSet>  where T : IMessage<T>, new()
     {
-        private bool skipKnownTypes;
+        private bool skipKnownTypes = true;
         private bool useDeprecatedFormat;
         private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy;
 
@@ -190,7 +190,7 @@ namespace Confluent.SchemaRegistry.Serdes
             for (int i=0; i<fd.Dependencies.Count; ++i)
             {
                 FileDescriptor fileDescriptor = fd.Dependencies[i];
-                if (skipKnownTypes && fileDescriptor.Name.StartsWith("google/protobuf/"))
+                if (skipKnownTypes && IgnoreReference(fileDescriptor.Name))
                 {
                     continue;
                 }
@@ -327,6 +327,13 @@ namespace Confluent.SchemaRegistry.Serdes
             IDictionary<string, string> references = await ResolveReferences(schema)
                 .ConfigureAwait(continueOnCapturedContext: false);
             return ProtobufUtils.Parse(schema.SchemaString, references);
+        }
+
+        protected override bool IgnoreReference(string name)
+        {
+            return name.StartsWith("confluent/") ||
+                   name.StartsWith("google/protobuf/") ||
+                   name.StartsWith("google/type/");
         }
     }
 }
