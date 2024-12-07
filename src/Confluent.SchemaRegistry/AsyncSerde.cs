@@ -359,7 +359,7 @@ namespace Confluent.SchemaRegistry
             for (int i = 0; i < rules.Count; i++)
             {
                 Rule rule = rules[i];
-                if (rule.Disabled)
+                if (IsDisabled(rule))
                 {
                     continue;
                 }
@@ -406,27 +406,66 @@ namespace Confluent.SchemaRegistry
                             default:
                                 throw new ArgumentException("Unsupported rule kind " + rule.Kind);
                         }
-                        await RunAction(ctx, ruleMode, rule, message != null ? rule.OnSuccess : rule.OnFailure,
+                        await RunAction(ctx, ruleMode, rule, message != null ? GetOnSuccess(rule) : GetOnFailure(rule),
                             message, null, message != null ? null : ErrorAction.ActionType,
                             ruleRegistry)
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                     catch (RuleException ex)
                     {
-                        await RunAction(ctx, ruleMode, rule, rule.OnFailure, message, 
+                        await RunAction(ctx, ruleMode, rule, GetOnFailure(rule), message,
                             ex, ErrorAction.ActionType, ruleRegistry)
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
                 else
                 {
-                    await RunAction(ctx, ruleMode, rule, rule.OnFailure, message, 
+                    await RunAction(ctx, ruleMode, rule, GetOnFailure(rule), message,
                         new RuleException("Could not find rule executor of type " + rule.Type),
                         ErrorAction.ActionType, ruleRegistry)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
             }
             return message;
+        }
+
+        private string GetOnSuccess(Rule rule)
+        {
+            if (ruleRegistry.TryGetOverride(rule.Type, out RuleOverride ruleOverride))
+            {
+                if (ruleOverride.OnSuccess != null)
+                {
+                    return ruleOverride.OnSuccess;
+                }
+            }
+
+            return rule.OnSuccess;
+        }
+
+        private string GetOnFailure(Rule rule)
+        {
+            if (ruleRegistry.TryGetOverride(rule.Type, out RuleOverride ruleOverride))
+            {
+                if (ruleOverride.OnFailure != null)
+                {
+                    return ruleOverride.OnFailure;
+                }
+            }
+
+            return rule.OnFailure;
+        }
+
+        private bool IsDisabled(Rule rule)
+        {
+            if (ruleRegistry.TryGetOverride(rule.Type, out RuleOverride ruleOverride))
+            {
+                if (ruleOverride.Disabled.HasValue)
+                {
+                    return ruleOverride.Disabled.Value;
+                }
+            }
+
+            return rule.Disabled;
         }
 
         private static IRuleExecutor GetRuleExecutor(RuleRegistry ruleRegistry, string type)
