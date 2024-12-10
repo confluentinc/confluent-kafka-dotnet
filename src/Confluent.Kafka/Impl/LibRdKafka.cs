@@ -424,6 +424,7 @@ namespace Confluent.Kafka.Impl
             _ConsumerGroupDescription_is_simple_consumer_group = (_ConsumerGroupDescription_is_simple_consumer_group_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_is_simple_consumer_group").CreateDelegate(typeof (_ConsumerGroupDescription_is_simple_consumer_group_delegate));
             _ConsumerGroupDescription_partition_assignor = (_ConsumerGroupDescription_partition_assignor_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_partition_assignor").CreateDelegate(typeof (_ConsumerGroupDescription_partition_assignor_delegate));
             _ConsumerGroupDescription_state = (_ConsumerGroupDescription_state_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_state").CreateDelegate(typeof (_ConsumerGroupDescription_state_delegate));
+            _ConsumerGroupDescription_type = (_ConsumerGroupDescription_type_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_type").CreateDelegate(typeof (_ConsumerGroupDescription_type_delegate));
             _ConsumerGroupDescription_coordinator = (_ConsumerGroupDescription_coordinator_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_coordinator").CreateDelegate(typeof (_ConsumerGroupDescription_coordinator_delegate));
             _ConsumerGroupDescription_member_count = (_ConsumerGroupDescription_member_count_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_member_count").CreateDelegate(typeof (_ConsumerGroupDescription_member_count_delegate));
             _ConsumerGroupDescription_authorized_operations = (_ConsumerGroupDescription_authorized_operations_delegate)methods.Single(m => m.Name == "rd_kafka_ConsumerGroupDescription_authorized_operations").CreateDelegate(typeof (_ConsumerGroupDescription_authorized_operations_delegate));
@@ -434,6 +435,8 @@ namespace Confluent.Kafka.Impl
             _MemberDescription_host = (_MemberDescription_host_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_host").CreateDelegate(typeof (_MemberDescription_host_delegate));
             _MemberDescription_assignment = (_MemberDescription_assignment_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_assignment").CreateDelegate(typeof (_MemberDescription_assignment_delegate));
             _MemberAssignment_partitions = (_MemberAssignment_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_MemberAssignment_partitions").CreateDelegate(typeof (_MemberAssignment_partitions_delegate));
+            _MemberDescription_target_assignment = (_MemberDescription_target_assignment_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_target_assignment").CreateDelegate(typeof (_MemberDescription_target_assignment_delegate));
+            _MemberAssignment_target_partitions = (_MemberAssignment_target_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_MemberAssignment_target_partitions").CreateDelegate(typeof (_MemberAssignment_target_partitions_delegate));
             _Node_id = (_Node_id_delegate)methods.Single(m => m.Name == "rd_kafka_Node_id").CreateDelegate(typeof (_Node_id_delegate));
             _Node_host = (_Node_host_delegate)methods.Single(m => m.Name == "rd_kafka_Node_host").CreateDelegate(typeof (_Node_host_delegate));
             _Node_port = (_Node_port_delegate)methods.Single(m => m.Name == "rd_kafka_Node_port").CreateDelegate(typeof (_Node_port_delegate));
@@ -1953,6 +1956,12 @@ namespace Confluent.Kafka.Impl
             return _ConsumerGroupDescription_state(grpdesc);
          }
 
+         private delegate ConsumerGroupType  _ConsumerGroupDescription_type_delegate(IntPtr grpdesc);
+         private static _ConsumerGroupDescription_type_delegate _ConsumerGroupDescription_type;
+
+         internal static ConsumerGroupType  ConsumerGroupDescription_type(IntPtr grpdesc)
+            => _ConsumerGroupDescription_type(grpdesc);
+
          private delegate IntPtr  _ConsumerGroupDescription_coordinator_delegate(IntPtr grpdesc);
          private static _ConsumerGroupDescription_coordinator_delegate _ConsumerGroupDescription_coordinator;
          internal static IntPtr  ConsumerGroupDescription_coordinator(IntPtr grpdesc)
@@ -2002,6 +2011,16 @@ namespace Confluent.Kafka.Impl
          private static _MemberAssignment_partitions_delegate _MemberAssignment_partitions;
          internal static IntPtr  MemberAssignment_topic_partitions(IntPtr assignment)
             => _MemberAssignment_partitions(assignment);
+
+         private delegate IntPtr _MemberDescription_target_assignment_delegate(IntPtr member);
+         private static _MemberDescription_target_assignment_delegate _MemberDescription_target_assignment;
+         internal static IntPtr MemberDescription_target_assignment(IntPtr member)
+            => _MemberDescription_target_assignment(member);
+
+         private delegate IntPtr _MemberAssignment_target_partitions_delegate(IntPtr assignment);
+         private static _MemberAssignment_target_partitions_delegate _MemberAssignment_target_partitions;
+         internal static IntPtr MemberAssignment_target_partitions(IntPtr assignment)
+            => _MemberAssignment_target_partitions(assignment);
 
         private delegate IntPtr _Node_id_delegate(IntPtr node);
         private static _Node_id_delegate _Node_id;
