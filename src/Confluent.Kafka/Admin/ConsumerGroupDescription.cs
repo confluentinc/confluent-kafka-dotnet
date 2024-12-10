@@ -52,6 +52,11 @@ namespace Confluent.Kafka.Admin
         public ConsumerGroupState State { get; set; }
 
         /// <summary>
+        ///    Consumer group type.
+        ///  </summary>
+        public ConsumerGroupType Type { get; set;}
+
+        /// <summary>
         ///     Broker that acts as consumer group coordinator (null if not known).
         /// </summary>
         public Node Coordinator { get; set; }
@@ -92,6 +97,7 @@ namespace Confluent.Kafka.Admin
             result.Append($"{{\"GroupId\": {GroupId.Quote()}");
             result.Append($", \"Error\": \"{Error.Code}\", \"IsSimpleConsumerGroup\": {IsSimpleConsumerGroup.Quote()}");
             result.Append($", \"PartitionAssignor\": {PartitionAssignor.Quote()}, \"State\": {State.ToString().Quote()}");
+            result.Append($", \"Type\": {Type.ToString().Quote()}");
             result.Append($", \"Coordinator\": {Coordinator?.ToString() ?? "null"}, \"Members\": [{members}]");
             result.Append($", \"AuthorizedOperations\": {authorizedOperations}}}");
 
