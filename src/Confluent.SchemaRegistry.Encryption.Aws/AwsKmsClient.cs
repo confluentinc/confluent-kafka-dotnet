@@ -12,7 +12,7 @@ namespace Confluent.SchemaRegistry.Encryption.Aws
     {
         private AmazonKeyManagementServiceClient kmsClient;
         private string keyId;
-        
+
         public string KekId { get; }
         
         public AwsKmsClient(string kekId, AWSCredentials credentials)
@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry.Encryption.Aws
 
         public bool DoesSupport(string uri)
         {
-            return uri.StartsWith(AwsKmsDriver.Prefix); 
+            return KekId == uri;
         }
         
         public async Task<byte[]> Encrypt(byte[] plaintext)

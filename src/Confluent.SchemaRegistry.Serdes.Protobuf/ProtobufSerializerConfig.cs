@@ -195,7 +195,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Specifies whether or not the Protobuf serializer should skip known types
         ///     when resolving dependencies.
         ///
-        ///     default: false
+        ///     default: true
         /// </summary>
         public bool? SkipKnownTypes
         {

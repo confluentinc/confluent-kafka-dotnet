@@ -18,6 +18,7 @@
 #pragma warning disable CS0618
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace Confluent.SchemaRegistry
         
         protected SemaphoreSlim serdeMutex = new SemaphoreSlim(1);
         
-        private readonly IDictionary<Schema, TParsedSchema> parsedSchemaCache = new Dictionary<Schema, TParsedSchema>();
+        private readonly IDictionary<Schema, TParsedSchema> parsedSchemaCache = new ConcurrentDictionary<Schema, TParsedSchema>();
         private SemaphoreSlim parsedSchemaMutex = new SemaphoreSlim(1);
         
         protected AsyncSerde(ISchemaRegistryClient schemaRegistryClient, SerdeConfig config, RuleRegistry ruleRegistry = null)
@@ -98,10 +99,15 @@ namespace Confluent.SchemaRegistry
 
         protected async Task<TParsedSchema> GetParsedSchema(Schema schema)
         {
+            if (parsedSchemaCache.TryGetValue(schema, out TParsedSchema parsedSchema))
+            {
+                return parsedSchema;
+            }
+            
             await parsedSchemaMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!parsedSchemaCache.TryGetValue(schema, out TParsedSchema parsedSchema))
+                if (!parsedSchemaCache.TryGetValue(schema, out parsedSchema))
                 {
                     if (parsedSchemaCache.Count > schemaRegistryClient.MaxCachedSchemas)
                     {
@@ -136,6 +142,11 @@ namespace Confluent.SchemaRegistry
                 .ConfigureAwait(continueOnCapturedContext: false);
             return result;
         }
+
+        protected virtual bool IgnoreReference(string name)
+        {
+            return false;
+        }
         
         private async Task<IDictionary<string, string>> ResolveReferences(
             Schema schema, IDictionary<string, string> schemas, ISet<string> visited)
@@ -143,7 +154,7 @@ namespace Confluent.SchemaRegistry
             IList<SchemaReference> references = schema.References;
             foreach (SchemaReference reference in references)
             {
-                if (visited.Contains(reference.Name))
+                if (IgnoreReference(reference.Name) || visited.Contains(reference.Name))
                 {
                     continue;
                 }

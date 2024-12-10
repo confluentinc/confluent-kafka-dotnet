@@ -25,7 +25,7 @@ namespace Confluent.SchemaRegistry.Encryption.Azure
         
         public bool DoesSupport(string uri)
         {
-            return uri.StartsWith(AzureKmsDriver.Prefix); 
+            return KekId == uri;
         }
         
         public async Task<byte[]> Encrypt(byte[] plaintext)
