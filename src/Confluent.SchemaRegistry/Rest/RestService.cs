@@ -34,7 +34,7 @@ namespace Confluent.SchemaRegistry
 
         private static readonly string acceptHeader = string.Join(", ", Versions.PreferredResponseTypes);
 
-        public const int DefaultMaxRetries = 2;
+        public const int DefaultMaxRetries = 3;
 
         public const int DefaultRetriesWaitMs = 1000;
 
