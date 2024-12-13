@@ -238,8 +238,7 @@ namespace Confluent.SchemaRegistry
                     string message = "";
                     int errorCode = -1;
 
-                    // 4xx errors with valid SR error message as content should not be retried (these are conclusive).
-                    if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+                    if (!IsRetriable((int)response.StatusCode))
                     {
                         try
                         {
