@@ -27,6 +27,7 @@ using System.Linq;
 using Avro;
 using Avro.Generic;
 using Confluent.SchemaRegistry.Encryption;
+using Confluent.SchemaRegistry.Rules;
 
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
@@ -325,6 +326,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 UseLatestVersion = true
             };
             RuleRegistry registry = new RuleRegistry();
+            registry.RegisterExecutor(new CelFieldExecutor());
             registry.RegisterOverride(new RuleOverride("CEL_FIELD", null, null, true));
             var serializer = new AvroSerializer<User>(schemaRegistryClient, config, registry);
             var deserializer = new AvroDeserializer<User>(schemaRegistryClient, null);
