@@ -90,6 +90,29 @@ namespace Confluent.Kafka.IntegrationTests
             
             Assert.Equal((Partition)1, drs2[0].Result.Partition);
             
+            // Memory<byte>? case
+
+            var drs3 = new List<Task<DeliveryResult<Memory<byte>?, Memory<byte>?>>>();
+            using (var producer = new TestProducerBuilder<Memory<byte>?, Memory<byte>?>(producerConfig).Build())
+            {
+                drs3.Add(producer.ProduceAsync(new TopicPartition(partitionedTopic, 1), new Message<Memory<byte>?, Memory<byte>?>()));
+                drs3.Add(producer.ProduceAsync(partitionedTopic, new Message<Memory<byte>?, Memory<byte>?>()));
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
+            for (int i = 0; i < 2; ++i)
+            {
+                var dr = drs3[i].Result;
+                Assert.True(dr.Partition == 0 || dr.Partition == 1);
+                Assert.Equal(partitionedTopic, dr.Topic);
+                Assert.True(dr.Offset >= 0);
+                Assert.Null(dr.Message.Key);
+                Assert.Null(dr.Message.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+            }
+
+            Assert.Equal((Partition)1, drs3[0].Result.Partition);
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Null_Task");
