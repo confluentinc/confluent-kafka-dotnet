@@ -31,7 +31,7 @@ blocks:
     task:
       agent:
         machine:
-          type: s1-prod-macos
+          type: s1-prod-macos-13-5-amd64
       jobs:
         - name: 'Build and test'
           commands:
@@ -70,7 +70,7 @@ blocks:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
-            - dotnet tool update -g docfx
+            - dotnet tool update -g docfx --version 2.75.2
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
@@ -97,7 +97,7 @@ blocks:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Version 6.0.403 -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
-            - dotnet tool update -g docfx
+            - dotnet tool update -g docfx --version 2.75.2
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --output artifacts
