@@ -155,7 +155,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordPrimitive()
+        public void ISpecificRecordStrings()
         {
             var schemaStr = "{\"type\":\"string\"}";
             var schema = new RegisteredSchema("topic1-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -173,7 +173,6 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
-                UseLatestVersion = true,
                 SubjectNameStrategy = SubjectNameStrategy.Topic
             };
             var serializer = new AvroSerializer<String>(schemaRegistryClient, config);
