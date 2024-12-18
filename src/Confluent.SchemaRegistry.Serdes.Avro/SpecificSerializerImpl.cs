@@ -35,22 +35,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             private string writerSchemaString;
             private global::Avro.Schema writerSchema;
-
-            /// <remarks>
-            ///     A given schema is uniquely identified by a schema id, even when
-            ///     registered against multiple subjects.
-            /// </remarks>
-            private int? writerSchemaId;
-
             private SpecificWriter<T> avroWriter;
-
-            private HashSet<string> subjectsRegistered = new HashSet<string>();
-
-            public HashSet<string> SubjectsRegistered
-            {
-                get => subjectsRegistered;
-                set => subjectsRegistered = value;
-            }
 
             public string WriterSchemaString
             {
@@ -64,12 +49,6 @@ namespace Confluent.SchemaRegistry.Serdes
                 set => writerSchema = value;
             }
 
-            public int? WriterSchemaId
-            {
-                get => writerSchemaId;
-                set => writerSchemaId = value;
-            }
-
             public SpecificWriter<T> AvroWriter
             {
                 get => avroWriter;
@@ -79,20 +58,14 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private Dictionary<Type, SerializerSchemaData> multiSchemaData =
             new Dictionary<Type, SerializerSchemaData>();
-
-        private SerializerSchemaData singleSchemaData;
+        private Dictionary<KeyValuePair<string, string>, int> registeredSchemas =
+            new Dictionary<KeyValuePair<string, string>, int>();
 
         public SpecificSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             AvroSerializerConfig config,
             RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
-            Type writerType = typeof(T);
-            if (writerType != typeof(ISpecificRecord))
-            {
-                singleSchemaData = ExtractSchemaData(writerType);
-            }
-            
             if (config == null) { return; }
 
             if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
@@ -177,24 +150,18 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             try
             {
+                int schemaId;
                 string subject;
                 RegisteredSchema latestSchema = null;
                 SerializerSchemaData currentSchemaData;
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    if (singleSchemaData == null)
+                    var key = data != null ? data.GetType() : typeof(Null);
+                    if (!multiSchemaData.TryGetValue(key, out currentSchemaData))
                     {
-                        var key = data.GetType();
-                        if (!multiSchemaData.TryGetValue(key, out currentSchemaData))
-                        {
-                            currentSchemaData = ExtractSchemaData(key);
-                            multiSchemaData[key] = currentSchemaData;
-                        }
-                    }
-                    else
-                    {
-                        currentSchemaData = singleSchemaData;
+                        currentSchemaData = ExtractSchemaData(key);
+                        multiSchemaData[key] = currentSchemaData;
                     }
 
                     string fullname = null;
@@ -204,17 +171,18 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
 
                     subject = GetSubjectName(topic, isKey, fullname);
+                    var subjectSchemaPair = new KeyValuePair<string, string>(subject, currentSchemaData.WriterSchemaString);
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     
                     if (latestSchema != null)
                     {
-                        currentSchemaData.WriterSchemaId = latestSchema.Id;
+                        schemaId = latestSchema.Id;
                     }
-                    else if (!currentSchemaData.SubjectsRegistered.Contains(subject))
+                    else if (!registeredSchemas.TryGetValue(subjectSchemaPair, out schemaId))
                     {
                         // first usage: register/get schema to check compatibility
-                        currentSchemaData.WriterSchemaId = autoRegisterSchema
+                        schemaId = autoRegisterSchema
                             ? await schemaRegistryClient
                                 .RegisterSchemaAsync(subject, currentSchemaData.WriterSchemaString, normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false)
@@ -222,7 +190,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 .GetSchemaIdAsync(subject, currentSchemaData.WriterSchemaString, normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
-                        currentSchemaData.SubjectsRegistered.Add(subject);
+                        registeredSchemas.Add(subjectSchemaPair, schemaId);
                     }
                 }
                 finally
@@ -248,7 +216,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     stream.WriteByte(Constants.MagicByte);
 
-                    writer.Write(IPAddress.HostToNetworkOrder(currentSchemaData.WriterSchemaId.Value));
+                    writer.Write(IPAddress.HostToNetworkOrder(schemaId));
                     currentSchemaData.AvroWriter.Write(data, new BinaryEncoder(stream));
 
                     // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
