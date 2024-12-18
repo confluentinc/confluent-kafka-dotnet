@@ -155,6 +155,44 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void ISpecificRecordPrimitive()
+        {
+            var schemaStr = "{\"type\":\"string\"}";
+            var schema = new RegisteredSchema("topic1-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            store[schemaStr] = 1;
+            subjectStore["topic1-value"] = new List<RegisteredSchema> { schema };
+
+            schema = new RegisteredSchema("topic2-value", 1, 2, schemaStr, SchemaType.Avro, null);
+            schema.Metadata = new Metadata(null, new Dictionary<string, string>
+            {
+                { "confluent:version", "1" }
+            }, null);
+            store[schemaStr] = 2;
+            subjectStore["topic2-value"] = new List<RegisteredSchema> { schema };
+
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true,
+                SubjectNameStrategy = SubjectNameStrategy.Topic
+            };
+            var serializer = new AvroSerializer<String>(schemaRegistryClient, config);
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync("hi", new SerializationContext(MessageComponentType.Value, "topic1", headers)).Result;
+            Assert.Equal(1, bytes[4]);
+
+            bytes = serializer.SerializeAsync("world", new SerializationContext(MessageComponentType.Value, "topic2", headers)).Result;
+            Assert.Equal(2, bytes[4]);
+
+            bytes = serializer.SerializeAsync("hi", new SerializationContext(MessageComponentType.Value, "topic1", headers)).Result;
+            Assert.Equal(1, bytes[4]);
+
+            bytes = serializer.SerializeAsync("world", new SerializationContext(MessageComponentType.Value, "topic2", headers)).Result;
+            Assert.Equal(2, bytes[4]);
+        }
+
+        [Fact]
         public void ISpecificRecordRecordNameStrategy()
         {
             var serializerConfig = new AvroSerializerConfig
