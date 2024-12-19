@@ -907,6 +907,78 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static async Task DescribeConfigsAsync(string bootstrapServers, string[] commandArgs)
+        {
+            var timeout = TimeSpan.FromSeconds(30);
+            var configResourceList = new List<ConfigResource>();
+            try
+            {
+                if (commandArgs.Length % 2 != 0)
+                {
+                    throw new ArgumentException("invalid arguments length");
+                }
+
+                for (int i = 0; i < commandArgs.Length; i += 2)
+                {
+                    var resourceType = Enum.Parse<ResourceType>(commandArgs[i]);
+                    var resourceName = commandArgs[i + 1];
+                    var resource = new ConfigResource
+                    {
+                        Name = resourceName,
+                        Type = resourceType
+                    };
+                    configResourceList.Add(resource);
+                }
+            }
+            catch (Exception e) when (
+                e is ArgumentException ||
+                e is FormatException
+            )
+            {
+                Console.WriteLine($"error: {e.Message}");
+                Console.WriteLine("usage: .. <bootstrapServers> describe-configs [<timeout_seconds> <resource-type1> <resource-name1> ...]");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var describeResultList = await adminClient.DescribeConfigsAsync(configResourceList, new DescribeConfigsOptions() { RequestTimeout = timeout });
+                    foreach (var describeResult in describeResultList)
+                    {
+                        Console.WriteLine($"Resource {describeResult.ConfigResource} description:");
+                        foreach (var configEntry in describeResult.Entries)
+                        {
+                            var entry = configEntry.Value;
+                            var synonyms = "";
+                            foreach (var synonym in entry.Synonyms)
+                            {
+                                synonyms += $"[{synonym.Name}={synonym.Value}]";
+                            }
+                            Console.WriteLine($"  {entry.Name}: {entry.Value} (default: {entry.IsDefault}, read-only: {entry.IsReadOnly}, sensitive: {entry.IsSensitive}, synonyms: {synonyms}");
+                            Console.WriteLine($"  type: {entry.Type}, documentation: {entry.Documentation})");
+                            
+                        }
+                    }
+                }
+                catch (DescribeConfigsException e)
+                {
+                    foreach (var describeResult in e.Results)
+                    {
+                        Console.WriteLine($"Resource {describeResult.ConfigResource} had error: {describeResult.Error}");
+                    }
+                    Environment.ExitCode = 1;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"An error occurred describing configs: {e.Message}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
+
         static async Task DescribeUserScramCredentialsAsync(string bootstrapServers, string[] commandArgs)
         {          
             var users = commandArgs.ToList();
@@ -1265,6 +1337,9 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "describe-consumer-groups":
                     await DescribeConsumerGroupsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "describe-configs":
+                    await DescribeConfigsAsync(bootstrapServers, commandArgs);
                     break;
                 case "incremental-alter-configs":
                     await IncrementalAlterConfigsAsync(bootstrapServers, commandArgs);
