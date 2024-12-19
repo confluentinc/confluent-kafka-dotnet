@@ -86,7 +86,9 @@ namespace Confluent.Kafka
                 IsSensitive = (int)Librdkafka.ConfigEntry_is_sensitive(configEntryPtr) == 1,
                 IsReadOnly = (int)Librdkafka.ConfigEntry_is_read_only(configEntryPtr) == 1,
                 Source = Librdkafka.ConfigEntry_source(configEntryPtr),
-                Synonyms = synonyms
+                Synonyms = synonyms,
+                Type = Librdkafka.ConfigEntry_type(configEntryPtr),
+                Documentation = PtrToStringUTF8(Librdkafka.ConfigEntry_documentation(configEntryPtr)),
             };
         }
 

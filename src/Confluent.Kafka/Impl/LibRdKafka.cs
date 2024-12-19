@@ -354,6 +354,8 @@ namespace Confluent.Kafka.Impl
             _ConfigEntry_is_sensitive = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_ConfigEntry_is_sensitive").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _ConfigEntry_is_synonym = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_ConfigEntry_is_synonym").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _ConfigEntry_synonyms = (_ConfigEntry_synonyms_delegate)methods.Single(m => m.Name == "rd_kafka_ConfigEntry_synonyms").CreateDelegate(typeof(_ConfigEntry_synonyms_delegate));
+            _ConfigEntry_type = (_ConfigEntry_type_delegate)methods.Single(m => m.Name == "rd_kafka_ConfigEntry_type").CreateDelegate(typeof(_ConfigEntry_type_delegate));
+            _ConfigEntry_documentation = (_ConfigEntry_documentation_delegate)methods.Single(m => m.Name == "rd_kafka_ConfigEntry_documentation").CreateDelegate(typeof(_ConfigEntry_documentation_delegate));
 
             _ResourceType_name = (Func<ResourceType, IntPtr>)methods.Single(m => m.Name == "rd_kafka_ResourceType_name").CreateDelegate(typeof(Func<ResourceType, IntPtr>));
 
@@ -1526,6 +1528,16 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr ConfigEntry_synonyms(
                 IntPtr entry,
                 out UIntPtr cntp) => _ConfigEntry_synonyms(entry, out cntp);
+        
+        private delegate ConfigType _ConfigEntry_type_delegate(IntPtr entry);
+        private static _ConfigEntry_type_delegate _ConfigEntry_type;
+        internal static ConfigType ConfigEntry_type(
+                IntPtr entry) => _ConfigEntry_type(entry);
+        
+        private delegate IntPtr _ConfigEntry_documentation_delegate(IntPtr entry);
+        private static _ConfigEntry_documentation_delegate _ConfigEntry_documentation;
+        internal static IntPtr ConfigEntry_documentation(
+                IntPtr entry) => _ConfigEntry_documentation(entry);
 
         private static Func<ResourceType, IntPtr> _ResourceType_name;
         internal static IntPtr ResourceType_name(

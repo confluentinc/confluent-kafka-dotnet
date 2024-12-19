@@ -64,5 +64,16 @@ namespace Confluent.Kafka.Admin
         ///     config along with their source, in the order of precedence.
         /// </summary>
         public List<ConfigSynonym> Synonyms { get; set; }
+        
+        /// <summary>
+        ///    The config type.
+        ///    Refer to <see cref="Confluent.Kafka.ConfigType" /> for more information.
+        /// </summary>
+        public ConfigType Type { get; set; }
+        
+        /// <summary>
+        ///   Documentation of the config.
+        /// </summary>
+        public string Documentation { get; set; }
     }
 }

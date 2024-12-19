@@ -759,6 +759,14 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern /* rd_kafka_ConfigEntry_t ** */ IntPtr rd_kafka_ConfigEntry_synonyms(
                 /* rd_kafka_ConfigEntry_t * */ IntPtr entry,
                 /* size_t * */ out UIntPtr cntp);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ConfigType rd_kafka_ConfigEntry_type(
+                /* rd_kafka_ConfigEntry_t * */ IntPtr entry);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ConfigEntry_documentation(
+                /* rd_kafka_ConfigEntry_t * */ IntPtr entry);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_ResourceType_name(
