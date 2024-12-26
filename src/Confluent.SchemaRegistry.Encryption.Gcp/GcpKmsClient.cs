@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry.Encryption.Gcp
 
         public bool DoesSupport(string uri)
         {
-            return uri.StartsWith(GcpKmsDriver.Prefix);
+            return KekId == uri;
         }
         
         public async Task<byte[]> Encrypt(byte[] plaintext)

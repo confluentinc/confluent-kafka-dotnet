@@ -33,12 +33,13 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
+            var serializerConfig = new ProtobufSerializerConfig() { SkipKnownTypes = false };
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, WithGoogleRefs.TheRecord>(producerConfig)
-                    .SetValueSerializer(new ProtobufSerializer<WithGoogleRefs.TheRecord>(schemaRegistry))
+                    .SetValueSerializer(new ProtobufSerializer<WithGoogleRefs.TheRecord>(schemaRegistry, serializerConfig))
                     .Build())
             {
                 var u = new WithGoogleRefs.TheRecord();

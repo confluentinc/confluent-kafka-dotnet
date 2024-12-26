@@ -18,6 +18,7 @@
 #pragma warning disable CS0618
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace Confluent.SchemaRegistry
         
         protected SemaphoreSlim serdeMutex = new SemaphoreSlim(1);
         
-        private readonly IDictionary<Schema, TParsedSchema> parsedSchemaCache = new Dictionary<Schema, TParsedSchema>();
+        private readonly IDictionary<Schema, TParsedSchema> parsedSchemaCache = new ConcurrentDictionary<Schema, TParsedSchema>();
         private SemaphoreSlim parsedSchemaMutex = new SemaphoreSlim(1);
         
         protected AsyncSerde(ISchemaRegistryClient schemaRegistryClient, SerdeConfig config, RuleRegistry ruleRegistry = null)
@@ -98,10 +99,15 @@ namespace Confluent.SchemaRegistry
 
         protected async Task<TParsedSchema> GetParsedSchema(Schema schema)
         {
+            if (parsedSchemaCache.TryGetValue(schema, out TParsedSchema parsedSchema))
+            {
+                return parsedSchema;
+            }
+            
             await parsedSchemaMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!parsedSchemaCache.TryGetValue(schema, out TParsedSchema parsedSchema))
+                if (!parsedSchemaCache.TryGetValue(schema, out parsedSchema))
                 {
                     if (parsedSchemaCache.Count > schemaRegistryClient.MaxCachedSchemas)
                     {
@@ -136,6 +142,11 @@ namespace Confluent.SchemaRegistry
                 .ConfigureAwait(continueOnCapturedContext: false);
             return result;
         }
+
+        protected virtual bool IgnoreReference(string name)
+        {
+            return false;
+        }
         
         private async Task<IDictionary<string, string>> ResolveReferences(
             Schema schema, IDictionary<string, string> schemas, ISet<string> visited)
@@ -143,7 +154,7 @@ namespace Confluent.SchemaRegistry
             IList<SchemaReference> references = schema.References;
             foreach (SchemaReference reference in references)
             {
-                if (visited.Contains(reference.Name))
+                if (IgnoreReference(reference.Name) || visited.Contains(reference.Name))
                 {
                     continue;
                 }
@@ -348,7 +359,7 @@ namespace Confluent.SchemaRegistry
             for (int i = 0; i < rules.Count; i++)
             {
                 Rule rule = rules[i];
-                if (rule.Disabled)
+                if (IsDisabled(rule))
                 {
                     continue;
                 }
@@ -395,27 +406,66 @@ namespace Confluent.SchemaRegistry
                             default:
                                 throw new ArgumentException("Unsupported rule kind " + rule.Kind);
                         }
-                        await RunAction(ctx, ruleMode, rule, message != null ? rule.OnSuccess : rule.OnFailure,
+                        await RunAction(ctx, ruleMode, rule, message != null ? GetOnSuccess(rule) : GetOnFailure(rule),
                             message, null, message != null ? null : ErrorAction.ActionType,
                             ruleRegistry)
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                     catch (RuleException ex)
                     {
-                        await RunAction(ctx, ruleMode, rule, rule.OnFailure, message, 
+                        await RunAction(ctx, ruleMode, rule, GetOnFailure(rule), message,
                             ex, ErrorAction.ActionType, ruleRegistry)
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
                 else
                 {
-                    await RunAction(ctx, ruleMode, rule, rule.OnFailure, message, 
+                    await RunAction(ctx, ruleMode, rule, GetOnFailure(rule), message,
                         new RuleException("Could not find rule executor of type " + rule.Type),
                         ErrorAction.ActionType, ruleRegistry)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
             }
             return message;
+        }
+
+        private string GetOnSuccess(Rule rule)
+        {
+            if (ruleRegistry.TryGetOverride(rule.Type, out RuleOverride ruleOverride))
+            {
+                if (ruleOverride.OnSuccess != null)
+                {
+                    return ruleOverride.OnSuccess;
+                }
+            }
+
+            return rule.OnSuccess;
+        }
+
+        private string GetOnFailure(Rule rule)
+        {
+            if (ruleRegistry.TryGetOverride(rule.Type, out RuleOverride ruleOverride))
+            {
+                if (ruleOverride.OnFailure != null)
+                {
+                    return ruleOverride.OnFailure;
+                }
+            }
+
+            return rule.OnFailure;
+        }
+
+        private bool IsDisabled(Rule rule)
+        {
+            if (ruleRegistry.TryGetOverride(rule.Type, out RuleOverride ruleOverride))
+            {
+                if (ruleOverride.Disabled.HasValue)
+                {
+                    return ruleOverride.Disabled.Value;
+                }
+            }
+
+            return rule.Disabled;
         }
 
         private static IRuleExecutor GetRuleExecutor(RuleRegistry ruleRegistry, string type)

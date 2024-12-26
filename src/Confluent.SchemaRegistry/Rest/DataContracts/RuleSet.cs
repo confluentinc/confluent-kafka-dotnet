@@ -45,14 +45,14 @@ namespace Confluent.SchemaRegistry
         switch (mode) {
           case RuleMode.Upgrade:
           case RuleMode.Downgrade:
-            return MigrationRules.Any(r => r.Mode == mode || r.Mode == RuleMode.UpDown);
+            return MigrationRules != null && MigrationRules.Any(r => r.Mode == mode || r.Mode == RuleMode.UpDown);
           case RuleMode.UpDown:
-            return MigrationRules.Any(r => r.Mode == mode);
+            return MigrationRules != null && MigrationRules.Any(r => r.Mode == mode);
           case RuleMode.Write:
           case RuleMode.Read:
-            return DomainRules.Any(r => r.Mode == mode || r.Mode == RuleMode.Write);
+            return DomainRules != null && DomainRules.Any(r => r.Mode == mode || r.Mode == RuleMode.Write);
           case RuleMode.WriteRead:
-            return DomainRules.Any(r => r.Mode == mode);
+            return DomainRules != null && DomainRules.Any(r => r.Mode == mode);
           default:
             return false;
         }

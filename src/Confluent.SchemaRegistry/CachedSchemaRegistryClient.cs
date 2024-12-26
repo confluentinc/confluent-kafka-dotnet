@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Threading;
 using System.Security.Cryptography.X509Certificates;
@@ -65,7 +66,7 @@ namespace Confluent.SchemaRegistry
         private IRestService restService;
         private int identityMapCapacity;
         private int latestCacheTtlSecs;
-        private readonly Dictionary<int, Schema> schemaById = new Dictionary<int, Schema>();
+        private readonly ConcurrentDictionary<int, Schema> schemaById = new ConcurrentDictionary<int, Schema>();
 
         private readonly Dictionary<string /*subject*/, Dictionary<Schema, int>> idBySchemaBySubject =
             new Dictionary<string, Dictionary<Schema, int>>();
@@ -592,16 +593,8 @@ namespace Confluent.SchemaRegistry
             // if a format isn't specified, then assume text is desired.
             if (format == null)
             {
-                try
-                {
-                    Convert.FromBase64String(schemaString);
-                }
-                catch (Exception)
-                {
-                    return true; // Base64 conversion failed, infer the schemaString format is text.
-                }
-
-                return false; // Base64 conversion succeeded, so infer the schamaString format is base64.
+                // If schemaString is not Base64, infer the schemaString format is text.
+                return !Utils.IsBase64String(schemaString);
             }
             else
             {
@@ -609,17 +602,8 @@ namespace Confluent.SchemaRegistry
                 {
                     throw new ArgumentException($"Invalid schema format was specified: {format}.");
                 }
-
-                try
-                {
-                    Convert.FromBase64String(schemaString);
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-
-                return true;
+                
+                return Utils.IsBase64String(schemaString);
             }
         }
 
@@ -657,11 +641,15 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public async Task<Schema> GetSchemaBySubjectAndIdAsync(string subject, int id, string format = null)
         {
+            if (this.schemaById.TryGetValue(id, out Schema schema) && checkSchemaMatchesFormat(format, schema.SchemaString))
+            {
+                return schema;
+            }
+            
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.schemaById.TryGetValue(id, out Schema schema) ||
-                    !checkSchemaMatchesFormat(format, schema.SchemaString))
+                if (!this.schemaById.TryGetValue(id, out schema) || !checkSchemaMatchesFormat(format, schema.SchemaString))
                 {
                     CleanCacheIfFull();
                     schema = (await restService.GetSchemaBySubjectAndIdAsync(subject, id, format)
