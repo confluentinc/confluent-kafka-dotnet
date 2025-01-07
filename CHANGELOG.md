@@ -1,3 +1,10 @@
+# 2.8.0
+
+## Enhancements
+
+* References librdkafka.redist 2.8.0. Refer to the [librdkafka v2.8.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.8.0) for more information.
+
+
 # 2.6.1
 
 ## Enhancements
