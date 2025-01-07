@@ -3,6 +3,17 @@
 ## Enhancements
 
 * References librdkafka.redist 2.8.0. Refer to the [librdkafka v2.8.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.8.0) for more information.
+* Add retry logic to RestService for Schema Registry (#2353)
+* Add config for validating payloads against JSON Schema (#2350)
+* Add ability to override disable flag and actions on a rule (#2377)
+* Add AWS AssumeRole support to AWS KMS (#2379)
+
+## Fixes
+* Retrieve version for writer schema when getting migrations (#2358)
+* Add missing JSON Schema validate check (#2372)
+* Ensure different key ids use different client instances (#2374)
+* DGS-19409 Ensure Avro serde caches per subject (#2387)
+* Update hash code for schema references so they can be retrieved correctly (#2390)
 
 
 # 2.6.1
