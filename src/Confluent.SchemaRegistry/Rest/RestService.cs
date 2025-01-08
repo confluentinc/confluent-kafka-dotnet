@@ -34,7 +34,7 @@ namespace Confluent.SchemaRegistry
 
         private static readonly string acceptHeader = string.Join(", ", Versions.PreferredResponseTypes);
 
-        public const int DefaultMaxRetries = 2;
+        public const int DefaultMaxRetries = 3;
 
         public const int DefaultRetriesWaitMs = 1000;
 
@@ -238,8 +238,7 @@ namespace Confluent.SchemaRegistry
                     string message = "";
                     int errorCode = -1;
 
-                    // 4xx errors with valid SR error message as content should not be retried (these are conclusive).
-                    if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+                    if (!IsRetriable((int)response.StatusCode))
                     {
                         try
                         {

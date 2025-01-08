@@ -26,18 +26,15 @@ namespace Confluent.SchemaRegistry
     {
         private readonly SemaphoreSlim ruleExecutorsMutex = new SemaphoreSlim(1);
         private readonly SemaphoreSlim ruleActionsMutex = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim ruleOverridesMutex = new SemaphoreSlim(1);
 
         private IDictionary<string, IRuleExecutor> ruleExecutors = new Dictionary<string, IRuleExecutor>();
         private IDictionary<string, IRuleAction> ruleActions = new Dictionary<string, IRuleAction>();
+        private IDictionary<string, RuleOverride> ruleOverrides = new Dictionary<string, RuleOverride>();
 
         private static readonly RuleRegistry GLOBAL_INSTANCE = new RuleRegistry();
 
         public static RuleRegistry GlobalInstance => GLOBAL_INSTANCE;
-
-        public static List<IRuleAction> GetRuleActions()
-        {
-            return GlobalInstance.GetActions();
-        }
 
         public void RegisterExecutor(IRuleExecutor executor)
         {
@@ -123,6 +120,48 @@ namespace Confluent.SchemaRegistry
             }
         }
 
+        public void RegisterOverride(RuleOverride ruleOverride)
+        {
+            ruleOverridesMutex.Wait();
+            try
+            {
+                if (!ruleOverrides.ContainsKey(ruleOverride.Type))
+                {
+                    ruleOverrides.Add(ruleOverride.Type, ruleOverride);
+                }
+            }
+            finally
+            {
+                ruleOverridesMutex.Release();
+            }
+        }
+
+        public bool TryGetOverride(string name, out RuleOverride ruleOverride)
+        {
+            ruleOverridesMutex.Wait();
+            try
+            {
+                return ruleOverrides.TryGetValue(name, out ruleOverride);
+            }
+            finally
+            {
+                ruleOverridesMutex.Release();
+            }
+        }
+
+        public List<RuleOverride> GetOverrides()
+        {
+            ruleOverridesMutex.Wait();
+            try
+            {
+                return new List<RuleOverride>(ruleOverrides.Values);
+            }
+            finally
+            {
+                ruleOverridesMutex.Release();
+            }
+        }
+
         public static void RegisterRuleExecutor(IRuleExecutor executor)
         {
             GlobalInstance.RegisterExecutor(executor);
@@ -131,6 +170,11 @@ namespace Confluent.SchemaRegistry
         public static void RegisterRuleAction(IRuleAction action)
         {
             GlobalInstance.RegisterAction(action);
+        }
+
+        public static void RegisterRuleOverride(RuleOverride ruleOverride)
+        {
+            GlobalInstance.RegisterOverride(ruleOverride);
         }
     }
 }

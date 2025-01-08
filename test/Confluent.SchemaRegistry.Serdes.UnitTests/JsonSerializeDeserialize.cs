@@ -577,12 +577,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
                         "typeName == 'STRING' ; value + '-suffix'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new JsonSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -605,6 +605,80 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal("awesome-suffix", result.Name);
             Assert.Equal("blue-suffix", result.FavoriteColor);
             Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
+        }
+
+        [Fact]
+        public void CELFieldTransformWithDef()
+        {
+            var schemaStr = @"{
+                ""$schema"" : ""http://json-schema.org/draft-07/schema#"",
+                ""additionalProperties"" : false,
+                ""definitions"" : {
+                    ""Address"" : {
+                        ""additionalProperties"" : false,
+                        ""properties"" : {
+                            ""DoorNumber"" : {
+                                ""type"" : ""integer""
+                            },
+                            ""DoorPin"" : {
+                                ""confluent:tags"" : [ ""PII"" ],
+                                ""type"" : ""string""
+                            }
+                        },
+                        ""type"" : ""object""
+                    }
+                },
+                ""properties"" : {
+                    ""Address"" : {
+                        ""$ref"" : ""#/definitions/Address""
+                    },
+                    ""Name"" : {
+                        ""confluent:tags"" : [ ""PII"" ],
+                        ""type"" : ""string""
+                    }
+                },
+                ""title"" : ""Sample Event"",
+                ""type"" : ""object""
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", new HashSet<string>
+                        {
+                            "PII"
+
+                        }, null,
+                        "value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new JsonSerializer<JsonPerson>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<JsonPerson>(schemaRegistryClient);
+
+            var address = new Address
+            {
+                DoorNumber = 100,
+                DoorPin = "1234"
+            };
+            var person = new JsonPerson()
+            {
+                Address = address,
+                Name = "bob"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(person, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("bob-suffix", result.Name);
+            Assert.Equal("1234-suffix", result.Address.DoorPin);
         }
 
         [Fact]
@@ -1003,5 +1077,18 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public int FavoriteNumber { get; set; }
         [JsonProperty("title")]
         public string Title { get; set; }
+    }
+
+    class JsonPerson
+    {
+        public string Name { get; set; }
+        public Address Address { get; set; }
+
+    }
+
+    class Address
+    {
+        public int DoorNumber { get; set; }
+        public string DoorPin { get; set; }
     }
 }

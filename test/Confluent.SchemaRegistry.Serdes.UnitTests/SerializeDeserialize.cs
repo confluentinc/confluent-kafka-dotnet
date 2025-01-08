@@ -27,6 +27,7 @@ using System.Linq;
 using Avro;
 using Avro.Generic;
 using Confluent.SchemaRegistry.Encryption;
+using Confluent.SchemaRegistry.Rules;
 
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
@@ -154,6 +155,43 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void ISpecificRecordStrings()
+        {
+            var schemaStr = "{\"type\":\"string\"}";
+            var schema = new RegisteredSchema("topic1-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            store[schemaStr] = 1;
+            subjectStore["topic1-value"] = new List<RegisteredSchema> { schema };
+
+            schema = new RegisteredSchema("topic2-value", 1, 2, schemaStr, SchemaType.Avro, null);
+            schema.Metadata = new Metadata(null, new Dictionary<string, string>
+            {
+                { "confluent:version", "1" }
+            }, null);
+            store[schemaStr] = 2;
+            subjectStore["topic2-value"] = new List<RegisteredSchema> { schema };
+
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                SubjectNameStrategy = SubjectNameStrategy.Topic
+            };
+            var serializer = new AvroSerializer<String>(schemaRegistryClient, config);
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync("hi", new SerializationContext(MessageComponentType.Value, "topic1", headers)).Result;
+            Assert.Equal(1, bytes[4]);
+
+            bytes = serializer.SerializeAsync("world", new SerializationContext(MessageComponentType.Value, "topic2", headers)).Result;
+            Assert.Equal(2, bytes[4]);
+
+            bytes = serializer.SerializeAsync("hi", new SerializationContext(MessageComponentType.Value, "topic1", headers)).Result;
+            Assert.Equal(1, bytes[4]);
+
+            bytes = serializer.SerializeAsync("world", new SerializationContext(MessageComponentType.Value, "topic2", headers)).Result;
+            Assert.Equal(2, bytes[4]);
+        }
+
+        [Fact]
         public void ISpecificRecordRecordNameStrategy()
         {
             var serializerConfig = new AvroSerializerConfig
@@ -275,12 +313,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schema.RuleSet = new RuleSet(new List<Rule>(),
                 new List<Rule>
                 {
-                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null, 
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
                         "typeName == 'STRING' ; value + '-suffix'", null, null, false)
                 }
             );
             store[schemaStr] = 1;
-            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
             var config = new AvroSerializerConfig
             {
                 AutoRegisterSchemas = false,
@@ -302,6 +340,47 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             Assert.Equal("awesome-suffix", result.name);
             Assert.Equal("blue-suffix", result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
+        public void ISpecificRecordCELFieldTransformDisable()
+        {
+            var schemaStr = User._SCHEMA.ToString();
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null, 
+                        "typeName == 'STRING' ; value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema }; 
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            RuleRegistry registry = new RuleRegistry();
+            registry.RegisterExecutor(new CelFieldExecutor());
+            registry.RegisterOverride(new RuleOverride("CEL_FIELD", null, null, true));
+            var serializer = new AvroSerializer<User>(schemaRegistryClient, config, registry);
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, null);
+
+            var user = new User
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("awesome", result.name);
+            Assert.Equal("blue", result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
         }
 

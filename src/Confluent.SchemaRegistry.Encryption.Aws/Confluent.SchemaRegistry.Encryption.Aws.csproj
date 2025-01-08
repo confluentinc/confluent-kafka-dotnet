@@ -29,7 +29,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.KeyManagementService" Version="3.7.302.19" />
+        <PackageReference Include="AWSSDK.KeyManagementService" Version="3.7.400.61" />
+        <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.401.10" />
     </ItemGroup>
 
     <ItemGroup>

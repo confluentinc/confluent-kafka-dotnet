@@ -31,9 +31,10 @@ namespace Confluent.SchemaRegistry.Serdes
 {
     internal class GenericSerializerImpl : AsyncSerializer<GenericRecord, Avro.Schema>
     {
-        private Dictionary<Avro.Schema, string> knownSchemas = new Dictionary<global::Avro.Schema, string>();
-        private HashSet<KeyValuePair<string, string>> registeredSchemas = new HashSet<KeyValuePair<string, string>>();
-        private Dictionary<string, int> schemaIds = new Dictionary<string, int>();
+        private Dictionary<Avro.Schema, string> knownSchemas =
+            new Dictionary<global::Avro.Schema, string>();
+        private Dictionary<KeyValuePair<string, string>, int> registeredSchemas =
+            new Dictionary<KeyValuePair<string, string>, int>();
 
         public GenericSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
@@ -99,12 +100,10 @@ namespace Confluent.SchemaRegistry.Serdes
                     // something more sophisticated than the below + not allow 
                     // the misuse to keep happening without warning.
                     if (knownSchemas.Count > schemaRegistryClient.MaxCachedSchemas ||
-                        registeredSchemas.Count > schemaRegistryClient.MaxCachedSchemas ||
-                        schemaIds.Count > schemaRegistryClient.MaxCachedSchemas)
+                        registeredSchemas.Count > schemaRegistryClient.MaxCachedSchemas)
                     {
                         knownSchemas.Clear();
                         registeredSchemas.Clear();
-                        schemaIds.Clear();
                     }
 
                     // Determine a schema string corresponding to the schema object.
@@ -139,41 +138,18 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         schemaId = latestSchema.Id;
                     }
-                    else if (!registeredSchemas.Contains(subjectSchemaPair))
+                    else if (!registeredSchemas.TryGetValue(subjectSchemaPair, out schemaId))
                     {
-                        int newSchemaId;
-
                         // first usage: register/get schema to check compatibility
-                        if (autoRegisterSchema)
-                        {
-                            newSchemaId = await schemaRegistryClient
+                        schemaId = autoRegisterSchema
+                            ? await schemaRegistryClient
                                 .RegisterSchemaAsync(subject, writerSchemaString, normalizeSchemas)
+                                .ConfigureAwait(continueOnCapturedContext: false)
+                            : await schemaRegistryClient
+                                .GetSchemaIdAsync(subject, writerSchemaString, normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false);
-                        }
-                        else
-                        {
-                            newSchemaId = await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString, normalizeSchemas)
-                                .ConfigureAwait(continueOnCapturedContext: false);
-                        }
 
-                        if (!schemaIds.ContainsKey(writerSchemaString))
-                        {
-                            schemaIds.Add(writerSchemaString, newSchemaId);
-                        }
-                        else if (schemaIds[writerSchemaString] != newSchemaId)
-                        {
-                            schemaIds.Clear();
-                            registeredSchemas.Clear();
-                            throw new KafkaException(new Error(isKey ? ErrorCode.Local_KeySerialization : ErrorCode.Local_ValueSerialization, $"Duplicate schema registration encountered: Schema ids {schemaIds[writerSchemaString]} and {newSchemaId} are associated with the same schema."));
-                        }
-
-                        registeredSchemas.Add(subjectSchemaPair);
-
-                        schemaId = schemaIds[writerSchemaString];
-                    }
-                    else
-                    {
-                        schemaId = schemaIds[writerSchemaString];
+                        registeredSchemas.Add(subjectSchemaPair, schemaId);
                     }
                 }
                 finally
