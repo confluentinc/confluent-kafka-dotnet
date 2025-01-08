@@ -16,13 +16,13 @@ namespace Confluent.SchemaRegistry.Encryption
         }
 
         public static readonly string RuleType = "ENCRYPT";
-        
+
         public static readonly string EncryptKekName = "encrypt.kek.name";
         public static readonly string EncryptKmsKeyid = "encrypt.kms.key.id";
         public static readonly string EncryptKmsType = "encrypt.kms.type";
         public static readonly string EncryptDekAlgorithm = "encrypt.dek.algorithm";
         public static readonly string EncryptDekExpiryDays = "encrypt.dek.expiry.days";
-        
+
         public static readonly string KmsTypeSuffix = "://";
 
         internal static readonly int LatestVersion = -1;
@@ -38,17 +38,28 @@ namespace Confluent.SchemaRegistry.Encryption
         {
             Clock = new Clock();
         }
-        
+
         public FieldEncryptionExecutor(IDekRegistryClient client, IClock clock)
         {
             Client = client;
             Clock = clock ?? new Clock();
         }
-        
+
         public override void Configure(IEnumerable<KeyValuePair<string, string>> config,
             ISchemaRegistryClient client = null)
         {
-            Configs = config;
+            if (Configs != null)
+            {
+                if (!new HashSet<KeyValuePair<string, string>>(Configs).SetEquals(config))
+                {
+                    throw new RuleException("FieldEncryptionExecutor already configured");
+                }
+            }
+            else
+            {
+                Configs = config;
+            }
+
             if (Client == null)
             {
                 if (client != null)
