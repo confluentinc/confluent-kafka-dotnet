@@ -19,6 +19,7 @@ using Xunit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Confluent.SchemaRegistry.Encryption;
 
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
@@ -110,6 +111,26 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Assert.Throws<ArgumentException>(() => {  var avroDeserializer = new AvroDeserializer<int>(null, config); });
+        }
+
+        [Fact]
+        public void FieldEncryptionExecutorConfig()
+        {
+            var executor = new FieldEncryptionExecutor();
+            var config = new Dictionary<string, string>
+            {
+                { "schema.registry.url", "mock://" }
+            };
+            executor.Configure(config.ToList());
+            // Configure with same args is fine
+            executor.Configure(config.ToList());
+
+            var config2 = new Dictionary<string, string>
+            {
+                { "schema.registry.url", "mock://" },
+                { "key", "value" }
+            };
+            Assert.Throws<RuleException>(() => {  executor.Configure(config2.ToList()); });
         }
     }
 }
