@@ -1,8 +1,8 @@
-# 2.2.0
+# 2.2.1
 
 ## Enhancements
 
-- References librdkafka.redist 2.2.0. Refer to the [librdkafka v2.2.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.2.0) for more information.
+- References librdkafka.redist 2.2.1. Refer to the [librdkafka v2.2.1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.2.1) for more information.
 - [KIP-339](https://cwiki.apache.org/confluence/display/KAFKA/KIP-339%3A+Create+a+new+IncrementalAlterConfigs+API)
   IncrementalAlterConfigs API (#2005).
 - [KIP-554](https://cwiki.apache.org/confluence/display/KAFKA/KIP-554%3A+Add+Broker-side+SCRAM+Config+API):
