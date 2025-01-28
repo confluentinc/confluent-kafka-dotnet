@@ -28,9 +28,12 @@ blocks:
             # TODO: remove incorrect focal repos from this agent
             - sudo rm /etc/apt/sources.list.d/*microsoft*
             - sudo apt update && sudo apt install -y dotnet-sdk-6.0 dotnet-sdk-8.0
+            - dotnet tool install --global dotnet-coverage
             - dotnet restore
             - make build
-            - make test
+            - make test-coverage
+            - dotnet-coverage merge test/**/coverage.xml -o unit-coverage.xml -f xml
+            - artifact push workflow unit-coverage.xml || true
   - name: 'OSX x64'
     dependencies: [ ]
     task:
@@ -166,3 +169,16 @@ blocks:
             - dotnet restore -p:TargetFramework=net8.0
             - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet test -f net8.0 -l "console;verbosity=normal" && cd ../..
             - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet test -f net8.0 -l "console;verbosity=normal" && cd ../..
+
+after_pipeline:
+  task:
+    agent:
+      machine:
+        type: s1-prod-ubuntu22-04-amd64-1
+    jobs:
+      - name: SonarQube
+        commands:
+          - checkout
+          - sem-version java 11
+          - artifact pull workflow unit-coverage.xml
+          - emit-sonarqube-data --run_only_sonar_scan
