@@ -187,5 +187,4 @@ after_pipeline:
           - artifact pull workflow classic-coverage.xml
           - artifact pull workflow consumer-coverage.xml
           - artifact pull workflow target
-          - find . -type f -iname "*coverage.xml"
           - emit-sonarqube-data --run_only_sonar_scan
