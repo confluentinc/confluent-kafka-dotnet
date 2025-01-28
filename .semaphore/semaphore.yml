@@ -170,9 +170,9 @@ blocks:
             - cd test/docker && docker-compose up -d && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - dotnet restore -p:TargetFramework=net8.0
-            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet-coverage collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../target/serdes-coverage.xml && cd ../..
-            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet-coverage collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../target/coverage.xml && cd ../..
-            - artifact push workflow target || true
+            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet-coverage collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../sr-target/serdes-coverage.xml && cd ../..
+            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet-coverage collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../sr-target/coverage.xml && cd ../..
+            - artifact push workflow sr-target || true
 
 after_pipeline:
   task:
@@ -184,9 +184,9 @@ after_pipeline:
         commands:
           - checkout
           - sem-version java 11
-          - artifact pull workflow unit-coverage.xml
-          - artifact pull workflow classic-coverage.xml
-          - artifact pull workflow consumer-coverage.xml
-          - artifact pull workflow target
+          - artifact pull workflow unit-coverage.xml || true
+          - artifact pull workflow classic-coverage.xml || true
+          - artifact pull workflow consumer-coverage.xml || true
+          - artifact pull workflow sr-target || true
           - find . -type f -iname "*coverage.xml"
           - emit-sonarqube-data --run_only_sonar_scan
