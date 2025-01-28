@@ -11,9 +11,7 @@ semaphore:
   pipeline_enable: false
 sonarqube:
   enable: true
-  coverage_sources: "src/"
   coverage_reports:
     - "**/*coverage.xml"
   scanner_config:
-    # sonar.tests: "test/"
     sonar.cs.vscoveragexml.reportsPaths: "**/*coverage.xml"
