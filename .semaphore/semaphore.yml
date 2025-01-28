@@ -143,6 +143,7 @@ blocks:
           # TODO: remove incorrect focal repos from this agent
           - sudo rm /etc/apt/sources.list.d/*microsoft*
           - sudo apt update && sudo apt install -y dotnet-sdk-8.0
+          - dotnet tool install --global dotnet-coverage
       jobs:
         - name: 'Build documentation'
           commands:
@@ -187,4 +188,5 @@ after_pipeline:
           - artifact pull workflow classic-coverage.xml
           - artifact pull workflow consumer-coverage.xml
           - artifact pull workflow target
+          - find . -type f -iname "*coverage.xml"
           - emit-sonarqube-data --run_only_sonar_scan
