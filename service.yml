@@ -9,3 +9,7 @@ github:
 semaphore:
   enable: true
   pipeline_enable: false
+sonarqube:
+  enable: true
+  scanner_config:
+    sonar.cs.vscoveragexml.reportsPaths: "**/*coverage.xml"
