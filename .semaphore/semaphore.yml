@@ -195,5 +195,4 @@ after_pipeline:
           - artifact pull workflow consumer-coverage.xml || true
           - artifact pull workflow sr-target || true
           - dotnet-coverage merge **/*coverage.xml -o coverage.xml -f xml --remove-input-files
-          - find . -type f -iname "*coverage.xml"
           - emit-sonarqube-data --run_only_sonar_scan
