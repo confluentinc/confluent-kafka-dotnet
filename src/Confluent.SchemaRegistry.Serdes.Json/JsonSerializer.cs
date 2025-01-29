@@ -232,13 +232,14 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     serdeMutex.Release();
                 }
-                
+
+                JsonSchema parsedSchema;
                 if (latestSchema != null)
                 {
-                    var latestSchemaJson = await GetParsedSchema(latestSchema).ConfigureAwait(false);
+                    parsedSchema = await GetParsedSchema(latestSchema).ConfigureAwait(false);
                     FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                     {
-                        return await JsonUtils.Transform(ctx, latestSchemaJson, "$", message, transform).ConfigureAwait(false);
+                        return await JsonUtils.Transform(ctx, parsedSchema, "$", message, transform).ConfigureAwait(false);
                     };
                     value = await ExecuteRules(context.Component == MessageComponentType.Key, subject,
                             context.Topic, context.Headers, RuleMode.Write, null,
@@ -246,11 +247,15 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
+                else
+                {
+                    parsedSchema = schema;
+                }
 
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
                 if (validate)
                 {
-                    var validationResult = validator.Validate(serializedString, this.schema);
+                    var validationResult = validator.Validate(serializedString, parsedSchema);
                     if (validationResult.Count > 0)
                     {
                         throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
