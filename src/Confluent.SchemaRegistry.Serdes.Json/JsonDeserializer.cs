@@ -61,6 +61,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
+        private Schema schemaJson = null;
+
         private JsonSchema schema = null;
 
         private bool validate = true;
@@ -142,6 +144,7 @@ namespace Confluent.SchemaRegistry.Serdes
             JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, this.jsonSchemaGeneratorSettings);
             JsonSchema jsonSchema = utils.GetResolvedSchema().Result;
+            this.schemaJson = schema;
             this.schema = jsonSchema;
         }
 
@@ -184,8 +187,10 @@ namespace Confluent.SchemaRegistry.Serdes
 
             try
             {
-                Schema writerSchema = null;
-                JsonSchema writerSchemaJson = null;
+                Schema writerSchemaJson = null;
+                JsonSchema writerSchema = null;
+                Schema readerSchemaJson;
+                JsonSchema readerSchema;
                 T value;
                 IList<Migration> migrations = new List<Migration>();
                 using (var stream = new MemoryStream(array))
@@ -201,10 +206,10 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (schemaRegistryClient != null)
                     {
-                        (writerSchema, writerSchemaJson) = await GetSchema(subject, writerId);
+                        (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
                         if (subject == null)
                         {
-                            subject = GetSubjectName(topic, isKey, writerSchemaJson.Title);
+                            subject = GetSubjectName(topic, isKey, writerSchema.Title);
                             if (subject != null)
                             {
                                 latestSchema = await GetReaderSchema(subject)
@@ -212,11 +217,23 @@ namespace Confluent.SchemaRegistry.Serdes
                             }
                         }
                     }
-                    
+
                     if (latestSchema != null)
                     {
-                        migrations = await GetMigrations(subject, writerSchema, latestSchema)
+                        migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
                             .ConfigureAwait(continueOnCapturedContext: false);
+                        readerSchemaJson = latestSchema;
+                        readerSchema = await GetParsedSchema(latestSchema);
+                    }
+                    else if (schema != null)
+                    {
+                        readerSchemaJson = schemaJson;
+                        readerSchema = schema;
+                    }
+                    else
+                    {
+                        readerSchemaJson = writerSchemaJson;
+                        readerSchema = writerSchema;
                     }
 
                     if (migrations.Count > 0)
@@ -231,9 +248,9 @@ namespace Confluent.SchemaRegistry.Serdes
                                 .ContinueWith(t => (JToken)t.Result)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
-                            if (schema != null && validate)
+                            if (readerSchema != null && validate)
                             {
-                                var validationResult = validator.Validate(json, schema);
+                                var validationResult = validator.Validate(json, readerSchema);
                                 if (validationResult.Count > 0)
                                 {
                                     throw new InvalidDataException("Schema validation failed for properties: [" +
@@ -250,10 +267,10 @@ namespace Confluent.SchemaRegistry.Serdes
                         using (var jsonReader = new StreamReader(jsonStream, Encoding.UTF8))
                         {
                             string serializedString = jsonReader.ReadToEnd();
-                    
-                            if (schema != null && validate)
+
+                            if (readerSchema != null && validate)
                             {
-                                var validationResult = validator.Validate(serializedString, schema);
+                                var validationResult = validator.Validate(serializedString, readerSchema);
 
                                 if (validationResult.Count > 0)
                                 {
@@ -266,14 +283,10 @@ namespace Confluent.SchemaRegistry.Serdes
                                 jsonSchemaGeneratorSettingsSerializerSettings);
                         }
                     }
-
-                    // A schema is not required to deserialize json messages.
-                    // TODO: add validation capability.
                 }
-                if (writerSchema != null)
+
+                if (readerSchema != null)
                 {
-                    Schema readerSchemaJson = latestSchema ?? writerSchema;
-                    JsonSchema readerSchema = latestSchema != null ? await GetParsedSchema(latestSchema) : writerSchemaJson;
                     FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                     {
                         return await JsonUtils.Transform(ctx, readerSchema, "$", message, transform).ConfigureAwait(false);
@@ -283,8 +296,8 @@ namespace Confluent.SchemaRegistry.Serdes
                             readerSchemaJson, value, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
-                } 
-                    
+                }
+
                 return value;
             }
             catch (AggregateException e)
