@@ -1074,6 +1074,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern ConsumerGroupState rd_kafka_ConsumerGroupDescription_state(IntPtr grpdesc);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ConsumerGroupType rd_kafka_ConsumerGroupDescription_type(IntPtr grpdesc);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_ConsumerGroupDescription_coordinator(IntPtr grpdesc);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1102,6 +1105,12 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_MemberAssignment_partitions(IntPtr assignment);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_MemberDescription_target_assignment(IntPtr member);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_MemberAssignment_target_partitions(IntPtr assignment);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_Node_id(IntPtr node);
