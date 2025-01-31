@@ -22,20 +22,20 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     Represents a Kafka partition.
-    /// </summary>  
+    /// </summary>
     /// <remarks>
-    ///     This structure is the same size as an int - 
-    ///     its purpose is to add some syntactical sugar 
+    ///     This structure is the same size as an int -
+    ///     its purpose is to add some syntactical sugar
     ///     related to special values.
     /// </remarks>
-    public struct Partition : IEquatable<Partition>
+    public readonly struct Partition : IEquatable<Partition>
     {
         private const int RD_KAFKA_PARTITION_UA = -1;
 
         /// <summary>
         ///     A special value that refers to an unspecified / unknown partition.
         /// </summary>
-        public static readonly Partition Any = new Partition(RD_KAFKA_PARTITION_UA);
+        public static readonly Partition Any = new(RD_KAFKA_PARTITION_UA);
 
         /// <summary>
         ///     Initializes a new instance of the Partition structure.
@@ -54,7 +54,7 @@ namespace Confluent.Kafka
         public int Value { get; }
 
         /// <summary>
-        ///     Gets whether or not this is one of the special 
+        ///     Gets whether or not this is one of the special
         ///     partition values.
         /// </summary>
         public bool IsSpecial
@@ -197,7 +197,7 @@ namespace Confluent.Kafka
         ///     The int value to convert.
         /// </param>
         public static implicit operator Partition(int v)
-            => new Partition(v);
+            => new(v);
 
         /// <summary>
         ///     Converts the specified Partition value to an int value.
@@ -216,13 +216,11 @@ namespace Confluent.Kafka
         /// </returns>
         public override string ToString()
         {
-            switch (Value)
+            return Value switch
             {
-                case RD_KAFKA_PARTITION_UA:
-                    return $"[Any]";
-                default:
-                    return $"[{Value}]";
-            }
+                RD_KAFKA_PARTITION_UA => $"[Any]",
+                _ => $"[{Value}]",
+            };
         }
     }
 }
