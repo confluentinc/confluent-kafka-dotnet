@@ -46,13 +46,14 @@ namespace Confluent.Kafka.IntegrationTests
             var maxDuration = TimeSpan.FromSeconds(30);
             var noError = new Error(ErrorCode.NoError, "", false);
             var unknownError = new Error(ErrorCode.Unknown, "Unknown broker error", false);
+            var invalidPrincipalError = new Error(ErrorCode.Unknown, "Could not parse principal from `wrong-principal` (no colon is present separating the principal type from the principal name)", false);
             var noErrorCreateResult = new CreateAclReport
             {
                 Error = noError
             };
             var unknownErrorCreateResult = new CreateAclReport
             {
-                Error = unknownError
+                Error = invalidPrincipalError
             };
 
             var newACLs = new List<AclBinding>
