@@ -5,4 +5,8 @@ message Person {
     string favorite_color = 1;
     int32 favorite_number = 2;
     string name = 3;
+    oneof pii_oneof {
+        int32 oneof_int32 = 4;
+        string oneof_string = 5;
+    }
 }

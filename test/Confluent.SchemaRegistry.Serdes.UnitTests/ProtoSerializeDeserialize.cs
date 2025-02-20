@@ -112,6 +112,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 string favorite_color = 1;
                 int32 favorite_number = 2;
                 string name = 3;
+                oneof pii_oneof {
+                    int32 oneof_int32 = 4;
+                    string oneof_string = 5;
+                }
             }";
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Protobuf, null);
             schema.RuleSet = new RuleSet(new List<Rule>(),
@@ -135,7 +139,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 FavoriteColor = "blue",
                 FavoriteNumber = 100,
-                Name = "awesome"
+                Name = "awesome",
+                OneofString = "oneof"
             };
 
             Headers headers = new Headers();
@@ -159,6 +164,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 string favorite_color = 1;
                 int32 favorite_number = 2;
                 string name = 3;
+                oneof pii_oneof {
+                    int32 oneof_int32 = 4;
+                    string oneof_string = 5;
+                }
             }";
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Protobuf, null);
             schema.RuleSet = new RuleSet(new List<Rule>(),
@@ -181,7 +190,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 FavoriteColor = "blue",
                 FavoriteNumber = 100,
-                Name = "awesome"
+                Name = "awesome",
+                OneofString = "oneof"
             };
 
             Headers headers = new Headers();
@@ -200,6 +210,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 string favorite_color = 1;
                 int32 favorite_number = 2;
                 string name = 3;
+                oneof pii_oneof {
+                    int32 oneof_int32 = 4;
+                    string oneof_string = 5;
+                }
             }";
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Protobuf, null);
             schema.RuleSet = new RuleSet(new List<Rule>(),
@@ -223,7 +237,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 FavoriteColor = "blue",
                 FavoriteNumber = 100,
-                Name = "awesome"
+                Name = "awesome",
+                OneofString = "oneof"
             };
 
             Headers headers = new Headers();
@@ -233,6 +248,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal("awesome-suffix", result.Name);
             Assert.Equal("blue-suffix", result.FavoriteColor);
             Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
+            Assert.Equal("oneof-suffix", result.OneofString);
         }
 
         [Fact]
@@ -247,6 +263,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 string favorite_color = 1;
                 int32 favorite_number = 2;
                 string name = 3;
+                oneof pii_oneof {
+                    int32 oneof_int32 = 4;
+                    string oneof_string = 5;
+                }
             }";
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Protobuf, null);
             schema.RuleSet = new RuleSet(new List<Rule>(),
@@ -270,7 +290,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 FavoriteColor = "blue",
                 FavoriteNumber = 100,
-                Name = "awesome"
+                Name = "awesome",
+                OneofString = "oneof"
             };
 
             Headers headers = new Headers();
@@ -294,6 +315,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 string favorite_color = 1;
                 int32 favorite_number = 2;
                 string name = 3;
+                oneof pii_oneof {
+                    int32 oneof_int32 = 4;
+                    string oneof_string = 5;
+                }
             }";
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Protobuf, null);
             schema.RuleSet = new RuleSet(new List<Rule>(),
@@ -316,7 +341,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 FavoriteColor = "blue",
                 FavoriteNumber = 100,
-                Name = "awesome"
+                Name = "awesome",
+                OneofString = "oneof"
             };
 
             Headers headers = new Headers();

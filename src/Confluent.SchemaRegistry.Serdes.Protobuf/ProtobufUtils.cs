@@ -129,6 +129,10 @@ namespace Confluent.SchemaRegistry.Serdes
                     FieldDescriptorProto schemaFd = FindFieldByName(messageType, fd.Name);
                     using (ctx.EnterField(copy, fd.FullName, fd.Name, GetType(fd), GetInlineTags(schemaFd)))
                     {
+                        if (fd.ContainingOneof != null && !fd.Accessor.HasValue(copy)) {
+                            // Skip oneof fields that are not set
+                            continue;
+                        }
                         object value = fd.Accessor.GetValue(copy);
                         DescriptorProto d = messageType;
                         if (value is IMessage)
