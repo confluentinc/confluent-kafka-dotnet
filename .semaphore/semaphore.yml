@@ -82,6 +82,7 @@ blocks:
             - tar.exe -cvzf docs-${Env:SEMAPHORE_JOB_ID}.zip doc/_site/*
             - move docs-${Env:SEMAPHORE_JOB_ID}.zip artifacts
             - artifact push workflow artifacts
+
   - name: 'Windows Artifacts on tagged commits'
     run:
       when: "tag =~ '.*'"
