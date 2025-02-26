@@ -24,13 +24,14 @@ namespace Example {
     static PersonReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxQZXJzb24ucHJvdG8SB2V4YW1wbGUiRwoGUGVyc29uEhYKDmZhdm9yaXRl",
-            "X2NvbG9yGAEgASgJEhcKD2Zhdm9yaXRlX251bWJlchgCIAEoBRIMCgRuYW1l",
-            "GAMgASgJYgZwcm90bzM="));
+            "CgxQZXJzb24ucHJvdG8SB2V4YW1wbGUigwEKBlBlcnNvbhIWCg5mYXZvcml0",
+            "ZV9jb2xvchgBIAEoCRIXCg9mYXZvcml0ZV9udW1iZXIYAiABKAUSDAoEbmFt",
+            "ZRgDIAEoCRIVCgtvbmVvZl9pbnQzMhgEIAEoBUgAEhYKDG9uZW9mX3N0cmlu",
+            "ZxgFIAEoCUgAQgsKCXBpaV9vbmVvZmIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Example.Person), global::Example.Person.Parser, new[]{ "FavoriteColor", "FavoriteNumber", "Name" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Example.Person), global::Example.Person.Parser, new[]{ "FavoriteColor", "FavoriteNumber", "Name", "OneofInt32", "OneofString" }, new[]{ "PiiOneof" }, null, null, null)
           }));
     }
     #endregion
@@ -74,6 +75,15 @@ namespace Example {
       favoriteColor_ = other.favoriteColor_;
       favoriteNumber_ = other.favoriteNumber_;
       name_ = other.name_;
+      switch (other.PiiOneofCase) {
+        case PiiOneofOneofCase.OneofInt32:
+          OneofInt32 = other.OneofInt32;
+          break;
+        case PiiOneofOneofCase.OneofString:
+          OneofString = other.OneofString;
+          break;
+      }
+
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -119,6 +129,51 @@ namespace Example {
       }
     }
 
+    /// <summary>Field number for the "oneof_int32" field.</summary>
+    public const int OneofInt32FieldNumber = 4;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int OneofInt32 {
+      get { return piiOneofCase_ == PiiOneofOneofCase.OneofInt32 ? (int) piiOneof_ : 0; }
+      set {
+        piiOneof_ = value;
+        piiOneofCase_ = PiiOneofOneofCase.OneofInt32;
+      }
+    }
+
+    /// <summary>Field number for the "oneof_string" field.</summary>
+    public const int OneofStringFieldNumber = 5;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string OneofString {
+      get { return piiOneofCase_ == PiiOneofOneofCase.OneofString ? (string) piiOneof_ : ""; }
+      set {
+        piiOneof_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        piiOneofCase_ = PiiOneofOneofCase.OneofString;
+      }
+    }
+
+    private object piiOneof_;
+    /// <summary>Enum of possible cases for the "pii_oneof" oneof.</summary>
+    public enum PiiOneofOneofCase {
+      None = 0,
+      OneofInt32 = 4,
+      OneofString = 5,
+    }
+    private PiiOneofOneofCase piiOneofCase_ = PiiOneofOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PiiOneofOneofCase PiiOneofCase {
+      get { return piiOneofCase_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void ClearPiiOneof() {
+      piiOneofCase_ = PiiOneofOneofCase.None;
+      piiOneof_ = null;
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -137,6 +192,9 @@ namespace Example {
       if (FavoriteColor != other.FavoriteColor) return false;
       if (FavoriteNumber != other.FavoriteNumber) return false;
       if (Name != other.Name) return false;
+      if (OneofInt32 != other.OneofInt32) return false;
+      if (OneofString != other.OneofString) return false;
+      if (PiiOneofCase != other.PiiOneofCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -147,6 +205,9 @@ namespace Example {
       if (FavoriteColor.Length != 0) hash ^= FavoriteColor.GetHashCode();
       if (FavoriteNumber != 0) hash ^= FavoriteNumber.GetHashCode();
       if (Name.Length != 0) hash ^= Name.GetHashCode();
+      if (piiOneofCase_ == PiiOneofOneofCase.OneofInt32) hash ^= OneofInt32.GetHashCode();
+      if (piiOneofCase_ == PiiOneofOneofCase.OneofString) hash ^= OneofString.GetHashCode();
+      hash ^= (int) piiOneofCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -177,6 +238,14 @@ namespace Example {
         output.WriteRawTag(26);
         output.WriteString(Name);
       }
+      if (piiOneofCase_ == PiiOneofOneofCase.OneofInt32) {
+        output.WriteRawTag(32);
+        output.WriteInt32(OneofInt32);
+      }
+      if (piiOneofCase_ == PiiOneofOneofCase.OneofString) {
+        output.WriteRawTag(42);
+        output.WriteString(OneofString);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -199,6 +268,14 @@ namespace Example {
         output.WriteRawTag(26);
         output.WriteString(Name);
       }
+      if (piiOneofCase_ == PiiOneofOneofCase.OneofInt32) {
+        output.WriteRawTag(32);
+        output.WriteInt32(OneofInt32);
+      }
+      if (piiOneofCase_ == PiiOneofOneofCase.OneofString) {
+        output.WriteRawTag(42);
+        output.WriteString(OneofString);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -217,6 +294,12 @@ namespace Example {
       }
       if (Name.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+      }
+      if (piiOneofCase_ == PiiOneofOneofCase.OneofInt32) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(OneofInt32);
+      }
+      if (piiOneofCase_ == PiiOneofOneofCase.OneofString) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(OneofString);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -239,6 +322,15 @@ namespace Example {
       if (other.Name.Length != 0) {
         Name = other.Name;
       }
+      switch (other.PiiOneofCase) {
+        case PiiOneofOneofCase.OneofInt32:
+          OneofInt32 = other.OneofInt32;
+          break;
+        case PiiOneofOneofCase.OneofString:
+          OneofString = other.OneofString;
+          break;
+      }
+
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -266,6 +358,14 @@ namespace Example {
             Name = input.ReadString();
             break;
           }
+          case 32: {
+            OneofInt32 = input.ReadInt32();
+            break;
+          }
+          case 42: {
+            OneofString = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -291,6 +391,14 @@ namespace Example {
           }
           case 26: {
             Name = input.ReadString();
+            break;
+          }
+          case 32: {
+            OneofInt32 = input.ReadInt32();
+            break;
+          }
+          case 42: {
+            OneofString = input.ReadString();
             break;
           }
         }
