@@ -22,9 +22,10 @@ namespace Confluent.SchemaRegistry.Encryption
     [DataContract]
     public class RegisteredDek : Dek, IEquatable<RegisteredDek>
     {
-        private string keyMaterial;
-        private byte[] keyMaterialBytes;
-        private byte[] encryptedKeyMaterialBytes;
+        private volatile string keyMaterial;
+        private volatile byte[] keyMaterialBytes;
+        private volatile byte[] encryptedKeyMaterialBytes;
+        private object _lock = new object();
         
         /// <summary>
         ///     The KEK name for the DEK.
@@ -55,11 +56,20 @@ namespace Confluent.SchemaRegistry.Encryption
         {
             get
             {
-                if (encryptedKeyMaterialBytes == null && EncryptedKeyMaterial != null)
+                if (EncryptedKeyMaterial != null)
                 {
-                    encryptedKeyMaterialBytes = System.Convert.FromBase64String(EncryptedKeyMaterial);
-                }
 
+                    if (encryptedKeyMaterialBytes == null)
+                    {
+                        lock (_lock)
+                        {
+                            if (encryptedKeyMaterialBytes == null)
+                            {
+                                encryptedKeyMaterialBytes = Convert.FromBase64String(EncryptedKeyMaterial);
+                            }
+                        }
+                    }
+                }
                 return encryptedKeyMaterialBytes;
             }
         }
@@ -71,9 +81,18 @@ namespace Confluent.SchemaRegistry.Encryption
         {
             get
             {
-                if (keyMaterialBytes == null && KeyMaterial != null)
+                if (KeyMaterial != null)
                 {
-                    keyMaterialBytes = System.Convert.FromBase64String(KeyMaterial);
+                    if (keyMaterialBytes == null)
+                    {
+                        lock (_lock)
+                        {
+                            if (keyMaterialBytes == null)
+                            {
+                                keyMaterialBytes = Convert.FromBase64String(KeyMaterial);
+                            }
+                        }
+                    }
                 }
                 return keyMaterialBytes;
             }
@@ -81,7 +100,7 @@ namespace Confluent.SchemaRegistry.Encryption
 
         public void SetKeyMaterial(byte[] keyMaterialBytes)
         {
-            keyMaterial = keyMaterialBytes != null ? System.Convert.ToBase64String(keyMaterialBytes) : null;
+            keyMaterial = keyMaterialBytes != null ? Convert.ToBase64String(keyMaterialBytes) : null;
         }
 
         public bool Equals(RegisteredDek other)
