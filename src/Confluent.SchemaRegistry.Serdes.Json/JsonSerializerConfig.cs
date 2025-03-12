@@ -98,7 +98,7 @@ namespace Confluent.SchemaRegistry.Serdes
             ///
             ///     default: true
             /// </summary>
-            public const string Validate= "json.serializer.validate";
+            public const string Validate = "json.serializer.validate";
         }
 
 
