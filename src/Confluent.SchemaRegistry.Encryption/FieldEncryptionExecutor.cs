@@ -351,7 +351,7 @@ namespace Confluent.SchemaRegistry.Encryption
 
             if (dek == null)
             {
-                throw new RuleException($"No dek found for {kekName} during produce");
+                throw new RuleException($"No dek found for {dekId.KekName} during produce");
             }
 
             return dek;
