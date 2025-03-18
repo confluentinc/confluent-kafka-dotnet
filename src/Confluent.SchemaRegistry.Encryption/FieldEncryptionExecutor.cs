@@ -309,17 +309,17 @@ namespace Confluent.SchemaRegistry.Encryption
                 }
 
                 int? newVersion = isExpired ? dek.Version + 1 : null;
-                DekId newDekId = new DekId(kekName, ctx.Subject, newVersion, cryptor.DekFormat, isRead);
-                dek = await StoreDekToRegistry(newDekId, encryptedDek).ConfigureAwait(continueOnCapturedContext: false);
-                if (dek == null)
+                try
                 {
-                    // Handle conflicts (409)
-                    dek = await RetrieveDekFromRegistry(dekId).ConfigureAwait(continueOnCapturedContext: false);
+                    dek = await CreateDek(dekId, newVersion, encryptedDek)
+                        .ConfigureAwait(continueOnCapturedContext: false);
                 }
-
-                if (dek == null)
+                catch (RuleException e)
                 {
-                    throw new RuleException($"No dek found for {kekName} during produce");
+                    if (dek == null)
+                    {
+                        throw e;
+                    }
                 }
             }
 
@@ -334,6 +334,24 @@ namespace Confluent.SchemaRegistry.Encryption
                     .ConfigureAwait(continueOnCapturedContext: false);
                 dek.SetKeyMaterial(rawDek);
 
+            }
+
+            return dek;
+        }
+
+        private async Task<RegisteredDek> CreateDek(DekId dekId, int? newVersion, byte[] encryptedDek)
+        {
+            DekId newDekId = new DekId(dekId.KekName, dekId.Subject, newVersion, dekId.DekFormat, dekId.LookupDeletedDeks);
+            RegisteredDek dek = await StoreDekToRegistry(newDekId, encryptedDek).ConfigureAwait(continueOnCapturedContext: false);
+            if (dek == null)
+            {
+                // Handle conflicts (409)
+                dek = await RetrieveDekFromRegistry(dekId).ConfigureAwait(continueOnCapturedContext: false);
+            }
+
+            if (dek == null)
+            {
+                throw new RuleException($"No dek found for {kekName} during produce");
             }
 
             return dek;
