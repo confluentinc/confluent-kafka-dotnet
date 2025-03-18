@@ -22,16 +22,16 @@ using Decimal = Confluent.SchemaRegistry.Serdes.Protobuf.Decimal;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///   Protobuf decimal utilities
+    ///   Protobuf decimal extensions
     /// </summary>
-    public static class DecimalUtils
+    public static class DecimalExtensions
     {
         /// <summary>
         ///   Converts a decimal to a Protobuf decimal
         /// </summary>
         /// <param name="value">Decimal value</param>
         /// <returns>Protobuf decimal value</returns>
-        public static Decimal DecimalToProtobuf(decimal value)
+        public static Decimal ToProtobufDecimal(this decimal value)
         {
             var bytes = GetBytesFromDecimal(value);
 
@@ -60,7 +60,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </summary>
         /// <param name="value">Protobuf decimal value</param>
         /// <returns>Decimal value</returns>
-        public static decimal ProtobufToDecimal(Decimal value)
+        public static decimal ToSystemDecimal(this Decimal value)
         {
             var buffer = value.Value.ToByteArray();
             Array.Reverse(buffer);
