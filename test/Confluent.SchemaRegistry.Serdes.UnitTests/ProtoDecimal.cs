@@ -25,9 +25,9 @@ public class ProtoDecimal
         foreach (var input in inputs)
         {
             var converted = input.ToProtobufDecimal();
-            var original = converted.ToSystemDecimal();
+            var result = converted.ToSystemDecimal();
 
-            Assert.Equal(input, original);
+            Assert.Equal(input, result);
         }
     }
 }
