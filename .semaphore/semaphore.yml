@@ -99,6 +99,7 @@ blocks:
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - artifact push workflow artifacts
+
   - name: 'Windows Artifacts on tagged commits'
     run:
       when: "tag =~ '.*'"
