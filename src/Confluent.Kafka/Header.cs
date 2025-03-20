@@ -27,20 +27,17 @@ namespace Confluent.Kafka
     /// </remarks>
     public class Header : IHeader
     {
-        private byte[] val;
+        private readonly byte[] val;
 
         /// <summary>
         ///     The header key.
         /// </summary>
-        public string Key { get; private set; }
+        public string Key { get; }
 
         /// <summary>
         ///     Get the serialized header value data.
         /// </summary>
-        public byte[] GetValueBytes()
-        {
-            return val;
-        }
+        public byte[] GetValueBytes() => val;
         
         /// <summary>
         ///     Create a new Header instance.
@@ -53,12 +50,7 @@ namespace Confluent.Kafka
         /// </param>
         public Header(string key, byte[] value)
         {
-            if (key == null) 
-            {
-                throw new ArgumentNullException("Kafka message header key cannot be null.");
-            }
-
-            Key = key;
+            Key = key ?? throw new ArgumentNullException(nameof(key), "Kafka message header key cannot be null.");
             val = value;
         }
     }
