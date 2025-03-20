@@ -25,8 +25,7 @@ using System.Threading.Tasks;
 using X509Certificate2 = System.Security.Cryptography.X509Certificates.X509Certificate2;
 
 using System.Net.Security;
-using System.Text;
-using System.Net.Http.Headers;
+
 
 namespace Confluent.SchemaRegistry
 {
