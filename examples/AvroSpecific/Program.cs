@@ -15,8 +15,10 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using com.leonteq.horizonsat.avro.berntrade;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
@@ -28,20 +30,23 @@ namespace Confluent.Kafka.Examples.AvroSpecific
     {
         static void Main(string[] args)
         {
-            if (args.Length != 3)
-            {
-                Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName");
-                return;
-            }
+
+            args = new string[3];
+
+            args[0] =
+                "lynqs-kafka-broker-01.lynqs.dev.gcp.fpprod.corp:9092,lynqs-kafka-broker-02.lynqs.dev.gcp.fpprod.corp:9092,lynqs-kafka-broker-03.lynqs.dev.gcp.fpprod.corp:9092,lynqs-kafka-broker-04.lynqs.dev.gcp.fpprod.corp:9092,lynqs-kafka-broker-05.lynqs.dev.gcp.fpprod.corp:9092,lynqs-kafka-broker-06.lynqs.dev.gcp.fpprod.corp:9092";
+            args[1] = "http://lynqs-kafka-schema-registry.lynqs.dev.gcp.fpprod.corp:80";
+            args[2] = "DEV_HZNSAT_PUBLIC_BxEodTrades_1";
 
             string bootstrapServers = args[0];
             string schemaRegistryUrl = args[1];
             string topicName = args[2];
 
-            var producerConfig = new ProducerConfig
+            if (args.Length != 3)
             {
-                BootstrapServers = bootstrapServers
-            };
+                Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName");
+                return;
+            }
 
             var schemaRegistryConfig = new SchemaRegistryConfig
             {
@@ -55,13 +60,11 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
-                GroupId = "avro-specific-example-group"
-            };
-
-            var avroSerializerConfig = new AvroSerializerConfig
-            {
-                // optional Avro serializer properties:
-                BufferBytes = 100
+                GroupId = "LEonteq.Test.SoborSaif" + Guid.NewGuid(),
+                SaslUsername = "sophis-sophis-jna",
+                SaslPassword = "vq8NKGA84Zadd",
+                SaslMechanism = SaslMechanism.Plain,
+                SecurityProtocol = SecurityProtocol.SaslSsl,
             };
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -69,9 +72,9 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             {
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
                 using (var consumer =
-                    new ConsumerBuilder<string, User>(consumerConfig)
-                        .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
-                        .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
+                    new ConsumerBuilder<Ignore, BernTrade>(consumerConfig)
+                        .SetValueDeserializer(new AvroDeserializer<BernTrade>(schemaRegistry).AsSyncOverAsync())
+                        .SetErrorHandler(ErrorHandler)
                         .Build())
                 {
                     consumer.Subscribe(topicName);
@@ -84,7 +87,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                             {
                                 var consumeResult = consumer.Consume(cts.Token);
                                 var user = consumeResult.Message.Value;
-                                Console.WriteLine($"key: {consumeResult.Message.Key}, user name: {user.name}, favorite number: {user.favorite_number}, favorite color: {user.favorite_color}, hourly_rate: {user.hourly_rate}");
+                                Console.WriteLine($"result: {consumeResult.Message.Value}");
+                                Console.WriteLine($"message: {user}");
                             }
                             catch (ConsumeException e)
                             {
@@ -99,41 +103,14 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 }
             });
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer =
-                new ProducerBuilder<string, User>(producerConfig)
-                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry, avroSerializerConfig))
-                    .Build())
-            {
-                Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
-                int i = 1;
-                string text;
-                while ((text = Console.ReadLine()) != "q")
-                {
-                    User user = new User { name = text, favorite_color = "green", favorite_number = ++i, hourly_rate = new Avro.AvroDecimal(67.99) };
-                    producer
-                        .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user })
-                        .ContinueWith(task =>
-                            {
-                                if (!task.IsFaulted)
-                                {
-                                    Console.WriteLine($"produced to: {task.Result.TopicPartitionOffset}");
-                                    return;
-                                }
-
-                                // Task.Exception is of type AggregateException. Use the InnerException property
-                                // to get the underlying ProduceException. In some cases (notably Schema Registry
-                                // connectivity issues), the InnerException of the ProduceException will contain
-                                // additional information pertaining to the root cause of the problem. Note: this
-                                // information is automatically included in the output of the ToString() method of
-                                // the ProduceException which is called implicitly in the below.
-                                Console.WriteLine($"error producing message: {task.Exception.InnerException}");
-                            });
-                }
-            }
-
+            Console.ReadLine();
             cts.Cancel();
+        }
+
+        private static void ErrorHandler(IConsumer<Ignore, BernTrade> _, Error e)
+        {
+            Console.WriteLine($"Error: {e.Reason}");
         }
     }
 }

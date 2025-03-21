@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ using Confluent.SchemaRegistry;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Schema = Avro.Schema;
 
 
 namespace Confluent.Kafka.Examples.AvroGeneric
@@ -30,20 +31,25 @@ namespace Confluent.Kafka.Examples.AvroGeneric
     {
         static async Task Main(string[] args)
         {
+            args = new string[3];
+            args[0] =
+                "lynqs-kafka-broker-01.lynqs.dev.gcp.fpprod.corp:9092,lynqs-kafka-broker-02.lynqs.dev.gcp.fpprod.corp:9092,lynqs-kafka-broker-03.lynqs.dev.gcp.fpprod.corp:9092,lynqs-kafka-broker-04.lynqs.dev.gcp.fpprod.corp:9092,lynqs-kafka-broker-05.lynqs.dev.gcp.fpprod.corp:9092,lynqs-kafka-broker-06.lynqs.dev.gcp.fpprod.corp:9092";
+            args[1] = "http://lynqs-kafka-schema-registry.lynqs.dev.gcp.fpprod.corp:80";
+            args[2] = "DEV_HZNSAT_PUBLIC_BxEodTrades_1";
+
             if (args.Length != 3)
             {
                 Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName");
                 return;
             }
 
+            string groupName = "avro-generic-example-group1";
+
             string bootstrapServers = args[0];
             string schemaRegistryUrl = args[1];
             string topicName = args[2];
-            string groupName = "avro-generic-example-group";
-
             // var s = (RecordSchema)RecordSchema.Parse(File.ReadAllText("my-schema.json"));
-            var s = (RecordSchema)RecordSchema.Parse(
-                @"{
+            var s = (RecordSchema)Schema.Parse(@"{
                     ""type"": ""record"",
                     ""name"": ""User"",
                     ""fields"": [
@@ -51,18 +57,26 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                         {""name"": ""favorite_number"",  ""type"": ""long""},
                         {""name"": ""favorite_color"", ""type"": ""string""}
                     ]
-                  }"
-            );
+                  }");
 
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
             {
-                using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
-                using (var consumer =
-                    new ConsumerBuilder<string, GenericRecord>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName })
-                        .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
-                        .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
-                        .Build())
+                //using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
+                using (var consumer = new ConsumerBuilder<Ignore, string>(new ConsumerConfig
+                           {
+                               BootstrapServers = bootstrapServers,
+                               GroupId = groupName,
+                               SaslUsername = "sophis-sophis-jna",
+                               SaslPassword = "vq8NKGA84Zadd",
+                               SaslMechanism = SaslMechanism.Plain,
+                               SecurityProtocol = SecurityProtocol.SaslSsl,
+                           }).
+                           SetValueDeserializer(
+                    Deserializers.Utf8
+                    //new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync()
+                    )
+                           .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}")).Build())
                 {
                     consumer.Subscribe(topicName);
 
@@ -84,45 +98,13 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                     }
                     catch (OperationCanceledException)
                     {
-                        // commit final offsets and leave the group.
                         consumer.Close();
                     }
                 }
             });
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
-            using (var producer =
-                new ProducerBuilder<string, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
-                    .Build())
-            {
-                Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
-                long i = 1;
-                string text;
-                while ((text = Console.ReadLine()) != "q")
-                {
-                    var record = new GenericRecord(s);
-                    record.Add("name", text);
-                    record.Add("favorite_number", i++);
-                    record.Add("favorite_color", "blue");
-
-                    try
-                    {
-                        var dr = await producer.ProduceAsync(topicName, new Message<string, GenericRecord> { Key = text, Value = record });
-                        Console.WriteLine($"produced to: {dr.TopicPartitionOffset}");
-                    }
-                    catch (ProduceException<string, GenericRecord> ex)
-                    {
-                        // In some cases (notably Schema Registry connectivity issues), the InnerException
-                        // of the ProduceException contains additional informatiom pertaining to the root
-                        // cause of the problem. This information is automatically included in the output
-                        // of the ToString() method of the ProduceException, called implicitly in the below.
-                        Console.WriteLine($"error producing message: {ex}");
-                    }
-                }
-            }
-
+            Console.ReadLine();
             cts.Cancel();
         }
     }

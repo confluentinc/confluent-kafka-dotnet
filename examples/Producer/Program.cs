@@ -22,6 +22,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 
 namespace Confluent.Kafka.Examples.ProducerExample
@@ -57,6 +58,8 @@ namespace Confluent.Kafka.Examples.ProducerExample
                     e.Cancel = true; // prevent the process from terminating.
                     cancelled = true;
                 };
+
+                producer.Flush(CancellationToken.None);
 
                 while (!cancelled)
                 {
