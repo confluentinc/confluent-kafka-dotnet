@@ -155,6 +155,37 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void ISpecificRecordUseSchemaId()
+        {
+            var schemaStr = User._SCHEMA.ToString();
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseSchemaId = 1
+            };
+            var serializer = new AvroSerializer<User>(schemaRegistryClient, config);
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, null);
+
+            var user = new User
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("awesome", result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
         public void ISpecificRecordStrings()
         {
             var schemaStr = "{\"type\":\"string\"}";

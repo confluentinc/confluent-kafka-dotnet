@@ -62,6 +62,13 @@ namespace Confluent.SchemaRegistry.Serdes
             public const string NormalizeSchemas = "avro.serializer.normalize.schemas";
 
             /// <summary>
+            ///     Specifies the schema ID to use for serialization.
+            ///     WARNING: There is no check that the given schema is backwards compatible
+            ///     with the schema of the object being serialized.
+            /// </summary>
+            public const string UseSchemaId = "avro.serializer.use.schema.id";
+
+            /// <summary>
             ///     Specifies whether or not the Avro serializer should use the latest subject
             ///     version for serialization.
             ///     WARNING: There is no check that the latest schema is backwards compatible
@@ -137,6 +144,18 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             get { return GetBool(PropertyNames.NormalizeSchemas); }
             set { SetObject(PropertyNames.NormalizeSchemas, value); }
+        }
+
+
+        /// <summary>
+        ///     Specifies the schema ID to be used for serialization.
+        ///     WARNING: There is no check that the latest schema is backwards compatible
+        ///     with the schema of the object being serialized.
+        /// </summary>
+        public int? UseSchemaId
+        {
+            get { return GetInt(PropertyNames.UseSchemaId); }
+            set { SetObject(PropertyNames.UseSchemaId, value); }
         }
 
 
