@@ -100,6 +100,49 @@ namespace Confluent.SchemaRegistry
             public const string SchemaRegistryBasicAuthUserInfo = "schema.registry.basic.auth.user.info";
 
             /// <summary>
+            ///     Specifies the configuration property(ies) that provide the bearer authentication credentials.
+            ///     STATIC_TOKEN: Credentials are specified via the `schema.registry.bearer.auth.token` config property.
+            ///     OAUTHBEARER: Credentials are specified via the `schema.registry.oauthbearer.auth.credentials.source` config property.
+            ///     CUSTOM: User provides a custom implementation of IAuthenticationHeaderValueProvider.
+            /// </summary>
+            public const string SchemaRegistryBearerAuthCredentialsSource = "schema.registry.bearer.auth.credentials.source";
+
+            /// <summary>
+            ///     Specifies the bearer authentication token.
+            /// </summary>
+            public const string SchemaRegistryBearerAuthToken = "schema.registry.bearer.auth.token";
+            
+            /// <summary>
+            ///     Specifies the logical cluster for the bearer authentication credentials.
+            /// </summary>
+            public const string SchemaRegistryBearerAuthLogicalCluster = "schema.registry.bearer.auth.logical.cluster";
+
+            /// <summary>
+            ///     Specifies the identity pool for the bearer authentication credentials.
+            /// </summary>
+            public const string SchemaRegistryBearerAuthIdentityPoolId = "schema.registry.bearer.auth.identity.pool.id";
+
+            /// <summary>
+            ///     Specifies the client ID for the bearer authentication credentials.
+            /// </summary>
+            public const string SchemaRegistryBearerAuthClientId = "schema.registry.bearer.auth.client.id";
+
+            /// <summary>
+            ///     Specifies the client secret for the bearer authentication credentials.
+            /// </summary>
+            public const string SchemaRegistryBearerAuthClientSecret = "schema.registry.bearer.auth.client.secret";
+
+            /// <summary>
+            ///     Specifies the scope for the bearer authentication credentials.
+            /// </summary>
+            public const string SchemaRegistryBearerAuthScope = "schema.registry.bearer.auth.scope";
+
+            /// <summary>
+            ///     Specifies the token endpoint for the bearer authentication credentials.
+            /// </summary>
+            public const string SchemaRegistryBearerAuthTokenEndpointUrl = "schema.registry.bearer.auth.token.endpoint.url";
+
+            /// <summary>
             ///     Key subject name strategy.
             /// </summary>
             [Obsolete(
@@ -325,6 +368,125 @@ namespace Confluent.SchemaRegistry
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo, value); }
         }
 
+        /// <summary>
+        ///     Specifies the configuration property(ies) that provide the bearer authentication credentials.
+        /// </summary>
+        public BearerAuthCredentialsSource? BearerAuthCredentialsSource
+        {
+            get
+            {
+                var r = Get(PropertyNames.SchemaRegistryBearerAuthCredentialsSource);
+                if (r == null)
+                {
+                    return null;
+                }
+
+                if (r == "STATIC_TOKEN")
+                {
+                    return Confluent.SchemaRegistry.BearerAuthCredentialsSource.StaticToken;
+                }
+
+                if (r == "OAUTHBEARER")
+                {
+                    return Confluent.SchemaRegistry.BearerAuthCredentialsSource.OAuthBearer;
+                }
+
+                if (r == "CUSTOM")
+                {
+                    return Confluent.SchemaRegistry.BearerAuthCredentialsSource.Custom;
+                }
+
+                throw new ArgumentException(
+                    $"Unknown ${PropertyNames.SchemaRegistryBearerAuthCredentialsSource} value: {r}.");
+            }
+            set
+            {
+                if (value == null)
+                {
+                    this.properties.Remove(PropertyNames.SchemaRegistryBearerAuthCredentialsSource);
+                }
+                else if (value == Confluent.SchemaRegistry.BearerAuthCredentialsSource.StaticToken)
+                {
+                    this.properties[PropertyNames.SchemaRegistryBearerAuthCredentialsSource] = "STATIC_TOKEN";
+                }
+                else if (value == Confluent.SchemaRegistry.BearerAuthCredentialsSource.OAuthBearer)
+                {
+                    this.properties[PropertyNames.SchemaRegistryBearerAuthCredentialsSource] = "OAUTHBEARER";
+                }
+                else if (value == Confluent.SchemaRegistry.BearerAuthCredentialsSource.Custom)
+                {
+                    this.properties[PropertyNames.SchemaRegistryBearerAuthCredentialsSource] = "CUSTOM";
+                }
+                else
+                {
+                    throw new NotImplementedException(
+                        $"Unknown ${PropertyNames.SchemaRegistryBearerAuthCredentialsSource} value: {value}.");
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Specifies the bearer authentication token.
+        /// </summary>
+        public string BearerAuthToken
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken, value); }
+        }
+
+        /// <summary>
+        ///     Specifies the logical cluster for the bearer authentication credentials.
+        /// </summary>
+        public string BearerAuthLogicalCluster
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster, value); }
+        }
+        
+        /// <summary>
+        ///     Specifies the identity pool for the bearer authentication credentials.
+        /// </summary>
+        public string BearerAuthIdentityPoolId
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId, value); }
+        } 
+
+        /// <summary>
+        ///     Specifies the client ID for the bearer authentication credentials.
+        /// </summary>
+        public string BearerAuthClientId
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId, value); }
+        }
+
+        /// <summary>
+        ///     Specifies the client secret for the bearer authentication credentials.
+        /// </summary>
+        public string BearerAuthClientSecret
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret, value); }
+        }
+
+        /// <summary>
+        ///     Specifies the scope for the bearer authentication credentials.
+        /// </summary>
+        public string BearerAuthScope
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope, value); }
+        }
+        
+        /// <summary>
+        ///     Specifies the token endpoint for the bearer authentication credentials.
+        /// </summary>
+        public string BearerAuthTokenEndpointUrl
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl, value); }
+        }
 
         /// <summary>
         ///     Key subject name strategy.
