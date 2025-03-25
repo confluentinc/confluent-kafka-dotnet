@@ -26,6 +26,7 @@ using X509Certificate2 = System.Security.Cryptography.X509Certificates.X509Certi
 
 using System.Net.Security;
 
+
 namespace Confluent.SchemaRegistry
 {
     public class RestService : IRestService
@@ -39,8 +40,6 @@ namespace Confluent.SchemaRegistry
         public const int DefaultRetriesWaitMs = 1000;
 
         public const int DefaultRetriesMaxWaitMs = 20000;
-
-        private static Random random = new Random();
 
         /// <summary>
         ///     The index of the last client successfully used (or random if none worked).
@@ -194,7 +193,7 @@ namespace Confluent.SchemaRegistry
 
         #region Base Requests
 
-        private async Task<HttpResponseMessage> ExecuteOnOneInstanceAsync(Func<HttpRequestMessage> createRequest)
+        private async Task<HttpResponseMessage> ExecuteOnOneInstanceAsync(Func<Task<HttpRequestMessage>> createRequest)
         {
             // There may be many base urls - roll until one is found that works.
             //
@@ -308,20 +307,20 @@ namespace Confluent.SchemaRegistry
         }
 
         private async Task<HttpResponseMessage> SendRequest(
-            HttpClient client, Func<HttpRequestMessage> createRequest)
+            HttpClient client, Func<Task<HttpRequestMessage>> createRequest)
         {
             HttpResponseMessage response = null;
             for (int i = 0; i < maxRetries; i++)
             {
                 response = await client
-                    .SendAsync(createRequest())
+                    .SendAsync(await createRequest())
                     .ConfigureAwait(continueOnCapturedContext: false);
                 if (IsSuccess((int)response.StatusCode) || !IsRetriable((int)response.StatusCode) || i >= maxRetries)
                 {
                     return response;
                 }
 
-                await Task.Delay(CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i));
+                await Task.Delay(RetryUtility.CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i));
             }
             return response;
         }
@@ -335,15 +334,6 @@ namespace Confluent.SchemaRegistry
         {
             return statusCode == 408 || statusCode == 429 ||
                    statusCode == 500 || statusCode == 502 || statusCode == 503 || statusCode == 504;
-        }
-
-        protected static int CalculateRetryDelay(int baseDelayMs, int maxDelayMs, int retriesAttempted)
-        {
-            double jitter;
-            lock (random) {
-                jitter = random.NextDouble();
-            }
-            return Convert.ToInt32(Math.Min(jitter * Math.Pow(2, retriesAttempted) * baseDelayMs, maxDelayMs));
         }
 
         /// <remarks>
@@ -371,7 +361,7 @@ namespace Confluent.SchemaRegistry
                 .ToObject<List<T>>(JsonSerializer.Create());
         }
 
-        private HttpRequestMessage CreateRequest(string endPoint, HttpMethod method, params object[] jsonBody)
+        private async Task<HttpRequestMessage> CreateRequest(string endPoint, HttpMethod method, params object[] jsonBody)
         {
             HttpRequestMessage request = new HttpRequestMessage(method, endPoint);
             request.Headers.Add("Accept", acceptHeader);
@@ -382,6 +372,15 @@ namespace Confluent.SchemaRegistry
                     Versions.SchemaRegistry_V1_JSON);
                 content.Headers.ContentType.CharSet = string.Empty;
                 request.Content = content;
+            }
+
+            if (authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider bearerProvider){
+                if (!bearerProvider.ProviderInitializedOrNotExpired()){
+                    await bearerProvider.InitializeAsync().ConfigureAwait(continueOnCapturedContext: false);
+                }
+                
+                request.Headers.Add("Confluent-Identity-Pool-Id", bearerProvider.GetIdentityPool());
+                request.Headers.Add("target-sr-cluster", bearerProvider.GetLogicalCluster());
             }
 
             if (authenticationHeaderValueProvider != null)
