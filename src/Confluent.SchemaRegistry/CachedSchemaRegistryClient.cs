@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Net.Http;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Threading;
@@ -359,30 +360,136 @@ namespace Confluent.SchemaRegistry
                     $"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
 
-            if (authenticationHeaderValueProvider != null)
+            var bearerAuthSource = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource).Value ?? "";
+
+            if (bearerAuthSource != "" && basicAuthSource != "")
             {
-                if (username != null || password != null)
+                throw new ArgumentException(
+                    $"Invalid authentication header value provider configuration: Cannot specify both basic and bearer authentication");
+            }
+
+            string logicalCluster = null;
+            string identityPoolId = null;
+            string bearerToken = null;
+            string clientId = null;
+            string clientSecret = null;
+            string scope = null;
+            string tokenEndpointUrl = null;
+
+            if (bearerAuthSource == "STATIC_TOKEN" || bearerAuthSource == "OAUTHBEARER")
+            {
+                logicalCluster = config.FirstOrDefault(prop =>
+                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster).Value;
+
+                identityPoolId = config.FirstOrDefault(prop =>
+                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId).Value;
+                if (logicalCluster == null || identityPoolId == null)
                 {
                     throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
+                        $"Invalid bearer authentication provider configuration: Logical cluster and identity pool ID must be specified");
                 }
+            }
+
+            switch (bearerAuthSource)
+            {
+                case "STATIC_TOKEN":
+                    bearerToken = config.FirstOrDefault(prop =>
+                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken).Value;
+
+                    if (bearerToken == null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Bearer authentication token not specified");
+                    }
+                    break;
+
+                case "OAUTHBEARER":
+                    clientId = config.FirstOrDefault(prop =>
+                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId).Value;
+
+                    clientSecret = config.FirstOrDefault(prop =>
+                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret).Value;
+
+                    scope = config.FirstOrDefault(prop =>
+                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope).Value;
+                    
+                    tokenEndpointUrl = config.FirstOrDefault(prop =>
+                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl).Value;
+                    
+                    if (tokenEndpointUrl == null || clientId == null || clientSecret == null || scope == null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid bearer authentication provider configuration: Token endpoint URL, client ID, client secret, and scope must be specified");
+                    }
+                    break;
+
+                case "CUSTOM":
+                    if (authenticationHeaderValueProvider == null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Custom authentication provider must be specified");
+                    }
+                    if(!(authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider))
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Custom authentication provider must implement IAuthenticationBearerHeaderValueProvider");
+                    }
+                    break;
+
+                case "":
+                    break;
+
+                default:
+                    throw new ArgumentException(
+                        $"Invalid value '{bearerAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource}'");
+            }
+            
+
+            if (authenticationHeaderValueProvider != null)
+            {
+                    if (username != null || password != null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
+                    }
+                    else if (bearerAuthSource != null && bearerAuthSource != "" && bearerAuthSource != "CUSTOM")
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Cannot specify both custom provider and bearer authentication");
+                    }
             }
             else
             {
-                if (username != null && password == null)
+                if (basicAuthSource != "")
                 {
-                    throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Basic authentication username specified, but password not specified");
-                }
+                    if (username != null && password == null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Basic authentication username specified, but password not specified");
+                    }
 
-                if (username == null && password != null)
-                {
-                    throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Basic authentication password specified, but username not specified");
+                    if (username == null && password != null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Basic authentication password specified, but username not specified");
+                    }
+                    else if (username != null && password != null)
+                    {
+                        authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
+                    }
                 }
-                else if (username != null && password != null)
+                else if (bearerAuthSource != "")
                 {
-                    authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
+                    if (bearerAuthSource == "STATIC_TOKEN")
+                    {
+                        authenticationHeaderValueProvider = new StaticBearerAuthenticationHeaderValueProvider(bearerToken, logicalCluster, identityPoolId);
+                    }
+                    else if (bearerAuthSource == "OAUTHBEARER")
+                    {
+                        authenticationHeaderValueProvider = new BearerAuthenticationHeaderValueProvider(
+                            new HttpClient(), clientId, clientSecret, scope, tokenEndpointUrl, logicalCluster, identityPoolId, maxRetries, retriesWaitMs, retriesMaxWaitMs);
+                    }
                 }
             }
 
@@ -402,6 +509,14 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
