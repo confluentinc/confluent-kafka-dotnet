@@ -34,7 +34,8 @@ namespace Confluent.SchemaRegistry
     {
         protected ISchemaRegistryClient schemaRegistryClient;
         protected RuleRegistry ruleRegistry;
-        
+
+        protected int useSchemaId = -1;
         protected bool useLatestVersion = false;
         protected bool latestCompatibilityStrict = false;
         protected IDictionary<string, string> useLatestWithMetadata = null;
@@ -258,6 +259,13 @@ namespace Confluent.SchemaRegistry
             if (schemaRegistryClient == null)
             {
                 return null;
+            }
+            if (useSchemaId >= 0)
+            {
+                var schemaForId =
+                    await schemaRegistryClient.GetSchemaBySubjectAndIdAsync(subject, useSchemaId);
+                return await schemaRegistryClient.LookupSchemaAsync(subject, schemaForId, false, false)
+                    .ConfigureAwait(continueOnCapturedContext: false);
             }
             if (useLatestWithMetadata != null && useLatestWithMetadata.Any())
             {
