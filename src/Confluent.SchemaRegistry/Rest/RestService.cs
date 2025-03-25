@@ -375,8 +375,9 @@ namespace Confluent.SchemaRegistry
             }
 
             if (authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider bearerProvider){
-                if (!bearerProvider.ProviderInitializedOrNotExpired()){
-                    await bearerProvider.InitializeAsync().ConfigureAwait(continueOnCapturedContext: false);
+                if (bearerProvider.NeedsInitOrRefresh())
+                {
+                    await bearerProvider.InitOrRefreshAsync().ConfigureAwait(continueOnCapturedContext: false);
                 }
                 
                 request.Headers.Add("Confluent-Identity-Pool-Id", bearerProvider.GetIdentityPool());

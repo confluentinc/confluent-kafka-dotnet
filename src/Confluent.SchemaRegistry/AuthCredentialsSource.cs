@@ -33,4 +33,25 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         SaslInherit
     }
+
+    /// <summary>
+    ///     Bearer auth credentials source.
+    /// </summary>
+    public enum BearerAuthCredentialsSource
+    {
+        /// <summary>
+        ///     Credentials are specified via the `schema.registry.bearer.auth.token` config property.
+        /// </summary>
+        StaticToken,
+
+        /// <summary>
+        ///     Credentials are specified via the `schema.registry.oauthbearer.auth.credentials.source` config property.
+        /// </summary>
+        OAuthBearer,
+
+        /// <summary>
+        ///     User provides a custom implementation of IAuthenticationHeaderValueProvider.
+        /// </summary>
+        Custom
+    }
 }

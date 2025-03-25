@@ -21,11 +21,11 @@ namespace Confluent.SchemaRegistry
     /// <summary>
     ///     An interface defining HTTP client authentication header values.
     /// </summary>
-    public interface IAuthenticationBearerHeaderValueProvider
+    public interface IAuthenticationBearerHeaderValueProvider : IAuthenticationHeaderValueProvider
     {
-        public Task InitializeAsync();
+        public Task InitOrRefreshAsync();
 
-        public bool ProviderInitializedOrNotExpired();
+        public bool NeedsInitOrRefresh();
 
         /// <summary>
         ///   Get the authentication header for HTTP requests
