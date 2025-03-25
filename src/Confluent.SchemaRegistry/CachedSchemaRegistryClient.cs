@@ -44,9 +44,9 @@ namespace Confluent.SchemaRegistry
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, Schema, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int, bool)" />
+    ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool, bool)" />
     ///
     ///     The following method calls do NOT cache results:
-    ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetLatestSchemaAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetAllSubjectsAsync" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSubjectVersionsAsync(string)" />
@@ -73,6 +73,9 @@ namespace Confluent.SchemaRegistry
 
         private readonly Dictionary<string /*subject*/, Dictionary<int, RegisteredSchema>> schemaByVersionBySubject =
             new Dictionary<string, Dictionary<int, RegisteredSchema>>();
+        
+        private readonly Dictionary<string /*subject*/, Dictionary<Schema, RegisteredSchema>> registeredSchemaBySchemaBySubject =
+            new Dictionary<string, Dictionary<Schema, RegisteredSchema>>();
 
         private readonly MemoryCache latestVersionBySubject = new MemoryCache(new MemoryCacheOptions());
         
@@ -476,6 +479,7 @@ namespace Confluent.SchemaRegistry
                 this.schemaById.Clear();
                 this.idBySchemaBySubject.Clear();
                 this.schemaByVersionBySubject.Clear();
+                this.registeredSchemaBySchemaBySubject.Clear();
                 return true;
             }
 
@@ -530,7 +534,7 @@ namespace Confluent.SchemaRegistry
                     CleanCacheIfFull();
 
                     // throws SchemaRegistryException if schema is not known.
-                    var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true, normalize)
+                    var registeredSchema = await LookupSchemaAsync(subject, schema, true, normalize)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     idBySchema[schema] = registeredSchema.Id;
                     schemaById[registeredSchema.Id] = registeredSchema.Schema;
@@ -609,10 +613,31 @@ namespace Confluent.SchemaRegistry
 
 
         /// <inheritdoc/>
-        public Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas,
+        public async Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas,
             bool normalize = false)
-            => restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas, normalize);
+        {
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
+            {
+                if (!registeredSchemaBySchemaBySubject.TryGetValue(subject, out var registeredSchemaBySchema))
+                {
+                    CleanCacheIfFull();
+                    registeredSchemaBySchema = new Dictionary<Schema, RegisteredSchema>();
+                    registeredSchemaBySchemaBySubject[subject] = registeredSchemaBySchema;
+                }
+                if (!registeredSchemaBySchema.TryGetValue(schema, out var registeredSchema))
+                {
+                    registeredSchema = await restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas, normalize).ConfigureAwait(continueOnCapturedContext: false);
+                    registeredSchemaBySchema[schema] = registeredSchema;
+                }
 
+                return registeredSchema;
+            }
+            finally
+            {
+                cacheMutex.Release();
+            }
+        }
 
         /// <inheritdoc/>
         public async Task<Schema> GetSchemaAsync(int id, string format = null)
@@ -807,6 +832,7 @@ namespace Confluent.SchemaRegistry
             schemaById.Clear();
             idBySchemaBySubject.Clear();
             schemaByVersionBySubject.Clear();
+            registeredSchemaBySchemaBySubject.Clear();
             latestVersionBySubject.Clear();
             latestWithMetadataBySubject.Clear();
         }
