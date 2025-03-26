@@ -318,7 +318,6 @@ namespace Confluent.SchemaRegistry
             {
                 if (basicAuthInfo != "")
                 {
-                    basicAuthSource = "USER_INFO";
                     var userPass = basicAuthInfo.Split(new char[] { ':' }, 2);
                     if (userPass.Length != 2)
                     {
@@ -328,6 +327,12 @@ namespace Confluent.SchemaRegistry
 
                     username = userPass[0];
                     password = userPass[1];
+                    if (authenticationHeaderValueProvider != null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
+                    }
+                    authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
                 }
             }
             else if (basicAuthSource == "SASL_INHERIT")
@@ -354,6 +359,12 @@ namespace Confluent.SchemaRegistry
 
                 username = saslUsername.Value;
                 password = saslPassword.Value;
+                if (authenticationHeaderValueProvider != null)
+                {
+                    throw new ArgumentException(
+                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
+                }
+                authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
             }
             else
             {
@@ -380,6 +391,11 @@ namespace Confluent.SchemaRegistry
 
             if (bearerAuthSource == "STATIC_TOKEN" || bearerAuthSource == "OAUTHBEARER")
             {
+                if (authenticationHeaderValueProvider != null)
+                {
+                    throw new ArgumentException(
+                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and bearer authentication");
+                }
                 logicalCluster = config.FirstOrDefault(prop =>
                     prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster).Value;
 
@@ -403,6 +419,7 @@ namespace Confluent.SchemaRegistry
                         throw new ArgumentException(
                             $"Invalid authentication header value provider configuration: Bearer authentication token not specified");
                     }
+                    authenticationHeaderValueProvider = new StaticBearerAuthenticationHeaderValueProvider(bearerToken, logicalCluster, identityPoolId);
                     break;
 
                 case "OAUTHBEARER":
@@ -423,6 +440,8 @@ namespace Confluent.SchemaRegistry
                         throw new ArgumentException(
                             $"Invalid bearer authentication provider configuration: Token endpoint URL, client ID, client secret, and scope must be specified");
                     }
+                    authenticationHeaderValueProvider = new BearerAuthenticationHeaderValueProvider(
+                        new HttpClient(), clientId, clientSecret, scope, tokenEndpointUrl, logicalCluster, identityPoolId, maxRetries, retriesWaitMs, retriesMaxWaitMs);
                     break;
 
                 case "CUSTOM":
@@ -444,54 +463,6 @@ namespace Confluent.SchemaRegistry
                 default:
                     throw new ArgumentException(
                         $"Invalid value '{bearerAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource}'");
-            }
-            
-
-            if (authenticationHeaderValueProvider != null)
-            {
-                    if (username != null || password != null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
-                    }
-                    else if (bearerAuthSource != null && bearerAuthSource != "" && bearerAuthSource != "CUSTOM")
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Cannot specify both custom provider and bearer authentication");
-                    }
-            }
-            else
-            {
-                if (basicAuthSource != "")
-                {
-                    if (username != null && password == null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Basic authentication username specified, but password not specified");
-                    }
-
-                    if (username == null && password != null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Basic authentication password specified, but username not specified");
-                    }
-                    else if (username != null && password != null)
-                    {
-                        authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
-                    }
-                }
-                else if (bearerAuthSource != "")
-                {
-                    if (bearerAuthSource == "STATIC_TOKEN")
-                    {
-                        authenticationHeaderValueProvider = new StaticBearerAuthenticationHeaderValueProvider(bearerToken, logicalCluster, identityPoolId);
-                    }
-                    else if (bearerAuthSource == "OAUTHBEARER")
-                    {
-                        authenticationHeaderValueProvider = new BearerAuthenticationHeaderValueProvider(
-                            new HttpClient(), clientId, clientSecret, scope, tokenEndpointUrl, logicalCluster, identityPoolId, maxRetries, retriesWaitMs, retriesMaxWaitMs);
-                    }
-                }
             }
 
             foreach (var property in config)
