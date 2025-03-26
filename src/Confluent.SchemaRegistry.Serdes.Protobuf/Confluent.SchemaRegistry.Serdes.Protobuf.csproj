@@ -26,7 +26,12 @@
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.26.1" />
-    <PackageReference Include="protobuf-net.Reflection" Version="3.2.12">
+    <!--
+    Exclude protobuf-net.Reflection from being a compile-time transitive dependency to avoid error CS0433.
+    Set PrivateAssets per https://learn.microsoft.com/en-us/nuget/create-packages/select-assemblies-referenced-by-projects
+    and https://stackoverflow.com/questions/52207524/disable-transitive-packagereference-dependency-for-a-specific-msbuild-project
+    -->
+    <PackageReference Include="protobuf-net.Reflection" Version="3.2.12" PrivateAssets="contentfiles;analyzers;build;compile">
       <Aliases>ProtobufNet</Aliases>
     </PackageReference>
   </ItemGroup>
