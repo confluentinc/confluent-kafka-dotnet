@@ -374,18 +374,17 @@ namespace Confluent.SchemaRegistry
                 request.Content = content;
             }
 
-            if (authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider bearerProvider){
-                if (bearerProvider.NeedsInitOrRefresh())
-                {
-                    await bearerProvider.InitOrRefreshAsync().ConfigureAwait(continueOnCapturedContext: false);
-                }
-                
-                request.Headers.Add("Confluent-Identity-Pool-Id", bearerProvider.GetIdentityPool());
-                request.Headers.Add("target-sr-cluster", bearerProvider.GetLogicalCluster());
-            }
-
             if (authenticationHeaderValueProvider != null)
             {
+                if (authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider bearerProvider){
+                    if (bearerProvider.NeedsInitOrRefresh())
+                    {
+                        await bearerProvider.InitOrRefreshAsync().ConfigureAwait(continueOnCapturedContext: false);
+                    }
+                
+                    request.Headers.Add("Confluent-Identity-Pool-Id", bearerProvider.GetIdentityPool());
+                    request.Headers.Add("target-sr-cluster", bearerProvider.GetLogicalCluster());
+                }
                 request.Headers.Authorization = authenticationHeaderValueProvider.GetAuthenticationHeader();
             }
 
