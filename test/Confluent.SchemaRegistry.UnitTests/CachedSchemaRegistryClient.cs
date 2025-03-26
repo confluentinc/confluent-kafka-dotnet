@@ -15,8 +15,9 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
-
+using System.Net.Http.Headers;
 
 namespace Confluent.SchemaRegistry.UnitTests
 {
@@ -33,6 +34,150 @@ namespace Confluent.SchemaRegistry.UnitTests
         {
             var config = new SchemaRegistryConfig();
             Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
+        }
+
+        [Fact]
+        public void BasicAuthWithUserInfo()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BasicAuthCredentialsSource = AuthCredentialsSource.UserInfo,
+                BasicAuthUserInfo = "username:password"
+            };
+            var client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void BasicAuthWithSaslInherit()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BasicAuthCredentialsSource = AuthCredentialsSource.SaslInherit
+            };
+            config.Set("sasl.username", "sasluser");
+            config.Set("sasl.password", "saslpass");
+            var client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void BearerAuthWithStaticToken()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
+                BearerAuthToken = "test-token",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            var client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void BearerAuthWithOAuthBearer()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearer,
+                BearerAuthClientId = "test-client",
+                BearerAuthClientSecret = "test-secret",
+                BearerAuthScope = "test-scope",
+                BearerAuthTokenEndpointUrl = "https://test.com/token",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            var client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void CustomAuthProvider()
+        {
+            var config = new SchemaRegistryConfig { Url = "irrelevanthost:8081" };
+            var customProvider = new TestBearerAuthProvider();
+            var client = new CachedSchemaRegistryClient(config, customProvider);
+            Assert.NotNull(client.AuthHeaderProvider);
+            Assert.Same(customProvider, client.AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void InvalidBasicAuthConfig()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BasicAuthCredentialsSource = AuthCredentialsSource.UserInfo,
+                BasicAuthUserInfo = "invalid-format" // Missing password
+            };
+            Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
+        }
+
+        [Fact]
+        public void InvalidSaslInheritConfig()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BasicAuthCredentialsSource = AuthCredentialsSource.SaslInherit,
+                BasicAuthUserInfo = "username:password" // Should not specify BasicAuthUserInfo with SASL_INHERIT
+            };
+            Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
+        }
+
+        [Fact]
+        public void InvalidBearerAuthConfig()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
+                BearerAuthToken = "test-token" // Missing required LogicalCluster and IdentityPoolId
+            };
+            Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
+        }
+
+        [Fact]
+        public void InvalidOAuthBearerConfig()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearer,
+                BearerAuthClientId = "test-client" // Missing required fields
+            };
+            Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
+        }
+
+        [Fact]
+        public void ConflictingAuthConfigs()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BasicAuthCredentialsSource = AuthCredentialsSource.UserInfo,
+                BasicAuthUserInfo = "username:password",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
+                BearerAuthToken = "test-token",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
+        }
+
+        private class TestBearerAuthProvider : IAuthenticationBearerHeaderValueProvider
+        {
+            public string GetBearerToken() => "test-token";
+            public AuthenticationHeaderValue GetAuthenticationHeader() => new AuthenticationHeaderValue("Bearer", "test-token");
+            public string GetLogicalCluster() => "test-cluster";
+            public string GetIdentityPool() => "test-pool";
+            public bool NeedsInitOrRefresh() => false;
+            public Task InitOrRefreshAsync() => Task.CompletedTask;
         }
 
         [Fact]
