@@ -1,12 +1,11 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Runtime.ConstrainedExecution;
+using System.Threading;
 
 namespace Confluent.SchemaRegistry
 {
@@ -34,9 +33,10 @@ namespace Confluent.SchemaRegistry
         private readonly int retriesWaitMs;
         private readonly int retriesMaxWaitMs;
         private readonly HttpClient httpClient;
-        private volatile BearerToken token;
+        private BearerToken token;
         private const float tokenExpiryThreshold = 0.8f;
         private long tokenExpiryTime;
+        private readonly SemaphoreSlim tokenLock = new SemaphoreSlim(1, 1);
         public BearerAuthenticationHeaderValueProvider(
             HttpClient httpClient,
             string clientId, 
@@ -63,8 +63,19 @@ namespace Confluent.SchemaRegistry
 
         public async Task InitOrRefreshAsync()
         {
-            await GenerateToken();
-            CalculateTokenExpiryTime();
+            if (!NeedsInitOrRefresh()) return;
+            await tokenLock.WaitAsync();
+            
+            try
+            {
+                if (!NeedsInitOrRefresh()) return;
+                await GenerateToken();
+                CalculateTokenExpiryTime();
+            }
+            finally
+            {
+                tokenLock.Release();
+            }
         }
 
         public bool NeedsInitOrRefresh()
