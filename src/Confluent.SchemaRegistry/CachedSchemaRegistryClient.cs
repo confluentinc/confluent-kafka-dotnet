@@ -321,7 +321,6 @@ namespace Confluent.SchemaRegistry
             {
                 if (basicAuthInfo != "")
                 {
-                    basicAuthSource = "USER_INFO";
                     var userPass = basicAuthInfo.Split(new char[] { ':' }, 2);
                     if (userPass.Length != 2)
                     {
