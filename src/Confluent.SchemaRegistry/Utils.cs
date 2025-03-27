@@ -79,15 +79,9 @@ namespace Confluent.SchemaRegistry
 
             using (var enumerator = items.GetEnumerator())
             {
-                if (enumerator.MoveNext())
+                while (enumerator.MoveNext())
                 {
-
-                    hash = enumerator.Current?.GetHashCode() ?? 0;
-
-                    while (enumerator.MoveNext())
-                    {
-                        hash = (hash * 397) ^ (enumerator.Current?.GetHashCode() ?? 0);
-                    }
+                    hash = (hash * 397) ^ (enumerator.Current?.GetHashCode() ?? 0);
                 }
             }
 
