@@ -116,8 +116,8 @@ namespace Confluent.SchemaRegistry
                 hashCode = (hashCode * 397) ^ (int)Kind;
                 hashCode = (hashCode * 397) ^ (int)Mode;
                 hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Params != null ? Params.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(Tags);
+                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(Params);
                 hashCode = (hashCode * 397) ^ (Expr != null ? Expr.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (OnSuccess != null ? OnSuccess.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (OnFailure != null ? OnFailure.GetHashCode() : 0);
