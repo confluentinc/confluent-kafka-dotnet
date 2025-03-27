@@ -19,6 +19,8 @@ namespace Confluent.SchemaRegistry
         public int ExpiresIn { get; set; }
         [JsonProperty("scope")]
         public string Scope { get; set; }
+        [JsonIgnore]
+        public double ExpiryTime { get; set; }
     }
 
     public class BearerAuthenticationHeaderValueProvider : IAuthenticationBearerHeaderValueProvider, IDisposable
@@ -63,24 +65,12 @@ namespace Confluent.SchemaRegistry
 
         public async Task InitOrRefreshAsync()
         {
-            if (!NeedsInitOrRefresh()) return;
-            await tokenLock.WaitAsync();
-            
-            try
-            {
-                if (!NeedsInitOrRefresh()) return;
-                await GenerateToken();
-                CalculateTokenExpiryTime();
-            }
-            finally
-            {
-                tokenLock.Release();
-            }
+            await GenerateToken();
         }
 
         public bool NeedsInitOrRefresh()
         {
-            return token == null || DateTimeOffset.UtcNow.ToUnixTimeSeconds() >= tokenExpiryTime;
+            return token == null || DateTimeOffset.UtcNow.ToUnixTimeSeconds() >= token.ExpiryTime;
         }
 
         private HttpRequestMessage CreateTokenRequest()
@@ -109,6 +99,7 @@ namespace Confluent.SchemaRegistry
                     response.EnsureSuccessStatusCode();
                     var tokenResponse = await response.Content.ReadAsStringAsync();
                     token = JObject.Parse(tokenResponse).ToObject<BearerToken>(JsonSerializer.Create());
+                    token.ExpiryTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (int)(token.ExpiresIn * tokenExpiryThreshold);
                     return;
                 }
                 catch (Exception e)
@@ -120,11 +111,6 @@ namespace Confluent.SchemaRegistry
                     await Task.Delay(RetryUtility.CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i));
                 }
             }
-        }
-
-        private void CalculateTokenExpiryTime()
-        {
-            tokenExpiryTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (int)(token.ExpiresIn * tokenExpiryThreshold);
         }
 
         public AuthenticationHeaderValue GetAuthenticationHeader()
