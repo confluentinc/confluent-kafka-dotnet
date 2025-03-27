@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Threading;
 
 namespace Confluent.SchemaRegistry
 {
@@ -37,8 +36,7 @@ namespace Confluent.SchemaRegistry
         private readonly HttpClient httpClient;
         private BearerToken token;
         private const float tokenExpiryThreshold = 0.8f;
-        private long tokenExpiryTime;
-        private readonly SemaphoreSlim tokenLock = new SemaphoreSlim(1, 1);
+
         public BearerAuthenticationHeaderValueProvider(
             HttpClient httpClient,
             string clientId, 
