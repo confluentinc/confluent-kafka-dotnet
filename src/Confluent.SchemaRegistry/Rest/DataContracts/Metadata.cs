@@ -66,9 +66,9 @@ namespace Confluent.SchemaRegistry
         {
             unchecked
             {
-                var hashCode = (Tags != null ? Tags.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Properties != null ? Properties.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Sensitive != null ? Sensitive.GetHashCode() : 0);
+                var hashCode = Utils.IEnumerableHashCode(Tags);
+                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(Properties);
+                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(Sensitive);
                 return hashCode;
             }
         }

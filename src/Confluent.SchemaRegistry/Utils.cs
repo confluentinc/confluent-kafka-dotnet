@@ -14,11 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Confluent.Kafka;
 
 #if NET8_0_OR_GREATER
 using System.Buffers.Text;
@@ -74,6 +71,23 @@ namespace Confluent.SchemaRegistry
             return a.SequenceEqual(b);
         }
         
+        public static int IEnumerableHashCode<T>(IEnumerable<T> items)
+        {
+            if (items == null) return 0;
+
+            var hash = 0;
+
+            using (var enumerator = items.GetEnumerator())
+            {
+                while (enumerator.MoveNext())
+                {
+                    hash = (hash * 397) ^ (enumerator.Current?.GetHashCode() ?? 0);
+                }
+            }
+
+            return hash;
+        }
+
         internal static bool IsBase64String(string value)
         {
 #if NET8_0_OR_GREATER

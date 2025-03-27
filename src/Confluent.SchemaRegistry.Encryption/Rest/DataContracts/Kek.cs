@@ -90,7 +90,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 var hashCode = (Name != null ? Name.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (KmsType != null ? KmsType.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (KmsKeyId != null ? KmsKeyId.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (KmsProps != null ? KmsProps.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(KmsProps);
                 hashCode = (hashCode * 397) ^ (Doc != null ? Doc.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ Shared.GetHashCode();
                 hashCode = (hashCode * 397) ^ Deleted.GetHashCode();
