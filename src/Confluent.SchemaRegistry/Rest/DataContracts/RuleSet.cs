@@ -77,8 +77,8 @@ namespace Confluent.SchemaRegistry
       {
         unchecked
         {
-          return ((MigrationRules != null ? MigrationRules.GetHashCode() : 0) * 397) ^ 
-                 (DomainRules != null ? DomainRules.GetHashCode() : 0);
+          return (Utils.IEnumerableHashCode(MigrationRules) * 397) ^
+                 Utils.IEnumerableHashCode(DomainRules);
         }
       }
     }
