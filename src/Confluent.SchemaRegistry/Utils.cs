@@ -74,6 +74,27 @@ namespace Confluent.SchemaRegistry
             return a.SequenceEqual(b);
         }
         
+        public static int IEnumerableHashCode<T>(IEnumerable<T> items)
+        {
+            if (items == null) return 0;
+
+            var hash = 0;
+
+            var enumerator = items.GetEnumerator();
+            if (enumerator.MoveNext())
+            {
+
+                hash = (hash * 397) ^ (enumerator.Current?.GetHashCode() ?? 0);
+
+                while (enumerator.MoveNext())
+                {
+                    hash = (hash * 397) ^ (enumerator.Current?.GetHashCode() ?? 0);
+                }
+            }
+
+            return hash;
+        }
+
         internal static bool IsBase64String(string value)
         {
 #if NET8_0_OR_GREATER
