@@ -271,38 +271,13 @@ namespace  Confluent.SchemaRegistry
             unchecked
             {
                 var hashCode = SchemaString.GetHashCode();
-                hashCode = (hashCode * 397) ^ (References != null ? GetListHashCode(References) : 0); 
+                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(References);
                 hashCode = (hashCode * 397) ^ (Metadata != null ? Metadata.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (RuleSet != null ? RuleSet.GetHashCode() : 0);
                 return hashCode;
             }
         }
         
-        /// <summary>
-        ///     Returns a hash code for a list of objects.
-        /// </summary>
-        /// <param name="list">
-        ///     The list to get the hash code for.
-        /// </param> 
-        /// <returns>
-        ///     An integer that specifies a hash value for this instance.
-        /// </returns>
-        private int GetListHashCode<T>(IList<T> list)
-        {
-            if (list == null || list.Count == 0)
-                return 0;
-
-            unchecked
-            {
-                int hash = 0;
-                foreach (var item in list)
-                {
-                    hash += item?.GetHashCode() ?? 0;
-                }
-                return hash;
-            }
-        }
-
         /// <summary>
         ///     Compares this instance with another instance of this object type and indicates whether
         ///     this instance precedes, follows, or appears in the same position in the sort order

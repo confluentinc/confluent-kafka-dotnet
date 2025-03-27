@@ -60,7 +60,7 @@ namespace Confluent.SchemaRegistry.Encryption
         {
             unchecked
             {
-                var hashCode = (KmsProps != null ? KmsProps.GetHashCode() : 0);
+                var hashCode = Utils.IEnumerableHashCode(KmsProps);
                 hashCode = (hashCode * 397) ^ (Doc != null ? Doc.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ Shared.GetHashCode();
                 return hashCode;
