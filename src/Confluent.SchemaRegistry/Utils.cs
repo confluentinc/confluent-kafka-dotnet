@@ -14,11 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Confluent.Kafka;
 
 #if NET8_0_OR_GREATER
 using System.Buffers.Text;
@@ -80,15 +77,17 @@ namespace Confluent.SchemaRegistry
 
             var hash = 0;
 
-            var enumerator = items.GetEnumerator();
-            if (enumerator.MoveNext())
+            using (var enumerator = items.GetEnumerator())
             {
-
-                hash = (hash * 397) ^ (enumerator.Current?.GetHashCode() ?? 0);
-
-                while (enumerator.MoveNext())
+                if (enumerator.MoveNext())
                 {
-                    hash = (hash * 397) ^ (enumerator.Current?.GetHashCode() ?? 0);
+
+                    hash = enumerator.Current?.GetHashCode() ?? 0;
+
+                    while (enumerator.MoveNext())
+                    {
+                        hash = (hash * 397) ^ (enumerator.Current?.GetHashCode() ?? 0);
+                    }
                 }
             }
 
