@@ -34,7 +34,7 @@ namespace Confluent.SchemaRegistry
         private readonly int retriesWaitMs;
         private readonly int retriesMaxWaitMs;
         private readonly HttpClient httpClient;
-        private BearerToken token;
+        private volatile BearerToken token;
         private const float tokenExpiryThreshold = 0.8f;
 
         public BearerAuthenticationHeaderValueProvider(
