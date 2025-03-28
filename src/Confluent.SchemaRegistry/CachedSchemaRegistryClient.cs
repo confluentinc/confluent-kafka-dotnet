@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Net.Http;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Threading;
@@ -44,9 +45,9 @@ namespace Confluent.SchemaRegistry
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, Schema, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int, bool)" />
+    ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool, bool)" />
     ///
     ///     The following method calls do NOT cache results:
-    ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetLatestSchemaAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetAllSubjectsAsync" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSubjectVersionsAsync(string)" />
@@ -73,6 +74,9 @@ namespace Confluent.SchemaRegistry
 
         private readonly Dictionary<string /*subject*/, Dictionary<int, RegisteredSchema>> schemaByVersionBySubject =
             new Dictionary<string, Dictionary<int, RegisteredSchema>>();
+        
+        private readonly Dictionary<string /*subject*/, Dictionary<Schema, RegisteredSchema>> registeredSchemaBySchemaBySubject =
+            new Dictionary<string, Dictionary<Schema, RegisteredSchema>>();
 
         private readonly MemoryCache latestVersionBySubject = new MemoryCache(new MemoryCacheOptions());
         
@@ -326,6 +330,12 @@ namespace Confluent.SchemaRegistry
 
                     username = userPass[0];
                     password = userPass[1];
+                    if (authenticationHeaderValueProvider != null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
+                    }
+                    authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
                 }
             }
             else if (basicAuthSource == "SASL_INHERIT")
@@ -352,6 +362,12 @@ namespace Confluent.SchemaRegistry
 
                 username = saslUsername.Value;
                 password = saslPassword.Value;
+                if (authenticationHeaderValueProvider != null)
+                {
+                    throw new ArgumentException(
+                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
+                }
+                authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
             }
             else
             {
@@ -359,31 +375,97 @@ namespace Confluent.SchemaRegistry
                     $"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
 
-            if (authenticationHeaderValueProvider != null)
+            var bearerAuthSource = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource).Value ?? "";
+
+            if (bearerAuthSource != "" && basicAuthSource != "")
             {
-                if (username != null || password != null)
+                throw new ArgumentException(
+                    $"Invalid authentication header value provider configuration: Cannot specify both basic and bearer authentication");
+            }
+
+            string logicalCluster = null;
+            string identityPoolId = null;
+            string bearerToken = null;
+            string clientId = null;
+            string clientSecret = null;
+            string scope = null;
+            string tokenEndpointUrl = null;
+
+            if (bearerAuthSource == "STATIC_TOKEN" || bearerAuthSource == "OAUTHBEARER")
+            {
+                if (authenticationHeaderValueProvider != null)
                 {
                     throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
+                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and bearer authentication");
+                }
+                logicalCluster = config.FirstOrDefault(prop =>
+                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster).Value;
+
+                identityPoolId = config.FirstOrDefault(prop =>
+                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId).Value;
+                if (logicalCluster == null || identityPoolId == null)
+                {
+                    throw new ArgumentException(
+                        $"Invalid bearer authentication provider configuration: Logical cluster and identity pool ID must be specified");
                 }
             }
-            else
-            {
-                if (username != null && password == null)
-                {
-                    throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Basic authentication username specified, but password not specified");
-                }
 
-                if (username == null && password != null)
-                {
+            switch (bearerAuthSource)
+            {
+                case "STATIC_TOKEN":
+                    bearerToken = config.FirstOrDefault(prop =>
+                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken).Value;
+
+                    if (bearerToken == null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Bearer authentication token not specified");
+                    }
+                    authenticationHeaderValueProvider = new StaticBearerAuthenticationHeaderValueProvider(bearerToken, logicalCluster, identityPoolId);
+                    break;
+
+                case "OAUTHBEARER":
+                    clientId = config.FirstOrDefault(prop =>
+                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId).Value;
+
+                    clientSecret = config.FirstOrDefault(prop =>
+                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret).Value;
+
+                    scope = config.FirstOrDefault(prop =>
+                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope).Value;
+                    
+                    tokenEndpointUrl = config.FirstOrDefault(prop =>
+                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl).Value;
+                    
+                    if (tokenEndpointUrl == null || clientId == null || clientSecret == null || scope == null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid bearer authentication provider configuration: Token endpoint URL, client ID, client secret, and scope must be specified");
+                    }
+                    authenticationHeaderValueProvider = new BearerAuthenticationHeaderValueProvider(
+                        new HttpClient(), clientId, clientSecret, scope, tokenEndpointUrl, logicalCluster, identityPoolId, maxRetries, retriesWaitMs, retriesMaxWaitMs);
+                    break;
+
+                case "CUSTOM":
+                    if (authenticationHeaderValueProvider == null)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Custom authentication provider must be specified");
+                    }
+                    if(!(authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider))
+                    {
+                        throw new ArgumentException(
+                            $"Invalid authentication header value provider configuration: Custom authentication provider must implement IAuthenticationBearerHeaderValueProvider");
+                    }
+                    break;
+
+                case "":
+                    break;
+
+                default:
                     throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Basic authentication password specified, but username not specified");
-                }
-                else if (username != null && password != null)
-                {
-                    authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
-                }
+                        $"Invalid value '{bearerAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource}'");
             }
 
             foreach (var property in config)
@@ -402,6 +484,14 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
@@ -476,6 +566,7 @@ namespace Confluent.SchemaRegistry
                 this.schemaById.Clear();
                 this.idBySchemaBySubject.Clear();
                 this.schemaByVersionBySubject.Clear();
+                this.registeredSchemaBySchemaBySubject.Clear();
                 return true;
             }
 
@@ -609,10 +700,31 @@ namespace Confluent.SchemaRegistry
 
 
         /// <inheritdoc/>
-        public Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas,
+        public async Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas,
             bool normalize = false)
-            => restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas, normalize);
+        {
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
+            {
+                if (!registeredSchemaBySchemaBySubject.TryGetValue(subject, out var registeredSchemaBySchema))
+                {
+                    CleanCacheIfFull();
+                    registeredSchemaBySchema = new Dictionary<Schema, RegisteredSchema>();
+                    registeredSchemaBySchemaBySubject[subject] = registeredSchemaBySchema;
+                }
+                if (!registeredSchemaBySchema.TryGetValue(schema, out var registeredSchema))
+                {
+                    registeredSchema = await restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas, normalize).ConfigureAwait(continueOnCapturedContext: false);
+                    registeredSchemaBySchema[schema] = registeredSchema;
+                }
 
+                return registeredSchema;
+            }
+            finally
+            {
+                cacheMutex.Release();
+            }
+        }
 
         /// <inheritdoc/>
         public async Task<Schema> GetSchemaAsync(int id, string format = null)
@@ -807,6 +919,7 @@ namespace Confluent.SchemaRegistry
             schemaById.Clear();
             idBySchemaBySubject.Clear();
             schemaByVersionBySubject.Clear();
+            registeredSchemaBySchemaBySubject.Clear();
             latestVersionBySubject.Clear();
             latestWithMetadataBySubject.Clear();
         }
