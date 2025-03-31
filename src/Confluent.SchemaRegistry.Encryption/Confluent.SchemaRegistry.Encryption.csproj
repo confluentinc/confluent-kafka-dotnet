@@ -15,7 +15,7 @@
         <PackageId>Confluent.SchemaRegistry.Encryption</PackageId>
         <Title>Confluent.SchemaRegistry.Encryption</Title>
         <AssemblyName>Confluent.SchemaRegistry.Encryption</AssemblyName>
-        <VersionPrefix>2.8.0</VersionPrefix>
+        <VersionPrefix>2.9.0rc</VersionPrefix>
         <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
