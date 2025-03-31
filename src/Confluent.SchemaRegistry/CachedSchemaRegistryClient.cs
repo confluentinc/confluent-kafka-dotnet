@@ -58,6 +58,8 @@ namespace Confluent.SchemaRegistry
     /// </summary>
     public class CachedSchemaRegistryClient : ISchemaRegistryClient
     {
+        private record struct SchemaId(int Id, string Format);
+        
         private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
 
         private IEnumerable<KeyValuePair<string, string>> config;
@@ -67,7 +69,7 @@ namespace Confluent.SchemaRegistry
         private IRestService restService;
         private int identityMapCapacity;
         private int latestCacheTtlSecs;
-        private readonly ConcurrentDictionary<int, Schema> schemaById = new ConcurrentDictionary<int, Schema>();
+        private readonly ConcurrentDictionary<SchemaId, Schema> schemaById = new ConcurrentDictionary<SchemaId, Schema>();
 
         private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<Schema, int>> idBySchemaBySubject =
             new ConcurrentDictionary<string, ConcurrentDictionary<Schema, int>>();
@@ -632,7 +634,9 @@ namespace Confluent.SchemaRegistry
                     var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true, normalize)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     idBySchema[schema] = registeredSchema.Id;
-                    schemaById[registeredSchema.Id] = registeredSchema.Schema;
+                    
+                    var format = GetSchemaFormat(schema.SchemaString);
+                    schemaById.TryAdd(new SchemaId(registeredSchema.Id, format), registeredSchema.Schema);
                     schemaId = registeredSchema.Id;
                 }
 
@@ -695,25 +699,10 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Check if the given schema string matches a given format name.
         /// </summary>
-        private bool checkSchemaMatchesFormat(string format, string schemaString)
+        private static string GetSchemaFormat(string schemaString)
         {
-            // if a format isn't specified, then assume text is desired.
-            if (format == null)
-            {
-                // If schemaString is not Base64, infer the schemaString format is text.
-                return !Utils.IsBase64String(schemaString);
-            }
-            else
-            {
-                if (format != "serialized")
-                {
-                    throw new ArgumentException($"Invalid schema format was specified: {format}.");
-                }
-                
-                return Utils.IsBase64String(schemaString);
-            }
+            return Utils.IsBase64String(schemaString) ? "serialized" : null;
         }
-
 
         /// <inheritdoc/>
         public async Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas,
@@ -753,7 +742,8 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public async Task<Schema> GetSchemaAsync(int id, string format = null)
         {
-            if (schemaById.TryGetValue(id, out var schema) && checkSchemaMatchesFormat(format, schema.SchemaString))
+            var schemaId = new SchemaId(id, format);
+            if (schemaById.TryGetValue(schemaId, out var schema))
             {
                 return schema;
             }
@@ -761,13 +751,11 @@ namespace Confluent.SchemaRegistry
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.schemaById.TryGetValue(id, out schema) ||
-                    !checkSchemaMatchesFormat(format, schema.SchemaString))
+                if (!this.schemaById.TryGetValue(schemaId, out schema))
                 {
                     CleanCacheIfFull();
-                    schema = (await restService.GetSchemaAsync(id, format)
-                        .ConfigureAwait(continueOnCapturedContext: false));
-                    schemaById[id] = schema;
+                    schema = await restService.GetSchemaAsync(id, format).ConfigureAwait(continueOnCapturedContext: false);
+                    schemaById.TryAdd(schemaId, schema);
                 }
 
                 return schema;
@@ -782,7 +770,8 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public async Task<Schema> GetSchemaBySubjectAndIdAsync(string subject, int id, string format = null)
         {
-            if (this.schemaById.TryGetValue(id, out var schema) && checkSchemaMatchesFormat(format, schema.SchemaString))
+            var schemaId = new SchemaId(id, format);
+            if (this.schemaById.TryGetValue(schemaId, out var schema))
             {
                 return schema;
             }
@@ -790,12 +779,12 @@ namespace Confluent.SchemaRegistry
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.schemaById.TryGetValue(id, out schema) || !checkSchemaMatchesFormat(format, schema.SchemaString))
+                if (!this.schemaById.TryGetValue(schemaId, out schema))
                 {
                     CleanCacheIfFull();
-                    schema = (await restService.GetSchemaBySubjectAndIdAsync(subject, id, format)
-                        .ConfigureAwait(continueOnCapturedContext: false));
-                    schemaById[id] = schema;
+                    schema = await restService.GetSchemaBySubjectAndIdAsync(subject, id, format)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                    schemaById.TryAdd(schemaId, schema);
                 }
 
                 return schema;
@@ -832,7 +821,8 @@ namespace Confluent.SchemaRegistry
                     schema = await restService.GetSchemaAsync(subject, version)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     schemaByVersion[version] = schema;
-                    schemaById[schema.Id] = schema.Schema;
+                    var format = GetSchemaFormat(schema.SchemaString);
+                    schemaById.TryAdd(new SchemaId(schema.Id, format), schema.Schema);
                 }
 
                 return schema;
