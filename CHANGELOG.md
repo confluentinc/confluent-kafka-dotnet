@@ -1,3 +1,19 @@
+# 2.9.0
+
+## Enhancements
+
+* Add utilities to convert decimals from/to Protobuf (#2424)
+* Add client credentials OAuth support (#2426)
+* Add support for passing schema ID during serialization (#2428)  
+* Optimize schema registry client by caching results of LookupSchemaAsync (#2429)
+* Use ConcurrentDictionary as default cache for Schema Registry client (#2433)
+
+## Fixes
+
+* Fix JSON Schema validation to use latest schema if needed (#2406)
+* Support Protobuf oneof fields in Data Contract rules (#2413)
+
+
 # 2.8.0
 
 ## Enhancements
@@ -9,6 +25,7 @@
 * Add AWS AssumeRole support to AWS KMS (#2379)
 
 ## Fixes
+
 * Retrieve version for writer schema when getting migrations (#2358)
 * Add missing JSON Schema validate check (#2372)
 * Ensure different key ids use different client instances (#2374)
