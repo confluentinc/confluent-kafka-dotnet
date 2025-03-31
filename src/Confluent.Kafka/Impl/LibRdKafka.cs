@@ -29,6 +29,9 @@ using System.Reflection;
 #if NET462
 using System.ComponentModel;
 #endif
+#if NET5_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 
 namespace Confluent.Kafka.Impl
@@ -173,7 +176,11 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        static bool SetDelegates(Type nativeMethodsClass)
+        static bool SetDelegates(
+#if NET5_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+#endif
+            Type nativeMethodsClass)
         {
             var methods = nativeMethodsClass.GetRuntimeMethods().ToArray();
 
@@ -673,14 +680,37 @@ namespace Confluent.Kafka.Impl
 
 #endif
 
-        private static bool TrySetDelegates(List<Type> nativeMethodCandidateTypes)
+        private static bool TrySetDelegates(
+#if NET5_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)] 
+#endif
+            Type nativeMethodCandidateType)
         {
-            foreach (var t in nativeMethodCandidateTypes)
+            if (SetDelegates(nativeMethodCandidateType))
             {
-                if (SetDelegates(t))
-                {
-                    return true;
-                }
+                return true;
+            }
+
+            throw new DllNotFoundException("Failed to load the librdkafka native library.");
+        }
+
+        private static bool TrySetDelegates(
+#if NET5_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)] 
+#endif
+            Type nativeMethodCandidateType1,
+#if NET5_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)] 
+#endif
+            Type nativeMethodCandidateType2)
+        {
+            if (SetDelegates(nativeMethodCandidateType1))
+            {
+                return true;
+            }
+            if (SetDelegates(nativeMethodCandidateType2))
+            {
+                return true;
             }
 
             throw new DllNotFoundException("Failed to load the librdkafka native library.");
@@ -698,7 +728,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
-            TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+            TrySetDelegates(typeof(NativeMethods.NativeMethods));
         }
 
         private static void LoadOSXDelegates(string userSpecifiedPath)
@@ -711,7 +741,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
-            TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+            TrySetDelegates(typeof(NativeMethods.NativeMethods));
         }
 
         private static void LoadLinuxDelegates(string userSpecifiedPath)
@@ -723,7 +753,7 @@ namespace Confluent.Kafka.Impl
                     throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
                 }
 
-                TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+                TrySetDelegates(typeof(NativeMethods.NativeMethods));
             }
             else
             {
@@ -732,17 +762,16 @@ namespace Confluent.Kafka.Impl
                 var osName = PlatformApis.GetOSName();
                 if (osName.Equals("alpine", StringComparison.OrdinalIgnoreCase))
                 {
-                    delegates.Add(typeof(NativeMethods.NativeMethods_Alpine));
+                    TrySetDelegates(typeof(NativeMethods.NativeMethods_Alpine));
                 }
                 else
                 {
                     // Try to load first the shared library with GSSAPI linkage 
                     // and then the one without.
-                    delegates.Add(typeof(NativeMethods.NativeMethods));
-                    delegates.Add(typeof(NativeMethods.NativeMethods_Centos8));
+                    TrySetDelegates(
+                        typeof(NativeMethods.NativeMethods),
+                        typeof(NativeMethods.NativeMethods_Centos8));
                 }
-
-                TrySetDelegates(delegates);
             }
         }
 
