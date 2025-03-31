@@ -38,4 +38,9 @@
         <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Include="..\Shared\SetEqualityComparer.cs" Link="Includes/SetEqualityComparer.cs"/>
+        <Compile Include="..\Shared\DictionaryEqualityComparer.cs" Link="Includes/DictionaryEqualityComparer.cs"/>
+    </ItemGroup>    
+
 </Project>

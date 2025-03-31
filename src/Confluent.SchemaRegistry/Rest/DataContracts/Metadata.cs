@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using Confluent.Shared.CollectionUtils;
 
 namespace Confluent.SchemaRegistry
 {
@@ -46,30 +47,56 @@ namespace Confluent.SchemaRegistry
             Sensitive = sensitive;
         }
 
+        /// <inheritdoc />
         public bool Equals(Metadata other)
         {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return Utils.DictEquals(Tags, other.Tags) && Utils.DictEquals(Properties, other.Properties) && 
-                Utils.SetEquals(Sensitive, other.Sensitive);
-        }
-        
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((Metadata)obj);
+            return MetadataEqualityComparer.Instance.Equals(this, other);
         }
 
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Metadata);
+        }
+
+        /// <inheritdoc />
         public override int GetHashCode()
         {
-            unchecked
+            return MetadataEqualityComparer.Instance.GetHashCode(this);
+        }
+        
+        private class MetadataEqualityComparer : IEqualityComparer<Metadata>
+        {
+            private readonly DictionaryEqualityComparer<string, ISet<string>> tagsEqualityComparer = new(new SetEqualityComparer<string>());
+            private readonly DictionaryEqualityComparer<string, string> propertiesEqualityComparer = new();
+            private readonly SetEqualityComparer<string> sensitiveEqualityComparer = new();
+
+            private MetadataEqualityComparer()
             {
-                var hashCode = Utils.IEnumerableHashCode(Tags);
-                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(Properties);
-                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(Sensitive);
-                return hashCode;
+            }
+            
+            public static MetadataEqualityComparer Instance { get; } = new();
+            
+            public bool Equals(Metadata x, Metadata y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null) return false;
+                if (y is null) return false;
+                if (x.GetType() != y.GetType()) return false;
+                if (!tagsEqualityComparer.Equals(x.Tags, y.Tags)) return false;
+                if (!propertiesEqualityComparer.Equals(x.Properties, y.Properties)) return false;
+                if (!sensitiveEqualityComparer.Equals(x.Sensitive, y.Sensitive)) return false;
+                
+                return true;
+            }
+
+            public int GetHashCode(Metadata obj)
+            {
+                var hashCode = new HashCode();
+                hashCode.Add(obj.Tags, tagsEqualityComparer);
+                hashCode.Add(obj.Properties, propertiesEqualityComparer);
+                hashCode.Add(obj.Sensitive, sensitiveEqualityComparer);
+                return hashCode.ToHashCode();
             }
         }
     }

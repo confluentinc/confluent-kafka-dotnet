@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using Confluent.Shared.CollectionUtils;
 
 namespace Confluent.SchemaRegistry
 {
@@ -88,41 +89,70 @@ namespace Confluent.SchemaRegistry
             Disabled = disabled;
         }
 
+        /// <inheritdoc />
         public bool Equals(Rule other)
         {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return Name == other.Name && Doc == other.Doc && Kind == other.Kind && Mode == other.Mode &&
-                   Type == other.Type && Utils.SetEquals(Tags, other.Tags) && 
-                   Utils.DictEquals(Params, other.Params) && Expr == other.Expr && 
-                   OnSuccess == other.OnSuccess && OnFailure == other.OnFailure &&
-                   Disabled == other.Disabled;
+            return RuleEqualityComparer.Instance.Equals(this, other);
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((Rule)obj);
+            return Equals(obj as Rule);
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
-            unchecked
+            return RuleEqualityComparer.Instance.GetHashCode(this);
+        }
+        
+        private class RuleEqualityComparer : IEqualityComparer<Rule>
+        {
+            private readonly DictionaryEqualityComparer<string, string> paramsEqualityComparer = new();
+            private readonly SetEqualityComparer<string> tagsEqualityComparer = new();
+            
+            private RuleEqualityComparer()
             {
-                var hashCode = (Name != null ? Name.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Doc != null ? Doc.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (int)Kind;
-                hashCode = (hashCode * 397) ^ (int)Mode;
-                hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(Tags);
-                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(Params);
-                hashCode = (hashCode * 397) ^ (Expr != null ? Expr.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (OnSuccess != null ? OnSuccess.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (OnFailure != null ? OnFailure.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ Disabled.GetHashCode();
-                return hashCode;
+            }
+            
+            public static RuleEqualityComparer Instance { get; } = new();
+            
+            public bool Equals(Rule x, Rule y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null) return false;
+                if (y is null) return false;
+                if (x.GetType() != y.GetType()) return false;
+                if (x.Name != y.Name) return false;
+                if (x.Doc != y.Doc) return false;
+                if (x.Kind != y.Kind) return false;
+                if (x.Mode != y.Mode) return false;
+                if (x.Type != y.Type) return false;
+                if (!tagsEqualityComparer.Equals(x.Tags, y.Tags)) return false;
+                if (!paramsEqualityComparer.Equals(x.Params, y.Params)) return false;
+                if (x.Expr != y.Expr) return false;
+                if (x.OnSuccess != y.OnSuccess) return false;
+                if (x.OnFailure != y.OnFailure) return false;
+                if (x.Disabled != y.Disabled) return false;
+                return true;
+            }
+
+            public int GetHashCode(Rule obj)
+            {
+                var hashCode = new HashCode();
+                hashCode.Add(obj.Name);
+                hashCode.Add(obj.Doc);
+                hashCode.Add((int) obj.Kind);
+                hashCode.Add((int) obj.Mode);
+                hashCode.Add(obj.Type);
+                hashCode.Add(obj.Tags, tagsEqualityComparer);
+                hashCode.Add(obj.Params, paramsEqualityComparer);
+                hashCode.Add(obj.Expr);
+                hashCode.Add(obj.OnSuccess);
+                hashCode.Add(obj.OnFailure);
+                hashCode.Add(obj.Disabled);
+                return hashCode.ToHashCode();
             }
         }
     }
