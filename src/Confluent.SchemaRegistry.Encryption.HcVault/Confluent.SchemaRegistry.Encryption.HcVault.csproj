@@ -15,7 +15,7 @@
         <PackageId>Confluent.SchemaRegistry.Encryption.HcVault</PackageId>
         <Title>Confluent.SchemaRegistry.Encryption.HcVault</Title>
         <AssemblyName>Confluent.SchemaRegistry.Encryption.HcVault</AssemblyName>
-        <VersionPrefix>2.9.0-RC3</VersionPrefix>
+        <VersionPrefix>2.9.0</VersionPrefix>
         <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
