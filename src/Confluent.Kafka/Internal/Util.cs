@@ -56,6 +56,12 @@ namespace Confluent.Kafka.Internal
             /// </summary>
             public unsafe static string PtrToStringUTF8(IntPtr strPtr)
             {
+                #if NET6_0_OR_GREATER
+
+                return SystemMarshal.PtrToStringUTF8(strPtr);
+
+                #else
+
                 if (strPtr == IntPtr.Zero)
                 {
                     return null;
@@ -67,6 +73,7 @@ namespace Confluent.Kafka.Internal
                 var length = (int)(pTraverse - (byte*)strPtr);
 
                 return Encoding.UTF8.GetString((byte*)strPtr.ToPointer(), length);
+                #endif
             }
 
             public unsafe static string PtrToStringUTF8(IntPtr strPtr, UIntPtr strLength)
