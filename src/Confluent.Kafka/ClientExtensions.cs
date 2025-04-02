@@ -41,6 +41,9 @@ namespace Confluent.Kafka
         /// <seealso cref="OAuthBearerSetTokenFailure"/>
         public static void OAuthBearerSetToken(this IClient client, string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions = null)
         {
+            if (tokenValue == null) throw new System.ArgumentNullException(nameof(tokenValue));
+            if (principalName == null) throw new System.ArgumentNullException(nameof(principalName));
+
             client.Handle.LibrdkafkaHandle.OAuthBearerSetToken(tokenValue, lifetimeMs, principalName, extensions);
         }
 
