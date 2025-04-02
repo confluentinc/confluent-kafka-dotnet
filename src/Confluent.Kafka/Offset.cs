@@ -22,13 +22,13 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     Represents a Kafka partition offset value.
-    /// </summary>  
+    /// </summary>
     /// <remarks>
-    ///     This structure is the same size as a long - 
-    ///     its purpose is to add some syntactical sugar 
+    ///     This structure is the same size as a long -
+    ///     its purpose is to add some syntactical sugar
     ///     related to special values.
     /// </remarks>
-    public struct Offset : IEquatable<Offset>
+    public readonly struct Offset : IEquatable<Offset>
     {
         private const long RD_KAFKA_OFFSET_BEGINNING = -2;
         private const long RD_KAFKA_OFFSET_END = -1;
@@ -38,22 +38,22 @@ namespace Confluent.Kafka
         /// <summary>
         ///     A special value that refers to the beginning of a partition.
         /// </summary>
-        public static readonly Offset Beginning = new Offset(RD_KAFKA_OFFSET_BEGINNING);
+        public static readonly Offset Beginning = new(RD_KAFKA_OFFSET_BEGINNING);
 
         /// <summary>
         ///     A special value that refers to the end of a partition.
         /// </summary>
-        public static readonly Offset End = new Offset(RD_KAFKA_OFFSET_END);
+        public static readonly Offset End = new(RD_KAFKA_OFFSET_END);
 
         /// <summary>
         ///     A special value that refers to the stored offset for a partition.
         /// </summary>
-        public static readonly Offset Stored = new Offset(RD_KAFKA_OFFSET_STORED);
+        public static readonly Offset Stored = new(RD_KAFKA_OFFSET_STORED);
 
         /// <summary>
         ///     A special value that refers to an invalid, unassigned or default partition offset.
         /// </summary>
-        public static readonly Offset Unset = new Offset(RD_KAFKA_OFFSET_INVALID);
+        public static readonly Offset Unset = new(RD_KAFKA_OFFSET_INVALID);
 
         /// <summary>
         ///     Initializes a new instance of the Offset structure.
@@ -72,7 +72,7 @@ namespace Confluent.Kafka
         public long Value { get; }
 
         /// <summary>
-        ///     Gets whether or not this is one of the special 
+        ///     Gets whether or not this is one of the special
         ///     offset values.
         /// </summary>
         public bool IsSpecial
@@ -273,19 +273,14 @@ namespace Confluent.Kafka
         /// </returns>
         public override string ToString()
         {
-            switch (Value)
+            return Value switch
             {
-                case RD_KAFKA_OFFSET_BEGINNING:
-                    return $"Beginning [{RD_KAFKA_OFFSET_BEGINNING}]";
-                case RD_KAFKA_OFFSET_END:
-                    return $"End [{RD_KAFKA_OFFSET_END}]";
-                case RD_KAFKA_OFFSET_STORED:
-                    return $"Stored [{RD_KAFKA_OFFSET_STORED}]";
-                case RD_KAFKA_OFFSET_INVALID:
-                    return $"Unset [{RD_KAFKA_OFFSET_INVALID}]";
-                default:
-                    return Value.ToString();
-            }
+                RD_KAFKA_OFFSET_BEGINNING => $"Beginning [{RD_KAFKA_OFFSET_BEGINNING}]",
+                RD_KAFKA_OFFSET_END => $"End [{RD_KAFKA_OFFSET_END}]",
+                RD_KAFKA_OFFSET_STORED => $"Stored [{RD_KAFKA_OFFSET_STORED}]",
+                RD_KAFKA_OFFSET_INVALID => $"Unset [{RD_KAFKA_OFFSET_INVALID}]",
+                _ => Value.ToString(),
+            };
         }
     }
 }
