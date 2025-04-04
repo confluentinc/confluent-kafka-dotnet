@@ -50,6 +50,11 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     Default
         /// </summary>
-        DefaultConfig = 5
+        DefaultConfig = 5,
+
+        /// <summary>
+        ///     GROUP
+        /// </summary>
+        GroupConfig = 8
     };
 }
