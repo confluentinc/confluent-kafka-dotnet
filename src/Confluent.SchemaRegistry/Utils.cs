@@ -39,19 +39,6 @@ namespace Confluent.SchemaRegistry
             }
             return true;
         }
-        
-        public static bool DictEquals(IDictionary<string, ISet<string>> a, IDictionary<string, ISet<string>> b)
-        {
-            if (ReferenceEquals(a, b)) return true;
-            if (a == null || b == null) return false;
-            if (a.Count != b.Count) return false;
-            foreach (var kvp in a)
-            {
-                if (!b.TryGetValue(kvp.Key, out var value)) return false;
-                if (!SetEquals(value, kvp.Value)) return false;
-            }
-            return true;
-        }
 
         public static bool SetEquals<T>(ISet<T> a, ISet<T> b)
         {
