@@ -341,12 +341,14 @@ namespace Confluent.SchemaRegistry
         /// </remarks>
         protected async Task<T> RequestAsync<T>(string endPoint, HttpMethod method, params object[] jsonBody)
         {
-            var response = await ExecuteOnOneInstanceAsync(() => CreateRequest(endPoint, method, jsonBody))
-                .ConfigureAwait(continueOnCapturedContext: false);
-            string responseJson =
-                await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false);
-            T t = JObject.Parse(responseJson).ToObject<T>(JsonSerializer.Create());
-            return t;
+            using (var response = await ExecuteOnOneInstanceAsync(() => CreateRequest(endPoint, method, jsonBody))
+                       .ConfigureAwait(continueOnCapturedContext: false))
+            {
+                string responseJson =
+                    await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false);
+                T t = JObject.Parse(responseJson).ToObject<T>(JsonSerializer.Create());
+                return t;
+            }
         }
 
         /// <remarks>
@@ -354,11 +356,13 @@ namespace Confluent.SchemaRegistry
         /// </remarks>
         protected async Task<List<T>> RequestListOfAsync<T>(string endPoint, HttpMethod method, params object[] jsonBody)
         {
-            var response = await ExecuteOnOneInstanceAsync(() => CreateRequest(endPoint, method, jsonBody))
-                .ConfigureAwait(continueOnCapturedContext: false);
-            return JArray.Parse(
-                    await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false))
-                .ToObject<List<T>>(JsonSerializer.Create());
+            using (var response = await ExecuteOnOneInstanceAsync(() => CreateRequest(endPoint, method, jsonBody))
+                       .ConfigureAwait(continueOnCapturedContext: false))
+            {
+                return JArray.Parse(
+                        await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false))
+                    .ToObject<List<T>>(JsonSerializer.Create());
+            }
         }
 
         private async Task<HttpRequestMessage> CreateRequest(string endPoint, HttpMethod method, params object[] jsonBody)
