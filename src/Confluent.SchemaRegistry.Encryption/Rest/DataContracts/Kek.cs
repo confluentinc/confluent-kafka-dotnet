@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using Confluent.Shared.CollectionUtils;
 
 namespace Confluent.SchemaRegistry.Encryption
 {
@@ -64,39 +65,72 @@ namespace Confluent.SchemaRegistry.Encryption
         /// </summary>
         [DataMember(Name = "deleted")]
         public bool Deleted { get; set; }
-        
+
+        /// <inheritdoc />
         public bool Equals(Kek other)
         {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return Name == other.Name && KmsType == other.KmsType && 
-                   KmsKeyId == other.KmsKeyId && 
-                   Utils.DictEquals(KmsProps, other.KmsProps) && 
-                   Doc == other.Doc && Shared == other.Shared && Deleted == other.Deleted;
+            return KekEqualityComparer.Instance.Equals(this, other);
         }
-        
+
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((Kek)obj);
+            return Equals(obj as Kek);
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
-            unchecked
-            {
-                var hashCode = (Name != null ? Name.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (KmsType != null ? KmsType.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (KmsKeyId != null ? KmsKeyId.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(KmsProps);
-                hashCode = (hashCode * 397) ^ (Doc != null ? Doc.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ Shared.GetHashCode();
-                hashCode = (hashCode * 397) ^ Deleted.GetHashCode();
-                return hashCode;
-            }
+            return KekEqualityComparer.Instance.GetHashCode(this);
         }
 
+        private class KekEqualityComparer : IEqualityComparer<Kek>
+        {
+            private readonly DictionaryEqualityComparer<string, string> kmsPropsEqualityComparer = new();
+
+            private KekEqualityComparer()
+            {
+            }
+            
+            public static KekEqualityComparer Instance { get; } = new();
+            
+            public bool Equals(Kek x, Kek y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null) return false;
+                if (y is null) return false;
+                if (x.GetType() != y.GetType()) return false;
+                
+                if (x.Name != y.Name) return false;
+                if (x.KmsType != y.KmsType) return false;
+                if (x.KmsKeyId != y.KmsKeyId) return false;
+                if (!kmsPropsEqualityComparer.Equals(x.KmsProps, y.KmsProps)) return false;
+                if (x.Doc != y.Doc) return false;
+                if (x.Shared != y.Shared) return false;
+                if (x.Deleted != y.Deleted) return false;
+                
+                return true;
+            }
+
+            public int GetHashCode(Kek obj)
+            {
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                if (obj is null)
+                {
+                    return 0;
+                }
+                
+                var hashCode = new HashCode();
+                hashCode.Add(obj.Name);
+                hashCode.Add(obj.KmsType);
+                hashCode.Add(obj.KmsKeyId);
+                hashCode.Add(obj.KmsProps, kmsPropsEqualityComparer);
+                hashCode.Add(obj.Doc);
+                hashCode.Add(obj.Shared);
+                hashCode.Add(obj.Deleted);
+                
+                return hashCode.ToHashCode();
+            }
+        }
     }
 }

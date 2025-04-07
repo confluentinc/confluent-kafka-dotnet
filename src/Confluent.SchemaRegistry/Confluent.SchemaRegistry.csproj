@@ -29,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup  Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 
@@ -40,6 +41,11 @@
   <ItemGroup>
     <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
     <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\SetEqualityComparer.cs" Link="Includes/SetEqualityComparer.cs"/>
+    <Compile Include="..\Shared\DictionaryEqualityComparer.cs" Link="Includes/DictionaryEqualityComparer.cs"/>
   </ItemGroup>
 
 </Project>
