@@ -165,9 +165,8 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await AvroUtils.Transform(ctx, writerSchema, message, transform).ConfigureAwait(false);
                     };
-                    data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Write, null,
+                    data = (GenericRecord) await ExecuteRules(isKey, subject, topic, headers, RuleMode.Write, null,
                         latestSchema, data, fieldTransformer)
-                        .ContinueWith(t => (GenericRecord)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 

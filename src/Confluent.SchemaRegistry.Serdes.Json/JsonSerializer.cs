@@ -242,10 +242,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await JsonUtils.Transform(ctx, parsedSchema, "$", message, transform).ConfigureAwait(false);
                     };
-                    value = await ExecuteRules(context.Component == MessageComponentType.Key, subject,
+                    value = (T) await ExecuteRules(context.Component == MessageComponentType.Key, subject,
                             context.Topic, context.Headers, RuleMode.Write, null,
                             latestSchema, value, fieldTransformer)
-                        .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
                 else
