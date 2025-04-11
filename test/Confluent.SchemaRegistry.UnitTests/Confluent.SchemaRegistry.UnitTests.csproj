@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj" />
+    <ProjectReference Include="../../src/Confluent.SchemaRegistry.Encryption/Confluent.SchemaRegistry.Encryption.csproj" />
   </ItemGroup>
 
 </Project>
