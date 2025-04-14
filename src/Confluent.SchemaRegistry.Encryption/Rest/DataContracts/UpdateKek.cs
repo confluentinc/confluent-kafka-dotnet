@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using Confluent.Shared.CollectionUtils;
 
 namespace Confluent.SchemaRegistry.Encryption
 {
@@ -41,29 +42,56 @@ namespace Confluent.SchemaRegistry.Encryption
         [DataMember(Name = "shared")]
         public bool Shared { get; set; }
 
+        /// <inheritdoc />
         public bool Equals(UpdateKek other)
         {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return Utils.DictEquals(KmsProps, other.KmsProps) && Doc == other.Doc && Shared == other.Shared;
+            return UpdateKekEqualityComparer.Instance.Equals(this, other);
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((UpdateKek)obj);
+            return Equals(obj as UpdateKek);
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
-            unchecked
+            return UpdateKekEqualityComparer.Instance.GetHashCode(this);
+        }
+        
+        private class UpdateKekEqualityComparer : IEqualityComparer<UpdateKek>
+        {
+            private readonly DictionaryEqualityComparer<string, string> kmsPropsEqualityComparer = new();
+
+            private UpdateKekEqualityComparer()
             {
-                var hashCode = Utils.IEnumerableHashCode(KmsProps);
-                hashCode = (hashCode * 397) ^ (Doc != null ? Doc.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ Shared.GetHashCode();
-                return hashCode;
+            }
+            
+            public static UpdateKekEqualityComparer Instance { get; } = new();
+            
+            public bool Equals(UpdateKek x, UpdateKek y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null) return false;
+                if (y is null) return false;
+                if (x.GetType() != y.GetType()) return false;
+                
+                if (!kmsPropsEqualityComparer.Equals(x.KmsProps, y.KmsProps)) return false;
+                if (x.Doc != y.Doc) return false;
+                if (x.Shared != y.Shared) return false;
+                
+                return true;
+            }
+
+            public int GetHashCode(UpdateKek obj)
+            {
+                var hashCode = new HashCode();
+                hashCode.Add(obj.KmsProps, kmsPropsEqualityComparer);
+                hashCode.Add(obj.Doc);
+                hashCode.Add(obj.Shared);
+                
+                return hashCode.ToHashCode();
             }
         }
     }
