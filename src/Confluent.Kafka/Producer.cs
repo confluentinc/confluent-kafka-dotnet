@@ -552,7 +552,7 @@ namespace Confluent.Kafka
                     valueSerializer = (ISerializer<TValue>)serializer;
                     this.serializeValue = (k, ctx) => valueSerializer.Serialize(k, ctx)?.AsMemory();
                 }
-                else if (memorySerializeFuncs.TryGetValue(typeof(TKey), out object serialize))
+                else if (memorySerializeFuncs.TryGetValue(typeof(TValue), out object serialize))
                 {
                     this.serializeValue = (Func<TValue, SerializationContext, ReadOnlyMemory<byte>?>)serialize;
                 }
