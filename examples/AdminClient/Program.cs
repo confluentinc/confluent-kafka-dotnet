@@ -804,7 +804,7 @@ namespace Confluent.Kafka.Examples
                             Console.WriteLine($"      TopicPartitions: [{topicPartitions}]");
                             Console.WriteLine($"      TargetAssignment:");
                             var targetTopicPartitions = "";
-                            if (m.TargetAssignment.TopicPartitions != null)
+                            if (m.TargetAssignment != null && m.TargetAssignment.TopicPartitions != null)
                             {
                                 targetTopicPartitions = String.Join(", ", m.TargetAssignment.TopicPartitions.Select(tp => tp.ToString()));
                             }

@@ -436,7 +436,6 @@ namespace Confluent.Kafka.Impl
             _MemberDescription_assignment = (_MemberDescription_assignment_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_assignment").CreateDelegate(typeof (_MemberDescription_assignment_delegate));
             _MemberAssignment_partitions = (_MemberAssignment_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_MemberAssignment_partitions").CreateDelegate(typeof (_MemberAssignment_partitions_delegate));
             _MemberDescription_target_assignment = (_MemberDescription_target_assignment_delegate)methods.Single(m => m.Name == "rd_kafka_MemberDescription_target_assignment").CreateDelegate(typeof (_MemberDescription_target_assignment_delegate));
-            _MemberAssignment_target_partitions = (_MemberAssignment_target_partitions_delegate)methods.Single(m => m.Name == "rd_kafka_MemberAssignment_target_partitions").CreateDelegate(typeof (_MemberAssignment_target_partitions_delegate));
             _Node_id = (_Node_id_delegate)methods.Single(m => m.Name == "rd_kafka_Node_id").CreateDelegate(typeof (_Node_id_delegate));
             _Node_host = (_Node_host_delegate)methods.Single(m => m.Name == "rd_kafka_Node_host").CreateDelegate(typeof (_Node_host_delegate));
             _Node_port = (_Node_port_delegate)methods.Single(m => m.Name == "rd_kafka_Node_port").CreateDelegate(typeof (_Node_port_delegate));
@@ -2016,11 +2015,6 @@ namespace Confluent.Kafka.Impl
          private static _MemberDescription_target_assignment_delegate _MemberDescription_target_assignment;
          internal static IntPtr MemberDescription_target_assignment(IntPtr member)
             => _MemberDescription_target_assignment(member);
-
-         private delegate IntPtr _MemberAssignment_target_partitions_delegate(IntPtr assignment);
-         private static _MemberAssignment_target_partitions_delegate _MemberAssignment_target_partitions;
-         internal static IntPtr MemberAssignment_target_partitions(IntPtr assignment)
-            => _MemberAssignment_target_partitions(assignment);
 
         private delegate IntPtr _Node_id_delegate(IntPtr node);
         private static _Node_id_delegate _Node_id;
