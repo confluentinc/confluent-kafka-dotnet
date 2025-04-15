@@ -342,6 +342,18 @@ namespace Confluent.Kafka
                     {
                         member.Assignment.TopicPartitions = SafeKafkaHandle.GetTopicPartitionList(topicPartitionPtr);
                     }
+                    var targetAssignmentPtr = Librdkafka.MemberDescription_target_assignment(memberPtr);
+                    var targetTopicPartitionPtr = IntPtr.Zero;
+                    if (targetAssignmentPtr != IntPtr.Zero)
+                    {
+                        targetTopicPartitionPtr = Librdkafka.MemberAssignment_topic_partitions(targetAssignmentPtr);
+                    }
+                    
+                    member.TargetAssignment = new MemberAssignment();
+                    if (targetTopicPartitionPtr != IntPtr.Zero)
+                    {
+                        member.TargetAssignment.TopicPartitions = SafeKafkaHandle.GetTopicPartitionList(targetTopicPartitionPtr);
+                    }
                     members.Add(member);
                 }
 
@@ -362,6 +374,8 @@ namespace Confluent.Kafka
                         PtrToStringUTF8(Librdkafka.ConsumerGroupDescription_partition_assignor(groupPtr)),
                     State =
                         Librdkafka.ConsumerGroupDescription_state(groupPtr),
+                    Type = 
+                        Librdkafka.ConsumerGroupDescription_type(groupPtr),
                     Coordinator = coordinator,
                     Members = members,
                     AuthorizedOperations = authorizedOperations,
