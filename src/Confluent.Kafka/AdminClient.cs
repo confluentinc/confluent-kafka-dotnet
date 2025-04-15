@@ -343,7 +343,12 @@ namespace Confluent.Kafka
                         member.Assignment.TopicPartitions = SafeKafkaHandle.GetTopicPartitionList(topicPartitionPtr);
                     }
                     var targetAssignmentPtr = Librdkafka.MemberDescription_target_assignment(memberPtr);
-                    var targetTopicPartitionPtr = Librdkafka.MemberAssignment_target_partitions(targetAssignmentPtr);
+                    var targetTopicPartitionPtr = IntPtr.Zero;
+                    if (targetAssignmentPtr != IntPtr.Zero)
+                    {
+                        targetTopicPartitionPtr = Librdkafka.MemberAssignment_topic_partitions(targetAssignmentPtr);
+                    }
+                    
                     member.TargetAssignment = new MemberAssignment();
                     if (targetTopicPartitionPtr != IntPtr.Zero)
                     {
