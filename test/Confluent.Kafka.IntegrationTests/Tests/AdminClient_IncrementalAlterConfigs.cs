@@ -19,6 +19,7 @@ using System.Threading;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Xunit;
+using Confluent.Kafka.TestsCommon;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -90,7 +91,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
                 Assert.Equal("delete,compact", describeConfigsResult[0].Entries["cleanup.policy"].Value);
 
-                // 4. test ValidateOnly = true does not update config entry.
+                // 5. test ValidateOnly = true does not update config entry.
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
                 { 
                     { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "20002" , IncrementalOperation = AlterConfigOpType.Set } } } 
@@ -100,7 +101,7 @@ namespace Confluent.Kafka.IntegrationTests
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
                 Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
 
-                // 5. test updating broker resource. 
+                // 6. test updating broker resource. 
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
                 {
                     { 
@@ -110,7 +111,7 @@ namespace Confluent.Kafka.IntegrationTests
                 };
                 adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
                 
-                // 6. test updating more than one resource.
+                // 7. test updating more than one resource.
                 var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
                 {
@@ -123,6 +124,28 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(2, describeConfigsResult.Count);
                 Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
                 Assert.Equal("333", describeConfigsResult[1].Entries["flush.ms"].Value);
+
+                if(!TestConsumerGroupProtocol.IsClassic()) {
+                    // 8. test updating ResourceType.Group
+                    string groupName = Guid.NewGuid().ToString();
+                    LogToFile($"Testing IncrementalAlterConfigs for consumer group {groupName}");
+                    var groupConfigResource = new ConfigResource { Name = groupName, Type = ResourceType.Group };
+                    var groupToUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
+                    {
+                        {
+                            groupConfigResource,
+                            new List<ConfigEntry> {
+                                new ConfigEntry { Name = "consumer.session.timeout.ms", Value = "50000", IncrementalOperation = AlterConfigOpType.Set }
+                            }
+                        }
+                    };
+                    adminClient.IncrementalAlterConfigsAsync(groupToUpdate).Wait();
+                    Thread.Sleep(TimeSpan.FromMilliseconds(200));
+                    var describeGroupConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { groupConfigResource }).Result;
+                    Assert.Single(describeGroupConfigsResult);
+                    Assert.Equal("50000", describeGroupConfigsResult[0].Entries["consumer.session.timeout.ms"].Value);
+                    LogToFile($"Successfully updated consumer.group {groupName} config");
+                }
             }
 
             Assert.Equal(0, Library.HandleCount);
