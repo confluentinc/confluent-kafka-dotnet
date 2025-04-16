@@ -15,9 +15,9 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
+using System.Threading;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -29,8 +29,8 @@ namespace Confluent.Kafka.IntegrationTests
         {
             if (!TestConsumerGroupProtocol.IsClassic())
             {
-                LogToFile("KIP 848 Admin operations changes still aren't " +
-                          "available");
+                LogToFile("ListGroup not working with KIP-848 " +
+                          "at the moment");
                 return;
             }
 
@@ -48,16 +48,30 @@ namespace Confluent.Kafka.IntegrationTests
             using var topic = new TemporaryTopic(bootstrapServers, 1);
             using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers })
                 .Build();
-            for (var i = 0; i < 10; i++)
+            IConsumer<Ignore, Ignore>[] consumers = new IConsumer<Ignore, Ignore>[10];
+            var i = 0;
+            try
             {
-                using var consumer = new TestConsumerBuilder<Ignore, Ignore>(consumerConfig).Build();
-                
-                consumer.Subscribe(topic.Name);
-                Task.Delay(TimeSpan.FromSeconds(1)).Wait();
-
-                var info = admin.ListGroup(groupId, TimeSpan.FromSeconds(5));
-                Assert.NotNull(info);
-                Assert.Equal(i + 1, info.Members.Count);
+                for (; i < 10; i++)
+                {
+                    consumers[i] = new TestConsumerBuilder<Ignore, Ignore>(
+                        consumerConfig).Build();
+                    consumers[i].Subscribe(topic.Name);
+                    // Ensure it joins the group.
+                    Thread.Sleep(2000);
+                    var info = admin.ListGroup(groupId,
+                        TimeSpan.FromSeconds(2));
+                    Assert.NotNull(info);
+                    Assert.Equal(i + 1, info.Members.Count);
+                }
+            }
+            finally
+            {
+                for (var j = 0; j < i; j++)
+                {
+                    if (consumers[j] != null)
+                        consumers[j].Close();
+                }
             }
             
             LogToFile("end   AdminClient_ListGroups");

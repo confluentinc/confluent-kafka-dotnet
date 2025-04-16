@@ -65,7 +65,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer1.Consume(TimeSpan.FromSeconds(10));
                 
                 cr = consumer2.Consume(TimeSpan.FromSeconds(10));
-                Assert.Equal(1, consumer1.Assignment.Count);
+                Assert.Single(consumer1.Assignment);
 
                 // StoreOffset should throw when attempting to assign to a
                 // partition no longer assigned.

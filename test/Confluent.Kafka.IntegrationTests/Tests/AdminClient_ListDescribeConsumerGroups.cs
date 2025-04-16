@@ -63,13 +63,6 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AdminClient_ListDescribeConsumerGroups(string bootstrapServers)
         {
-            if (!TestConsumerGroupProtocol.IsClassic())
-            {
-                LogToFile("KIP 848 Admin operations changes still aren't " +
-                          "available");
-                return;
-            }
-
             LogToFile("start AdminClient_ListDescribeConsumerGroups");
             var groupID = Guid.NewGuid().ToString();
             var nonExistentGroupID = Guid.NewGuid().ToString();
@@ -102,8 +95,8 @@ namespace Confluent.Kafka.IntegrationTests
                     BootstrapServers = bootstrapServers,
                     SessionTimeoutMs = 6000,
                     PartitionAssignmentStrategy = PartitionAssignmentStrategy.Range,
+                    GroupRemoteAssignor = "range",
                     ClientId = clientID1,
-
                 };
                 var consumer1 = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build();
                 consumer1.Subscribe(new string[] { partitionedTopic });
@@ -179,8 +172,16 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(descResult.ConsumerGroupDescriptions.Where(group => group.GroupId == groupID));
                 groupDesc = descResult.ConsumerGroupDescriptions.Find(group => group.GroupId == groupID);
                 clientIdToToppars = new Dictionary<string, List<TopicPartition>>();
+                
+                // For the "classic" protocol
+                // it is empty, for the "consumer" protocol it's the
+                // default value that we cannot know in advance
+                var nonExistentGroupAssignor = TestConsumerGroupProtocol.IsClassic() ?
+                    "" : groupDesc.PartitionAssignor;
                 checkConsumerGroupDescription(
-                    groupDesc, ConsumerGroupState.Empty, "", groupID, clientIdToToppars);
+                    groupDesc, ConsumerGroupState.Empty,
+                    nonExistentGroupAssignor,
+                    groupID, clientIdToToppars);
             }
 
             Assert.Equal(0, Library.HandleCount);
