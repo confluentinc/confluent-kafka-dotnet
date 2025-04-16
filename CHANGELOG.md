@@ -1,3 +1,10 @@
+# 2.10.0
+
+## Enhancements
+
+* [KIP-848] Group Config is now supported in AlterConfigs, IncrementalAlterConfigs and DescribeConfigs. (#2366)
+
+
 # 2.9.0
 
 ## Enhancements
