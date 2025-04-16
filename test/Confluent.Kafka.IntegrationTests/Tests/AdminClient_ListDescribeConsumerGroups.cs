@@ -129,8 +129,9 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer2.Subscribe(new string[] { partitionedTopic });
 
                 // Wait for rebalance.
-                var state = ConsumerGroupState.PreparingRebalance;
-                while (state != ConsumerGroupState.Stable)
+                while (consumer1.Assignment.Count != 1 ||
+                       consumer2.Assignment.Count != 1 ||
+                       groupDesc.Members.Count != 2)
                 {
                     consumer1.Consume(TimeSpan.FromSeconds(1));
                     consumer2.Consume(TimeSpan.FromSeconds(1));
@@ -140,7 +141,6 @@ namespace Confluent.Kafka.IntegrationTests
                         describeOptionsWithTimeout).Result;
                     Assert.Single(descResult.ConsumerGroupDescriptions.Where(group => group.GroupId == groupID));
                     groupDesc = descResult.ConsumerGroupDescriptions.Find(group => group.GroupId == groupID);
-                    state = groupDesc.State;
                 }
 
                 clientIdToToppars[clientID1] = new List<TopicPartition>() {

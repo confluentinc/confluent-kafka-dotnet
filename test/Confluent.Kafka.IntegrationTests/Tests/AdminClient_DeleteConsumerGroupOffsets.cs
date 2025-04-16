@@ -196,22 +196,27 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(committedOffsets);
                 Assert.Equal(Offset.Unset, committedOffsets[0].Offset);
 
-                // Deleting offset from the topic which has no set offset
-                consumer1.Assign(new List<TopicPartition>() { new TopicPartition(topic2.Name, 0) });
+                // Behavior that works with AK 4.0+ remove when upgrading
+                // The classic integration tests
+                if (!TestConsumerGroupProtocol.IsClassic())
+                {
+                    // Deleting offset from the topic which has no set offset
+                    consumer1.Assign(new List<TopicPartition>() { new TopicPartition(topic2.Name, 0) });
 
-                committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
-                Assert.Single(committedOffsets);
-                Assert.Equal(Offset.Unset, committedOffsets[0].Offset);
+                    committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
+                    Assert.Single(committedOffsets);
+                    Assert.Equal(Offset.Unset, committedOffsets[0].Offset);
 
-                topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic2.Name, 0) };
-                res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
-                Assert.Equal(groupId1, res.Group);
-                Assert.Single(res.Partitions);
-                Assert.Equal(0, res.Partitions[0].Partition.Value);
+                    topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic2.Name, 0) };
+                    res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
+                    Assert.Equal(groupId1, res.Group);
+                    Assert.Single(res.Partitions);
+                    Assert.Equal(0, res.Partitions[0].Partition.Value);
 
-                committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
-                Assert.Single(committedOffsets);
-                Assert.Equal(Offset.Unset, committedOffsets[0].Offset); // offsets are unchaged after the reset
+                    committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
+                    Assert.Single(committedOffsets);
+                    Assert.Equal(Offset.Unset, committedOffsets[0].Offset); // offsets are unchaged after the reset
+                }
 
                 // Resetting offset for only one partiton in a multi partition topic
                 consumer1.Assign(new List<TopicPartition>() { new TopicPartition(topic3.Name, 0), new TopicPartition(topic3.Name, 1) });
