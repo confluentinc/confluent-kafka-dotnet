@@ -112,6 +112,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
 
                 var record = consumer.Consume(TimeSpan.FromMilliseconds(6000));
+                Console.WriteLine($"record: {record.Offset} {firstMsgOffset}");
                 var offset = consumer.Position(new TopicPartition(singlePartitionTopic, 0));
                 Assert.Equal(firstMsgOffset + 6, offset);
                 var co = consumer.Committed(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
