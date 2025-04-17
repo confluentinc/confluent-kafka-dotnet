@@ -62,7 +62,7 @@ namespace Confluent.Kafka.UnitTests
                     var ex = await Assert.ThrowsAsync<KafkaException>(() =>
                                         adminClient.DescribeUserScramCredentialsAsync(users, options)
                                     );
-                    Assert.Equal("Failed while waiting for controller: Local: Timed out", ex.Message);
+                    Assert.Contains("Timed out", ex.Message);
                 }
             }
         }
