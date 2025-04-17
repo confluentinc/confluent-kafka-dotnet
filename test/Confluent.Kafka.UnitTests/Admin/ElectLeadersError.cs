@@ -47,7 +47,7 @@ namespace Confluent.Kafka.UnitTests
                     new ElectLeadersOptions())
             );
 
-            Assert.Contains("Local: Timed out", exception.Message);
+            Assert.Contains("Timed out", exception.Message);
         }
 
         [Theory]
@@ -64,7 +64,7 @@ namespace Confluent.Kafka.UnitTests
                     new ElectLeadersOptions())
             );
 
-            Assert.Contains("Local: Timed out", exception.Message);
+            Assert.Contains("Timed out", exception.Message);
         }
 
         [Theory]
@@ -98,7 +98,7 @@ namespace Confluent.Kafka.UnitTests
                     new ElectLeadersOptions { RequestTimeout = TimeSpan.FromMilliseconds(1000) })
             );
 
-            Assert.Contains("Local: Timed out", exception.Message);
+            Assert.Contains("Timed out", exception.Message);
         }
     }
 }

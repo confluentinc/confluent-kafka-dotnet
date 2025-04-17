@@ -301,7 +301,24 @@ namespace Confluent.Kafka
             }
             catch (Exception e)
             {
-                Unassign();
+                if (kafkaHandle.RebalanceProtocol == "COOPERATIVE")
+                {
+                    if (Assignment.Count > 0)
+                    {
+                        try
+                        {
+                            IncrementalUnassign(Assignment);
+                        }
+                        catch (KafkaException e1)
+                        {
+                            handlerException = e1;
+                        }
+                    }
+                }
+                else
+                {
+                    Unassign();
+                }
                 handlerException = e;
             }
         }
