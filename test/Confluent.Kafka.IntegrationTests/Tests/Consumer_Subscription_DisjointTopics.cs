@@ -162,7 +162,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer5.Consume(TimeSpan.FromSeconds(10));
                 consumer6.Consume(TimeSpan.FromSeconds(10));
 
-                Assert.Equal(0, consumer1.Assignment.Count);
+                Assert.Empty(consumer1.Assignment);
                 // Allow rebalance to complete 
                 consumer1.Subscribe(topic1.Name);
                 consumer1.Consume(TimeSpan.FromSeconds(10));
