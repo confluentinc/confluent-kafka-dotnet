@@ -33,6 +33,13 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_Subscription(string bootstrapServers)
         {
+            if (!TestConsumerGroupProtocol.IsClassic())
+            {
+                LogToFile("KIP 848 does not support " +
+                          "eager assignment");
+                return;
+            }
+
             LogToFile("start Consumer_Subscription");
             
             int N = 2;
@@ -71,6 +78,51 @@ namespace Confluent.Kafka.IntegrationTests
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_Subscription");
+        }
+
+        /// <summary>
+        ///     Basic DeserializingConsumer test (consume mode).
+        ///     Cooperative mode, partitions can't be changed in the
+        ///     assignment handler.
+        /// </summary>
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public void Consumer_Subscription_Cooperative(string bootstrapServers)
+        {
+            LogToFile("start Consumer_Subscription_Cooperative");
+            
+            int N = 2;
+            var firstProduced = Util.ProduceNullStringMessages(bootstrapServers, singlePartitionTopic, 1, N);
+
+            var consumerConfig = new ConsumerConfig
+            {
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky,
+                SessionTimeoutMs = 6000
+            };
+
+            using (var consumer =
+                new TestConsumerBuilder<byte[], byte[]>(consumerConfig)
+                    .SetPartitionsAssignedHandler((c, partitions) =>
+                    {
+                        Assert.Single(partitions);
+                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                        return partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset));
+                    })
+                    .Build())
+            {
+                // Test empty case.
+                Assert.Empty(consumer.Subscription);
+
+                consumer.Subscribe(singlePartitionTopic);
+
+                var r = consumer.Consume(TimeSpan.FromSeconds(10));
+
+                consumer.Close();
+            }
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end Consumer_Subscription_Cooperative");
         }
 
     }
