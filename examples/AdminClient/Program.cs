@@ -790,6 +790,7 @@ namespace Confluent.Kafka.Examples
                         Console.WriteLine($"  IsSimpleConsumerGroup: {group.IsSimpleConsumerGroup}");
                         Console.WriteLine($"  PartitionAssignor: {group.PartitionAssignor}");
                         Console.WriteLine($"  State: {group.State}");
+                        Console.WriteLine($"  Type: {group.Type}");
                         Console.WriteLine($"  Members:");
                         foreach (var m in group.Members)
                         {
@@ -801,6 +802,17 @@ namespace Confluent.Kafka.Examples
                                 topicPartitions = String.Join(", ", m.Assignment.TopicPartitions.Select(tp => tp.ToString()));
                             }
                             Console.WriteLine($"      TopicPartitions: [{topicPartitions}]");
+                            if (m. TargetAssignment != null)
+                            {
+                                Console.WriteLine($"      TargetAssignment:");
+                                var targetTopicPartitions = "";
+                                if (m.TargetAssignment.TopicPartitions != null)
+                                {
+                                    targetTopicPartitions = String.Join(", ", m.TargetAssignment.TopicPartitions.Select(tp => tp.ToString()));
+                                }
+                                Console.WriteLine($"      TopicPartitions: [{targetTopicPartitions}]");
+                            }
+                            
                         }
                         if (includeAuthorizedOperations)
                         {
