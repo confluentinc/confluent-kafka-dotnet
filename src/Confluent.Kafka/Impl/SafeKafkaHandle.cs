@@ -1819,7 +1819,7 @@ namespace Confluent.Kafka.Impl
                 setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
-                if (partitions.Where(tp => tp.Topic == null || tp.Partition == null).Count() > 0)
+                if (partitions.Where(tp => tp.Topic == null).Count() > 0)
                 {
                     throw new ArgumentException("Cannot delete offsets because one or more topics or partitions were specified as null.");
                 }
