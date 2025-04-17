@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using Xunit;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.TestsCommon;
+using System.Threading;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -38,15 +39,14 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AdminClient_ListConsumerGroups(string bootstrapServers)
         {
-            if (TestConsumerGroupProtocol.IsClassic())
-            {
-                LogToFile("Image used for testing Classic protocol doesn't " +
-                    "support ListConsumerGroups type filter still");
-                return;
-            }
-
             var usedType = ConsumerGroupType.Consumer;
             var oppositeType = ConsumerGroupType.Classic;
+            if (TestConsumerGroupProtocol.IsClassic())
+            {
+                usedType = ConsumerGroupType.Classic;
+                oppositeType = ConsumerGroupType.Consumer;
+            }
+
             var listOptionsWithUsed = new ListConsumerGroupsOptions()
             {
                 RequestTimeout = TimeSpan.FromSeconds(30),
@@ -85,6 +85,8 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Subscribe(new string[] { partitionedTopic });
                     // Wait for rebalance.
                     consumer.Consume(TimeSpan.FromSeconds(10));
+
+                    Thread.Sleep(2000);
 
                     // Our consumer group should be present with same group type option
                     var groups = adminClient.ListConsumerGroupsAsync(listOptionsWithUsed).Result;
