@@ -29,8 +29,8 @@ namespace Confluent.Kafka.IntegrationTests
         {
             if (!TestConsumerGroupProtocol.IsClassic())
             {
-                LogToFile("ListGroup not working with KIP-848 " +
-                          "at the moment");
+                LogToFile("ListGroup is deprecated and won't " +
+                          "work with KIP-848");
                 return;
             }
 
