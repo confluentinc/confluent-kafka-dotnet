@@ -32,13 +32,6 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public async void AdminClient_AclOperations(string bootstrapServers)
         {
-            if (!TestConsumerGroupProtocol.IsClassic())
-            {
-                LogToFile("FIXME: These invalid ACLs aren't invalid anymore " +
-                          "with KRaft, check why");
-                return;
-            }
-
             LogToFile("start AdminClient_AclOperations");
 
             var topicName = Guid.NewGuid().ToString();
@@ -46,6 +39,9 @@ namespace Confluent.Kafka.IntegrationTests
             var maxDuration = TimeSpan.FromSeconds(30);
             var noError = new Error(ErrorCode.NoError, "", false);
             var unknownError = new Error(ErrorCode.Unknown, "Unknown broker error", false);
+            var unknownError_4_0 = new Error(ErrorCode.InvalidRequest, "Could not parse "+
+            "principal from `wrong-principal` (no colon is present separating "+
+            "the principal type from the principal name)");
             var noErrorCreateResult = new CreateAclReport
             {
                 Error = noError
@@ -53,6 +49,11 @@ namespace Confluent.Kafka.IntegrationTests
             var unknownErrorCreateResult = new CreateAclReport
             {
                 Error = unknownError
+            };
+            // Error since Apache Kafka 4.0
+            var unknownErrorCreateResult_4_0 = new CreateAclReport
+            {
+                Error = unknownError_4_0
             };
 
             var newACLs = new List<AclBinding>
@@ -261,9 +262,16 @@ namespace Confluent.Kafka.IntegrationTests
                         createAclsOptions
                     )
                 );
-                Assert.Equal(new CreateAclsException(
+                var expectedException = new CreateAclsException(
                     new List<CreateAclReport> { unknownErrorCreateResult }
-                ), createAclsException);
+                );
+                var expectedException_4_0 = new CreateAclsException(
+                    new List<CreateAclReport> { unknownErrorCreateResult_4_0 }
+                );
+                Assert.True(expectedException == createAclsException ||
+                    expectedException_4_0 == createAclsException,
+                    $"Expected exception: {expectedException} or " +
+                    $"{expectedException_4_0}, but got: {createAclsException}");
             }
 
             //  - construction of admin client from a producer handle
@@ -277,9 +285,16 @@ namespace Confluent.Kafka.IntegrationTests
                         createAclsOptions
                     )
                 );
-                Assert.Equal(new CreateAclsException(
+                var expectedException = new CreateAclsException(
                     new List<CreateAclReport> { unknownErrorCreateResult, noErrorCreateResult }
-                ), createAclsException);
+                );
+                var expectedException_4_0 = new CreateAclsException(
+                    new List<CreateAclReport> { unknownErrorCreateResult_4_0, noErrorCreateResult }
+                );
+                Assert.True(expectedException == createAclsException ||
+                    expectedException_4_0 == createAclsException,
+                    $"Expected exception: {expectedException} or " +
+                    $"{expectedException_4_0}, but got: {createAclsException}");
 
                 // DescribeAcls must return the three ACLs
                 var describeAclsResult = await adminClient.DescribeAclsAsync(aclBindingFilters[0], describeAclsOptions);

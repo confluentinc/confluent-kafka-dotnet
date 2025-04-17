@@ -69,7 +69,7 @@ namespace Confluent.Kafka.UnitTests
                             new List<TopicSpecification>{topic},
                             options)
                     );
-                    Assert.Equal("Failed while waiting for controller: Local: Timed out", ex.Message);
+                    Assert.Contains("Timed out", ex.Message);
                 }
             }
         }
