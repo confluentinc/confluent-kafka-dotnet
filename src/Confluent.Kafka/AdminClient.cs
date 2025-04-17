@@ -375,7 +375,7 @@ namespace Confluent.Kafka
                         PtrToStringUTF8(Librdkafka.ConsumerGroupDescription_partition_assignor(groupPtr)),
                     State =
                         Librdkafka.ConsumerGroupDescription_state(groupPtr),
-                    Type = 
+                    GroupType = 
                         Librdkafka.ConsumerGroupDescription_type(groupPtr),
                     Coordinator = coordinator,
                     Members = members,

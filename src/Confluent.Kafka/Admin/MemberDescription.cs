@@ -77,7 +77,12 @@ namespace Confluent.Kafka.Admin
 
             result.Append($"{{\"ClientId\": {ClientId.Quote()}");
             result.Append($", \"GroupInstanceId\": {GroupInstanceId.Quote()}, \"ConsumerId\": {ConsumerId.Quote()}");
-            result.Append($", \"Host\": {Host.Quote()}, \"Assignment\": [{assignment}], \"TargetAssignment\": [{targetAssignment}]}}");
+            result.Append($", \"Host\": {Host.Quote()}, \"Assignment\": [{assignment}]");
+            if (TargetAssignment != null)
+            {
+                result.Append($", \"TargetAssignment\": [{targetAssignment}]");
+            }
+            result.Append("}");
 
             return result.ToString();
         }

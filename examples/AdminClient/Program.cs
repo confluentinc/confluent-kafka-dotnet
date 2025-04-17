@@ -790,7 +790,7 @@ namespace Confluent.Kafka.Examples
                         Console.WriteLine($"  IsSimpleConsumerGroup: {group.IsSimpleConsumerGroup}");
                         Console.WriteLine($"  PartitionAssignor: {group.PartitionAssignor}");
                         Console.WriteLine($"  State: {group.State}");
-                        Console.WriteLine($"  Type: {group.Type}");
+                        Console.WriteLine($"  GroupType: {group.GroupType}");
                         Console.WriteLine($"  Members:");
                         foreach (var m in group.Members)
                         {
