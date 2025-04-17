@@ -49,7 +49,12 @@ namespace Confluent.Kafka.Admin
         ///     Member assignment.
         /// </summary>
         public MemberAssignment Assignment { get; set; }
-        
+
+        /// <summary>
+        ///    Target assignment.
+        /// </summary>
+        public MemberAssignment TargetAssignment { get; set; } = null;
+
         /// <summary>
         ///     Returns a JSON representation of this object.
         /// </summary>
@@ -60,13 +65,24 @@ namespace Confluent.Kafka.Admin
         {
             var result = new StringBuilder();
             var assignment = string.Join(",",
-                Assignment.TopicPartitions.Select(topicPartition => 
+                Assignment.TopicPartitions.Select(topicPartition =>
                     $"{{\"Topic\": {topicPartition.Topic.Quote()}, \"Partition\": {topicPartition.Partition.Value}}}"
                 ).ToList());
-            
+            var targetAssignment = TargetAssignment != null
+                    ? string.Join(",",
+                        TargetAssignment.TopicPartitions.Select(topicPartition =>
+                            $"{{\"Topic\": {topicPartition.Topic.Quote()}, \"Partition\": {topicPartition.Partition.Value}}}"
+                        ).ToList())
+                    : string.Empty;
+
             result.Append($"{{\"ClientId\": {ClientId.Quote()}");
             result.Append($", \"GroupInstanceId\": {GroupInstanceId.Quote()}, \"ConsumerId\": {ConsumerId.Quote()}");
-            result.Append($", \"Host\": {Host.Quote()}, \"Assignment\": [{assignment}]}}");
+            result.Append($", \"Host\": {Host.Quote()}, \"Assignment\": [{assignment}]");
+            if (TargetAssignment != null)
+            {
+                result.Append($", \"TargetAssignment\": [{targetAssignment}]");
+            }
+            result.Append("}");
 
             return result.ToString();
         }

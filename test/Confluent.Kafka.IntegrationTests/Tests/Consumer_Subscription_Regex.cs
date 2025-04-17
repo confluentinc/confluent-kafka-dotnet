@@ -32,16 +32,15 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_Subscription_Regex(string bootstrapServers)
         {
-            if (!TestConsumerGroupProtocol.IsClassic())
-            {
-                LogToFile("KIP 848 subscription still doesn't support " +
-                          "regexes");
-                return;
-            }
-
             LogToFile("start Consumer_Subscription_Regex");
 
             var topicMetadataRefreshPeriodMs = 1000;
+            if (!TestConsumerGroupProtocol.IsClassic())
+            {
+                // KIP-848: regex is resolved by the coordinator
+                // at given intervals
+                topicMetadataRefreshPeriodMs += 10000;
+            }
             var rebalanceWaitMs = 2000;
 
             var consumerConfig = new ConsumerConfig
