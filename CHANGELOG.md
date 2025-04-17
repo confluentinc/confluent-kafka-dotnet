@@ -3,9 +3,6 @@
 ## Enhancements
 
 * References librdkafka.redist 2.10.0. Refer to the [librdkafka v2.10.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.10.0) for more information.
-
-## Enhancements
-
 * [KIP-848] Group Config is now supported in AlterConfigs, IncrementalAlterConfigs and DescribeConfigs. (#2366)
 
 
