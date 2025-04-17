@@ -15,7 +15,7 @@
     <PackageId>Confluent.SchemaRegistry.Serdes.Avro</PackageId>
     <Title>Confluent.SchemaRegistry.Serdes.Avro</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Avro</AssemblyName>
-    <VersionPrefix>2.9.0</VersionPrefix>
+    <VersionPrefix>2.10.0-RC3</VersionPrefix>
     <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

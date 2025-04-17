@@ -26,6 +26,33 @@ public class TestConsumerBuilder<TKey, TValue> : ConsumerBuilder<TKey, TValue>
                 GroupProtocol.Consumer;
         }
 
+        if (consumerConfig.GroupProtocol == GroupProtocol.Consumer)
+        {
+            ISet<string> forbiddenProperties = new HashSet<string>
+            {
+                "partition.assignment.strategy",
+                "session.timeout.ms",
+                "heartbeat.interval.ms",
+                "group.protocol.type"
+            };
+            var filteredConfig = new ConsumerConfig();
+            foreach (var property in consumerConfig)
+            {
+                if (forbiddenProperties.Contains(property.Key))
+                {
+                    Console.WriteLine(
+                        "Skipping setting forbidden configuration property \"" +
+                        property.Key + 
+                        "\" for CONSUMER protocol.");
+                }
+                else
+                {
+                    filteredConfig.Set(property.Key, property.Value);
+                }
+            }
+            consumerConfig = filteredConfig;
+        }
+
         
         return consumerConfig;
     }
