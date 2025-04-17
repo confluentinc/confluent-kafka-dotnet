@@ -125,6 +125,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
                 Assert.Equal("333", describeConfigsResult[1].Entries["flush.ms"].Value);
 
+                // TODO: enable this test for the classic run too, when
+                // Confluent Platform test cluster is upgraded to 8.0.0.
                 if(!TestConsumerGroupProtocol.IsClassic()) {
                     // 8. test updating ResourceType.Group
                     string groupName = Guid.NewGuid().ToString();
