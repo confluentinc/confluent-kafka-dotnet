@@ -34,6 +34,7 @@ namespace Confluent.Kafka.UnitTests
                 IsSimpleConsumerGroup = true,
                 PartitionAssignor = "testAssignor",
                 State = ConsumerGroupState.PreparingRebalance,
+                GroupType = ConsumerGroupType.Classic,
                 Coordinator = null,
                 Members = new List<MemberDescription>
                 {
@@ -59,7 +60,7 @@ namespace Confluent.Kafka.UnitTests
             };
             Assert.Equal(
                 @"{""GroupId"": ""test"", ""Error"": ""NoError"", ""IsSimpleConsumerGroup"": true"+
-                @", ""PartitionAssignor"": ""testAssignor"", ""State"": ""PreparingRebalance"", ""Coordinator"": null" + 
+                @", ""PartitionAssignor"": ""testAssignor"", ""State"": ""PreparingRebalance"", ""GroupType"": ""Classic"", ""Coordinator"": null" + 
                 @", ""Members"": [{""ClientId"": ""client1"", ""GroupInstanceId"": null" + 
                 @", ""ConsumerId"": ""consumer1"", ""Host"": ""localhost"", ""Assignment"": [{""Topic"": ""test1"", ""Partition"": 0}," +
                 @"{""Topic"": ""test1"", ""Partition"": 1}]}], ""AuthorizedOperations"": [""Create""]}",
@@ -73,6 +74,7 @@ namespace Confluent.Kafka.UnitTests
                 IsSimpleConsumerGroup = true,
                 PartitionAssignor = "testAssignor",
                 State = ConsumerGroupState.PreparingRebalance,
+                GroupType = ConsumerGroupType.Classic,
                 Coordinator = new Node
                 {
                     Host = "localhost",
@@ -99,7 +101,7 @@ namespace Confluent.Kafka.UnitTests
             };
             Assert.Equal(
                 @"{""GroupId"": ""test"", ""Error"": ""NoError"", ""IsSimpleConsumerGroup"": true"+
-                @", ""PartitionAssignor"": ""testAssignor"", ""State"": ""PreparingRebalance"", ""Coordinator"": " + 
+                @", ""PartitionAssignor"": ""testAssignor"", ""State"": ""PreparingRebalance"", ""GroupType"": ""Classic"", ""Coordinator"": " + 
                 @"{""Id"": 1, ""Host"": ""localhost"", ""Port"": 9092, ""Rack"": null}" +
                 @", ""Members"": [{""ClientId"": ""client1"", ""GroupInstanceId"": ""groupInstanceId1""" + 
                 @", ""ConsumerId"": ""consumer1"", ""Host"": ""localhost"", ""Assignment"": [" +
