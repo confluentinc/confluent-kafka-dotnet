@@ -802,13 +802,17 @@ namespace Confluent.Kafka.Examples
                                 topicPartitions = String.Join(", ", m.Assignment.TopicPartitions.Select(tp => tp.ToString()));
                             }
                             Console.WriteLine($"      TopicPartitions: [{topicPartitions}]");
-                            Console.WriteLine($"      TargetAssignment:");
-                            var targetTopicPartitions = "";
-                            if (m.TargetAssignment != null && m.TargetAssignment.TopicPartitions != null)
+                            if (m. TargetAssignment != null)
                             {
-                                targetTopicPartitions = String.Join(", ", m.TargetAssignment.TopicPartitions.Select(tp => tp.ToString()));
+                                Console.WriteLine($"      TargetAssignment:");
+                                var targetTopicPartitions = "";
+                                if (m.TargetAssignment.TopicPartitions != null)
+                                {
+                                    targetTopicPartitions = String.Join(", ", m.TargetAssignment.TopicPartitions.Select(tp => tp.ToString()));
+                                }
+                                Console.WriteLine($"      TopicPartitions: [{targetTopicPartitions}]");
                             }
-                            Console.WriteLine($"      TopicPartitions: [{targetTopicPartitions}]");
+                            
                         }
                         if (includeAuthorizedOperations)
                         {
