@@ -41,6 +41,9 @@ namespace Confluent.Kafka.IntegrationTests
             var messages = ProduceMessages(bootstrapServers, singlePartitionTopic, Partition, N);
             var firstMsgOffset = messages[0].Offset;
 
+            // Just a test
+            Thread.Sleep(20000);
+
             var consumerConfig = new ConsumerConfig
             {
                 GroupId = Guid.NewGuid().ToString(),
