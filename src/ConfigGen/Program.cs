@@ -346,10 +346,12 @@ namespace Confluent.Kafka
                 var nullableType = type == "string" ? "string" : type + "?";
 
                 codeText += $"        /// <summary>\n";
+                codeText += $"        /// <![CDATA[\n";
                 codeText += $"        ///     {prop.Description}\n";
                 codeText += $"        ///\n";
                 codeText += $"        ///     default: {(prop.Default == "" ? "''" : prop.Default)}\n";
                 codeText += $"        ///     importance: {prop.Importance}\n";
+                codeText += $"        /// ]]>\n";
                 codeText += $"        /// </summary>\n";
                 codeText += $"        public {nullableType} {ConfigNameToDotnetName(prop.Name)} {{ get {{ return ";
                 switch (type)
