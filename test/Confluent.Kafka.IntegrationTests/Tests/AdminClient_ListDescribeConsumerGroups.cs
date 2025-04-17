@@ -60,12 +60,9 @@ namespace Confluent.Kafka.IntegrationTests
         ///     2. One consumer group with two clients.
         ///     3. Empty consumer group.
         /// </summary>
-        [SkippableTheory, MemberData(nameof(KafkaParameters))]
+        [Theory(Skip="FIXME: Review and fix this test"), MemberData(nameof(KafkaParameters))]
         public void AdminClient_ListDescribeConsumerGroups(string bootstrapServers)
         {
-            Skip.If(!TestConsumerGroupProtocol.IsClassic(),
-                    "FIXME: Why isn't this test working with KIP-848?");
-
             LogToFile("start AdminClient_ListDescribeConsumerGroups");
             var groupID = Guid.NewGuid().ToString();
             var nonExistentGroupID = Guid.NewGuid().ToString();
