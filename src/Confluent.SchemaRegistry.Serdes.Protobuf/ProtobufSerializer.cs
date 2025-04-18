@@ -301,10 +301,10 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await ProtobufUtils.Transform(ctx, fdSet, message, transform).ConfigureAwait(false);
                     };
-                    value = await ExecuteRules(context.Component == MessageComponentType.Key, subject,
+                    value = (T) await ExecuteRules(context.Component == MessageComponentType.Key, subject,
                             context.Topic, context.Headers, RuleMode.Write, null,
                             latestSchema, value, fieldTransformer)
-                        .ContinueWith(t => (T)t.Result).ConfigureAwait(continueOnCapturedContext: false);
+                        .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
                 using (var stream = new MemoryStream(initialBufferSize))
