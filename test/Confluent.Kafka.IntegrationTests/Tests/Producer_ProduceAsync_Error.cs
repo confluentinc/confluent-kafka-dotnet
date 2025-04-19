@@ -106,6 +106,40 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(TimestampType.NotAvailable, dr.Message.Timestamp.Type);
             }
 
+            // byte[] case
+
+            Task<DeliveryResult<ReadOnlyMemory<byte>, Memory<byte>>> drt3;
+            using (var producer = new TestProducerBuilder<ReadOnlyMemory<byte>, Memory<byte>>(producerConfig).Build())
+            {
+                drt3 = producer.ProduceAsync(
+                    new TopicPartition(partitionedTopic, 42),
+                    new Message<ReadOnlyMemory<byte>, Memory<byte>> { Key = new byte[] { 100 }, Value = new byte[] { 101 } });
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
+            Assert.Throws<AggregateException>(() => { drt.Wait(); });
+
+            try
+            {
+                _ = drt3.Result;
+            }
+            catch (AggregateException e)
+            {
+                var inner = e.InnerException;
+                Assert.IsType<ProduceException<ReadOnlyMemory<byte>, Memory<byte>>>(inner);
+                var dr = ((ProduceException<ReadOnlyMemory<byte>, Memory<byte>>)inner).DeliveryResult;
+                var err = ((ProduceException<ReadOnlyMemory<byte>, Memory<byte>>)inner).Error;
+
+                Assert.True(err.IsError);
+                Assert.False(err.IsFatal);
+                Assert.Equal(partitionedTopic, dr.Topic);
+                Assert.Equal(Offset.Unset, dr.Offset);
+                Assert.True(dr.Partition == 42);
+                Assert.Equal(new byte[] { 100 }, dr.Message.Key.ToArray());
+                Assert.Equal(new byte[] { 101 }, dr.Message.Value.ToArray());
+                Assert.Equal(TimestampType.NotAvailable, dr.Message.Timestamp.Type);
+            }
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Error");
         }
