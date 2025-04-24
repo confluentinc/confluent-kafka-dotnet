@@ -62,7 +62,7 @@ namespace Confluent.SchemaRegistry
         {
             get
             {
-                return new Schema(SchemaString, References, SchemaType, Metadata, RuleSet);
+                return new Schema(SchemaString, References ?? new List<SchemaReference>(), SchemaType, Metadata, RuleSet);
             }
         }
 
