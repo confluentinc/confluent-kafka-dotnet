@@ -114,6 +114,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdDeserializer = config.SchemaIdStrategy.Value.ToDeserializer(); }
             if (config.Validate != null) { this.validate = config.Validate.Value; }
         }
 
@@ -193,17 +194,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 JsonSchema readerSchema;
                 T value;
                 IList<Migration> migrations = new List<Migration>();
-                using (var stream = new MemoryStream(array))
-                using (var reader = new BinaryReader(stream))
+                SchemaId writerId = new SchemaId(SchemaType.Json);
+                using (var stream = schemaIdDeserializer.Deserialize(array, context, writerId))
                 {
-                    var magicByte = reader.ReadByte();
-                    if (magicByte != Constants.MagicByte)
-                    {
-                        throw new InvalidDataException($"Expecting message {context.Component.ToString()} with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
-                    }
-
-                    var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
-
                     if (schemaRegistryClient != null)
                     {
                         (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);

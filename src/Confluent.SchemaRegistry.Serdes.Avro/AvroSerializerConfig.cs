@@ -89,6 +89,12 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
             public const string SubjectNameStrategy = "avro.serializer.subject.name.strategy";
+
+            /// <summary>
+            ///     The schema id name strategy to use for serialize the ID/GUID.
+            ///     Possible values: <see cref="Confluent.SchemaRegistry.SchemaIdSerializerStrategy" />
+            /// </summary>
+            public const string SchemaIdStrategy = "avro.serializer.schema.id.strategy";
         }
 
 
@@ -189,7 +195,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <summary>
         ///     Subject name strategy.
-        ///     
+        ///
         ///     default: SubjectNameStrategy.Topic
         /// </summary>
         public SubjectNameStrategy? SubjectNameStrategy
@@ -215,5 +221,33 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+
+        /// <summary>
+        ///     Schema id strategy.
+        ///     
+        ///     default: SchemaIdSerializerStrategy.Prefix
+        /// </summary>
+        public SchemaIdSerializerStrategy? SchemaIdStrategy
+        {
+            get
+            {
+                var r = Get(PropertyNames.SchemaIdStrategy);
+                if (r == null) { return null; }
+                else
+                {
+                    SchemaIdSerializerStrategy result;
+                    if (!Enum.TryParse<SchemaIdSerializerStrategy>(r, out result))
+                        throw new ArgumentException(
+                            $"Unknown ${PropertyNames.SchemaIdStrategy} value: {r}.");
+                    else
+                        return result;
+                }
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove(PropertyNames.SchemaIdStrategy); }
+                else { this.properties[PropertyNames.SchemaIdStrategy] = value.ToString(); }
+            }
+        }
     }
 }
