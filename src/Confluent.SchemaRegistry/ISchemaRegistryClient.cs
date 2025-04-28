@@ -90,6 +90,24 @@ namespace Confluent.SchemaRegistry
         Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize = false);
 
         /// <summary>
+        ///     Register a schema or get the schema id if it's already
+        ///     registered.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to register the schema against.
+        /// </param>
+        /// <param name="schema">
+        ///     The schema to register.
+        /// </param>
+        /// <param name="normalize">
+        ///     Whether to normalize schemas.
+        /// </param>
+        /// <returns>
+        ///     The schema.
+        /// </returns>
+        Task<RegisteredSchema> RegisterSchemaWithResponseAsync(string subject, Schema schema, bool normalize = false);
+
+        /// <summary>
         ///   Get the unique id of the specified avro schema registered against 
         ///   the specified subject.
         /// </summary>
@@ -173,6 +191,25 @@ namespace Confluent.SchemaRegistry
         ///     The schema identified by <paramref name="id" />.
         /// </returns>
         Task<Schema> GetSchemaBySubjectAndIdAsync(string subject, int id, string format = null);
+
+
+        /// <summary>
+        ///     Gets the schema uniquely identified by <paramref name="guid" />.
+        /// </summary>
+        /// <param name="guid">
+        ///     The globally unique id of schema to get.
+        /// </param>
+        /// <param name="format">
+        ///     The format of the schema to get. Currently, the only supported
+        ///     value is "serialized", and this is only valid for protobuf
+        ///     schemas. If 'serialized', the SchemaString property of the returned
+        ///     value will be a base64 encoded protobuf file descriptor. If null,
+        ///     SchemaString will be human readable text.
+        /// </param>
+        /// <returns>
+        ///     The schema identified by <paramref name="guid" />.
+        /// </returns>
+        Task<Schema> GetSchemaByGuidAsync(string guid, string format = null);
 
 
         /// <summary>

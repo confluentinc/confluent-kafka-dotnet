@@ -33,8 +33,8 @@ namespace Confluent.SchemaRegistry.Serdes
     {
         private Dictionary<Avro.Schema, string> knownSchemas =
             new Dictionary<global::Avro.Schema, string>();
-        private Dictionary<KeyValuePair<string, string>, int> registeredSchemas =
-            new Dictionary<KeyValuePair<string, string>, int>();
+        private Dictionary<KeyValuePair<string, string>, SchemaId> registeredSchemas =
+            new Dictionary<KeyValuePair<string, string>, SchemaId>();
 
         public GenericSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
@@ -50,6 +50,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdSerializer = config.SchemaIdStrategy.Value.ToSerializer(); }
 
             if (this.useLatestVersion && this.autoRegisterSchema)
             {
@@ -89,7 +90,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             try
             {
-                int schemaId;
+                SchemaId schemaId;
                 string subject;
                 RegisteredSchema latestSchema = null;
                 Avro.Schema writerSchema;
@@ -137,19 +138,21 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ConfigureAwait(continueOnCapturedContext: false);
                     if (latestSchema != null)
                     {
-                        schemaId = latestSchema.Id;
+                        schemaId = new SchemaId(SchemaType.Avro, latestSchema.Id, latestSchema.Guid);
                     }
                     else if (!registeredSchemas.TryGetValue(subjectSchemaPair, out schemaId))
                     {
                         // first usage: register/get schema to check compatibility
-                        schemaId = autoRegisterSchema
+                        var inputSchema = new Schema(writerSchemaString, new List<SchemaReference>(), SchemaType.Avro);
+                        var outputSchema = autoRegisterSchema
                             ? await schemaRegistryClient
-                                .RegisterSchemaAsync(subject, writerSchemaString, normalizeSchemas)
+                                .RegisterSchemaWithResponseAsync(subject, inputSchema, normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false)
                             : await schemaRegistryClient
-                                .GetSchemaIdAsync(subject, writerSchemaString, normalizeSchemas)
+                                .LookupSchemaAsync(subject, inputSchema, normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
+                        schemaId = new SchemaId(SchemaType.Avro, outputSchema.Id, outputSchema.Guid);
                         registeredSchemas.Add(subjectSchemaPair, schemaId);
                     }
                 }
@@ -171,13 +174,13 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 using (var stream = new MemoryStream(initialBufferSize))
-                using (var writer = new BinaryWriter(stream))
                 {
-                    stream.WriteByte(Constants.MagicByte);
-                    writer.Write(IPAddress.HostToNetworkOrder(schemaId));
                     new GenericWriter<GenericRecord>(writerSchema)
                         .Write(data, new BinaryEncoder(stream));
-                    return stream.ToArray();
+                    byte[] payload = stream.ToArray();
+                    SerializationContext context = new SerializationContext(
+                        isKey ? MessageComponentType.Key : MessageComponentType.Value, topic, headers);
+                    return schemaIdSerializer.Serialize(payload, context, schemaId);
                 }
             }
             catch (AggregateException e)

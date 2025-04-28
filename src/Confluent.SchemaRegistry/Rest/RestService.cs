@@ -411,6 +411,12 @@ namespace Confluent.SchemaRegistry
                         HttpMethod.Get)
                     .ConfigureAwait(continueOnCapturedContext: false)));
 
+        public async Task<Schema> GetSchemaByGuidAsync(string guid, string format)
+            => SanitizeSchema(
+                (await RequestAsync<Schema>($"schemas/guids/{guid}{(format != null ? "?format=" + format : "")}",
+                        HttpMethod.Get)
+                    .ConfigureAwait(continueOnCapturedContext: false)));
+
         #endregion Schemas
 
         #region Subjects
@@ -445,12 +451,15 @@ namespace Confluent.SchemaRegistry
         {
             return string.Join("&", metadata.Select(x => $"key={x.Key}&value={x.Value}"));
         }
-        
+
         public async Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize)
-            => (await RequestAsync<SchemaId>(
+            => RegisterSchemaWithResponseAsync(subject, schema, normalize).Id;
+
+        public async Task<RegisteredSchema> RegisterSchemaWithResponseAsync(string subject, Schema schema, bool normalize)
+            => (await RequestAsync<RegisteredSchema>(
                     $"subjects/{Uri.EscapeDataString(subject)}/versions?normalize={normalize}", HttpMethod.Post,
                     schema)
-                .ConfigureAwait(continueOnCapturedContext: false)).Id;
+                .ConfigureAwait(continueOnCapturedContext: false));
 
         // Checks whether a schema has been registered under a given subject.
         public async Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas,
