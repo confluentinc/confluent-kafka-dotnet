@@ -55,6 +55,12 @@ namespace Confluent.SchemaRegistry.Serdes
             public const string SubjectNameStrategy = "protobuf.deserializer.subject.name.strategy";
             
             /// <summary>
+            ///     The schema id name strategy to use for serialize the ID/GUID.
+            ///     Possible values: <see cref="Confluent.SchemaRegistry.SchemaIdDeserializerStrategy" />
+            /// </summary>
+            public const string SchemaIdStrategy = "protobuf.deserializer.schema.id.strategy";
+
+            /// <summary>
             ///     Specifies whether or not the Protobuf deserializer should deserialize message indexes
             ///     without zig-zag encoding.
             ///
@@ -135,6 +141,35 @@ namespace Confluent.SchemaRegistry.Serdes
         }
         
         
+        /// <summary>
+        ///     Schema id strategy.
+        ///
+        ///     default: SchemaIdDeserializerStrategy.Dual
+        /// </summary>
+        public SchemaIdDeserializerStrategy? SchemaIdStrategy
+        {
+            get
+            {
+                var r = Get(PropertyNames.SchemaIdStrategy);
+                if (r == null) { return null; }
+                else
+                {
+                    SchemaIdDeserializerStrategy result;
+                    if (!Enum.TryParse<SchemaIdDeserializerStrategy>(r, out result))
+                        throw new ArgumentException(
+                            $"Unknown ${PropertyNames.SchemaIdStrategy} value: {r}.");
+                    else
+                        return result;
+                }
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove(PropertyNames.SchemaIdStrategy); }
+                else { this.properties[PropertyNames.SchemaIdStrategy] = value.ToString(); }
+            }
+        }
+
+
         /// <summary>
         ///     Specifies whether the Protobuf deserializer should deserialize message indexes
         ///     without zig-zag encoding.
