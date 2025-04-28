@@ -101,6 +101,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdDeserializer = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 
         public override async Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull,
@@ -137,16 +138,11 @@ namespace Confluent.SchemaRegistry.Serdes
                 Avro.Schema writerSchema = null;
                 object data;
                 IList<Migration> migrations = new List<Migration>();
-                using (var stream = new MemoryStream(array))
-                using (var reader = new BinaryReader(stream))
+                SerializationContext context = new SerializationContext(
+                    isKey ? MessageComponentType.Key : MessageComponentType.Value, topic, headers);
+                SchemaId writerId = new SchemaId(SchemaType.Avro);
+                using (var stream = schemaIdDeserializer.Deserialize(array, context, writerId))
                 {
-                    var magicByte = reader.ReadByte();
-                    if (magicByte != Constants.MagicByte)
-                    {
-                        throw new InvalidDataException($"Expecting data with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
-                    }
-                    var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
-
                     (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
                     if (subject == null)
                     {
