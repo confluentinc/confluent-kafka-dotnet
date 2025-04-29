@@ -99,5 +99,15 @@ namespace Confluent.SchemaRegistry.Encryption
                 .ConfigureAwait(continueOnCapturedContext: false);
 
         #endregion Deks
+
+        protected internal static IAuthenticationHeaderValueProvider
+            AuthenticationHeaderValueProvider(
+                IEnumerable<KeyValuePair<string, string>> config,
+                IAuthenticationHeaderValueProvider authenticationHeaderValueProvider,
+                int maxRetries, int retriesWaitMs, int retriesMaxWaitMs)
+        {
+            return RestService.AuthenticationHeaderValueProvider(config,
+                authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs);
+        }
     }
 }
