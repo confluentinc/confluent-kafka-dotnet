@@ -173,87 +173,8 @@ namespace Confluent.SchemaRegistry.Encryption
                     $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas} must be an integer.");
             }
 
-            var basicAuthSource = config.FirstOrDefault(prop =>
-                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource)
-                .Value ?? "";
-            var basicAuthInfo = config.FirstOrDefault(prop =>
-                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo).Value ?? "";
-
-            string username = null;
-            string password = null;
-
-            if (basicAuthSource == "USER_INFO" || basicAuthSource == "")
-            {
-                if (basicAuthInfo != "")
-                {
-                    var userPass = basicAuthInfo.Split(new char[] { ':' }, 2);
-                    if (userPass.Length != 2)
-                    {
-                        throw new ArgumentException(
-                            $"Configuration property {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} must be of the form 'username:password'.");
-                    }
-
-                    username = userPass[0];
-                    password = userPass[1];
-                }
-            }
-            else if (basicAuthSource == "SASL_INHERIT")
-            {
-                if (basicAuthInfo != "")
-                {
-                    throw new ArgumentException(
-                        $"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} as also specified.");
-                }
-
-                var saslUsername = config.FirstOrDefault(prop => prop.Key == "sasl.username");
-                var saslPassword = config.FirstOrDefault(prop => prop.Key == "sasl.password");
-                if (saslUsername.Value == null)
-                {
-                    throw new ArgumentException(
-                        $"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.username' property not specified.");
-                }
-
-                if (saslPassword.Value == null)
-                {
-                    throw new ArgumentException(
-                        $"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.password' property not specified.");
-                }
-
-                username = saslUsername.Value;
-                password = saslPassword.Value;
-            }
-            else
-            {
-                throw new ArgumentException(
-                    $"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
-            }
-
-            if (authenticationHeaderValueProvider != null)
-            {
-                if (username != null || password != null)
-                {
-                    throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
-                }
-            }
-            else
-            {
-                if (username != null && password == null)
-                {
-                    throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Basic authentication username specified, but password not specified");
-                }
-
-                if (username == null && password != null)
-                {
-                    throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Basic authentication password specified, but username not specified");
-                }
-                else if (username != null && password != null)
-                {
-                    authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
-                }
-            }
+            authenticationHeaderValueProvider = DekRestService.AuthenticationHeaderValueProvider(
+                config, authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs);
 
             foreach (var property in config)
             {
@@ -271,6 +192,14 @@ namespace Confluent.SchemaRegistry.Encryption
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
