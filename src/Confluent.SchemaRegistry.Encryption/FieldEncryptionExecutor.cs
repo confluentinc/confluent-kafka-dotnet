@@ -50,7 +50,9 @@ namespace Confluent.SchemaRegistry.Encryption
         {
             if (Configs != null)
             {
-                if (!new HashSet<KeyValuePair<string, string>>(Configs).SetEquals(config))
+                if (config != null
+                    && config.Any()
+                    && !new HashSet<KeyValuePair<string, string>>(Configs).SetEquals(config))
                 {
                     throw new RuleException("FieldEncryptionExecutor already configured");
                 }
