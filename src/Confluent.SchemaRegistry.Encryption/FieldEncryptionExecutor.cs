@@ -241,6 +241,10 @@ namespace Confluent.SchemaRegistry.Encryption
         
         private async Task<RegisteredKek> RetrieveKekFromRegistry(KekId key)
         {
+            if (executor.Client == null)
+            {
+                throw new RuleException("Pass a serializer/deserializer config to initialize the client");
+            }
             try
             {
                 return await executor.Client.GetKekAsync(key.Name, !key.LookupDeletedKeks)
@@ -259,6 +263,10 @@ namespace Confluent.SchemaRegistry.Encryption
         
         private async Task<RegisteredKek> StoreKekToRegistry(KekId key, string kmsType, string kmsKeyId, bool shared)
         {
+            if (executor.Client == null)
+            {
+                throw new RuleException("Pass a serializer/deserializer config to initialize the client");
+            }
             Kek kek = new Kek
             {
                 Name = key.Name,
@@ -368,6 +376,10 @@ namespace Confluent.SchemaRegistry.Encryption
         
         private async Task<RegisteredDek> RetrieveDekFromRegistry(DekId key)
         {
+            if (executor.Client == null)
+            {
+                throw new RuleException("Pass a serializer/deserializer config to initialize the client");
+            }
             try
             {
                 RegisteredDek dek;
@@ -400,7 +412,10 @@ namespace Confluent.SchemaRegistry.Encryption
         
         private async Task<RegisteredDek> StoreDekToRegistry(DekId key, byte[] encryptedDek)
         {
-
+            if (executor.Client == null)
+            {
+                throw new RuleException("Pass a serializer/deserializer config to initialize the client");
+            }
             string encryptedDekStr = encryptedDek != null ? Convert.ToBase64String(encryptedDek) : null;
             Dek dek = new Dek
             {
