@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Confluent.SchemaRegistry.Serdes.Protobuf;
 using Google.Protobuf;
 using ProtobufNet::Google.Protobuf.Reflection;
 using FileDescriptor = Google.Protobuf.Reflection.FileDescriptor;
@@ -307,15 +307,20 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
-                using (var stream = new MemoryStream(initialBufferSize))
-                using (var writer = new BinaryWriter(stream))
-                {
-                    stream.WriteByte(Constants.MagicByte);
-                    writer.Write(IPAddress.HostToNetworkOrder(schemaId.Value));
-                    writer.Write(this.indexArray);
-                    value.WriteTo(stream);
-                    return stream.ToArray();
-                }
+                int bufferSize = sizeof(byte) // Magic byte
+                                + sizeof(int) // Schema ID
+                                + indexArray.Length // Index array size
+                                + value.CalculateSize(); // Serialized message size
+
+                var buffer = new byte[bufferSize];
+                
+                var offset = 0;
+                offset += BinaryConverter.WriteByte(buffer, Constants.MagicByte);
+                offset += BinaryConverter.WriteInt32(buffer.AsSpan(offset), schemaId.Value!);
+                offset += BinaryConverter.WriteBytes(buffer.AsSpan(offset), this.indexArray);
+                value.WriteTo(buffer.AsSpan(offset));
+                
+                return buffer;
             }
             catch (AggregateException e)
             {
