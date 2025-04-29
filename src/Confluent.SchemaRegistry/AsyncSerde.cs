@@ -51,7 +51,11 @@ namespace Confluent.SchemaRegistry
             this.schemaRegistryClient = schemaRegistryClient;
             this.ruleRegistry = ruleRegistry ?? RuleRegistry.GlobalInstance;
 
-            if (config == null) { return; }
+            if (config == null)
+            {
+                // Use an empty config for setting the rule executors
+                config = new SerdeConfig();
+            }
 
             IEnumerable<KeyValuePair<string, string>> ruleConfigs = config
                 .Select(kv => new KeyValuePair<string, string>(
