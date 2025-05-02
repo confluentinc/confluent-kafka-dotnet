@@ -101,7 +101,7 @@ namespace Confluent.SchemaRegistry.Serdes
             public const string SubjectNameStrategy = "json.serializer.subject.name.strategy";
 
             /// <summary>
-            ///     The schema id name strategy to use for serialize the ID/GUID.
+            ///     The schema id name strategy to use to serialize the ID/GUID.
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SchemaIdSerializerStrategy" />
             /// </summary>
             public const string SchemaIdStrategy = "json.serializer.schema.id.strategy";
