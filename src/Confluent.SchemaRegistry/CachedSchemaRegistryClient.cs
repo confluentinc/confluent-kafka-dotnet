@@ -23,12 +23,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
-using System.Net.Http;
 using System.Collections.Concurrent;
 using System.Net;
-using System.Threading;
 using System.Security.Cryptography.X509Certificates;
 using Confluent.Kafka;
+using Confluent.Shared.CollectionUtils;
 using Microsoft.Extensions.Caching.Memory;
 
 
@@ -69,22 +68,20 @@ namespace Confluent.SchemaRegistry
         private IRestService restService;
         private int identityMapCapacity;
         private int latestCacheTtlSecs;
-        private readonly ConcurrentDictionary<SchemaId, Schema> schemaById = new ConcurrentDictionary<SchemaId, Schema>();
+        private readonly ConcurrentDictionary<SchemaId, Task<Schema>> schemaById = new ConcurrentDictionary<SchemaId, Task<Schema>>();
 
-        private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<Schema, int>> idBySchemaBySubject =
-            new ConcurrentDictionary<string, ConcurrentDictionary<Schema, int>>();
+        private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<Schema, Task<int>>> idBySchemaBySubject =
+            new ConcurrentDictionary<string, ConcurrentDictionary<Schema, Task<int>>>();
 
-        private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<int, RegisteredSchema>> schemaByVersionBySubject =
-            new ConcurrentDictionary<string, ConcurrentDictionary<int, RegisteredSchema>>();
+        private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<int, Task<RegisteredSchema>>> schemaByVersionBySubject =
+            new ConcurrentDictionary<string, ConcurrentDictionary<int, Task<RegisteredSchema>>>();
         
-        private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<Schema, RegisteredSchema>> registeredSchemaBySchemaBySubject =
-            new ConcurrentDictionary<string, ConcurrentDictionary<Schema, RegisteredSchema>>();
+        private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<Schema, Task<RegisteredSchema>>> registeredSchemaBySchemaBySubject =
+            new ConcurrentDictionary<string, ConcurrentDictionary<Schema, Task<RegisteredSchema>>>();
 
         private readonly MemoryCache latestVersionBySubject = new MemoryCache(new MemoryCacheOptions());
         
         private readonly MemoryCache latestWithMetadataBySubject = new MemoryCache(new MemoryCacheOptions());
-
-        private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
 
         private SubjectNameStrategyDelegate keySubjectNameStrategy;
         private SubjectNameStrategyDelegate valueSubjectNameStrategy;
@@ -310,165 +307,8 @@ namespace Confluent.SchemaRegistry
                     $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs} must be an integer.");
             }
             
-            var basicAuthSource = config.FirstOrDefault(prop =>
-                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource)
-                .Value ?? "";
-            var basicAuthInfo = config.FirstOrDefault(prop =>
-                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo).Value ?? "";
-
-            string username = null;
-            string password = null;
-
-            if (basicAuthSource == "USER_INFO" || basicAuthSource == "")
-            {
-                if (basicAuthInfo != "")
-                {
-                    var userPass = basicAuthInfo.Split(new char[] { ':' }, 2);
-                    if (userPass.Length != 2)
-                    {
-                        throw new ArgumentException(
-                            $"Configuration property {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} must be of the form 'username:password'.");
-                    }
-
-                    username = userPass[0];
-                    password = userPass[1];
-                    if (authenticationHeaderValueProvider != null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
-                    }
-                    authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
-                }
-            }
-            else if (basicAuthSource == "SASL_INHERIT")
-            {
-                if (basicAuthInfo != "")
-                {
-                    throw new ArgumentException(
-                        $"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} as also specified.");
-                }
-
-                var saslUsername = config.FirstOrDefault(prop => prop.Key == "sasl.username");
-                var saslPassword = config.FirstOrDefault(prop => prop.Key == "sasl.password");
-                if (saslUsername.Value == null)
-                {
-                    throw new ArgumentException(
-                        $"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.username' property not specified.");
-                }
-
-                if (saslPassword.Value == null)
-                {
-                    throw new ArgumentException(
-                        $"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.password' property not specified.");
-                }
-
-                username = saslUsername.Value;
-                password = saslPassword.Value;
-                if (authenticationHeaderValueProvider != null)
-                {
-                    throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
-                }
-                authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
-            }
-            else
-            {
-                throw new ArgumentException(
-                    $"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
-            }
-
-            var bearerAuthSource = config.FirstOrDefault(prop =>
-                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource).Value ?? "";
-
-            if (bearerAuthSource != "" && basicAuthSource != "")
-            {
-                throw new ArgumentException(
-                    $"Invalid authentication header value provider configuration: Cannot specify both basic and bearer authentication");
-            }
-
-            string logicalCluster = null;
-            string identityPoolId = null;
-            string bearerToken = null;
-            string clientId = null;
-            string clientSecret = null;
-            string scope = null;
-            string tokenEndpointUrl = null;
-
-            if (bearerAuthSource == "STATIC_TOKEN" || bearerAuthSource == "OAUTHBEARER")
-            {
-                if (authenticationHeaderValueProvider != null)
-                {
-                    throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and bearer authentication");
-                }
-                logicalCluster = config.FirstOrDefault(prop =>
-                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster).Value;
-
-                identityPoolId = config.FirstOrDefault(prop =>
-                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId).Value;
-                if (logicalCluster == null || identityPoolId == null)
-                {
-                    throw new ArgumentException(
-                        $"Invalid bearer authentication provider configuration: Logical cluster and identity pool ID must be specified");
-                }
-            }
-
-            switch (bearerAuthSource)
-            {
-                case "STATIC_TOKEN":
-                    bearerToken = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken).Value;
-
-                    if (bearerToken == null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Bearer authentication token not specified");
-                    }
-                    authenticationHeaderValueProvider = new StaticBearerAuthenticationHeaderValueProvider(bearerToken, logicalCluster, identityPoolId);
-                    break;
-
-                case "OAUTHBEARER":
-                    clientId = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId).Value;
-
-                    clientSecret = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret).Value;
-
-                    scope = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope).Value;
-                    
-                    tokenEndpointUrl = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl).Value;
-                    
-                    if (tokenEndpointUrl == null || clientId == null || clientSecret == null || scope == null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid bearer authentication provider configuration: Token endpoint URL, client ID, client secret, and scope must be specified");
-                    }
-                    authenticationHeaderValueProvider = new BearerAuthenticationHeaderValueProvider(
-                        new HttpClient(), clientId, clientSecret, scope, tokenEndpointUrl, logicalCluster, identityPoolId, maxRetries, retriesWaitMs, retriesMaxWaitMs);
-                    break;
-
-                case "CUSTOM":
-                    if (authenticationHeaderValueProvider == null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Custom authentication provider must be specified");
-                    }
-                    if(!(authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider))
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Custom authentication provider must implement IAuthenticationBearerHeaderValueProvider");
-                    }
-                    break;
-
-                case "":
-                    break;
-
-                default:
-                    throw new ArgumentException(
-                        $"Invalid value '{bearerAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource}'");
-            }
+            authenticationHeaderValueProvider = RestService.AuthenticationHeaderValueProvider(
+                config, authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs);
 
             foreach (var property in config)
             {
@@ -607,45 +447,26 @@ namespace Confluent.SchemaRegistry
         {
             if (idBySchemaBySubject.TryGetValue(subject, out var idBySchema))
             {
-                if (idBySchema.TryGetValue(schema, out int schemaId))
+                if (idBySchema.TryGetValue(schema, out var schemaId))
                 {
-                    return schemaId;
+                    return await schemaId;
                 }
             }
             
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-            try
+            CleanCacheIfFull();
+
+            idBySchema = idBySchemaBySubject.GetOrAdd(subject, _ => new ConcurrentDictionary<Schema, Task<int>>());
+            return await idBySchema.GetOrAdd(schema, async _ =>
             {
-                if (!this.idBySchemaBySubject.TryGetValue(subject, out idBySchema))
-                {
-                    idBySchema = new ConcurrentDictionary<Schema, int>();
-                    this.idBySchemaBySubject.TryAdd(subject, idBySchema);
-                }
+                var registeredSchema = await LookupSchemaAsync(subject, schema, true, normalize)
+                    .ConfigureAwait(continueOnCapturedContext: false);
 
-                // TODO: The following could be optimized in the usual case where idBySchema only
-                // contains very few elements and the schema string passed in is always the same
-                // instance.
-
-                if (!idBySchema.TryGetValue(schema, out int schemaId))
-                {
-                    CleanCacheIfFull();
-
-                    // throws SchemaRegistryException if schema is not known.
-                    var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true, normalize)
-                        .ConfigureAwait(continueOnCapturedContext: false);
-                    idBySchema[schema] = registeredSchema.Id;
-                    
-                    var format = GetSchemaFormat(schema.SchemaString);
-                    schemaById.TryAdd(new SchemaId(registeredSchema.Id, format), registeredSchema.Schema);
-                    schemaId = registeredSchema.Id;
-                }
-
-                return schemaId;
-            }
-            finally
-            {
-                cacheMutex.Release();
-            }
+                // We already have the schema so we can add it to the cache.
+                var format = GetSchemaFormat(registeredSchema.SchemaString);
+                schemaById.TryAdd(new SchemaId(registeredSchema.Id, format), Task.FromResult(registeredSchema.Schema));
+                
+                return registeredSchema.Id;
+            }).ConfigureAwait(continueOnCapturedContext: false);
         }
 
 
@@ -656,40 +477,14 @@ namespace Confluent.SchemaRegistry
             {
                 if (idBySchema.TryGetValue(schema, out var schemaId))
                 {
-                    return schemaId;
+                    return await schemaId;
                 }
             }
             
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-            try
-            {
-                if (!this.idBySchemaBySubject.TryGetValue(subject, out idBySchema))
-                {
-                    idBySchema = new ConcurrentDictionary<Schema, int>();
-                    idBySchemaBySubject.TryAdd(subject, idBySchema);
-                }
-
-                // TODO: This could be optimized in the usual case where idBySchema only
-                // contains very few elements and the schema string passed in is always
-                // the same instance.
-
-                if (!idBySchema.TryGetValue(schema, out int schemaId))
-                {
-                    CleanCacheIfFull();
-
-                    schemaId = await restService.RegisterSchemaAsync(subject, schema, normalize)
-                        .ConfigureAwait(continueOnCapturedContext: false);
-                    idBySchema[schema] = schemaId;
-                }
-
-                return schemaId;
-            }
-            finally
-            {
-                cacheMutex.Release();
-            }
+            CleanCacheIfFull();
+            idBySchema = idBySchemaBySubject.GetOrAdd(subject, _ => new ConcurrentDictionary<Schema, Task<int>>());
+            return await idBySchema.GetOrAddAsync(schema, _ => restService.RegisterSchemaAsync(subject, schema, normalize)).ConfigureAwait(continueOnCapturedContext: false);
         }
-
 
         /// <inheritdoc/>
         public Task<int> RegisterSchemaAsync(string subject, string avroSchema, bool normalize = false)
@@ -712,31 +507,14 @@ namespace Confluent.SchemaRegistry
             {
                 if (registeredSchemaBySchema.TryGetValue(schema, out var registeredSchema))
                 {
-                    return registeredSchema;
+                    return await registeredSchema;
                 }
             }
             
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-            try
-            {
-                if (!registeredSchemaBySchemaBySubject.TryGetValue(subject, out registeredSchemaBySchema))
-                {
-                    CleanCacheIfFull();
-                    registeredSchemaBySchema = new ConcurrentDictionary<Schema, RegisteredSchema>();
-                    registeredSchemaBySchemaBySubject[subject] = registeredSchemaBySchema;
-                }
-                if (!registeredSchemaBySchema.TryGetValue(schema, out var registeredSchema))
-                {
-                    registeredSchema = await restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas, normalize).ConfigureAwait(continueOnCapturedContext: false);
-                    registeredSchemaBySchema[schema] = registeredSchema;
-                }
-
-                return registeredSchema;
-            }
-            finally
-            {
-                cacheMutex.Release();
-            }
+            CleanCacheIfFull();
+            
+            registeredSchemaBySchema = registeredSchemaBySchemaBySubject.GetOrAdd(subject, _ => new ConcurrentDictionary<Schema, Task<RegisteredSchema>>());
+            return await registeredSchemaBySchema.GetOrAddAsync(schema, _ => restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas, normalize)).ConfigureAwait(continueOnCapturedContext: false);
         }
 
         /// <inheritdoc/>
@@ -745,25 +523,11 @@ namespace Confluent.SchemaRegistry
             var schemaId = new SchemaId(id, format);
             if (schemaById.TryGetValue(schemaId, out var schema))
             {
-                return schema;
+                return await schema;
             }
             
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-            try
-            {
-                if (!this.schemaById.TryGetValue(schemaId, out schema))
-                {
-                    CleanCacheIfFull();
-                    schema = await restService.GetSchemaAsync(id, format).ConfigureAwait(continueOnCapturedContext: false);
-                    schemaById.TryAdd(schemaId, schema);
-                }
-
-                return schema;
-            }
-            finally
-            {
-                cacheMutex.Release();
-            }
+            CleanCacheIfFull();
+            return await schemaById.GetOrAddAsync(schemaId, _ => restService.GetSchemaAsync(id, format)).ConfigureAwait(continueOnCapturedContext: false);
         }
 
 
@@ -773,64 +537,36 @@ namespace Confluent.SchemaRegistry
             var schemaId = new SchemaId(id, format);
             if (this.schemaById.TryGetValue(schemaId, out var schema))
             {
-                return schema;
+                return await schema;
             }
             
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-            try
-            {
-                if (!this.schemaById.TryGetValue(schemaId, out schema))
-                {
-                    CleanCacheIfFull();
-                    schema = await restService.GetSchemaBySubjectAndIdAsync(subject, id, format)
-                        .ConfigureAwait(continueOnCapturedContext: false);
-                    schemaById.TryAdd(schemaId, schema);
-                }
-
-                return schema;
-            }
-            finally
-            {
-                cacheMutex.Release();
-            }
+            return await schemaById.GetOrAddAsync(schemaId, _ => restService.GetSchemaBySubjectAndIdAsync(subject, id, format)).ConfigureAwait(continueOnCapturedContext: false);
         }
 
 
         /// <inheritdoc/>
         public async Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version, bool ignoreDeletedSchemas = true)
         {
-            if (schemaByVersionBySubject.TryGetValue(subject, out var schemaByVersion) &&
-                schemaByVersion.TryGetValue(version, out var schema))
+            if (schemaByVersionBySubject.TryGetValue(subject, out var schemaByVersion))
             {
-                return schema;
+                if (schemaByVersion.TryGetValue(version, out var schema))
+                {
+                    return await schema;
+                }
             }
             
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-            try
+            CleanCacheIfFull();
+            schemaByVersion = schemaByVersionBySubject.GetOrAdd(subject, _ => new ConcurrentDictionary<int, Task<RegisteredSchema>>());
+            return await schemaByVersion.GetOrAddAsync(version, async _ =>
             {
-                CleanCacheIfFull();
-
-                if (!schemaByVersionBySubject.TryGetValue(subject, out schemaByVersion))
-                {
-                    schemaByVersion = new ConcurrentDictionary<int, RegisteredSchema>();
-                    schemaByVersionBySubject[subject] = schemaByVersion;
-                }
-
-                if (!schemaByVersion.TryGetValue(version, out schema))
-                {
-                    schema = await restService.GetSchemaAsync(subject, version)
-                        .ConfigureAwait(continueOnCapturedContext: false);
-                    schemaByVersion[version] = schema;
-                    var format = GetSchemaFormat(schema.SchemaString);
-                    schemaById.TryAdd(new SchemaId(schema.Id, format), schema.Schema);
-                }
-
+                var schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(continueOnCapturedContext: false);
+                
+                // We already have the schema so we can add it to the cache.
+                var format = GetSchemaFormat(schema.SchemaString);
+                schemaById.TryAdd(new SchemaId(schema.Id, format), Task.FromResult(schema.Schema));
+                
                 return schema;
-            }
-            finally
-            {
-                cacheMutex.Release();
-            }
+            }).ConfigureAwait(continueOnCapturedContext: false);
         }
 
 
