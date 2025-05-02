@@ -91,7 +91,7 @@ namespace Confluent.SchemaRegistry.Serdes
             public const string SubjectNameStrategy = "avro.serializer.subject.name.strategy";
 
             /// <summary>
-            ///     The schema id name strategy to use for serialize the ID/GUID.
+            ///     The schema id name strategy to use to serialize the ID/GUID.
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SchemaIdSerializerStrategy" />
             /// </summary>
             public const string SchemaIdStrategy = "avro.serializer.schema.id.strategy";
