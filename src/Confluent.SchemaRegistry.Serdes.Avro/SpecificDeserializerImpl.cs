@@ -120,12 +120,6 @@ namespace Confluent.SchemaRegistry.Serdes
                 // Note: topic is not necessary for deserialization (or knowing if it's a key 
                 // or value) only the schema id is needed.
 
-                if (array.Length < 5)
-                {
-                    throw new InvalidDataException(
-                        $"Expecting data framing of length 5 bytes or more but total data size is {array.Length} bytes");
-                }
-
                 string subject = GetSubjectName(topic, isKey, null);
                 RegisteredSchema latestSchema = null;
                 if (subject != null)
