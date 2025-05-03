@@ -4,12 +4,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1EFCD839-0726-4BCE-B745-1E829991B1BC}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.build.props = src\Directory.build.props
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.csproj", "{09C3255B-1972-4EB8-91D0-FB9F5CD82BCB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry", "src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj", "{AA671E3D-EB85-40A2-B183-8DA037286680}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{90058283-1F8F-465D-89E4-D4374A27E612}"
+	ProjectSection(SolutionItems) = preProject
+		test\Directory.build.props = test\Directory.build.props
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.UnitTests", "test\Confluent.Kafka.UnitTests\Confluent.Kafka.UnitTests.csproj", "{BD6FCDB1-CC2E-4DE2-AB48-9CBD3F78E637}"
 EndProject
@@ -28,6 +34,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.IntegrationTests", "test\Confluent.SchemaRegistry.IntegrationTests\Confluent.SchemaRegistry.IntegrationTests.csproj", "{EC57E6D6-371F-4538-8C48-35C37CA2ED67}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{9CE4B5F7-9251-4340-BACB-207066A5DBE8}"
+	ProjectSection(SolutionItems) = preProject
+		examples\Directory.build.props = examples\Directory.build.props
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdminClient", "examples\AdminClient\AdminClient.csproj", "{964449D5-3024-420E-9262-1913EC189D6A}"
 EndProject
@@ -100,6 +109,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{B544BD
 		src\Shared\DictionaryEqualityComparer.cs = src\Shared\DictionaryEqualityComparer.cs
 		src\Shared\SetEqualityComparer.cs = src\Shared\SetEqualityComparer.cs
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{D5322057-682D-49F2-A2FB-68FA69187B28}"
+				ProjectSection(SolutionItems) = preProject
+								README.md = README.md
+								Directory.Build.props = Directory.Build.props
+								.editorconfig = .editorconfig
+				EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BA928213-B366-4290-A4AA-E0FA094333FE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{EDA3CED2-A80E-44F5-B5E4-79E38BC1376F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{A4A6EEAB-8053-4746-892F-683FC7C21622}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -673,5 +695,8 @@ Global
 		{6988FB1F-3648-4E5E-821F-55D67CA00FD7} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
 		{10CD6000-59A3-40C9-905F-20F4EE03C1B4} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
 		{B544BD2C-F46D-4C68-8A31-3010E371E640} = {1EFCD839-0726-4BCE-B745-1E829991B1BC}
+		{BA928213-B366-4290-A4AA-E0FA094333FE} = {D5322057-682D-49F2-A2FB-68FA69187B28}
+		{EDA3CED2-A80E-44F5-B5E4-79E38BC1376F} = {D5322057-682D-49F2-A2FB-68FA69187B28}
+		{A4A6EEAB-8053-4746-892F-683FC7C21622} = {D5322057-682D-49F2-A2FB-68FA69187B28}
 	EndGlobalSection
 EndGlobal
