@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using Avro.Generic;
@@ -92,7 +91,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 SchemaId schemaId;
                 string subject;
-                RegisteredSchema latestSchema = null;
+                RegisteredSchema latestSchema;
                 Avro.Schema writerSchema;
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
