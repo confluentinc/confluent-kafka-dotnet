@@ -57,7 +57,27 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void TestMessageIndexes()
+        public void TestGuidWithMessageIndexes()
+        {
+            var schemaId = new SchemaId(SchemaType.Protobuf);
+            byte[] input = new byte[]
+            {
+                0x01, 0x89, 0x79, 0x17, 0x62, 0x23, 0x36, 0x41, 0x86, 0x96, 0x74, 0x29, 0x9b, 0x90,
+                0xa8, 0x02, 0xe2, 0x06, 0x02, 0x04, 0x06
+            };
+            schemaId.FromBytes(new MemoryStream(input));
+            var guidString = schemaId.Guid.ToString();
+            Assert.Equal("89791762-2336-4186-9674-299b90a802e2", guidString);
+
+            var messageIndexes = schemaId.MessageIndexes;
+            Assert.Equal(messageIndexes, new List<int>() { 1, 2, 3 });
+
+            var output = schemaId.GuidToBytes();
+            Assert.Equal(output, input);
+        }
+
+        [Fact]
+        public void TestIdWithMessageIndexes()
         {
             var schemaId = new SchemaId(SchemaType.Protobuf);
             byte[] input = new byte[]
