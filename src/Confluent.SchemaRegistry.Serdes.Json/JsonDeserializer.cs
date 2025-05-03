@@ -171,11 +171,6 @@ namespace Confluent.SchemaRegistry.Serdes
             if (isNull) { return null; }
 
             var array = data.ToArray();
-            if (array.Length < 6)
-            {
-                throw new InvalidDataException($"Expecting data framing of length 6 bytes or more but total data size is {array.Length} bytes");
-            }
-
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
             string subject = GetSubjectName(topic, isKey, null);
