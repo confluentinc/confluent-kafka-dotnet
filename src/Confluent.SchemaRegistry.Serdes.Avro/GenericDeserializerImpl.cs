@@ -85,7 +85,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 SchemaId writerId = new SchemaId(SchemaType.Avro);
                 using (var stream = schemaIdDeserializer.Deserialize(array, context, writerId))
                 {
-                    (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
+                    (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId);
                     if (subject == null)
                     {
                         subject = GetSubjectName(topic, isKey, writerSchema.Fullname);
