@@ -90,7 +90,7 @@ namespace Confluent.SchemaRegistry
             }
         }
 
-        protected async Task<(Schema, TParsedSchema)> GetSchema(string subject, SchemaId writerId, string format = null)
+        protected async Task<(Schema, TParsedSchema)> GetWriterSchema(string subject, SchemaId writerId, string format = null)
         {
             if (writerId.Id != null)
             {

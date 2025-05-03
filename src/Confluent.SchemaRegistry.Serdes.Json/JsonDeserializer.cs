@@ -193,7 +193,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     if (schemaRegistryClient != null)
                     {
-                        (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
+                        (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId);
                         if (subject == null)
                         {
                             subject = GetSubjectName(topic, isKey, writerSchema.Title);
