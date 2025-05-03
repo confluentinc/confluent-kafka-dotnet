@@ -15,7 +15,6 @@
         <PackageId>Confluent.SchemaRegistry.Rules</PackageId>
         <Title>Confluent.SchemaRegistry.Rules</Title>
         <AssemblyName>Confluent.SchemaRegistry.Rules</AssemblyName>
-        <VersionPrefix>2.11.0</VersionPrefix>
         <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
