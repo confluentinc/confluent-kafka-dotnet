@@ -20,11 +20,9 @@
 extern alias ProtobufNet;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Confluent.SchemaRegistry.Serdes.Protobuf;
 using Google.Protobuf;
 using ProtobufNet::Google.Protobuf.Reflection;
 using FileDescriptor = Google.Protobuf.Reflection.FileDescriptor;
@@ -224,7 +222,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 string fullname = value.Descriptor.FullName;
 
                 string subject;
-                RegisteredSchema latestSchema = null;
+                RegisteredSchema latestSchema;
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {

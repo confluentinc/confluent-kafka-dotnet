@@ -17,10 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using System.Reflection;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Avro.Specific;
 using Avro.IO;
@@ -128,8 +125,8 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
-                Schema writerSchemaJson = null;
-                Avro.Schema writerSchema = null;
+                Schema writerSchemaJson;
+                Avro.Schema writerSchema;
                 object data;
                 IList<Migration> migrations = new List<Migration>();
                 SerializationContext context = new SerializationContext(

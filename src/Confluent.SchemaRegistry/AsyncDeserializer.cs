@@ -25,8 +25,7 @@ namespace Confluent.SchemaRegistry
     public abstract class AsyncDeserializer<T, TParsedSchema> : AsyncSerde<TParsedSchema>, IAsyncDeserializer<T>
     {
         protected SchemaIdDeserializer schemaIdDeserializer = new DualSchemaIdDeserializer();
-        protected readonly int headerSize =  sizeof(int) + sizeof(byte);
-        
+
         protected AsyncDeserializer(ISchemaRegistryClient schemaRegistryClient, SerdeConfig config, 
             RuleRegistry ruleRegistry = null) : base(schemaRegistryClient, config, ruleRegistry)
         {
