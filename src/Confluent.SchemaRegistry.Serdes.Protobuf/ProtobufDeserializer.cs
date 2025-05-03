@@ -17,10 +17,8 @@
 extern alias ProtobufNet;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Net;
 using Confluent.Kafka;
 using Google.Protobuf;
 using ProtobufNet::Google.Protobuf.Reflection;
