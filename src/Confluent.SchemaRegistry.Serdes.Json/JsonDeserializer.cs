@@ -61,9 +61,9 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
-        private Schema schemaJson = null;
+        private Schema schemaJson;
 
-        private JsonSchema schema = null;
+        private JsonSchema schema;
 
         private bool validate = true;
 
@@ -226,8 +226,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (migrations.Count > 0)
                     {
-                        using (var jsonStream = new MemoryStream(array, headerSize, array.Length - headerSize))
-                        using (var jsonReader = new StreamReader(jsonStream, Encoding.UTF8))
+                        using (var jsonReader = new StreamReader(stream, Encoding.UTF8))
                         {
                             JToken json = Newtonsoft.Json.JsonConvert.DeserializeObject<JToken>(jsonReader.ReadToEnd(),
                                 jsonSchemaGeneratorSettingsSerializerSettings
@@ -251,8 +250,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                     else
                     {
-                        using (var jsonStream = new MemoryStream(array, headerSize, array.Length - headerSize))
-                        using (var jsonReader = new StreamReader(jsonStream, Encoding.UTF8))
+                        using (var jsonReader = new StreamReader(stream, Encoding.UTF8))
                         {
                             string serializedString = jsonReader.ReadToEnd();
 
