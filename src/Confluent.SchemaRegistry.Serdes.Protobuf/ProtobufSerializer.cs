@@ -20,11 +20,9 @@
 extern alias ProtobufNet;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Confluent.SchemaRegistry.Serdes.Protobuf;
 using Google.Protobuf;
 using ProtobufNet::Google.Protobuf.Reflection;
 using FileDescriptor = Google.Protobuf.Reflection.FileDescriptor;
@@ -62,9 +60,9 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A given schema is uniquely identified by a schema id, even when
         ///     registered against multiple subjects.
         /// </remarks>
-        private int? schemaId;
+        private SchemaId? schemaId;
 
-        private byte[] indexArray;
+        private List<int> indexArray;
 
 
         /// <summary>
@@ -95,6 +93,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.SkipKnownTypes != null) { this.skipKnownTypes = config.SkipKnownTypes.Value; }
             if (config.UseDeprecatedFormat != null) { this.useDeprecatedFormat = config.UseDeprecatedFormat.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdSerializer = config.SchemaIdStrategy.Value.ToSerializer(); }
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
                 ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()
                 : config.ReferenceSubjectNameStrategy.Value.ToDelegate(config.CustomReferenceSubjectNameStrategy);
@@ -105,7 +104,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
-        private static byte[] CreateIndexArray(MessageDescriptor md, bool useDeprecatedFormat)
+        private static List<int> CreateIndexArray(MessageDescriptor md)
         {
             var indices = new List<int>();
 
@@ -147,38 +146,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw new InvalidOperationException("MessageDescriptor not found.");
             }
 
-            using (var result = new MemoryStream())
-            {
-                if (indices.Count == 1 && indices[0] == 0)
-                {
-                    // optimization for the special case [0]
-                    result.WriteByte(0);
-                }
-                else
-                {
-                    if (useDeprecatedFormat)
-                    {
-                        result.WriteUnsignedVarint((uint)indices.Count);
-                    }
-                    else
-                    {
-                        result.WriteVarint((uint)indices.Count);
-                    }
-                    for (int i=0; i<indices.Count; ++i)
-                    {
-                        if (useDeprecatedFormat)
-                        {
-                            result.WriteUnsignedVarint((uint)indices[indices.Count-i-1]);
-                        }
-                        else
-                        {
-                            result.WriteVarint((uint)indices[indices.Count-i-1]);
-                        }
-                    }
-                }
-
-                return result.ToArray();
-            }
+            return indices;
         }
 
 
@@ -248,13 +216,13 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 if (this.indexArray == null)
                 {
-                    this.indexArray = CreateIndexArray(value.Descriptor, useDeprecatedFormat);
+                    this.indexArray = CreateIndexArray(value.Descriptor);
                 }
 
                 string fullname = value.Descriptor.FullName;
 
                 string subject;
-                RegisteredSchema latestSchema = null;
+                RegisteredSchema latestSchema;
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
@@ -264,7 +232,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     
                     if (latestSchema != null)
                     {
-                        schemaId = latestSchema.Id;
+                        schemaId = new SchemaId(SchemaType.Protobuf, latestSchema.Id, latestSchema.Guid);
                     }
                     else if (!subjectsRegistered.Contains(subject))
                     {
@@ -273,12 +241,12 @@ namespace Confluent.SchemaRegistry.Serdes
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
                         // first usage: register/get schema to check compatibility
-                        schemaId = autoRegisterSchema
-                            ? await schemaRegistryClient.RegisterSchemaAsync(subject,
+                        var outputSchema = autoRegisterSchema
+                            ? await schemaRegistryClient.RegisterSchemaWithResponseAsync(subject,
                                     new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
                                         SchemaType.Protobuf), normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false)
-                            : await schemaRegistryClient.GetSchemaIdAsync(subject,
+                            : await schemaRegistryClient.LookupSchemaAsync(subject,
                                     new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
                                         SchemaType.Protobuf), normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false);
@@ -286,6 +254,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         // note: different values for schemaId should never be seen here.
                         // TODO: but fail fast may be better here.
 
+                        schemaId = new SchemaId(SchemaType.Protobuf, outputSchema.Id, outputSchema.Guid);
                         subjectsRegistered.Add(subject);
                     }
                 }
@@ -307,20 +276,12 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
-                int bufferSize = sizeof(byte) // Magic byte
-                                + sizeof(int) // Schema ID
-                                + indexArray.Length // Index array size
-                                + value.CalculateSize(); // Serialized message size
+                int bufferSize = value.CalculateSize(); // Serialized message size
+                var payload = new byte[bufferSize];
+                value.WriteTo(payload);
 
-                var buffer = new byte[bufferSize];
-                
-                var offset = 0;
-                offset += BinaryConverter.WriteByte(buffer, Constants.MagicByte);
-                offset += BinaryConverter.WriteInt32(buffer.AsSpan(offset), schemaId.Value!);
-                offset += BinaryConverter.WriteBytes(buffer.AsSpan(offset), this.indexArray);
-                value.WriteTo(buffer.AsSpan(offset));
-                
-                return buffer;
+                schemaId.MessageIndexes = indexArray;
+                return schemaIdSerializer.Serialize(payload, context, schemaId);
             }
             catch (AggregateException e)
             {
