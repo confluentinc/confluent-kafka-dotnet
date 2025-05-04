@@ -488,7 +488,14 @@ namespace Confluent.SchemaRegistry
             {
                 if (registeredSchemaBySchema.TryGetValue(schema, out var registeredSchema))
                 {
-                    return await registeredSchema;
+                    var result = await registeredSchema;
+                    if (result.Version > 0)
+                    {
+                        return result;
+                    }
+                    // Allow the schema to be looked up again if version is not valid
+                    // This is for backward compatibility with versions before CP 8.0
+                    registeredSchemaBySchema.TryRemove(schema, out registeredSchema);
                 }
             }
             
