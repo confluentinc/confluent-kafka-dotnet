@@ -62,8 +62,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                         return result;
                     }
                     int id = store.Count + 1;
+                    String guid = new Guid().ToString();
                     int version = schemas.Count + 1;
-                    result = new RegisteredSchema(subject, version, id, schema.SchemaString, schema.SchemaType, schema.References);
+                    result = new RegisteredSchema(subject, version, id, guid, schema.SchemaString, schema.SchemaType, schema.References);
                     schemas.Add(result);
                     store[schema] = id;
                     return result;
@@ -98,6 +99,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                         // Next try store
                         return new Schema(store.Where(x => x.Value == id).First().Key, null, SchemaType.Avro);
                     }
+                });
+            schemaRegistryMock.Setup(x => x.GetSchemaByGuidAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(
+                (string guid, string format) =>
+                {
+                    return subjectStore.Values.SelectMany(x => x.Where(x => x.Guid == guid)).First();
                 });
             schemaRegistryMock.Setup(x => x.GetRegisteredSchemaAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>())).ReturnsAsync(
                 (string subject, int version, bool ignoreDeletedSchemas) => subjectStore[subject].First(x => x.Version == version)
