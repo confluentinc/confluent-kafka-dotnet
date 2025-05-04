@@ -514,6 +514,52 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void WithGuidInHeader()
+        {
+            var schemaStr = @"{
+              ""type"": ""object"",
+              ""properties"": {
+                ""favorite_color"": {
+                  ""type"": ""string""
+                },
+                ""favorite_number"": {
+                  ""type"": ""number""
+                },
+                ""name"": {
+                  ""type"": ""string""
+                }
+              }
+            }";
+            var nullGuid = "00000000-0000-0000-0000-000000000000";
+            var schema = new RegisteredSchema("topic-value", 1, 1, nullGuid, schemaStr, SchemaType.Json, null);
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true,
+                SchemaIdStrategy = SchemaIdSerializerStrategy.Header
+            };
+            var serializer = new JsonSerializer<Customer>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<Customer>(schemaRegistryClient);
+
+            var user = new Customer
+            {
+                FavoriteColor = "blue",
+                FavoriteNumber = 100,
+                Name = "awesome"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("awesome", result.Name);
+            Assert.Equal(user.FavoriteColor, result.FavoriteColor);
+            Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
+        }
+
+        [Fact]
         public void CELCondition()
         {
             var schemaStr = @"{
