@@ -30,7 +30,8 @@ namespace Confluent.SchemaRegistry
         
         protected bool autoRegisterSchema = true;
         protected bool normalizeSchemas = false;
-        
+        protected SchemaIdSerializer schemaIdSerializer = new PrefixSchemaIdSerializer();
+
         protected int initialBufferSize = DefaultInitialBufferSize;
         
         protected HashSet<string> subjectsRegistered = new HashSet<string>();
