@@ -443,12 +443,18 @@ namespace Confluent.SchemaRegistry
 
         /// <inheritdoc/>
         public async Task<int> GetSchemaIdAsync(string subject, Schema schema, bool normalize = false)
-            => LookupSchemaAsync(subject, schema, true, normalize).Id;
+        {
+            var registeredSchema = await LookupSchemaAsync(subject, schema, true, normalize);
+            return registeredSchema.Id;
+        }
 
 
         /// <inheritdoc/>
         public async Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize = false)
-            => RegisterSchemaWithResponseAsync(subject, schema, normalize).Id;
+        {
+            var registeredSchema = await RegisterSchemaWithResponseAsync(subject, schema, normalize);
+            return registeredSchema.Id;
+        }
 
 
         /// <inheritdoc/>
