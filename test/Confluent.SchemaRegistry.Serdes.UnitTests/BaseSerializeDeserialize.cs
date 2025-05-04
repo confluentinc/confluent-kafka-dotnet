@@ -62,7 +62,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                         return result;
                     }
                     int id = store.Count + 1;
-                    String guid = new Guid().ToString();
+                    String guid = Guid.NewGuid().ToString();
                     int version = schemas.Count + 1;
                     result = new RegisteredSchema(subject, version, id, guid, schema.SchemaString, schema.SchemaType, schema.References);
                     schemas.Add(result);
