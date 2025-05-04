@@ -20,7 +20,7 @@ using System.Runtime.Serialization;
 namespace  Confluent.SchemaRegistry
 {
     [DataContract]
-    internal class SchemaId
+    internal class SchemaIdResponse
     {
         [DataMember(Name = "id")]
         public int Id { get; set; }
@@ -28,9 +28,9 @@ namespace  Confluent.SchemaRegistry
         /// <summary>
         ///     Empty constructor for serialization
         /// </summary>
-        private SchemaId() { }
+        private SchemaIdResponse() { }
 
-        public SchemaId(int schemaId)
+        public SchemaIdResponse(int schemaId)
         {
             Id = schemaId;
         }

@@ -58,7 +58,8 @@ namespace Confluent.SchemaRegistry
     public class CachedSchemaRegistryClient : ISchemaRegistryClient
     {
         private record struct SchemaId(int Id, string Format);
-        
+        private record struct SchemaGuid(string Guid, string Format);
+
         private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
 
         private IEnumerable<KeyValuePair<string, string>> config;
@@ -69,9 +70,7 @@ namespace Confluent.SchemaRegistry
         private int identityMapCapacity;
         private int latestCacheTtlSecs;
         private readonly ConcurrentDictionary<SchemaId, Task<Schema>> schemaById = new ConcurrentDictionary<SchemaId, Task<Schema>>();
-
-        private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<Schema, Task<int>>> idBySchemaBySubject =
-            new ConcurrentDictionary<string, ConcurrentDictionary<Schema, Task<int>>>();
+        private readonly ConcurrentDictionary<SchemaGuid, Task<Schema>> schemaByGuid = new ConcurrentDictionary<SchemaGuid, Task<Schema>>();
 
         private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<int, Task<RegisteredSchema>>> schemaByVersionBySubject =
             new ConcurrentDictionary<string, ConcurrentDictionary<int, Task<RegisteredSchema>>>();
@@ -402,11 +401,11 @@ namespace Confluent.SchemaRegistry
         /// </remarks>
         private bool CleanCacheIfFull()
         {
-            if (schemaById.Count >= identityMapCapacity)
+            if (schemaById.Count >= identityMapCapacity || schemaByGuid.Count >= identityMapCapacity)
             {
                 // TODO: maybe log something somehow if this happens. Maybe throwing an exception (fail fast) is better.
                 this.schemaById.Clear();
-                this.idBySchemaBySubject.Clear();
+                this.schemaByGuid.Clear();
                 this.schemaByVersionBySubject.Clear();
                 this.registeredSchemaBySchemaBySubject.Clear();
                 return true;
@@ -444,46 +443,28 @@ namespace Confluent.SchemaRegistry
 
         /// <inheritdoc/>
         public async Task<int> GetSchemaIdAsync(string subject, Schema schema, bool normalize = false)
-        {
-            if (idBySchemaBySubject.TryGetValue(subject, out var idBySchema))
-            {
-                if (idBySchema.TryGetValue(schema, out var schemaId))
-                {
-                    return await schemaId;
-                }
-            }
-            
-            CleanCacheIfFull();
-
-            idBySchema = idBySchemaBySubject.GetOrAdd(subject, _ => new ConcurrentDictionary<Schema, Task<int>>());
-            return await idBySchema.GetOrAdd(schema, async _ =>
-            {
-                var registeredSchema = await LookupSchemaAsync(subject, schema, true, normalize)
-                    .ConfigureAwait(continueOnCapturedContext: false);
-
-                // We already have the schema so we can add it to the cache.
-                var format = GetSchemaFormat(registeredSchema.SchemaString);
-                schemaById.TryAdd(new SchemaId(registeredSchema.Id, format), Task.FromResult(registeredSchema.Schema));
-                
-                return registeredSchema.Id;
-            }).ConfigureAwait(continueOnCapturedContext: false);
-        }
+            => LookupSchemaAsync(subject, schema, true, normalize).Id;
 
 
         /// <inheritdoc/>
         public async Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize = false)
+            => RegisterSchemaWithResponseAsync(subject, schema, normalize).Id;
+
+
+        /// <inheritdoc/>
+        public async Task<RegisteredSchema> RegisterSchemaWithResponseAsync(string subject, Schema schema, bool normalize = false)
         {
-            if (idBySchemaBySubject.TryGetValue(subject, out var idBySchema))
+            if (registeredSchemaBySchemaBySubject.TryGetValue(subject, out var registeredSchemaBySchema))
             {
-                if (idBySchema.TryGetValue(schema, out var schemaId))
+                if (registeredSchemaBySchema.TryGetValue(schema, out var registeredSchema))
                 {
-                    return await schemaId;
+                    return await registeredSchema;
                 }
             }
-            
+
             CleanCacheIfFull();
-            idBySchema = idBySchemaBySubject.GetOrAdd(subject, _ => new ConcurrentDictionary<Schema, Task<int>>());
-            return await idBySchema.GetOrAddAsync(schema, _ => restService.RegisterSchemaAsync(subject, schema, normalize)).ConfigureAwait(continueOnCapturedContext: false);
+            registeredSchemaBySchema = registeredSchemaBySchemaBySubject.GetOrAdd(subject, _ => new ConcurrentDictionary<Schema, Task<RegisteredSchema>>());
+            return await registeredSchemaBySchema.GetOrAddAsync(schema, _ => restService.RegisterSchemaWithResponseAsync(subject, schema, normalize)).ConfigureAwait(continueOnCapturedContext: false);
         }
 
         /// <inheritdoc/>
@@ -507,7 +488,14 @@ namespace Confluent.SchemaRegistry
             {
                 if (registeredSchemaBySchema.TryGetValue(schema, out var registeredSchema))
                 {
-                    return await registeredSchema;
+                    var result = await registeredSchema;
+                    if (result.Version > 0)
+                    {
+                        return result;
+                    }
+                    // Allow the schema to be looked up again if version is not valid
+                    // This is for backward compatibility with versions before CP 8.0
+                    registeredSchemaBySchema.TryRemove(schema, out registeredSchema);
                 }
             }
             
@@ -539,8 +527,21 @@ namespace Confluent.SchemaRegistry
             {
                 return await schema;
             }
-            
+
             return await schemaById.GetOrAddAsync(schemaId, _ => restService.GetSchemaBySubjectAndIdAsync(subject, id, format)).ConfigureAwait(continueOnCapturedContext: false);
+        }
+
+
+        /// <inheritdoc/>
+        public async Task<Schema> GetSchemaByGuidAsync(string guid, string format = null)
+        {
+            var schemaGuid = new SchemaGuid(guid, format);
+            if (this.schemaByGuid.TryGetValue(schemaGuid, out var schema))
+            {
+                return await schema;
+            }
+            
+            return await schemaByGuid.GetOrAddAsync(schemaGuid, _ => restService.GetSchemaByGuidAsync(guid, format)).ConfigureAwait(continueOnCapturedContext: false);
         }
 
 
@@ -564,7 +565,8 @@ namespace Confluent.SchemaRegistry
                 // We already have the schema so we can add it to the cache.
                 var format = GetSchemaFormat(schema.SchemaString);
                 schemaById.TryAdd(new SchemaId(schema.Id, format), Task.FromResult(schema.Schema));
-                
+                schemaByGuid.TryAdd(new SchemaGuid(schema.Guid, format), Task.FromResult(schema.Schema));
+
                 return schema;
             }).ConfigureAwait(continueOnCapturedContext: false);
         }
@@ -677,7 +679,7 @@ namespace Confluent.SchemaRegistry
         public void ClearCaches()
         {
             schemaById.Clear();
-            idBySchemaBySubject.Clear();
+            schemaByGuid.Clear();
             schemaByVersionBySubject.Clear();
             registeredSchemaBySchemaBySubject.Clear();
             latestVersionBySubject.Clear();
