@@ -25,7 +25,7 @@ namespace Confluent.SchemaRegistry;
 /// <summary>
 ///     Represents a schema ID or GUID.
 /// </summary>
-public class SchemaId
+public struct SchemaId
 {
     public const string KEY_SCHEMA_ID_HEADER = "__key_schema_id";
     public const string VALUE_SCHEMA_ID_HEADER = "__value_schema_id";
@@ -59,6 +59,9 @@ public class SchemaId
     public SchemaId(SchemaType schemaType)
     {
         SchemaType = schemaType;
+        Id = null;
+        Guid = null;
+        MessageIndexes = null;
     }
 
     public SchemaId(SchemaType schemaType, int id, Guid guid)
@@ -66,6 +69,7 @@ public class SchemaId
         SchemaType = schemaType;
         Id = id;
         Guid = guid;
+        MessageIndexes = null;
     }
 
     public SchemaId(SchemaType schemaType, int id, string guid)
@@ -73,6 +77,7 @@ public class SchemaId
         SchemaType = schemaType;
         Id = id;
         Guid = guid != null ? System.Guid.Parse(guid) : null;
+        MessageIndexes = null;
     }
 
     public Stream FromBytes(Stream stream)
@@ -184,7 +189,7 @@ public enum SchemaIdDeserializerStrategy
 
 public static class SchemaIdStrategyExtensions
 {
-    public static SchemaIdSerializer ToSerializer(this SchemaIdSerializerStrategy strategy)
+    public static ISchemaIdSerializer ToSerializer(this SchemaIdSerializerStrategy strategy)
     {
         switch (strategy)
         {
@@ -196,7 +201,7 @@ public static class SchemaIdStrategyExtensions
                 throw new ArgumentException($"Unknown SchemaIdSerializerStrategy: {strategy}");
         }
     }
-    public static SchemaIdDeserializer ToDeserializer(this SchemaIdDeserializerStrategy strategy)
+    public static ISchemaIdDeserializer ToDeserializer(this SchemaIdDeserializerStrategy strategy)
     {
         switch (strategy)
         {
@@ -213,7 +218,7 @@ public static class SchemaIdStrategyExtensions
 /// <summary>
 ///     Interface for schema ID or GUID serialization.
 /// </summary>
-public interface SchemaIdSerializer
+public interface ISchemaIdSerializer
 {
     /// <summary>
     ///     Serialize a schema ID/GUID.
@@ -231,7 +236,7 @@ public interface SchemaIdSerializer
 /// <summary>
 ///     Interface for schema ID or GUID deserialization.
 /// </summary>
-public interface SchemaIdDeserializer
+public interface ISchemaIdDeserializer
 {
     /// <summary>
     ///     Deserialize a schema ID/GUID.
@@ -243,10 +248,10 @@ public interface SchemaIdDeserializer
     /// <param name="context"></param>
     /// <param name="schemaId"></param>
     /// <returns></returns>
-    public Stream Deserialize(byte[] payload, SerializationContext context, SchemaId schemaId);
+    public Stream Deserialize(byte[] payload, SerializationContext context, ref SchemaId schemaId);
 }
 
-public class HeaderSchemaIdSerializer : SchemaIdSerializer
+public class HeaderSchemaIdSerializer : ISchemaIdSerializer
 {
     public byte[] Serialize(byte[] payload, SerializationContext context, SchemaId schemaId)
     {
@@ -261,7 +266,7 @@ public class HeaderSchemaIdSerializer : SchemaIdSerializer
     }
 }
 
-public class PrefixSchemaIdSerializer : SchemaIdSerializer
+public class PrefixSchemaIdSerializer : ISchemaIdSerializer
 {
     public byte[] Serialize(byte[] payload, SerializationContext context, SchemaId schemaId)
     {
@@ -273,9 +278,9 @@ public class PrefixSchemaIdSerializer : SchemaIdSerializer
     }
 }
 
-public class DualSchemaIdDeserializer : SchemaIdDeserializer
+public class DualSchemaIdDeserializer : ISchemaIdDeserializer
 {
-    public Stream Deserialize(byte[] payload, SerializationContext context, SchemaId schemaId)
+    public Stream Deserialize(byte[] payload, SerializationContext context, ref SchemaId schemaId)
     {
         string headerKey = context.Component == MessageComponentType.Key
             ? SchemaId.KEY_SCHEMA_ID_HEADER : SchemaId.VALUE_SCHEMA_ID_HEADER;
@@ -289,9 +294,9 @@ public class DualSchemaIdDeserializer : SchemaIdDeserializer
     }
 }
 
-public class PrefixSchemaIdDeserializer : SchemaIdDeserializer
+public class PrefixSchemaIdDeserializer : ISchemaIdDeserializer
 {
-    public Stream Deserialize(byte[] payload, SerializationContext context, SchemaId schemaId)
+    public Stream Deserialize(byte[] payload, SerializationContext context, ref SchemaId schemaId)
     {
         return schemaId.FromBytes(new MemoryStream(payload));
     }

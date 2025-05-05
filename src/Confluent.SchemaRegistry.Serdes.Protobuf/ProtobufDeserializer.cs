@@ -132,7 +132,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 FileDescriptorSet fdSet = null;
                 T message;
                 SchemaId writerId = new SchemaId(SchemaType.Protobuf);
-                using (var stream = schemaIdDeserializer.Deserialize(array, context, writerId))
+                using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
                 {
                     if (schemaRegistryClient != null)
                     {
