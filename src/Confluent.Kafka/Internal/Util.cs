@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Runtime.InteropServices;
 using System.Text;
 using SystemMarshal = System.Runtime.InteropServices.Marshal;
 using SystemGCHandle = System.Runtime.InteropServices.GCHandle;
@@ -52,31 +53,35 @@ namespace Confluent.Kafka.Internal
             }
 
             /// <summary>
-            ///     Interpret a zero terminated c string as UTF-8.
+            ///     Interpret a zero-terminated c string as UTF-8.
             /// </summary>
-            public unsafe static string PtrToStringUTF8(IntPtr strPtr)
+            public static unsafe string PtrToStringUTF8(IntPtr strPtr)
             {
                 if (strPtr == IntPtr.Zero)
                 {
                     return null;
                 }
                 
-                // TODO: Is there a built in / vectorized / better way to implement this?              
+#if NET6_0_OR_GREATER
+                var span = MemoryMarshal.CreateReadOnlySpanFromNullTerminated((byte*)strPtr);
+                return Encoding.UTF8.GetString(span);
+#else
                 byte* pTraverse = (byte*)strPtr;
-                while (*pTraverse != 0) { pTraverse += 1; }
+                while (*pTraverse != 0) pTraverse++;
                 var length = (int)(pTraverse - (byte*)strPtr);
 
-                return Encoding.UTF8.GetString((byte*)strPtr.ToPointer(), length);
+                return Encoding.UTF8.GetString((byte*)strPtr, length);
+#endif
             }
 
-            public unsafe static string PtrToStringUTF8(IntPtr strPtr, UIntPtr strLength)
+            public static unsafe string PtrToStringUTF8(IntPtr strPtr, UIntPtr strLength)
             {
                 if (strPtr == IntPtr.Zero)
                 {
                     return null;
                 }
 
-                return Encoding.UTF8.GetString((byte*)strPtr.ToPointer(), (int)strLength);
+                return Encoding.UTF8.GetString((byte*)strPtr, (int)strLength);
             }
 
             public static T PtrToStructure<T>(IntPtr ptr)
