@@ -107,6 +107,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     property.Key != AvroSerializerConfig.PropertyNames.UseLatestWithMetadata &&
                     property.Key != AvroSerializerConfig.PropertyNames.BufferBytes &&
                     property.Key != AvroSerializerConfig.PropertyNames.SubjectNameStrategy &&
+                    property.Key != AvroSerializerConfig.PropertyNames.SchemaIdStrategy &&
                     property.Key != AvroSerializerConfig.PropertyNames.NormalizeSchemas)
                 {
                     throw new ArgumentException($"AvroSerializer: unknown configuration property {property.Key}");

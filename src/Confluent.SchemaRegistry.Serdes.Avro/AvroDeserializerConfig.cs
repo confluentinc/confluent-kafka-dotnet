@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Confluent.Kafka;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -53,6 +52,12 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
             public const string SubjectNameStrategy = "avro.deserializer.subject.name.strategy";
+
+            /// <summary>
+            ///     The schema id name strategy to use to serialize the ID/GUID.
+            ///     Possible values: <see cref="Confluent.SchemaRegistry.SchemaIdDeserializerStrategy" />
+            /// </summary>
+            public const string SchemaIdStrategy = "avro.deserializer.schema.id.strategy";
         }
 
 
@@ -122,6 +127,35 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 if (value == null) { this.properties.Remove(PropertyNames.SubjectNameStrategy); }
                 else { this.properties[PropertyNames.SubjectNameStrategy] = value.ToString(); }
+            }
+        }
+
+
+        /// <summary>
+        ///     Schema id strategy.
+        ///
+        ///     default: SchemaIdDeserializerStrategy.Dual
+        /// </summary>
+        public SchemaIdDeserializerStrategy? SchemaIdStrategy
+        {
+            get
+            {
+                var r = Get(PropertyNames.SchemaIdStrategy);
+                if (r == null) { return null; }
+                else
+                {
+                    SchemaIdDeserializerStrategy result;
+                    if (!Enum.TryParse<SchemaIdDeserializerStrategy>(r, out result))
+                        throw new ArgumentException(
+                            $"Unknown ${PropertyNames.SchemaIdStrategy} value: {r}.");
+                    else
+                        return result;
+                }
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove(PropertyNames.SchemaIdStrategy); }
+                else { this.properties[PropertyNames.SchemaIdStrategy] = value.ToString(); }
             }
         }
     }
