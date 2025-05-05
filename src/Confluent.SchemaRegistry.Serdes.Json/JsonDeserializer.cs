@@ -189,7 +189,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 T value;
                 IList<Migration> migrations = new List<Migration>();
                 SchemaId writerId = new SchemaId(SchemaType.Json);
-                using (var stream = schemaIdDeserializer.Deserialize(array, context, writerId))
+                using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
                 {
                     if (schemaRegistryClient != null)
                     {

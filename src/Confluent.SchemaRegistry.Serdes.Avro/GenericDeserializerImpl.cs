@@ -83,7 +83,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 SerializationContext context = new SerializationContext(
                     isKey ? MessageComponentType.Key : MessageComponentType.Value, topic, headers);
                 SchemaId writerId = new SchemaId(SchemaType.Avro);
-                using (var stream = schemaIdDeserializer.Deserialize(array, context, writerId))
+                using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
                 {
                     (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId);
                     if (subject == null)

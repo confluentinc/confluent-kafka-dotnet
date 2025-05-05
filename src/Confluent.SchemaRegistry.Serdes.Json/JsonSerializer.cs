@@ -69,7 +69,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A given schema is uniquely identified by a schema id, even when
         ///     registered against multiple subjects.
         /// </remarks>
-        private SchemaId? schemaId;
+        private SchemaId schemaId;
 
         private JsonSchema schema;
         private string schemaText;
