@@ -57,7 +57,7 @@ namespace Confluent.SchemaRegistry.Encryption
             }
             else
             {
-                Configs = config;
+                Configs = config ?? new Dictionary<string, string>();
             }
 
             if (Client == null)
