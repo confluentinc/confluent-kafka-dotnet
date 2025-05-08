@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Avro.IO;
@@ -48,6 +47,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdDeserializer = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 
         public override async Task<GenericRecord> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull,
@@ -66,11 +66,6 @@ namespace Confluent.SchemaRegistry.Serdes
                 // Note: topic is not necessary for deserialization (or knowing if it's a key 
                 // or value) only the schema id is needed.
 
-                if (array.Length < 5)
-                {
-                    throw new InvalidDataException($"Expecting data framing of length 5 bytes or more but total data size is {array.Length} bytes");
-                }
-
                 string subject = GetSubjectName(topic, isKey, null);
                 RegisteredSchema latestSchema = null;
                 if (subject != null)
@@ -85,17 +80,12 @@ namespace Confluent.SchemaRegistry.Serdes
                 Avro.Schema readerSchema;
                 GenericRecord data;
                 IList<Migration> migrations = new List<Migration>();
-                using (var stream = new MemoryStream(array))
-                using (var reader = new BinaryReader(stream))
+                SerializationContext context = new SerializationContext(
+                    isKey ? MessageComponentType.Key : MessageComponentType.Value, topic, headers);
+                SchemaId writerId = new SchemaId(SchemaType.Avro);
+                using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
                 {
-                    var magicByte = reader.ReadByte();
-                    if (magicByte != Constants.MagicByte)
-                    {
-                        throw new InvalidDataException($"Expecting data with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
-                    }
-                    var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
-
-                    (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
+                    (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId);
                     if (subject == null)
                     {
                         subject = GetSubjectName(topic, isKey, writerSchema.Fullname);
@@ -130,7 +120,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                             jsonString = Encoding.UTF8.GetString(jsonStream.ToArray());
                         }
-                        
+
                         JToken json = JToken.Parse(jsonString);
                         json = await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
                             .ContinueWith(t => (JToken)t.Result)
@@ -138,7 +128,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         readerSchemaJson = latestSchema;
                         readerSchema = await GetParsedSchema(readerSchemaJson);
                         Avro.IO.Decoder decoder = new JsonDecoder(readerSchema, json.ToString(Formatting.None));
-                        
+
                         datumReader = new GenericReader<GenericRecord>(readerSchema, readerSchema);
                         data = datumReader.Read(default(GenericRecord), decoder);
                     }
@@ -158,7 +148,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         data = datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
                     }
                 }
-                
+
                 FieldTransformer fieldTransformer = async (ctx, transform, message) => 
                 {
                     return await AvroUtils.Transform(ctx, readerSchema, message, transform).ConfigureAwait(false);

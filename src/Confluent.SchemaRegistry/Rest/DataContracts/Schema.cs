@@ -133,7 +133,7 @@ namespace  Confluent.SchemaRegistry
             {
                 switch (SchemaType_String)
                 {
-                    case "AVRO": return SchemaType.Avro;
+                    case "AVRO": case null: return SchemaType.Avro;
                     case "PROTOBUF": return SchemaType.Protobuf;
                     case "JSON": return SchemaType.Json;
                 }

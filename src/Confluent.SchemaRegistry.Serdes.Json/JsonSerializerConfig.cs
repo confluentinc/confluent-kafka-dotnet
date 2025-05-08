@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Confluent.Kafka;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -99,6 +98,12 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
             public const string SubjectNameStrategy = "json.serializer.subject.name.strategy";
+
+            /// <summary>
+            ///     The schema id name strategy to use to serialize the ID/GUID.
+            ///     Possible values: <see cref="Confluent.SchemaRegistry.SchemaIdSerializerStrategy" />
+            /// </summary>
+            public const string SchemaIdStrategy = "json.serializer.schema.id.strategy";
 
             /// <summary>
             ///     Specifies whether to validate payloads against the schema.
@@ -243,6 +248,35 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 if (value == null) { this.properties.Remove(PropertyNames.SubjectNameStrategy); }
                 else { this.properties[PropertyNames.SubjectNameStrategy] = value.ToString(); }
+            }
+        }
+
+
+        /// <summary>
+        ///     Schema id strategy.
+        ///
+        ///     default: SchemaIdSerializerStrategy.Prefix
+        /// </summary>
+        public SchemaIdSerializerStrategy? SchemaIdStrategy
+        {
+            get
+            {
+                var r = Get(PropertyNames.SchemaIdStrategy);
+                if (r == null) { return null; }
+                else
+                {
+                    SchemaIdSerializerStrategy result;
+                    if (!Enum.TryParse<SchemaIdSerializerStrategy>(r, out result))
+                        throw new ArgumentException(
+                            $"Unknown ${PropertyNames.SchemaIdStrategy} value: {r}.");
+                    else
+                        return result;
+                }
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove(PropertyNames.SchemaIdStrategy); }
+                else { this.properties[PropertyNames.SchemaIdStrategy] = value.ToString(); }
             }
         }
 

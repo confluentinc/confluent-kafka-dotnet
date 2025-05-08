@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -61,9 +60,9 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
-        private Schema schemaJson = null;
+        private Schema schemaJson;
 
-        private JsonSchema schema = null;
+        private JsonSchema schema;
 
         private bool validate = true;
 
@@ -114,6 +113,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdDeserializer = config.SchemaIdStrategy.Value.ToDeserializer(); }
             if (config.Validate != null) { this.validate = config.Validate.Value; }
         }
 
@@ -170,11 +170,6 @@ namespace Confluent.SchemaRegistry.Serdes
             if (isNull) { return null; }
 
             var array = data.ToArray();
-            if (array.Length < 6)
-            {
-                throw new InvalidDataException($"Expecting data framing of length 6 bytes or more but total data size is {array.Length} bytes");
-            }
-
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
             string subject = GetSubjectName(topic, isKey, null);
@@ -193,20 +188,12 @@ namespace Confluent.SchemaRegistry.Serdes
                 JsonSchema readerSchema;
                 T value;
                 IList<Migration> migrations = new List<Migration>();
-                using (var stream = new MemoryStream(array))
-                using (var reader = new BinaryReader(stream))
+                SchemaId writerId = new SchemaId(SchemaType.Json);
+                using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
                 {
-                    var magicByte = reader.ReadByte();
-                    if (magicByte != Constants.MagicByte)
-                    {
-                        throw new InvalidDataException($"Expecting message {context.Component.ToString()} with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
-                    }
-
-                    var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
-
                     if (schemaRegistryClient != null)
                     {
-                        (writerSchemaJson, writerSchema) = await GetSchema(subject, writerId);
+                        (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId);
                         if (subject == null)
                         {
                             subject = GetSubjectName(topic, isKey, writerSchema.Title);
@@ -238,8 +225,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (migrations.Count > 0)
                     {
-                        using (var jsonStream = new MemoryStream(array, headerSize, array.Length - headerSize))
-                        using (var jsonReader = new StreamReader(jsonStream, Encoding.UTF8))
+                        using (var jsonReader = new StreamReader(stream, Encoding.UTF8))
                         {
                             JToken json = Newtonsoft.Json.JsonConvert.DeserializeObject<JToken>(jsonReader.ReadToEnd(),
                                 jsonSchemaGeneratorSettingsSerializerSettings
@@ -263,8 +249,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                     else
                     {
-                        using (var jsonStream = new MemoryStream(array, headerSize, array.Length - headerSize))
-                        using (var jsonReader = new StreamReader(jsonStream, Encoding.UTF8))
+                        using (var jsonReader = new StreamReader(stream, Encoding.UTF8))
                         {
                             string serializedString = jsonReader.ReadToEnd();
 
