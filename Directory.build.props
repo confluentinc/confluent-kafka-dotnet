@@ -1,5 +1,5 @@
 <Project>
   <PropertyGroup>
-    <LangVersion>13</LangVersion>
+    <LangVersion>12</LangVersion>
   </PropertyGroup>
 </Project>
