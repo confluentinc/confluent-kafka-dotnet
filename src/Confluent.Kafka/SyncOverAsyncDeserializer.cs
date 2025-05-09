@@ -73,7 +73,6 @@ namespace Confluent.Kafka.SyncOverAsync
         /// </returns>
         public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
             => asyncDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(data.ToArray()), isNull, context)
-                    .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
     }
