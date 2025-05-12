@@ -27,6 +27,9 @@ namespace Confluent.Kafka
     ///     Defines an Apache Kafka admin client.
     /// </summary>
     public interface IAdminClient : IClient
+#if NET6_0_OR_GREATER
+        , IAsyncDisposable
+#endif
     {
         /// <summary>
         ///     DEPRECATED.

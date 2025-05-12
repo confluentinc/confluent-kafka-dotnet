@@ -30,7 +30,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Implements an Apache Kafka admin client.
     /// </summary>
-    internal class AdminClient : IAdminClient
+    internal sealed class AdminClient : IAdminClient
     {
         private int cancellationDelayMaxMs;
 
@@ -1654,51 +1654,51 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Releases all resources used by this AdminClient. In the current
-        ///     implementation, this method may block for up to 100ms. This 
-        ///     will be replaced with a non-blocking version in the future.
+        ///     implementation, this method may block for up to 100ms. It is
+        ///     recommended to use <see cref="DisposeAsync"/> instead.
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-
-        /// <summary>
-        ///     Releases the unmanaged resources used by the
-        ///     <see cref="Confluent.Kafka.AdminClient" />
-        ///     and optionally disposes the managed resources.
-        /// </summary>
-        /// <param name="disposing">
-        ///     true to release both managed and unmanaged resources;
-        ///     false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
+            callbackCts.Cancel();
+            try
             {
-                callbackCts.Cancel();
-                try
-                {
-                    callbackTask.Wait();
-                }
-                catch (AggregateException e)
-                {
-                    if (e.InnerException.GetType() != typeof(TaskCanceledException))
-                    {
-                        // program execution should never get here.
-                        throw e.InnerException;
-                    }
-                }
-                finally
-                {
-                    callbackCts.Dispose();
-                }
-
-                DisposeResources();
+                callbackTask.Wait();
             }
+            catch (AggregateException e)
+            {
+                if (e.InnerException.GetType() != typeof(TaskCanceledException))
+                {
+                    // program execution should never get here.
+                    throw e.InnerException;
+                }
+            }
+            finally
+            {
+                callbackCts.Dispose();
+            }
+
+            DisposeResources();
         }
 
+#if NET6_0_OR_GREATER
+        public async ValueTask DisposeAsync()
+        {
+            callbackCts.Cancel();
+            try
+            {
+                await callbackTask;
+            }
+            catch (TaskCanceledException)
+            {
+            }
+            finally
+            {
+                callbackCts.Dispose();
+            }
+
+            DisposeResources();
+        }
+#endif
 
         private void DisposeResources()
         {
