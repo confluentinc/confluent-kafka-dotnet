@@ -1353,7 +1353,7 @@ namespace Confluent.Kafka
                                 //       ignore the situation, we panic, destroy the librdkafka handle, 
                                 //       and exit the polling loop. Further usage of the AdminClient will
                                 //       result in exceptions. People will be sure to notice and tell us.
-                                this.DisposeResources();
+                                this.Dispose(true);
                                 break;
                             }
                             finally
@@ -1651,11 +1651,15 @@ namespace Confluent.Kafka
         public Handle Handle
             => handle;
 
+        ~AdminClient()
+        {
+            Dispose(false);
+        }
 
         /// <summary>
         ///     Releases all resources used by this AdminClient. In the current
-        ///     implementation, this method may block for up to 100ms. It is
-        ///     recommended to use <see cref="DisposeAsync"/> instead.
+        ///     implementation, this method may block for up to 100ms. With
+        ///     .NET 6+, it is recommended to use DisposeAsync instead.
         /// </summary>
         public void Dispose()
         {
@@ -1677,7 +1681,8 @@ namespace Confluent.Kafka
                 callbackCts.Dispose();
             }
 
-            DisposeResources();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
 #if NET6_0_OR_GREATER
@@ -1688,7 +1693,7 @@ namespace Confluent.Kafka
             {
                 await callbackTask;
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException)
             {
             }
             finally
@@ -1696,18 +1701,22 @@ namespace Confluent.Kafka
                 callbackCts.Dispose();
             }
 
-            DisposeResources();
+            Dispose(false);
+            GC.SuppressFinalize(this);
         }
 #endif
 
-        private void DisposeResources()
+        private void Dispose(bool disposing)
         {
-            kafkaHandle.DestroyQueue(resultQueue);
-
-            if (handle.Owner == this)
+            if (disposing)
             {
-                ownedClient.Dispose();
+                if (handle.Owner == this)
+                {
+                    ownedClient.Dispose();
+                }
             }
+
+            kafkaHandle.DestroyQueue(resultQueue);
         }
 
         /// <summary>
