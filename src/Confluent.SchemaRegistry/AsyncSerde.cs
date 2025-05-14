@@ -40,7 +40,7 @@ namespace Confluent.SchemaRegistry
         protected bool latestCompatibilityStrict = false;
         protected IDictionary<string, string> useLatestWithMetadata = null;
         protected SubjectNameStrategyDelegate subjectNameStrategy = null;
-        
+
         protected SemaphoreSlim serdeMutex = new SemaphoreSlim(1);
         
         private readonly IDictionary<Schema, TParsedSchema> parsedSchemaCache = new ConcurrentDictionary<Schema, TParsedSchema>();
@@ -90,12 +90,26 @@ namespace Confluent.SchemaRegistry
             }
         }
 
-        protected async Task<(Schema, TParsedSchema)> GetSchema(string subject, int writerId, string format = null)
+        protected async Task<(Schema, TParsedSchema)> GetWriterSchema(string subject, SchemaId writerId, string format = null)
         {
-            Schema writerSchema = await schemaRegistryClient.GetSchemaBySubjectAndIdAsync(subject, writerId, format)
-                .ConfigureAwait(continueOnCapturedContext: false);
-            TParsedSchema parsedSchema = await GetParsedSchema(writerSchema);
-            return (writerSchema, parsedSchema);
+            if (writerId.Id != null)
+            {
+                Schema writerSchema = await schemaRegistryClient.GetSchemaBySubjectAndIdAsync(subject, writerId.Id ?? 0, format)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+                TParsedSchema parsedSchema = await GetParsedSchema(writerSchema);
+                return (writerSchema, parsedSchema);
+            }
+            else if (writerId.Guid != null)
+            {
+                Schema writerSchema = await schemaRegistryClient.GetSchemaByGuidAsync(writerId.Guid.ToString(), format)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+                TParsedSchema parsedSchema = await GetParsedSchema(writerSchema);
+                return (writerSchema, parsedSchema);
+            }
+            else
+            {
+                throw new SerializationException("Invalid schema id");
+            }
         }
 
         protected async Task<TParsedSchema> GetParsedSchema(Schema schema)
