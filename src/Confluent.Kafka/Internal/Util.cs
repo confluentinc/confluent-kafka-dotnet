@@ -16,6 +16,9 @@
 
 using System;
 using System.Text;
+#if NET6_0_OR_GREATER
+using System.Runtime.InteropServices;
+#endif
 using SystemMarshal = System.Runtime.InteropServices.Marshal;
 using SystemGCHandle = System.Runtime.InteropServices.GCHandle;
 using SystemGCHandleType = System.Runtime.InteropServices.GCHandleType;
@@ -31,7 +34,7 @@ namespace Confluent.Kafka.Internal
             ///     Convenience class for generating and pinning the UTF8
             ///     representation of a string.
             /// </summary>
-            public class StringAsPinnedUTF8 : IDisposable
+            public sealed class StringAsPinnedUTF8 : IDisposable
             {
                 private SystemGCHandle gch;
 
@@ -60,13 +63,18 @@ namespace Confluent.Kafka.Internal
                 {
                     return null;
                 }
-                
+
+#if NET6_0_OR_GREATER
+                var bytes = MemoryMarshal.CreateReadOnlySpanFromNullTerminated((byte*)strPtr.ToPointer());
+                return Encoding.UTF8.GetString(bytes);
+#else
                 // TODO: Is there a built in / vectorized / better way to implement this?              
                 byte* pTraverse = (byte*)strPtr;
                 while (*pTraverse != 0) { pTraverse += 1; }
                 var length = (int)(pTraverse - (byte*)strPtr);
 
                 return Encoding.UTF8.GetString((byte*)strPtr.ToPointer(), length);
+#endif
             }
 
             public unsafe static string PtrToStringUTF8(IntPtr strPtr, UIntPtr strLength)
