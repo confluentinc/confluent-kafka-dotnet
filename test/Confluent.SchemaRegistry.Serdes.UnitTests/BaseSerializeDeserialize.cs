@@ -47,6 +47,29 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schemaRegistryMock.Setup(x => x.RegisterSchemaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(
                 (string subject, string schema, bool normalize) => store.TryGetValue(schema, out int id) ? id : store[schema] = store.Count + 1
             );
+            schemaRegistryMock.Setup(x => x.RegisterSchemaWithResponseAsync(It.IsAny<string>(), It.IsAny<Schema>(), It.IsAny<bool>())).ReturnsAsync(
+                (string subject, Schema schema, bool normalize) =>
+                {
+                    List<RegisteredSchema> schemas;
+                    if (!subjectStore.TryGetValue(subject, out schemas))
+                    {
+                        schemas = new List<RegisteredSchema>();
+                        subjectStore[subject] = schemas;
+                    }
+                    var result = schemas.FirstOrDefault(x => x.SchemaString == schema.SchemaString, null);
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                    int id = store.Count + 1;
+                    String guid = Guid.NewGuid().ToString();
+                    int version = schemas.Count + 1;
+                    result = new RegisteredSchema(subject, version, id, guid, schema.SchemaString, schema.SchemaType, schema.References);
+                    schemas.Add(result);
+                    store[schema] = id;
+                    return result;
+                }
+            );
             schemaRegistryMock.Setup(x => x.GetSchemaIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(
                 (string subject, string schema, bool normalize) =>
                 {
@@ -76,6 +99,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                         // Next try store
                         return new Schema(store.Where(x => x.Value == id).First().Key, null, SchemaType.Avro);
                     }
+                });
+            schemaRegistryMock.Setup(x => x.GetSchemaByGuidAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(
+                (string guid, string format) =>
+                {
+                    return subjectStore.Values.SelectMany(x => x.Where(x => x.Guid == guid)).First();
                 });
             schemaRegistryMock.Setup(x => x.GetRegisteredSchemaAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>())).ReturnsAsync(
                 (string subject, int version, bool ignoreDeletedSchemas) => subjectStore[subject].First(x => x.Version == version)
