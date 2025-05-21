@@ -781,6 +781,89 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void CELFieldTransformWithList()
+        {
+            var schemaStr = @"{
+                ""$schema"" : ""http://json-schema.org/draft-07/schema#"",
+                ""additionalProperties"" : false,
+                ""definitions"" : {
+                    ""Address"" : {
+                        ""additionalProperties"" : false,
+                        ""properties"" : {
+                            ""DoorNumber"" : {
+                                ""type"" : ""integer""
+                            },
+                            ""DoorPin"" : {
+                                ""confluent:tags"" : [ ""PII"" ],
+                                ""type"" : ""string""
+                            }
+                        },
+                        ""type"" : ""object""
+                    }
+                },
+                ""properties"" : {
+                    ""Addresses"" : {
+                        ""type"": ""array"",
+                        ""items"" : {
+                            ""$ref"" : ""#/definitions/Address""
+                        }
+                    },
+                    ""Name"" : {
+                        ""confluent:tags"" : [ ""PII"" ],
+                        ""type"" : ""string""
+                    }
+                },
+                ""title"" : ""Sample Event"",
+                ""type"" : ""object""
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", new HashSet<string>
+                        {
+                            "PII"
+
+                        }, null,
+                        "value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new JsonSerializer<JsonPersonWithList>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<JsonPersonWithList>(schemaRegistryClient);
+
+            var address1 = new Address
+            {
+                DoorNumber = 100,
+                DoorPin = "1234"
+            };
+            var address2 = new Address
+            {
+                DoorNumber = 200,
+                DoorPin = "5678"
+            };
+            var person = new JsonPersonWithList()
+            {
+                Addresses = new List<Address> { address1, address2 },
+                Name = "bob"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(person, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("bob-suffix", result.Name);
+            Assert.Equal("1234-suffix", result.Addresses[0].DoorPin);
+            Assert.Equal("5678-suffix", result.Addresses[1].DoorPin);
+        }
+
+        [Fact]
         public void CELFieldCondition()
         {
             var schemaStr = @"{
@@ -1182,7 +1265,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
     {
         public string Name { get; set; }
         public Address Address { get; set; }
+    }
 
+    class JsonPersonWithList
+    {
+        public string Name { get; set; }
+        public List<Address> Addresses { get; set; }
     }
 
     class Address
