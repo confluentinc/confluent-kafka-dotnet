@@ -222,7 +222,7 @@ namespace Confluent.SchemaRegistry
 
                 try
                 {
-                    response = await SendRequest(clients[clientIndex], createRequest);
+                    response = await SendRequest(clients[clientIndex], createRequest).ConfigureAwait(false);
 
                     if (IsSuccess((int)response.StatusCode))
                     {
@@ -320,7 +320,8 @@ namespace Confluent.SchemaRegistry
                     return response;
                 }
 
-                await Task.Delay(RetryUtility.CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i));
+                await Task.Delay(RetryUtility.CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i))
+                    .ConfigureAwait(false);
             }
             return response;
         }
