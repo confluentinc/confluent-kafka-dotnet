@@ -257,7 +257,7 @@ namespace Confluent.SchemaRegistry
             foreach (var item in (IEnumerable)sourceEnumerable)
             {
                 // Call transformer with (index, element) and await its Task<object>
-                var transformed = await indexedTransformer(index, item);
+                var transformed = await indexedTransformer(index, item).ConfigureAwait(false);
                 // Optionally validate that transformed is assignable to T
                 resultList.Add(transformed);
                 index++;
@@ -321,7 +321,7 @@ namespace Confluent.SchemaRegistry
                 var valueObj = entry.Value;
 
                 // Invoke and await the transformer(key, value)
-                var transformedValueObj = await transformer(keyObj, valueObj);
+                var transformedValueObj = await transformer(keyObj, valueObj).ConfigureAwait(false);
 
                 // Add to the result dictionary (will cast transformedValueObj → V)
                 resultDict.Add(keyObj, transformedValueObj);
