@@ -411,8 +411,6 @@ namespace Confluent.SchemaRegistry
                 request.Headers.ConnectionClose = true;
             }
 
-            Console.WriteLine("Request: " + request.Headers.ToString());
-
             return request;
         }
 
