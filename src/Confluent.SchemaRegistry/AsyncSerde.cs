@@ -96,14 +96,14 @@ namespace Confluent.SchemaRegistry
             {
                 Schema writerSchema = await schemaRegistryClient.GetSchemaBySubjectAndIdAsync(subject, writerId.Id ?? 0, format)
                     .ConfigureAwait(continueOnCapturedContext: false);
-                TParsedSchema parsedSchema = await GetParsedSchema(writerSchema);
+                TParsedSchema parsedSchema = await GetParsedSchema(writerSchema).ConfigureAwait(false);
                 return (writerSchema, parsedSchema);
             }
             else if (writerId.Guid != null)
             {
                 Schema writerSchema = await schemaRegistryClient.GetSchemaByGuidAsync(writerId.Guid.ToString(), format)
                     .ConfigureAwait(continueOnCapturedContext: false);
-                TParsedSchema parsedSchema = await GetParsedSchema(writerSchema);
+                TParsedSchema parsedSchema = await GetParsedSchema(writerSchema).ConfigureAwait(false);
                 return (writerSchema, parsedSchema);
             }
             else

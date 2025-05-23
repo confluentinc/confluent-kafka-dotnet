@@ -282,7 +282,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, jsonSchemaGeneratorSettings);
-            return await utils.GetResolvedSchema();
+            return await utils.GetResolvedSchema().ConfigureAwait(false);
         }
     }
 }

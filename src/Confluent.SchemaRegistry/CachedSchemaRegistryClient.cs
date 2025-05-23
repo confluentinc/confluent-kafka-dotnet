@@ -444,7 +444,7 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public async Task<int> GetSchemaIdAsync(string subject, Schema schema, bool normalize = false)
         {
-            var registeredSchema = await LookupSchemaAsync(subject, schema, true, normalize);
+            var registeredSchema = await LookupSchemaAsync(subject, schema, true, normalize).ConfigureAwait(false);
             return registeredSchema.Id;
         }
 
@@ -452,7 +452,7 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public async Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize = false)
         {
-            var registeredSchema = await RegisterSchemaWithResponseAsync(subject, schema, normalize);
+            var registeredSchema = await RegisterSchemaWithResponseAsync(subject, schema, normalize).ConfigureAwait(false);
             return registeredSchema.Id;
         }
 
@@ -464,7 +464,7 @@ namespace Confluent.SchemaRegistry
             {
                 if (registeredSchemaBySchema.TryGetValue(schema, out var registeredSchema))
                 {
-                    return await registeredSchema;
+                    return await registeredSchema.ConfigureAwait(false);
                 }
             }
 
@@ -494,7 +494,7 @@ namespace Confluent.SchemaRegistry
             {
                 if (registeredSchemaBySchema.TryGetValue(schema, out var registeredSchema))
                 {
-                    var result = await registeredSchema;
+                    var result = await registeredSchema.ConfigureAwait(false);
                     if (result.Version > 0)
                     {
                         return result;
@@ -517,7 +517,7 @@ namespace Confluent.SchemaRegistry
             var schemaId = new SchemaId(id, format);
             if (schemaById.TryGetValue(schemaId, out var schema))
             {
-                return await schema;
+                return await schema.ConfigureAwait(false);
             }
             
             CleanCacheIfFull();
@@ -531,7 +531,7 @@ namespace Confluent.SchemaRegistry
             var schemaId = new SchemaId(id, format);
             if (this.schemaById.TryGetValue(schemaId, out var schema))
             {
-                return await schema;
+                return await schema.ConfigureAwait(false);
             }
 
             return await schemaById.GetOrAddAsync(schemaId, _ => restService.GetSchemaBySubjectAndIdAsync(subject, id, format)).ConfigureAwait(continueOnCapturedContext: false);
@@ -544,7 +544,7 @@ namespace Confluent.SchemaRegistry
             var schemaGuid = new SchemaGuid(guid, format);
             if (this.schemaByGuid.TryGetValue(schemaGuid, out var schema))
             {
-                return await schema;
+                return await schema.ConfigureAwait(false);
             }
             
             return await schemaByGuid.GetOrAddAsync(schemaGuid, _ => restService.GetSchemaByGuidAsync(guid, format)).ConfigureAwait(continueOnCapturedContext: false);
@@ -558,7 +558,7 @@ namespace Confluent.SchemaRegistry
             {
                 if (schemaByVersion.TryGetValue(version, out var schema))
                 {
-                    return await schema;
+                    return await schema.ConfigureAwait(false);
                 }
             }
             
@@ -582,7 +582,7 @@ namespace Confluent.SchemaRegistry
         [Obsolete(
             "Superseded by GetRegisteredSchemaAsync(string subject, int version). This method will be removed in a future release.")]
         public async Task<string> GetSchemaAsync(string subject, int version)
-            => (await GetRegisteredSchemaAsync(subject, version)).SchemaString;
+            => (await GetRegisteredSchemaAsync(subject, version).ConfigureAwait(false)).SchemaString;
 
 
         /// <inheritdoc/>

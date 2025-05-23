@@ -193,7 +193,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     if (schemaRegistryClient != null)
                     {
-                        (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId);
+                        (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId)
+                            .ConfigureAwait(false);
                         if (subject == null)
                         {
                             subject = GetSubjectName(topic, isKey, writerSchema.Title);
@@ -210,7 +211,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
                             .ConfigureAwait(continueOnCapturedContext: false);
                         readerSchemaJson = latestSchema;
-                        readerSchema = await GetParsedSchema(latestSchema);
+                        readerSchema = await GetParsedSchema(latestSchema).ConfigureAwait(false);
                     }
                     else if (schema != null)
                     {
@@ -296,7 +297,7 @@ namespace Confluent.SchemaRegistry.Serdes
             JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, jsonSchemaGeneratorSettings);
             
-            return await utils.GetResolvedSchema();
+            return await utils.GetResolvedSchema().ConfigureAwait(false);
         }
     }
 }
