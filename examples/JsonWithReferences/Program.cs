@@ -22,7 +22,12 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using NJsonSchema.Generation;
+#if NET8_0_OR_GREATER
+using NJsonSchema.NewtonsoftJson.Generation;
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.NewtonsoftJson.Generation.NewtonsoftJsonSchemaGeneratorSettings;
+#else
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.Generation.JsonSchemaGeneratorSettings;
+#endif
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -150,7 +155,7 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
             // from default one to camelCase.
             // It's also possible to add JsonProperty attributes to customize
             // serialization mapping and all available NJson attributes.
-            var jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+            var jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
             {
                 SerializerSettings = new JsonSerializerSettings
                 {
