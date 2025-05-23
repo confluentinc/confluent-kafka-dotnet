@@ -101,11 +101,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     && (message.GetType().GetGenericTypeDefinition() == typeof(List<>)
                         || message.GetType().GetGenericTypeDefinition() == typeof(IList<>))))
             {
-                var tasks = ((IList<object>)message)
-                    .Select(it => Transform(ctx, desc, it, fieldTransform))
-                    .ToList();
-                object[] items = await Task.WhenAll(tasks).ConfigureAwait(false);
-                return items.ToList();
+                var transformer = (int index, object elem) =>
+                    Transform(ctx, desc, elem, fieldTransform);
+                return await Utils.TransformEnumerableAsync(message, transformer).ConfigureAwait(false);
             }
             else if (typeof(IDictionary).IsAssignableFrom(message.GetType())
                      || (message.GetType().IsGenericType
