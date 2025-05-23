@@ -136,7 +136,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     if (schemaRegistryClient != null)
                     {
-                        (writerSchema, fdSet) = await GetWriterSchema(subject, writerId);
+                        (writerSchema, fdSet) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
                     }
 
                     message = parser.ParseFrom(stream);

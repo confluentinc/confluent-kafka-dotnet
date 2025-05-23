@@ -56,7 +56,7 @@ namespace Confluent.SchemaRegistry.Serdes
             return isNull
                 ? default
                 : await Deserialize(context.Topic, context.Headers, data.ToArray(),
-                    context.Component == MessageComponentType.Key);
+                    context.Component == MessageComponentType.Key).ConfigureAwait(false);
         }
         
         public async Task<GenericRecord> Deserialize(string topic, Headers headers, byte[] array, bool isKey)
@@ -85,7 +85,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 SchemaId writerId = new SchemaId(SchemaType.Avro);
                 using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
                 {
-                    (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId);
+                    (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
                     if (subject == null)
                     {
                         subject = GetSubjectName(topic, isKey, writerSchema.Fullname);
@@ -126,7 +126,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             .ContinueWith(t => (JToken)t.Result)
                             .ConfigureAwait(continueOnCapturedContext: false);
                         readerSchemaJson = latestSchema;
-                        readerSchema = await GetParsedSchema(readerSchemaJson);
+                        readerSchema = await GetParsedSchema(readerSchemaJson).ConfigureAwait(false);
                         Avro.IO.Decoder decoder = new JsonDecoder(readerSchema, json.ToString(Formatting.None));
 
                         datumReader = new GenericReader<GenericRecord>(readerSchema, readerSchema);
@@ -137,14 +137,14 @@ namespace Confluent.SchemaRegistry.Serdes
                         if (latestSchema != null)
                         {
                             readerSchemaJson = latestSchema;
-                            readerSchema = await GetParsedSchema(readerSchemaJson);
+                            readerSchema = await GetParsedSchema(readerSchemaJson).ConfigureAwait(false);
                         }
                         else
                         {
                             readerSchemaJson = writerSchemaJson;
                             readerSchema = writerSchema;
                         }
-                        datumReader = await GetDatumReader(writerSchema, readerSchema);
+                        datumReader = await GetDatumReader(writerSchema, readerSchema).ConfigureAwait(false);
                         data = datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
                     }
                 }

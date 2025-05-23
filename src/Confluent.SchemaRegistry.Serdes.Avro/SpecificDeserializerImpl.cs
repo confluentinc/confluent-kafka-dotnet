@@ -107,7 +107,7 @@ namespace Confluent.SchemaRegistry.Serdes
             return isNull
                 ? default
                 : await Deserialize(context.Topic, context.Headers, data.ToArray(),
-                    context.Component == MessageComponentType.Key);
+                    context.Component == MessageComponentType.Key).ConfigureAwait(false);
         }
         
         public async Task<T> Deserialize(string topic, Headers headers, byte[] array, bool isKey)
@@ -134,7 +134,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 SchemaId writerId = new SchemaId(SchemaType.Avro);
                 using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
                 {
-                    (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId);
+                    (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
                     if (subject == null)
                     {
                         subject = GetSubjectName(topic, isKey, writerSchema.Fullname);
@@ -181,13 +181,15 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                     else
                     {
-                        datumReader = await GetDatumReader(writerSchema, ReaderSchema);
+                        datumReader = await GetDatumReader(writerSchema, ReaderSchema).ConfigureAwait(false);
                         data = Read(datumReader, new BinaryDecoder(stream));
                     }
                 }
 
                 Schema readerSchemaJson = latestSchema ?? writerSchemaJson;
-                Avro.Schema readerSchema = latestSchema != null ? await GetParsedSchema(latestSchema) : writerSchema;
+                Avro.Schema readerSchema = latestSchema != null
+                    ? await GetParsedSchema(latestSchema).ConfigureAwait(false)
+                    : writerSchema;
                 FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                 {
                     return await AvroUtils.Transform(ctx, readerSchema, message, transform).ConfigureAwait(false);
