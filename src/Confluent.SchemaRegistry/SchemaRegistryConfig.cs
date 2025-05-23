@@ -143,6 +143,11 @@ namespace Confluent.SchemaRegistry
             public const string SchemaRegistryBearerAuthTokenEndpointUrl = "schema.registry.bearer.auth.token.endpoint.url";
 
             /// <summary>
+            ///     Specifies whether to close the connection to the schema registry after use.
+            /// </summary>
+            public const string SchemaRegistryCloseConnection = "schema.registry.close.connection";
+
+            /// <summary>
             ///     Key subject name strategy.
             /// </summary>
             [Obsolete(
@@ -486,6 +491,15 @@ namespace Confluent.SchemaRegistry
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl, value); }
+        }
+
+        /// <summary>
+        ///     Specifies whether to close the connection to the schema registry after use.
+        /// </summary>
+        public bool? CloseConnection
+        {
+            get { return GetBool(SchemaRegistryConfig.PropertyNames.SchemaRegistryCloseConnection); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryCloseConnection, value); }
         }
 
         /// <summary>

@@ -64,6 +64,8 @@ namespace Confluent.SchemaRegistry
 
         private int retriesMaxWaitMs;
 
+        private bool closeConnection;
+
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
@@ -72,6 +74,16 @@ namespace Confluent.SchemaRegistry
             bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null,
             int maxRetries = DefaultMaxRetries, int retriesWaitMs = DefaultRetriesWaitMs,
             int retriesMaxWaitMs = DefaultRetriesMaxWaitMs)
+            : this(schemaRegistryUrl, timeoutMs, authenticationHeaderValueProvider, certificates, enableSslCertificateVerification, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, false)
+        {}
+        /// <summary>
+        ///     Initializes a new instance of the RestService class.
+        /// </summary>
+        public RestService(string schemaRegistryUrl, int timeoutMs,
+            IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
+            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null,
+            int maxRetries = DefaultMaxRetries, int retriesWaitMs = DefaultRetriesWaitMs,
+            int retriesMaxWaitMs = DefaultRetriesMaxWaitMs, bool closeConnection = false)
         {
             this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
             this.maxRetries = maxRetries;
@@ -86,6 +98,7 @@ namespace Confluent.SchemaRegistry
                     BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs)
                 })
                 .ToList();
+            this.closeConnection = closeConnection;
         }
 
         private static string SanitizeUri(string uri)
@@ -392,6 +405,13 @@ namespace Confluent.SchemaRegistry
                 }
                 request.Headers.Authorization = authenticationHeaderValueProvider.GetAuthenticationHeader();
             }
+
+            if (closeConnection)
+            {
+                request.Headers.ConnectionClose = true;
+            }
+
+            Console.WriteLine("Request: " + request.Headers.ToString());
 
             return request;
         }

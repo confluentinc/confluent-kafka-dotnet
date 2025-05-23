@@ -309,6 +309,10 @@ namespace Confluent.SchemaRegistry
             authenticationHeaderValueProvider = RestService.AuthenticationHeaderValueProvider(
                 config, authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs);
 
+            var closeConnectionMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryCloseConnection);
+            bool closeConnection = closeConnectionMaybe.Value == null ? false : bool.Parse(closeConnectionMaybe.Value);
+
             foreach (var property in config)
             {
                 if (!property.Key.StartsWith("schema.registry."))
@@ -333,6 +337,7 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryCloseConnection &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
@@ -362,7 +367,7 @@ namespace Confluent.SchemaRegistry
             var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
             var sslCaCertificate = string.IsNullOrEmpty(sslCaLocation) ? null : new X509Certificate2(sslCaLocation);
             this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
-                SetSslConfig(config), sslVerify, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs);
+                SetSslConfig(config), sslVerify, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, closeConnection);
         }
 
         /// <summary>
