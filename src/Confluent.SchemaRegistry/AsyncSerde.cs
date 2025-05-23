@@ -277,7 +277,7 @@ namespace Confluent.SchemaRegistry
             if (useSchemaId >= 0)
             {
                 var schemaForId =
-                    await schemaRegistryClient.GetSchemaBySubjectAndIdAsync(subject, useSchemaId);
+                    await schemaRegistryClient.GetSchemaBySubjectAndIdAsync(subject, useSchemaId).ConfigureAwait(false);
                 return await schemaRegistryClient.LookupSchemaAsync(subject, schemaForId, false, false)
                     .ConfigureAwait(continueOnCapturedContext: false);
             }
