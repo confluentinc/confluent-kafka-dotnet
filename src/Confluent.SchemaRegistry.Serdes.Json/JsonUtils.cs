@@ -74,11 +74,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 JsonSchema subschema = schema.Item;
-                var tasks = ((IList<object>)message)
-                    .Select((it, index) => Transform(ctx, subschema, path + '[' + index + ']', it, fieldTransform))
-                    .ToList();
-                object[] items = await Task.WhenAll(tasks).ConfigureAwait(false);
-                return items.ToList();
+                var transformer = (int index, object elem) =>
+                    Transform(ctx, subschema, path + '[' + index + ']', elem, fieldTransform);
+                return await Utils.TransformEnumerableAsync(message, transformer).ConfigureAwait(false);
             }
             else if (schema.IsObject)
             {
