@@ -210,9 +210,9 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        /// Asynchronously transforms each element of an IEnumerable<T>,
+        /// Asynchronously transforms each element of an IEnumerable&lt;T&gt;,
         /// passing in its zero-based index and the element itself, using a
-        /// Func<int, object, Task<object>>, and returns a List<T> of the transformed elements.
+        /// Func&lt;int, object, Task&lt;object&gt;&gt;, and returns a List&lt;T&gt; of the transformed elements.
         /// </summary>
         /// <param name="sourceEnumerable">
         ///   An object implementing IEnumerable&lt;T&gt; for some T.
@@ -252,26 +252,33 @@ namespace Confluent.SchemaRegistry
             var listType   = typeof(List<>).MakeGenericType(elementType);
             var resultList = (IList)Activator.CreateInstance(listType);
 
-            // 4. Enumerate via non-generic IEnumerable and apply the async indexed transformer
+            // 4. Kick off all transforms in parallel
+            var tasks = new List<Task<object>>();
             int index = 0;
             foreach (var item in (IEnumerable)sourceEnumerable)
             {
-                // Call transformer with (index, element) and await its Task<object>
-                var transformed = await indexedTransformer(index, item).ConfigureAwait(false);
-                // Optionally validate that transformed is assignable to T
-                resultList.Add(transformed);
+                tasks.Add(indexedTransformer(index, item));
                 index++;
             }
 
-            // 5. Return the List<T> as object
+            // 5. Await them all at once
+            var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            // 6. Populate the result list in original order
+            foreach (var transformed in results)
+            {
+                resultList.Add(transformed);
+            }
+
+            // 7. Return the List<T> as object
             return resultList;
         }
 
         /// <summary>
-        /// Asynchronously transforms each value of an IDictionary<K,V>,
-        /// by invoking the provided Func<object, object, Task<object>>
+        /// Asynchronously transforms each value of an IDictionary&lt;K,V&gt;,
+        /// by invoking the provided Func&lt;object, object, Task&lt;object&gt;&gt;
         /// passing in the key and the original value
-        /// and returns a new Dictionary<K,V> whose values are the awaited results.
+        /// and returns a new Dictionary&lt;K,V&gt; whose values are the awaited results.
         /// </summary>
         /// <param name="sourceDictionary">
         ///   An object implementing IDictionary&lt;K,V&gt; for some K,V.
@@ -315,19 +322,25 @@ namespace Confluent.SchemaRegistry
 
             // 4. Enumerate the source via the non‐generic IDictionary interface
             var nonGenericDict = (IDictionary)sourceDictionary;
+            var keys       = new List<object>();
+            var tasks      = new List<Task<object>>();
+
             foreach (DictionaryEntry entry in nonGenericDict)
             {
-                var keyObj   = entry.Key;
-                var valueObj = entry.Value;
-
-                // Invoke and await the transformer(key, value)
-                var transformedValueObj = await transformer(keyObj, valueObj).ConfigureAwait(false);
-
-                // Add to the result dictionary (will cast transformedValueObj → V)
-                resultDict.Add(keyObj, transformedValueObj);
+                keys.Add(entry.Key);
+                tasks.Add(transformer(entry.Key, entry.Value));
             }
 
-            // 5. Return the new Dictionary<K,V> as object
+            // 5. Await all transformations
+            var transformedValues = await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            // 6. Reconstruct the new dictionary in original order
+            for (int i = 0; i < keys.Count; i++)
+            {
+                resultDict.Add(keys[i], transformedValues[i]);
+            }
+
+            // 7. Return boxed Dictionary<K,V>
             return resultDict;
         }
     }
