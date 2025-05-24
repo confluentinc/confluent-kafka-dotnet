@@ -47,8 +47,6 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class ProtobufDeserializer<T> : AsyncDeserializer<T, FileDescriptorSet> where T : class, IMessage<T>, new()
     {
-        private bool useDeprecatedFormat;
-        
         private MessageParser<T> parser;
 
         /// <summary>
@@ -82,9 +80,9 @@ namespace Confluent.SchemaRegistry.Serdes
             }
 
             ProtobufDeserializerConfig protobufConfig = new ProtobufDeserializerConfig(config);
-            if (protobufConfig.UseDeprecatedFormat != null)
+            if (protobufConfig.UseDeprecatedFormat != null && protobufConfig.UseDeprecatedFormat.Value)
             {
-                this.useDeprecatedFormat = protobufConfig.UseDeprecatedFormat.Value;
+                throw new ArgumentException("ProtobufDeserializer: UseDeprecatedFormat is no longer supported");
             }
 
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
