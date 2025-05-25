@@ -1701,7 +1701,7 @@ namespace Confluent.Kafka
                 callbackCts.Dispose();
             }
 
-            Dispose(false);
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 #endif
