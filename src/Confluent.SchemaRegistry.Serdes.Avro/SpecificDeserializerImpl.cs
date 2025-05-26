@@ -98,7 +98,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-            if (config.SchemaIdStrategy != null) { this.schemaIdDeserializer = config.SchemaIdStrategy.Value.ToDeserializer(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 
         public override async Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull,
@@ -106,11 +106,11 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             return isNull
                 ? default
-                : await Deserialize(context.Topic, context.Headers, data.ToArray(),
+                : await Deserialize(context.Topic, context.Headers, data,
                     context.Component == MessageComponentType.Key).ConfigureAwait(false);
         }
         
-        public async Task<T> Deserialize(string topic, Headers headers, byte[] array, bool isKey)
+        public async Task<T> Deserialize(string topic, Headers headers, ReadOnlyMemory<byte> array, bool isKey)
         {
             try
             {
@@ -132,58 +132,66 @@ namespace Confluent.SchemaRegistry.Serdes
                 SerializationContext context = new SerializationContext(
                     isKey ? MessageComponentType.Key : MessageComponentType.Value, topic, headers);
                 SchemaId writerId = new SchemaId(SchemaType.Avro);
-                using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
+                var payload = schemaIdDecoder.Decode(array, context, ref writerId);
+                
+                (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
+                if (subject == null)
                 {
-                    (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
-                    if (subject == null)
+                    subject = GetSubjectName(topic, isKey, writerSchema.Fullname);
+                    if (subject != null)
                     {
-                        subject = GetSubjectName(topic, isKey, writerSchema.Fullname);
-                        if (subject != null)
-                        {
-                            latestSchema = await GetReaderSchema(subject)
-                                .ConfigureAwait(continueOnCapturedContext: false);
-                        }
-                    }
-                    
-                    if (latestSchema != null)
-                    {
-                        migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
+                        latestSchema = await GetReaderSchema(subject)
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
+                }
+                    
+                if (latestSchema != null)
+                {
+                    migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                }
 
-                    DatumReader<T> datumReader = null;
-                    if (migrations.Count > 0)
+                DatumReader<T> datumReader = null;
+                if (migrations.Count > 0)
+                {
+                    // TODO: We should be able to write a wrapper around ReadOnlyMemory<byte> that allows us to
+                    // pass it to the BinaryDecoder without copying the data to a MemoryStream.
+                    using (var memoryStream = new MemoryStream(payload.ToArray()))
                     {
                         data = new GenericReader<GenericRecord>(writerSchema, writerSchema)
-                            .Read(default(GenericRecord), new BinaryDecoder(stream));
-                        
-                        string jsonString = null;
-                        using (var jsonStream = new MemoryStream())
-                        {
-                            GenericRecord record = (GenericRecord)data;
-                            DatumWriter<object> datumWriter = new GenericDatumWriter<object>(writerSchema);
-
-                            JsonEncoder encoder = new JsonEncoder(writerSchema, jsonStream);
-                            datumWriter.Write(record, encoder);
-                            encoder.Flush();
-
-                            jsonString = Encoding.UTF8.GetString(jsonStream.ToArray());
-                        }
-                        
-                        JToken json = JToken.Parse(jsonString);
-                        json = await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
-                            .ContinueWith(t => (JToken)t.Result)
-                            .ConfigureAwait(continueOnCapturedContext: false);
-                        Avro.IO.Decoder decoder = new JsonDecoder(ReaderSchema, json.ToString(Formatting.None));
-                        
-                        datumReader = new SpecificReader<T>(ReaderSchema, ReaderSchema);
-                        data = Read(datumReader, decoder);
+                            .Read(default(GenericRecord), new BinaryDecoder(memoryStream));
                     }
-                    else
+                        
+                    string jsonString = null;
+                    using (var jsonStream = new MemoryStream())
                     {
-                        datumReader = await GetDatumReader(writerSchema, ReaderSchema).ConfigureAwait(false);
-                        data = Read(datumReader, new BinaryDecoder(stream));
+                        GenericRecord record = (GenericRecord)data;
+                        DatumWriter<object> datumWriter = new GenericDatumWriter<object>(writerSchema);
+
+                        JsonEncoder encoder = new JsonEncoder(writerSchema, jsonStream);
+                        datumWriter.Write(record, encoder);
+                        encoder.Flush();
+
+                        jsonString = Encoding.UTF8.GetString(jsonStream.ToArray());
                     }
+                        
+                    JToken json = JToken.Parse(jsonString);
+                    json = await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
+                        .ContinueWith(t => (JToken)t.Result)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                    Avro.IO.Decoder decoder = new JsonDecoder(ReaderSchema, json.ToString(Formatting.None));
+                        
+                    datumReader = new SpecificReader<T>(ReaderSchema, ReaderSchema);
+                    data = Read(datumReader, decoder);
+                }
+                else
+                {
+                    datumReader = await GetDatumReader(writerSchema, ReaderSchema).ConfigureAwait(false);
+
+                    // TODO: We should be able to write a wrapper around ReadOnlyMemory<byte> that allows us to
+                    // pass it to the BinaryDecoder without copying the data to a MemoryStream.
+                    using var stream = new MemoryStream(payload.ToArray());
+                    data = Read(datumReader, new BinaryDecoder(stream));
                 }
 
                 Schema readerSchemaJson = latestSchema ?? writerSchemaJson;

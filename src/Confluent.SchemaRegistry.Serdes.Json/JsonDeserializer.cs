@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -113,7 +114,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-            if (config.SchemaIdStrategy != null) { this.schemaIdDeserializer = config.SchemaIdStrategy.Value.ToDeserializer(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
             if (config.Validate != null) { this.validate = config.Validate.Value; }
         }
 
@@ -169,7 +170,6 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             if (isNull) { return null; }
 
-            var array = data.ToArray();
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
             string subject = GetSubjectName(topic, isKey, null);
@@ -189,86 +189,78 @@ namespace Confluent.SchemaRegistry.Serdes
                 T value;
                 IList<Migration> migrations = new List<Migration>();
                 SchemaId writerId = new SchemaId(SchemaType.Json);
-                using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
+                var payload = schemaIdDecoder.Decode(data, context, ref writerId);
+                
+                if (schemaRegistryClient != null)
                 {
-                    if (schemaRegistryClient != null)
+                    (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId)
+                        .ConfigureAwait(false);
+                    if (subject == null)
                     {
-                        (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId)
-                            .ConfigureAwait(false);
-                        if (subject == null)
+                        subject = GetSubjectName(topic, isKey, writerSchema.Title);
+                        if (subject != null)
                         {
-                            subject = GetSubjectName(topic, isKey, writerSchema.Title);
-                            if (subject != null)
-                            {
-                                latestSchema = await GetReaderSchema(subject)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
-                            }
-                        }
-                    }
-
-                    if (latestSchema != null)
-                    {
-                        migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
-                            .ConfigureAwait(continueOnCapturedContext: false);
-                        readerSchemaJson = latestSchema;
-                        readerSchema = await GetParsedSchema(latestSchema).ConfigureAwait(false);
-                    }
-                    else if (schema != null)
-                    {
-                        readerSchemaJson = schemaJson;
-                        readerSchema = schema;
-                    }
-                    else
-                    {
-                        readerSchemaJson = writerSchemaJson;
-                        readerSchema = writerSchema;
-                    }
-
-                    if (migrations.Count > 0)
-                    {
-                        using (var jsonReader = new StreamReader(stream, Encoding.UTF8))
-                        {
-                            JToken json = Newtonsoft.Json.JsonConvert.DeserializeObject<JToken>(jsonReader.ReadToEnd(),
-                                jsonSchemaGeneratorSettingsSerializerSettings
-                            );
-                            json = await ExecuteMigrations(migrations, isKey, subject, topic, context.Headers, json)
-                                .ContinueWith(t => (JToken)t.Result)
+                            latestSchema = await GetReaderSchema(subject)
                                 .ConfigureAwait(continueOnCapturedContext: false);
-
-                            if (readerSchema != null && validate)
-                            {
-                                var validationResult = validator.Validate(json, readerSchema);
-                                if (validationResult.Count > 0)
-                                {
-                                    throw new InvalidDataException("Schema validation failed for properties: [" +
-                                                                   string.Join(", ", validationResult.Select(r => r.Path)) + "]");
-                                }
-                            }
-
-                            value = json.ToObject<T>(JsonSerializer.Create());
                         }
                     }
-                    else
+                }
+
+                if (latestSchema != null)
+                {
+                    migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                    readerSchemaJson = latestSchema;
+                    readerSchema = await GetParsedSchema(latestSchema).ConfigureAwait(false);
+                }
+                else if (schema != null)
+                {
+                    readerSchemaJson = schemaJson;
+                    readerSchema = schema;
+                }
+                else
+                {
+                    readerSchemaJson = writerSchemaJson;
+                    readerSchema = writerSchema;
+                }
+
+                if (migrations.Count > 0)
+                {
+                    var serializedString = GetString(payload);
+                    JToken json = Newtonsoft.Json.JsonConvert.DeserializeObject<JToken>(serializedString, jsonSchemaGeneratorSettingsSerializerSettings);
+                    
+                    json = await ExecuteMigrations(migrations, isKey, subject, topic, context.Headers, json)
+                        .ContinueWith(t => (JToken)t.Result)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+
+                    if (readerSchema != null && validate)
                     {
-                        using (var jsonReader = new StreamReader(stream, Encoding.UTF8))
+                        var validationResult = validator.Validate(json, readerSchema);
+                        if (validationResult.Count > 0)
                         {
-                            string serializedString = jsonReader.ReadToEnd();
-
-                            if (readerSchema != null && validate)
-                            {
-                                var validationResult = validator.Validate(serializedString, readerSchema);
-
-                                if (validationResult.Count > 0)
-                                {
-                                    throw new InvalidDataException("Schema validation failed for properties: [" +
-                                                                   string.Join(", ", validationResult.Select(r => r.Path)) + "]");
-                                }
-                            }
-
-                            value = Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString,
-                                jsonSchemaGeneratorSettingsSerializerSettings);
+                            throw new InvalidDataException("Schema validation failed for properties: [" +
+                                                           string.Join(", ", validationResult.Select(r => r.Path)) + "]");
                         }
                     }
+
+                    value = json.ToObject<T>(JsonSerializer.Create());
+                }
+                else
+                {
+                    var serializedString = GetString(payload);
+                    if (readerSchema != null && validate)
+                    {
+                        var validationResult = validator.Validate(serializedString, readerSchema);
+
+                        if (validationResult.Count > 0)
+                        {
+                            throw new InvalidDataException("Schema validation failed for properties: [" +
+                                                           string.Join(", ", validationResult.Select(r => r.Path)) + "]");
+                        }
+                    }
+
+                    value = Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serializedString,
+                        jsonSchemaGeneratorSettingsSerializerSettings);
                 }
 
                 if (readerSchema != null)
@@ -290,6 +282,18 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 throw e.InnerException;
             }
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private string GetString(ReadOnlyMemory<byte> data)
+        {
+#if NET8_0_OR_GREATER
+            return Encoding.UTF8.GetString(data.Span);
+#else
+
+            var array = data.ToArray();
+            return Encoding.UTF8.GetString(array);
+#endif
         }
 
         protected override async Task<JsonSchema> ParseSchema(Schema schema)

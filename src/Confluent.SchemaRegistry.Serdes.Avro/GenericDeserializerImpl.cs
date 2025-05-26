@@ -47,7 +47,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-            if (config.SchemaIdStrategy != null) { this.schemaIdDeserializer = config.SchemaIdStrategy.Value.ToDeserializer(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 
         public override async Task<GenericRecord> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull,
@@ -55,11 +55,11 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             return isNull
                 ? default
-                : await Deserialize(context.Topic, context.Headers, data.ToArray(),
+                : await Deserialize(context.Topic, context.Headers, data,
                     context.Component == MessageComponentType.Key).ConfigureAwait(false);
         }
         
-        public async Task<GenericRecord> Deserialize(string topic, Headers headers, byte[] array, bool isKey)
+        public async Task<GenericRecord> Deserialize(string topic, Headers headers, ReadOnlyMemory<byte> array, bool isKey)
         {
             try
             {
@@ -83,68 +83,74 @@ namespace Confluent.SchemaRegistry.Serdes
                 SerializationContext context = new SerializationContext(
                     isKey ? MessageComponentType.Key : MessageComponentType.Value, topic, headers);
                 SchemaId writerId = new SchemaId(SchemaType.Avro);
-                using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
+                var payload = schemaIdDecoder.Decode(array, context, ref writerId);
+                
+                (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
+                if (subject == null)
                 {
-                    (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
-                    if (subject == null)
+                    subject = GetSubjectName(topic, isKey, writerSchema.Fullname);
+                    if (subject != null)
                     {
-                        subject = GetSubjectName(topic, isKey, writerSchema.Fullname);
-                        if (subject != null)
-                        {
-                            latestSchema = await GetReaderSchema(subject)
-                                .ConfigureAwait(continueOnCapturedContext: false);
-                        }
-                    }
-
-                    if (latestSchema != null)
-                    {
-                        migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
+                        latestSchema = await GetReaderSchema(subject)
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
+                }
 
-                    DatumReader<GenericRecord> datumReader;
-                    if (migrations.Count > 0)
+                if (latestSchema != null)
+                {
+                    migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                }
+
+                DatumReader<GenericRecord> datumReader;
+                if (migrations.Count > 0)
+                {
+                    using (var stream = new MemoryStream(payload.ToArray()))
                     {
                         data = new GenericReader<GenericRecord>(writerSchema, writerSchema)
                             .Read(default(GenericRecord), new BinaryDecoder(stream));
+                    }
 
-                        string jsonString;
-                        using (var jsonStream = new MemoryStream())
-                        {
-                            GenericRecord record = data;
-                            DatumWriter<object> datumWriter = new GenericDatumWriter<object>(writerSchema);
+                    string jsonString;
+                    using (var jsonStream = new MemoryStream())
+                    {
+                        GenericRecord record = data;
+                        DatumWriter<object> datumWriter = new GenericDatumWriter<object>(writerSchema);
 
-                            JsonEncoder encoder = new JsonEncoder(writerSchema, jsonStream);
-                            datumWriter.Write(record, encoder);
-                            encoder.Flush();
+                        JsonEncoder encoder = new JsonEncoder(writerSchema, jsonStream);
+                        datumWriter.Write(record, encoder);
+                        encoder.Flush();
 
-                            jsonString = Encoding.UTF8.GetString(jsonStream.ToArray());
-                        }
+                        jsonString = Encoding.UTF8.GetString(jsonStream.ToArray());
+                    }
 
-                        JToken json = JToken.Parse(jsonString);
-                        json = await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
-                            .ContinueWith(t => (JToken)t.Result)
-                            .ConfigureAwait(continueOnCapturedContext: false);
+                    JToken json = JToken.Parse(jsonString);
+                    json = await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
+                        .ContinueWith(t => (JToken)t.Result)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                    readerSchemaJson = latestSchema;
+                    readerSchema = await GetParsedSchema(readerSchemaJson).ConfigureAwait(false);
+                    Avro.IO.Decoder decoder = new JsonDecoder(readerSchema, json.ToString(Formatting.None));
+
+                    datumReader = new GenericReader<GenericRecord>(readerSchema, readerSchema);
+                    data = datumReader.Read(default(GenericRecord), decoder);
+                }
+                else
+                {
+                    if (latestSchema != null)
+                    {
                         readerSchemaJson = latestSchema;
                         readerSchema = await GetParsedSchema(readerSchemaJson).ConfigureAwait(false);
-                        Avro.IO.Decoder decoder = new JsonDecoder(readerSchema, json.ToString(Formatting.None));
-
-                        datumReader = new GenericReader<GenericRecord>(readerSchema, readerSchema);
-                        data = datumReader.Read(default(GenericRecord), decoder);
                     }
                     else
                     {
-                        if (latestSchema != null)
-                        {
-                            readerSchemaJson = latestSchema;
-                            readerSchema = await GetParsedSchema(readerSchemaJson).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            readerSchemaJson = writerSchemaJson;
-                            readerSchema = writerSchema;
-                        }
-                        datumReader = await GetDatumReader(writerSchema, readerSchema).ConfigureAwait(false);
+                        readerSchemaJson = writerSchemaJson;
+                        readerSchema = writerSchema;
+                    }
+                    datumReader = await GetDatumReader(writerSchema, readerSchema).ConfigureAwait(false);
+
+                    using (var stream = new MemoryStream(payload.ToArray()))
+                    {
                         data = datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
                     }
                 }
