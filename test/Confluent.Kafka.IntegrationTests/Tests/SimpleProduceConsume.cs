@@ -117,7 +117,7 @@ namespace Confluent.Kafka.IntegrationTests
 
         private static DeliveryResult<Null, Memory<byte>?> ProduceMessage(string topic, IProducer<Null, Memory<byte>?> producer, string testString)
         {
-            var result = producer .ProduceAsync(topic, new Message<Null, Memory<byte>?>
+            var result = producer.ProduceAsync(topic, new Message<Null, Memory<byte>?>
             {
                 Value = testString == null ? null : Encoding.UTF8.GetBytes(testString),
             }).Result;

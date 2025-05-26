@@ -106,7 +106,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(TimestampType.NotAvailable, dr.Message.Timestamp.Type);
             }
 
-            // byte[] case
+            // Memory<byte> case
 
             Task<DeliveryResult<ReadOnlyMemory<byte>, Memory<byte>>> drt3;
             using (var producer = new TestProducerBuilder<ReadOnlyMemory<byte>, Memory<byte>>(producerConfig).Build())
