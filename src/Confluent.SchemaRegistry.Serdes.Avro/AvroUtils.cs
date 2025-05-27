@@ -55,19 +55,14 @@ namespace Confluent.SchemaRegistry.Serdes
                     return await Transform(ctx, us[unionIndex], message, fieldTransform).ConfigureAwait(false);
                 case Avro.Schema.Type.Array:
                     ArraySchema a = (ArraySchema)schema;
-                    var arrayTasks = ((IList<object>)message)
-                        .Select(it => Transform(ctx, a.ItemSchema, it, fieldTransform))
-                        .ToList();
-                    object[] items = await Task.WhenAll(arrayTasks).ConfigureAwait(false);
-                    return items.ToList();
+                    var arrayTransformer = (int index, object elem) =>
+                        Transform(ctx, a.ItemSchema, elem, fieldTransform);
+                    return await Utils.TransformEnumerableAsync(message, arrayTransformer).ConfigureAwait(false);
                 case Avro.Schema.Type.Map:
                     MapSchema ms = (MapSchema)schema;
-                    var dictTasks = ((IDictionary<object, object>)message)
-                        .Select(it => Transform(ctx, ms.ValueSchema, it.Value, fieldTransform)
-                            .ContinueWith(t => new KeyValuePair<object, object>(it.Key, it.Value)))
-                        .ToList();
-                    KeyValuePair<object, object>[] entries = await Task.WhenAll(dictTasks).ConfigureAwait(false);
-                    return entries.ToDictionary(it => it.Key, it => it.Value); 
+                    var mapTransformer = (object key, object value) =>
+                        Transform(ctx, ms.ValueSchema, value, fieldTransform);
+                    return await Utils.TransformDictionaryAsync(message, mapTransformer).ConfigureAwait(false);
                 case Avro.Schema.Type.Record:
                     RecordSchema rs = (RecordSchema)schema;
                     foreach (Field f in rs.Fields)

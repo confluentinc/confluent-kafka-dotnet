@@ -19,6 +19,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 #if NET8_0_OR_GREATER
 using System.Buffers.Text;
@@ -206,6 +207,141 @@ namespace Confluent.SchemaRegistry
 
             // Create the Guid from the correctly formatted mixed-endian byte array
             return new Guid(mixedEndianBytes);
+        }
+
+        /// <summary>
+        /// Asynchronously transforms each element of an IEnumerable&lt;T&gt;,
+        /// passing in its zero-based index and the element itself, using a
+        /// Func&lt;int, object, Task&lt;object&gt;&gt;, and returns a List&lt;T&gt; of the transformed elements.
+        /// </summary>
+        /// <param name="sourceEnumerable">
+        ///   An object implementing IEnumerable&lt;T&gt; for some T.
+        /// </param>
+        /// <param name="indexedTransformer">
+        ///   A function that takes (index, element as object) and returns a Task whose Result
+        ///   is the new element (as object). The returned object must be castable to T.
+        /// </param>
+        /// <returns>
+        ///   A Task whose Result is a List&lt;T&gt; (boxed as object) containing all transformed elements.
+        ///   Await and then cast back to IEnumerable&lt;T&gt; to enumerate.
+        /// </returns>
+        public static async Task<object> TransformEnumerableAsync(
+            object sourceEnumerable,
+            Func<int, object, Task<object>> indexedTransformer)
+        {
+            if (sourceEnumerable == null)
+                throw new ArgumentNullException(nameof(sourceEnumerable));
+            if (indexedTransformer == null)
+                throw new ArgumentNullException(nameof(indexedTransformer));
+
+            // 1. Find the IEnumerable<T> interface on the source object
+            var srcType = sourceEnumerable.GetType();
+            var enumInterface = srcType
+                .GetInterfaces()
+                .FirstOrDefault(i =>
+                    i.IsGenericType &&
+                    i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+
+            if (enumInterface == null)
+                throw new ArgumentException("Source must implement IEnumerable<T>", nameof(sourceEnumerable));
+
+            // 2. Extract the element type T
+            var elementType = enumInterface.GetGenericArguments()[0];
+
+            // 3. Build a List<T> at runtime
+            var listType   = typeof(List<>).MakeGenericType(elementType);
+            var resultList = (IList)Activator.CreateInstance(listType);
+
+            // 4. Kick off all transforms in parallel
+            var tasks = new List<Task<object>>();
+            int index = 0;
+            foreach (var item in (IEnumerable)sourceEnumerable)
+            {
+                tasks.Add(indexedTransformer(index, item));
+                index++;
+            }
+
+            // 5. Await them all at once
+            var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            // 6. Populate the result list in original order
+            foreach (var transformed in results)
+            {
+                resultList.Add(transformed);
+            }
+
+            // 7. Return the List<T> as object
+            return resultList;
+        }
+
+        /// <summary>
+        /// Asynchronously transforms each value of an IDictionary&lt;K,V&gt;,
+        /// by invoking the provided Func&lt;object, object, Task&lt;object&gt;&gt;
+        /// passing in the key and the original value
+        /// and returns a new Dictionary&lt;K,V&gt; whose values are the awaited results.
+        /// </summary>
+        /// <param name="sourceDictionary">
+        ///   An object implementing IDictionary&lt;K,V&gt; for some K,V.
+        /// </param>
+        /// <param name="transformer">
+        ///   A function that takes (key as object, value as object) and returns a Task whose Result
+        ///   is the new value (as object). The returned object must be castable to V.
+        /// </param>
+        /// <returns>
+        ///   A Task whose Result is a Dictionary&lt;K,V&gt; containing all the transformed values.
+        ///   Await and then cast back to IDictionary&lt;K,V&gt; to enumerate.
+        /// </returns>
+        public static async Task<object> TransformDictionaryAsync(
+            object sourceDictionary,
+            Func<object, object, Task<object>> transformer)
+        {
+            if (sourceDictionary == null)
+                throw new ArgumentNullException(nameof(sourceDictionary));
+            if (transformer == null)
+                throw new ArgumentNullException(nameof(transformer));
+
+            // 1. Find the IDictionary<K,V> interface on the source object
+            var srcType = sourceDictionary.GetType();
+            var dictInterface = srcType
+                .GetInterfaces()
+                .FirstOrDefault(i =>
+                    i.IsGenericType &&
+                    i.GetGenericTypeDefinition() == typeof(IDictionary<,>));
+
+            if (dictInterface == null)
+                throw new ArgumentException("Source must implement IDictionary<K,V>", nameof(sourceDictionary));
+
+            // 2. Extract K and V
+            var genericArgs = dictInterface.GetGenericArguments();
+            var keyType   = genericArgs[0];
+            var valueType = genericArgs[1];
+
+            // 3. Create a Dictionary<K,V> at runtime
+            var resultDictType = typeof(Dictionary<,>).MakeGenericType(keyType, valueType);
+            var resultDict     = (IDictionary)Activator.CreateInstance(resultDictType);
+
+            // 4. Enumerate the source via the non‐generic IDictionary interface
+            var nonGenericDict = (IDictionary)sourceDictionary;
+            var keys       = new List<object>();
+            var tasks      = new List<Task<object>>();
+
+            foreach (DictionaryEntry entry in nonGenericDict)
+            {
+                keys.Add(entry.Key);
+                tasks.Add(transformer(entry.Key, entry.Value));
+            }
+
+            // 5. Await all transformations
+            var transformedValues = await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            // 6. Reconstruct the new dictionary in original order
+            for (int i = 0; i < keys.Count; i++)
+            {
+                resultDict.Add(keys[i], transformedValues[i]);
+            }
+
+            // 7. Return boxed Dictionary<K,V>
+            return resultDict;
         }
     }
 }
