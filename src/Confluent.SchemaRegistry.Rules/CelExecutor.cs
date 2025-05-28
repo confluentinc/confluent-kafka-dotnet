@@ -44,7 +44,8 @@ namespace Confluent.SchemaRegistry.Rules
 
         public async Task<object> Transform(RuleContext ctx, object message)
         {
-            return await Execute(ctx, message, new Dictionary<string, object>() { { "message", message } });
+            return await Execute(ctx, message, new Dictionary<string, object>() { { "message", message } })
+                .ConfigureAwait(false);
         }
 
         public async Task<object> Execute(RuleContext ctx, object obj, IDictionary<string, object> args)
@@ -59,7 +60,7 @@ namespace Confluent.SchemaRegistry.Rules
                     object guardResult = false;
                     try
                     {
-                        guardResult = await Execute(ctx, guard, obj, args);
+                        guardResult = await Execute(ctx, guard, obj, args).ConfigureAwait(false);
                     }
                     catch (RuleException e)
                     {
@@ -75,7 +76,7 @@ namespace Confluent.SchemaRegistry.Rules
                 expr = expr.Substring(index + 1);
             }
 
-            return await Execute(ctx, expr, obj, args);
+            return await Execute(ctx, expr, obj, args).ConfigureAwait(false);
         }
 
         private async Task<object> Execute(RuleContext ctx, string rule, object obj, IDictionary<string, object> args)

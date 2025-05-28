@@ -69,7 +69,7 @@ namespace Confluent.SchemaRegistry.Rules
                         { "tags", fieldCtx.Tags.ToList() },
                         { "message", message }
                     }
-                );
+                ).ConfigureAwait(false);
                 if (result is ByteString)
                 {
                     result = ((ByteString)result).ToByteArray();

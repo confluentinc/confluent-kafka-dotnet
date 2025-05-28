@@ -61,7 +61,7 @@ internal static class ConcurrentDictionaryExtensions
                 {
                     var value = await valueFactory(key).ConfigureAwait(continueOnCapturedContext: false);
                     tcs.TrySetResult(value);
-                    return await tcs.Task;
+                    return await tcs.Task.ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

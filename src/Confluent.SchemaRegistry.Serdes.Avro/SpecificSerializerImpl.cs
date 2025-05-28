@@ -58,8 +58,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private Dictionary<Type, SerializerSchemaData> multiSchemaData =
             new Dictionary<Type, SerializerSchemaData>();
-        private Dictionary<KeyValuePair<string, string>, int> registeredSchemas =
-            new Dictionary<KeyValuePair<string, string>, int>();
+        private Dictionary<KeyValuePair<string, string>, SchemaId> registeredSchemas =
+            new Dictionary<KeyValuePair<string, string>, SchemaId>();
 
         public SpecificSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
@@ -75,6 +75,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdSerializer = config.SchemaIdStrategy.Value.ToSerializer(); }
 
             if (this.useLatestVersion && this.autoRegisterSchema)
             {
@@ -151,7 +152,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             try
             {
-                int schemaId;
+                SchemaId schemaId;
                 string subject;
                 RegisteredSchema latestSchema = null;
                 SerializerSchemaData currentSchemaData;
@@ -178,19 +179,21 @@ namespace Confluent.SchemaRegistry.Serdes
                     
                     if (latestSchema != null)
                     {
-                        schemaId = latestSchema.Id;
+                        schemaId = new SchemaId(SchemaType.Avro, latestSchema.Id, latestSchema.Guid);
                     }
                     else if (!registeredSchemas.TryGetValue(subjectSchemaPair, out schemaId))
                     {
                         // first usage: register/get schema to check compatibility
-                        schemaId = autoRegisterSchema
+                        var inputSchema = new Schema(currentSchemaData.WriterSchemaString, new List<SchemaReference>(), SchemaType.Avro);
+                        var outputSchema = autoRegisterSchema
                             ? await schemaRegistryClient
-                                .RegisterSchemaAsync(subject, currentSchemaData.WriterSchemaString, normalizeSchemas)
+                                .RegisterSchemaWithResponseAsync(subject, inputSchema, normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false)
                             : await schemaRegistryClient
-                                .GetSchemaIdAsync(subject, currentSchemaData.WriterSchemaString, normalizeSchemas)
+                                .LookupSchemaAsync(subject, inputSchema, normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
+                        schemaId = new SchemaId(SchemaType.Avro, outputSchema.Id, outputSchema.Guid);
                         registeredSchemas.Add(subjectSchemaPair, schemaId);
                     }
                 }
@@ -201,7 +204,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 if (latestSchema != null)
                 {
-                    var schema = await GetParsedSchema(latestSchema);
+                    var schema = await GetParsedSchema(latestSchema).ConfigureAwait(false);
                     FieldTransformer fieldTransformer = async (ctx, transform, message) => 
                     {
                         return await AvroUtils.Transform(ctx, schema, message, transform).ConfigureAwait(false);
@@ -212,15 +215,12 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 using (var stream = new MemoryStream(initialBufferSize))
-                using (var writer = new BinaryWriter(stream))
                 {
-                    stream.WriteByte(Constants.MagicByte);
-
-                    writer.Write(IPAddress.HostToNetworkOrder(schemaId));
                     currentSchemaData.AvroWriter.Write(data, new BinaryEncoder(stream));
-
-                    // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
-                    return stream.ToArray();
+                    byte[] payload = stream.ToArray();
+                    SerializationContext context = new SerializationContext(
+                        isKey ? MessageComponentType.Key : MessageComponentType.Value, topic, headers);
+                    return schemaIdSerializer.Serialize(payload, context, schemaId);
                 }
             }
             catch (AggregateException e)

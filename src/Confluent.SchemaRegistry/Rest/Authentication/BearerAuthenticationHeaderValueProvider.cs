@@ -63,7 +63,7 @@ namespace Confluent.SchemaRegistry
 
         public async Task InitOrRefreshAsync()
         {
-            await GenerateToken();
+            await GenerateToken().ConfigureAwait(false);
         }
 
         public bool NeedsInitOrRefresh()
@@ -95,7 +95,7 @@ namespace Confluent.SchemaRegistry
                 {
                     var response = await httpClient.SendAsync(request).ConfigureAwait(continueOnCapturedContext: false);
                     response.EnsureSuccessStatusCode();
-                    var tokenResponse = await response.Content.ReadAsStringAsync();
+                    var tokenResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     token = JObject.Parse(tokenResponse).ToObject<BearerToken>(JsonSerializer.Create());
                     token.ExpiryTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (int)(token.ExpiresIn * tokenExpiryThreshold);
                     return;
@@ -106,7 +106,8 @@ namespace Confluent.SchemaRegistry
                     {
                         throw new Exception("Failed to fetch token from server: " + e.Message);
                     }
-                    await Task.Delay(RetryUtility.CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i));
+                    await Task.Delay(RetryUtility.CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i))
+                        .ConfigureAwait(false);
                 }
             }
         }

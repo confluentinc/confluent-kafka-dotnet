@@ -17,10 +17,8 @@
 extern alias ProtobufNet;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Net;
 using Confluent.Kafka;
 using Google.Protobuf;
 using ProtobufNet::Google.Protobuf.Reflection;
@@ -92,6 +90,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdDeserializer = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 
         /// <summary>
@@ -116,11 +115,6 @@ namespace Confluent.SchemaRegistry.Serdes
             if (isNull) { return null; }
 
             var array = data.ToArray();
-            if (array.Length < 6)
-            {
-                throw new InvalidDataException($"Expecting data framing of length 6 bytes or more but total data size is {array.Length} bytes");
-            }
-
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
             string subject = GetSubjectName(topic, isKey, null);
@@ -137,40 +131,12 @@ namespace Confluent.SchemaRegistry.Serdes
                 Schema writerSchema = null;
                 FileDescriptorSet fdSet = null;
                 T message;
-                using (var stream = new MemoryStream(array))
-                using (var reader = new BinaryReader(stream))
+                SchemaId writerId = new SchemaId(SchemaType.Protobuf);
+                using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
                 {
-                    var magicByte = reader.ReadByte();
-                    if (magicByte != Constants.MagicByte)
-                    {
-                        throw new InvalidDataException($"Expecting message {context.Component.ToString()} with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
-                    }
-
-                    // A schema is not required to deserialize protobuf messages since the
-                    // serialized data includes tag and type information, which is enough for
-                    // the IMessage<T> implementation to deserialize the data (even if the
-                    // schema has evolved). _schemaId is thus unused.
-                    var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
-
-                    // Read the index array length, then all of the indices. These are not
-                    // needed, but parsing them is the easiest way to seek to the start of
-                    // the serialized data because they are varints.
-                    var indicesLength = useDeprecatedFormat ? (int)stream.ReadUnsignedVarint() : stream.ReadVarint();
-                    for (int i=0; i<indicesLength; ++i)
-                    {
-                        if (useDeprecatedFormat)
-                        {
-                            stream.ReadUnsignedVarint();
-                        }
-                        else
-                        {
-                            stream.ReadVarint();
-                        }
-                    }
-
                     if (schemaRegistryClient != null)
                     {
-                        (writerSchema, fdSet) = await GetSchema(subject, writerId);
+                        (writerSchema, fdSet) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
                     }
 
                     message = parser.ParseFrom(stream);

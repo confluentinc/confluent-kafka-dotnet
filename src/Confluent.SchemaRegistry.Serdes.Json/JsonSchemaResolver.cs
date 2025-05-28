@@ -79,8 +79,8 @@ namespace Confluent.SchemaRegistry.Serdes
         public async Task<JsonSchema> GetResolvedSchema(){
             if (resolvedJsonSchema == null)
             {
-                await CreateSchemaDictUtil(root);
-                resolvedJsonSchema = await GetSchemaUtil(root);
+                await CreateSchemaDictUtil(root).ConfigureAwait(false);
+                resolvedJsonSchema = await GetSchemaUtil(root).ConfigureAwait(false);
             }
             return resolvedJsonSchema;
         }
@@ -94,8 +94,9 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 foreach (var reference in root.References)
                 {
-                    Schema refSchemaRes = await schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version, false);
-                    await CreateSchemaDictUtil(refSchemaRes, reference.Name);
+                    Schema refSchemaRes = await schemaRegistryClient.GetRegisteredSchemaAsync(reference.Subject, reference.Version, false)
+                        .ConfigureAwait(false);
+                    await CreateSchemaDictUtil(refSchemaRes, reference.Name).ConfigureAwait(false);
                 }
             }
         }
@@ -107,7 +108,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 if (!dictSchemaNameToJsonSchema.ContainsKey(x.Name))
                 {
-                    var jsonSchema = await GetSchemaUtil(dictSchemaNameToSchema[x.Name]);
+                    var jsonSchema = await GetSchemaUtil(dictSchemaNameToSchema[x.Name]).ConfigureAwait(false);
                     dictSchemaNameToJsonSchema.Add(x.Name, jsonSchema);
                 }
             }
@@ -125,7 +126,7 @@ namespace Confluent.SchemaRegistry.Serdes
             string rootStr = root.SchemaString;
             JObject schema = JObject.Parse(rootStr);
             string schemaId = (string)schema["$id"] ?? "";
-            return await JsonSchema.FromJsonAsync(rootStr, schemaId, factory);
+            return await JsonSchema.FromJsonAsync(rootStr, schemaId, factory).ConfigureAwait(false);
         }
 
         private class CustomJsonReferenceResolver : JsonReferenceResolver
@@ -163,7 +164,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     return schema;
                 }
 
-                return await base.ResolveFileReferenceAsync(filePath, cancellationToken);
+                return await base.ResolveFileReferenceAsync(filePath, cancellationToken).ConfigureAwait(false);
             }
 
             public override async Task<IJsonReference> ResolveUrlReferenceAsync(string url, CancellationToken cancellationToken = default)
@@ -189,7 +190,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                 }
 
-                return await base.ResolveUrlReferenceAsync(url, cancellationToken);
+                return await base.ResolveUrlReferenceAsync(url, cancellationToken).ConfigureAwait(false);
             }
         }
     }

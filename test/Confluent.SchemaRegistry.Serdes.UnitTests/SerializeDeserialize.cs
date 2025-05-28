@@ -416,6 +416,44 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void ISpecificRecordCELFieldTransformComplex()
+        {
+            var schemaStr = Complex._SCHEMA.ToString();
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
+                        "typeName == 'STRING' ; value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new AvroSerializer<Complex>(schemaRegistryClient, config);
+            var deserializer = new AvroDeserializer<Complex>(schemaRegistryClient, null);
+
+            var user = new Complex
+            {
+                arrayField = new List<string>() {"hello"},
+                mapField = new Dictionary<string, string>() {{"key", "world"}},
+                unionField = "bye"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("hello-suffix", result.arrayField[0]);
+            Assert.Equal("world-suffix", result.mapField["key"]);
+            Assert.Equal("bye-suffix", result.unionField);
+        }
+
+        [Fact]
         public void ISpecificRecordCELFieldCondition()
         {
             var schemaStr = User._SCHEMA.ToString();
@@ -835,6 +873,45 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "red");
 
             bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal(user["name"], result["name"]);
+            Assert.Equal(user["favorite_color"], result["favorite_color"]);
+            Assert.Equal(user["favorite_number"], result["favorite_number"]);
+        }
+
+        [Fact]
+        public void GenericRecordWithGuidInHeader()
+        {
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                SchemaIdStrategy = SchemaIdSerializerStrategy.Header
+            };
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
+
+            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            user.Add("name", "awesome");
+            user.Add("favorite_number", 100);
+            user.Add("favorite_color", "blue");
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal(user["name"], result["name"]);
+            Assert.Equal(user["favorite_color"], result["favorite_color"]);
+            Assert.Equal(user["favorite_number"], result["favorite_number"]);
+
+            // serialize second object
+            user = new GenericRecord((RecordSchema) User._SCHEMA);
+            user.Add("name", "cool");
+            user.Add("favorite_number", 100);
+            user.Add("favorite_color", "red");
+
+            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
             result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
 
             Assert.Equal(user["name"], result["name"]);

@@ -1,0 +1,19 @@
+﻿{
+    "namespace": "confluent.io.examples.serialization.avro",
+    "name": "Complex",
+    "type": "record",
+    "fields": [
+        {
+            "name": "arrayField",
+            "type": {"type": "array", "items": "string"}
+        },
+        {
+            "name": "mapField",
+            "type": {"type": "map", "values": "string"}
+        },
+        {
+            "name": "unionField",
+            "type": ["null", "string"], "confluent:tags": ["PII"]
+        }
+    ]
+}

@@ -56,6 +56,12 @@ namespace Confluent.SchemaRegistry
         public new int Id { get; set; }
 
         /// <summary>
+        ///     Globally unique identifier of the schema.
+        /// </summary>
+        [DataMember(Name = "guid")]
+        public string Guid { get; set; }
+
+        /// <summary>
         ///     The unregistered schema corresponding to this schema.
         /// </summary>
         public Schema Schema
@@ -111,6 +117,54 @@ namespace Confluent.SchemaRegistry
             Subject = subject;
             Version = version;
             Id = id;
+            SchemaString = schemaString;
+            References = references;
+            SchemaType = schemaType;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of this class.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject the schema is registered against.
+        /// </param>
+        /// <param name="version">
+        ///     The schema version, >= 0
+        /// </param>
+        /// <param name="id">
+        ///     The unique identifier of the schema, >= 0
+        /// </param>
+        /// <param name="guid">
+        ///     The globally unique identifier of the schema
+        /// </param>
+        /// <param name="schemaString">
+        ///     String representation of the schema.
+        /// </param>
+        /// <param name="schemaType">
+        ///     The schema type: AVRO, PROTOBUF, JSON
+        /// </param>
+        /// <param name="references">
+        ///     A list of schemas referenced by this schema.
+        /// </param>
+        public RegisteredSchema(string subject, int version, int id, string guid, string schemaString, SchemaType schemaType, List<SchemaReference> references)
+        {
+            if (string.IsNullOrEmpty(schemaString))
+            {
+                throw new ArgumentNullException(nameof(schemaString));
+            }
+            if (version < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(version));
+            }
+            if (id < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(id));
+            }
+
+            Subject = subject;
+            Version = version;
+            Id = id;
+            Guid = guid;
             SchemaString = schemaString;
             References = references;
             SchemaType = schemaType;
