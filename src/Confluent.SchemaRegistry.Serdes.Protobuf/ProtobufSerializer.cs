@@ -92,7 +92,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.SkipKnownTypes != null) { this.skipKnownTypes = config.SkipKnownTypes.Value; }
             if (config.UseDeprecatedFormat != null && config.UseDeprecatedFormat.Value)
             {
-                throw new ArgumentException("ProtobufSerializer: UseDeprecatedFormat is no longer supported");
+                throw new NotSupportedException("ProtobufSerializer: UseDeprecatedFormat is no longer supported");
             }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
             if (config.SchemaIdStrategy != null) { this.schemaIdSerializer = config.SchemaIdStrategy.Value.ToSerializer(); }

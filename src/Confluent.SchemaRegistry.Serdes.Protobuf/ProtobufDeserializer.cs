@@ -82,7 +82,7 @@ namespace Confluent.SchemaRegistry.Serdes
             ProtobufDeserializerConfig protobufConfig = new ProtobufDeserializerConfig(config);
             if (protobufConfig.UseDeprecatedFormat != null && protobufConfig.UseDeprecatedFormat.Value)
             {
-                throw new ArgumentException("ProtobufDeserializer: UseDeprecatedFormat is no longer supported");
+                throw new NotSupportedException("ProtobufDeserializer: UseDeprecatedFormat is no longer supported");
             }
 
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
