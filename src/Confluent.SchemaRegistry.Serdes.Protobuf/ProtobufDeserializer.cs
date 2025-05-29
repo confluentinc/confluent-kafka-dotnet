@@ -90,7 +90,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-            if (config.SchemaIdStrategy != null) { this.schemaIdDeserializer = config.SchemaIdStrategy.Value.ToDeserializer(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 
         /// <summary>
@@ -113,8 +113,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public override async Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
         {
             if (isNull) { return null; }
-
-            var array = data.ToArray();
+            
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
             string subject = GetSubjectName(topic, isKey, null);
@@ -132,15 +131,13 @@ namespace Confluent.SchemaRegistry.Serdes
                 FileDescriptorSet fdSet = null;
                 T message;
                 SchemaId writerId = new SchemaId(SchemaType.Protobuf);
-                using (var stream = schemaIdDeserializer.Deserialize(array, context, ref writerId))
+                var payload = schemaIdDecoder.Decode(data, context, ref writerId);
+                if (schemaRegistryClient != null)
                 {
-                    if (schemaRegistryClient != null)
-                    {
-                        (writerSchema, fdSet) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
-                    }
-
-                    message = parser.ParseFrom(stream);
+                    (writerSchema, fdSet) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
                 }
+                message = new T();
+                message.MergeFrom(payload.Span);
 
                 if (writerSchema != null)
                 {
