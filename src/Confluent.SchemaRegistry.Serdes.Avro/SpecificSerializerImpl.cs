@@ -75,7 +75,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-            if (config.SchemaIdStrategy != null) { this.schemaIdSerializer = config.SchemaIdStrategy.Value.ToSerializer(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
 
             if (this.useLatestVersion && this.autoRegisterSchema)
             {
@@ -214,13 +214,21 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
+                SerializationContext context = new SerializationContext(
+                    isKey ? MessageComponentType.Key : MessageComponentType.Value, topic, headers);
+                
                 using (var stream = new MemoryStream(initialBufferSize))
                 {
                     currentSchemaData.AvroWriter.Write(data, new BinaryEncoder(stream));
-                    byte[] payload = stream.ToArray();
-                    SerializationContext context = new SerializationContext(
-                        isKey ? MessageComponentType.Key : MessageComponentType.Value, topic, headers);
-                    return schemaIdSerializer.Serialize(payload, context, schemaId);
+                    
+                    var schemaIdSize = schemaIdEncoder.CalculateSize(ref schemaId);
+                    var serializedMessageSize = (int) stream.Length;
+
+                    var buffer = new byte[schemaIdSize + serializedMessageSize];
+                    schemaIdEncoder.Encode(buffer, ref context, ref schemaId);
+                    stream.GetBuffer().AsSpan(0, serializedMessageSize).CopyTo(buffer.AsSpan(schemaIdSize));
+
+                    return buffer;
                 }
             }
             catch (AggregateException e)

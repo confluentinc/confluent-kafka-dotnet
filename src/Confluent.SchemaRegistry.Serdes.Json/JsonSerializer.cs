@@ -132,7 +132,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.LatestCompatibilityStrict != null) { this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-            if (config.SchemaIdStrategy != null) { this.schemaIdSerializer = config.SchemaIdStrategy.Value.ToSerializer(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
             if (config.Validate != null) { this.validate = config.Validate.Value; }
 
             if (this.useLatestVersion && this.autoRegisterSchema)
@@ -255,6 +255,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
+                
                 if (validate)
                 {
                     var validationResult = validator.Validate(serializedString, parsedSchema);
@@ -263,14 +264,15 @@ namespace Confluent.SchemaRegistry.Serdes
                         throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
                     }
                 }
+                
+                var schemaIdSize = schemaIdEncoder.CalculateSize(ref schemaId);
+                var serializedMessageSize = System.Text.Encoding.UTF8.GetByteCount(serializedString);
+                
+                var buffer = new byte[schemaIdSize + serializedMessageSize];
+                schemaIdEncoder.Encode(buffer, ref context, ref schemaId);
+                System.Text.Encoding.UTF8.GetBytes(serializedString).AsSpan().CopyTo(buffer.AsSpan(schemaIdSize));
 
-                using (var stream = new MemoryStream(initialBufferSize))
-                using (var writer = new BinaryWriter(stream))
-                {
-                    writer.Write(System.Text.Encoding.UTF8.GetBytes(serializedString));
-                    byte[] payload = stream.ToArray();
-                    return schemaIdSerializer.Serialize(payload, context, schemaId);
-                }
+                return buffer;
             }
             catch (AggregateException e)
             {
