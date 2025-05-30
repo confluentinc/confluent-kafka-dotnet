@@ -53,7 +53,6 @@ namespace Confluent.SchemaRegistry.Serdes
     public class ProtobufSerializer<T> : AsyncSerializer<T, FileDescriptorSet>  where T : IMessage<T>, new()
     {
         private bool skipKnownTypes = true;
-        private bool useDeprecatedFormat;
         private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy;
 
         /// <remarks>
@@ -91,7 +90,10 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SkipKnownTypes != null) { this.skipKnownTypes = config.SkipKnownTypes.Value; }
-            if (config.UseDeprecatedFormat != null) { this.useDeprecatedFormat = config.UseDeprecatedFormat.Value; }
+            if (config.UseDeprecatedFormat != null && config.UseDeprecatedFormat.Value)
+            {
+                throw new NotSupportedException("ProtobufSerializer: UseDeprecatedFormat is no longer supported");
+            }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
             if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
