@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1EFCD839-0726-4BCE-B745-1E829991B1BC}"
 	ProjectSection(SolutionItems) = preProject
-		src\Directory.build.props = src\Directory.build.props
+		src\Directory.Build.props = src\Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.csproj", "{09C3255B-1972-4EB8-91D0-FB9F5CD82BCB}"
@@ -14,7 +14,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{90058283-1F8F-465D-89E4-D4374A27E612}"
 	ProjectSection(SolutionItems) = preProject
-		test\Directory.build.props = test\Directory.build.props
+		test\Directory.Build.props = test\Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.UnitTests", "test\Confluent.Kafka.UnitTests\Confluent.Kafka.UnitTests.csproj", "{BD6FCDB1-CC2E-4DE2-AB48-9CBD3F78E637}"
@@ -35,7 +35,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.In
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{9CE4B5F7-9251-4340-BACB-207066A5DBE8}"
 	ProjectSection(SolutionItems) = preProject
-		examples\Directory.build.props = examples\Directory.build.props
+		examples\Directory.Build.props = examples\Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdminClient", "examples\AdminClient\AdminClient.csproj", "{964449D5-3024-420E-9262-1913EC189D6A}"
