@@ -15,18 +15,12 @@ namespace Confluent.Kafka.Examples.AvroSpecific
 	
 	public partial class User : ISpecificRecord
 	{
-		public static Schema _SCHEMA = Avro.Schema.Parse(@"{""type"":""record"",""name"":""User"",""namespace"":""confluent.io.examples.serialization.avro"",""fields"":[{""name"":""name"",""type"":""string""},{""name"":""favorite_number"",""type"":""long""},{""name"":""favorite_color"",""type"":""string""},{""name"":""hourly_rate"",""default"":null,""type"":[""null"",{""type"":""bytes"",""logicalType"":""decimal"",""precision"":4,""scale"":2}]}]}");
+		// properties could be simplified and innitializations be shortened
+		public virtual Schema Schema => Avro.Schema.Parse(@"{""type"":""record"",""name"":""User"",""namespace"":""confluent.io.examples.serialization.avro"",""fields"":[{""name"":""name"",""type"":""string""},{""name"":""favorite_number"",""type"":""long""},{""name"":""favorite_color"",""type"":""string""},{""name"":""hourly_rate"",""default"":null,""type"":[""null"",{""type"":""bytes"",""logicalType"":""decimal"",""precision"":4,""scale"":2}]}]}");
 		private string _name;
 		private long _favorite_number;
 		private string _favorite_color;
 		private System.Nullable<Avro.AvroDecimal> _hourly_rate;
-		public virtual Schema Schema
-		{
-			get
-			{
-				return User._SCHEMA;
-			}
-		}
 		public string name
 		{
 			get
@@ -71,26 +65,23 @@ namespace Confluent.Kafka.Examples.AvroSpecific
 				this._hourly_rate = value;
 			}
 		}
-		public virtual object Get(int fieldPos)
+		public virtual object Get(int fieldPos) => fieldPos switch
 		{
-			switch (fieldPos)
-			{
-			case 0: return this.name;
-			case 1: return this.favorite_number;
-			case 2: return this.favorite_color;
-			case 3: return this.hourly_rate;
-			default: throw new AvroRuntimeException("Bad index " + fieldPos + " in Get()");
-			};
-		}
+			0 => name,
+			1 => favorite_number,
+			2 => favorite_color,
+			3 => hourly_rate,
+			_ => throw new AvroRuntimeException("Bad index " + fieldPos + " in Get()")
+		};
 		public virtual void Put(int fieldPos, object fieldValue)
 		{
-			switch (fieldPos)
+			object example = fieldPos switch
 			{
-			case 0: this.name = (System.String)fieldValue; break;
-			case 1: this.favorite_number = (System.Int64)fieldValue; break;
-			case 2: this.favorite_color = (System.String)fieldValue; break;
-			case 3: this.hourly_rate = (System.Nullable<Avro.AvroDecimal>)fieldValue; break;
-			default: throw new AvroRuntimeException("Bad index " + fieldPos + " in Put()");
+				0 => name = (string)fieldValue,
+				1 => favorite_number = (Int64)fieldValue,
+				2 => favorite_color = (string)fieldValue,
+				3 => hourly_rate = (System.Nullable<Avro.AvroDecimal>)fieldValue,
+				_ => throw new AvroRuntimeException("Bad index " + fieldPos + " in Put()")
 			};
 		}
 	}
