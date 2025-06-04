@@ -47,6 +47,7 @@
     <Compile Include="..\Shared\SetEqualityComparer.cs" Link="Includes/SetEqualityComparer.cs"/>
     <Compile Include="..\Shared\DictionaryEqualityComparer.cs" Link="Includes/DictionaryEqualityComparer.cs"/>
     <Compile Include="..\Shared\ConcurrentDictionaryExtensions.cs" Link="Includes/ConcurrentDictionaryExtensions.cs"/>
+    <Compile Include="..\Shared\BinaryConverter.cs" Link="Includes/BinaryConverter.cs"/>
   </ItemGroup>
 
 </Project>

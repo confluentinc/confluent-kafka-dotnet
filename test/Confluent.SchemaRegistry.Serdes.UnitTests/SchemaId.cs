@@ -32,11 +32,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 0x01, 0x89, 0x79, 0x17, 0x62, 0x23, 0x36, 0x41, 0x86, 0x96, 0x74, 0x29, 0x9b, 0x90,
                 0xa8, 0x02, 0xe2
             };
-            schemaId.FromBytes(new MemoryStream(input));
+            schemaId.FromBytes(input);
             var guidString = schemaId.Guid.ToString();
             Assert.Equal("89791762-2336-4186-9674-299b90a802e2", guidString);
 
-            var output = schemaId.GuidToBytes();
+            var output = new byte[schemaId.CalculateGuidSize()];
+            schemaId.WriteGuidToBytes(output);
             Assert.Equal(output, input);
         }
 
@@ -48,11 +49,12 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 0x00, 0x00, 0x00, 0x00, 0x01
             };
-            schemaId.FromBytes(new MemoryStream(input));
+            schemaId.FromBytes(input);
             var id = schemaId.Id;
             Assert.Equal(1, id);
 
-            var output = schemaId.IdToBytes();
+            var output = new byte[schemaId.CalculateIdSize()];
+            schemaId.WriteIdToBytes(output);
             Assert.Equal(output, input);
         }
 
@@ -65,14 +67,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 0x01, 0x89, 0x79, 0x17, 0x62, 0x23, 0x36, 0x41, 0x86, 0x96, 0x74, 0x29, 0x9b, 0x90,
                 0xa8, 0x02, 0xe2, 0x06, 0x02, 0x04, 0x06
             };
-            schemaId.FromBytes(new MemoryStream(input));
+            schemaId.FromBytes(input);
             var guidString = schemaId.Guid.ToString();
             Assert.Equal("89791762-2336-4186-9674-299b90a802e2", guidString);
 
             var messageIndexes = schemaId.MessageIndexes;
             Assert.Equal(messageIndexes, new List<int>() { 1, 2, 3 });
 
-            var output = schemaId.GuidToBytes();
+            var output = new byte[schemaId.CalculateGuidSize()];
+            schemaId.WriteGuidToBytes(output);
             Assert.Equal(output, input);
         }
 
@@ -84,14 +87,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 0x00, 0x00, 0x00, 0x00, 0x01, 0x06, 0x02, 0x04, 0x06
             };
-            schemaId.FromBytes(new MemoryStream(input));
+            schemaId.FromBytes(input);
             var id = schemaId.Id;
             Assert.Equal(1, id);
 
             var messageIndexes = schemaId.MessageIndexes;
             Assert.Equal(messageIndexes, new List<int>() { 1, 2, 3 });
 
-            var output = schemaId.IdToBytes();
+            var output = new byte[schemaId.CalculateIdSize()];
+            schemaId.WriteIdToBytes(output);
             Assert.Equal(output, input);
         }
     }

@@ -53,7 +53,6 @@ namespace Confluent.SchemaRegistry.Serdes
     public class ProtobufSerializer<T> : AsyncSerializer<T, FileDescriptorSet>  where T : IMessage<T>, new()
     {
         private bool skipKnownTypes = true;
-        private bool useDeprecatedFormat;
         private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy;
 
         /// <remarks>
@@ -91,9 +90,12 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SkipKnownTypes != null) { this.skipKnownTypes = config.SkipKnownTypes.Value; }
-            if (config.UseDeprecatedFormat != null) { this.useDeprecatedFormat = config.UseDeprecatedFormat.Value; }
+            if (config.UseDeprecatedFormat != null && config.UseDeprecatedFormat.Value)
+            {
+                throw new NotSupportedException("ProtobufSerializer: UseDeprecatedFormat is no longer supported");
+            }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
-            if (config.SchemaIdStrategy != null) { this.schemaIdSerializer = config.SchemaIdStrategy.Value.ToSerializer(); }
+            if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
                 ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()
                 : config.ReferenceSubjectNameStrategy.Value.ToDelegate(config.CustomReferenceSubjectNameStrategy);
@@ -275,13 +277,20 @@ namespace Confluent.SchemaRegistry.Serdes
                             latestSchema, value, fieldTransformer)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
-
-                int bufferSize = value.CalculateSize(); // Serialized message size
-                var payload = new byte[bufferSize];
-                value.WriteTo(payload);
-
+                
                 schemaId.MessageIndexes = indexArray;
-                return schemaIdSerializer.Serialize(payload, context, schemaId);
+
+                var schemaIdSize = schemaIdEncoder.CalculateSize(ref schemaId);
+                var serializedMessageSize = value.CalculateSize();
+
+                var bufferSize = schemaIdSize // Schema ID size
+                                 + serializedMessageSize; // Serialized message size
+                
+                var buffer = new byte[bufferSize];
+                schemaIdEncoder.Encode(buffer, ref context, ref schemaId);
+                value.WriteTo(buffer.AsSpan(schemaIdSize));
+
+                return buffer;
             }
             catch (AggregateException e)
             {

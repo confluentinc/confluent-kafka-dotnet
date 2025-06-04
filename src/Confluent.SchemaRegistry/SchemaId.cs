@@ -18,7 +18,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Runtime.CompilerServices;
 using Confluent.Kafka;
+using Confluent.Shared;
 
 namespace Confluent.SchemaRegistry;
 
@@ -31,8 +33,6 @@ public struct SchemaId
     public const string VALUE_SCHEMA_ID_HEADER = "__value_schema_id";
     public const byte MAGIC_BYTE_V0 = 0;
     public const byte MAGIC_BYTE_V1 = 1;
-
-    private const int DefaultInitialBufferSize = 1024;
 
     private static List<int> _defaultIndex = new List<int> { 0 };
 
@@ -54,7 +54,7 @@ public struct SchemaId
     /// <summary>
     ///     The schema GUID.
     /// </summary>
-    public List<int> MessageIndexes { get; set;  }
+    public IReadOnlyList<int> MessageIndexes { get; set;  }
 
     public SchemaId(SchemaType schemaType)
     {
@@ -79,94 +79,143 @@ public struct SchemaId
         Guid = guid != null ? System.Guid.Parse(guid) : null;
         MessageIndexes = null;
     }
-
-    public Stream FromBytes(Stream stream)
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlyMemory<byte> FromBytes(ReadOnlyMemory<byte> payload)
     {
-        var reader = new BinaryReader(stream);
-        var magicByte = reader.ReadByte();
+        var offset = BinaryConverter.ReadByte(payload.Span, out var magicByte);
+        
         if (magicByte == MAGIC_BYTE_V0)
         {
-            Id = IPAddress.NetworkToHostOrder(reader.ReadInt32());
+            offset += BinaryConverter.ReadInt32(payload.Slice(offset).Span, out var id);
+            Id = id;
         }
         else if (magicByte == MAGIC_BYTE_V1)
         {
-            Guid = Utils.GuidFromBigEndian(reader.ReadBytes(16));
+            offset += BinaryConverter.ReadGuidBigEndian(payload.Slice(offset).Span, out var guid);
+            Guid = guid;
         }
         else
         {
             throw new InvalidDataException($"Invalid magic byte: {magicByte}");
         }
-
+        
         if (SchemaType == SchemaType.Protobuf)
         {
-            var size = stream.ReadVarint();
+            offset += BinaryConverter.ReadVarint(payload.Slice(offset).Span, out var size);
             if (size == 0)
             {
                 MessageIndexes = _defaultIndex;
             }
             else
             {
-                MessageIndexes = new List<int>();
+                var messageIndexes = new List<int>();
                 for (int i = 0; i < size; i++)
                 {
-                    MessageIndexes.Add(stream.ReadVarint());
+                    offset += BinaryConverter.ReadVarint(payload.Slice(offset).Span, out var index);
+                    messageIndexes.Add(index);
                 }
+
+                MessageIndexes = messageIndexes;
             }
         }
-        return stream;
-    }
 
-    public byte[] IdToBytes()
+        return payload.Slice(offset);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int CalculateIdSize()
+    {
+        return sizeof(byte) // Magic byte
+               + sizeof(int) // Schema ID
+               + CalculateMessageIndexesSize();
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteIdToBytes(Span<byte> destination)
     {
         if (Id == null)
         {
             throw new InvalidOperationException("Schema ID is not set.");
         }
-        using (var stream = new MemoryStream(DefaultInitialBufferSize))
-        using (var writer = new BinaryWriter(stream))
-        {
-            writer.Write(MAGIC_BYTE_V0);
-            writer.Write(IPAddress.HostToNetworkOrder(Id.Value));
-            WriteMessageIndexes(stream);
-            return stream.ToArray();
-        }
+
+        var offset = BinaryConverter.WriteByte(destination, MAGIC_BYTE_V0);
+        offset += BinaryConverter.WriteInt32(destination.Slice(offset), Id.Value);
+        WriteArrayIndexesToBytes(destination.Slice(offset));
     }
 
-    public byte[] GuidToBytes()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int CalculateGuidSize()
+    {
+        return sizeof(byte) // Magic byte
+               + 16 // GUID size
+               + CalculateMessageIndexesSize();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteGuidToBytes(Span<byte> destination)
     {
         if (Guid == null)
         {
             throw new InvalidOperationException("Schema GUID is not set.");
         }
-        using (var stream = new MemoryStream(DefaultInitialBufferSize))
-        using (var writer = new BinaryWriter(stream))
-        {
-            writer.Write(MAGIC_BYTE_V1);
-            writer.Write(Guid.Value.ToBigEndian());
-            WriteMessageIndexes(stream);
-            return stream.ToArray();
-        }
-    }
 
-    private void WriteMessageIndexes(Stream stream)
+        var offset = BinaryConverter.WriteByte(destination, MAGIC_BYTE_V1);
+        offset += BinaryConverter.WriteGuidBigEndian(destination.Slice(offset), Guid.Value);
+        WriteArrayIndexesToBytes(destination.Slice(offset));
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int CalculateMessageIndexesSize()
     {
-        if (MessageIndexes != null && MessageIndexes.Count > 0)
+        if (MessageIndexes == null || MessageIndexes.Count == 0)
         {
-            if (MessageIndexes.Count == 1 && MessageIndexes[0] == 0)
+            return 0; // No message indexes to serialize
+        }
+
+        int size = 0;
+        if (MessageIndexes.Count == 1 && MessageIndexes[0] == 0)
+        {
+            // Optimization for the common case where the message type is the first in the schema
+            size += 1;
+        }
+        else
+        {
+            Span<byte> scratchBuffer = stackalloc byte[sizeof(uint)];
+            size += BinaryConverter.WriteVarint(scratchBuffer, (uint)MessageIndexes.Count);
+            foreach (var index in MessageIndexes)
             {
-                // optimization for the special case [0]
-                stream.WriteVarint(0);
-            }
-            else
-            {
-                stream.WriteVarint((uint)MessageIndexes.Count);
-                foreach (var index in MessageIndexes)
-                {
-                    stream.WriteVarint((uint)index);
-                }
+                size += BinaryConverter.WriteVarint(scratchBuffer, (uint)index);
             }
         }
+
+        return size;
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void WriteArrayIndexesToBytes(Span<byte> destination)
+    {
+        if (MessageIndexes == null || MessageIndexes.Count == 0)
+        {
+            // No message indexes to serialize
+            return;
+        }
+        
+        int offset = 0;
+        if (MessageIndexes.Count == 1 && MessageIndexes[0] == 0)
+        {
+            // Optimization for the common case where the message type is the first in the schema
+            BinaryConverter.WriteVarint(destination.Slice(offset), 0);
+        }
+        else
+        {
+            offset += BinaryConverter.WriteVarint(destination.Slice(offset), (uint)MessageIndexes.Count);
+            foreach (var index in MessageIndexes)
+            {
+                offset += BinaryConverter.WriteVarint(destination.Slice(offset), (uint)index);
+            }
+        }
+    }    
 }
 
 /// <summary>
@@ -189,26 +238,26 @@ public enum SchemaIdDeserializerStrategy
 
 public static class SchemaIdStrategyExtensions
 {
-    public static ISchemaIdSerializer ToSerializer(this SchemaIdSerializerStrategy strategy)
+    public static ISchemaIdEncoder ToEncoder(this SchemaIdSerializerStrategy strategy)
     {
         switch (strategy)
         {
             case SchemaIdSerializerStrategy.Header:
-                return new HeaderSchemaIdSerializer();
+                return new HeaderSchemaIdEncoder();
             case SchemaIdSerializerStrategy.Prefix:
-                return new PrefixSchemaIdSerializer();
+                return new PrefixSchemaIdEncoder();
             default:
                 throw new ArgumentException($"Unknown SchemaIdSerializerStrategy: {strategy}");
         }
     }
-    public static ISchemaIdDeserializer ToDeserializer(this SchemaIdDeserializerStrategy strategy)
+    public static ISchemaIdDecoder ToDeserializer(this SchemaIdDeserializerStrategy strategy)
     {
         switch (strategy)
         {
             case SchemaIdDeserializerStrategy.Dual:
-                return new DualSchemaIdDeserializer();
+                return new DualSchemaIdDecoder();
             case SchemaIdDeserializerStrategy.Prefix:
-                return new PrefixSchemaIdDeserializer();
+                return new PrefixSchemaIdDecoder();
             default:
                 throw new ArgumentException($"Unknown SchemaIdDeserializerStrategy: {strategy}");
         }
@@ -216,88 +265,91 @@ public static class SchemaIdStrategyExtensions
 }
 
 /// <summary>
-///     Interface for schema ID or GUID serialization.
+/// Interface for encoding schema IDs or GUIDs.
 /// </summary>
-public interface ISchemaIdSerializer
+public interface ISchemaIdEncoder
 {
     /// <summary>
-    ///     Serialize a schema ID/GUID.
-    ///     During serialization, the headers or payload may be mutated, and
-    ///     the result is a payload (which may contain a schema ID/GUID).
+    /// Encodes the schema ID or GUID into the provided buffer. The buffer is expected to be large enough 
+    /// to hold the data. Use <see cref="CalculateSize"/> to determine the required size.
     /// </summary>
-    ///
-    /// <param name="payload"></param>
-    /// <param name="context"></param>
-    /// <param name="schemaId"></param>
-    /// <returns></returns>
-    public byte[] Serialize(byte[] payload, SerializationContext context, SchemaId schemaId);
+    void Encode(Span<byte> buffer, ref SerializationContext context, ref SchemaId schemaId);
+
+    /// <summary>
+    /// Calculates the number of bytes required to encode the schema ID or GUID. 
+    /// Returns 0 if the schema is encoded in headers instead of the buffer.
+    /// </summary>
+    int CalculateSize(ref SchemaId schemaId);
+}
+
+internal class PrefixSchemaIdEncoder : ISchemaIdEncoder
+{
+    public void Encode(Span<byte> buffer, ref SerializationContext context, ref SchemaId schemaId)
+    {
+        schemaId.WriteIdToBytes(buffer);
+    }
+
+    public int CalculateSize(ref SchemaId schemaId)
+    {
+        return schemaId.CalculateIdSize();
+    }
+}
+
+internal class HeaderSchemaIdEncoder : ISchemaIdEncoder
+{
+    public void Encode(Span<byte> buffer, ref SerializationContext context, ref SchemaId schemaId)
+    {
+        string headerKey = context.Component == MessageComponentType.Key
+            ? SchemaId.KEY_SCHEMA_ID_HEADER : SchemaId.VALUE_SCHEMA_ID_HEADER;
+        
+        var bytes = new byte[schemaId.CalculateGuidSize()];
+        schemaId.WriteGuidToBytes(bytes);
+        context.Headers.Add(headerKey, bytes);
+    }
+
+    public int CalculateSize(ref SchemaId schemaId)
+    {
+        return 0;
+    }
 }
 
 /// <summary>
-///     Interface for schema ID or GUID deserialization.
+/// Interface for decoding schema IDs or GUIDs.
 /// </summary>
-public interface ISchemaIdDeserializer
+public interface ISchemaIdDecoder
 {
     /// <summary>
-    ///     Deserialize a schema ID/GUID.
-    ///     During deserialization, the schemaId is mutated, and the result is the payload
-    ///     (which will not contain a schema ID/GUID).
+    /// Decodes a schema ID or GUID from the provided payload.
     /// </summary>
-    ///
-    /// <param name="payload"></param>
-    /// <param name="context"></param>
-    /// <param name="schemaId"></param>
-    /// <returns></returns>
-    public Stream Deserialize(byte[] payload, SerializationContext context, ref SchemaId schemaId);
+    /// <param name="payload">The payload that may contain an encoded schema ID or GUID.</param>
+    /// <param name="context">The serialization context, including headers and the message component type.</param>
+    /// <param name="schemaId">The <see cref="SchemaId"/> instance to populate with the decoded value.</param>
+    /// <returns>The remaining payload after the schema ID or GUID has been decoded.</returns>
+    ReadOnlyMemory<byte> Decode(ReadOnlyMemory<byte> payload, SerializationContext context, ref SchemaId schemaId);
 }
 
-public class HeaderSchemaIdSerializer : ISchemaIdSerializer
+internal class PrefixSchemaIdDecoder : ISchemaIdDecoder
 {
-    public byte[] Serialize(byte[] payload, SerializationContext context, SchemaId schemaId)
+    public ReadOnlyMemory<byte> Decode(ReadOnlyMemory<byte> payload, SerializationContext context, ref SchemaId schemaId)
     {
-        if (context.Headers == null)
-        {
-            throw new ArgumentNullException("Headers cannot be null");
-        }
-        string headerKey = context.Component == MessageComponentType.Key
-            ? SchemaId.KEY_SCHEMA_ID_HEADER : SchemaId.VALUE_SCHEMA_ID_HEADER;
-        context.Headers.Add(headerKey, schemaId.GuidToBytes());
-        return payload;
+        return schemaId.FromBytes(payload);
     }
 }
 
-public class PrefixSchemaIdSerializer : ISchemaIdSerializer
+internal class DualSchemaIdDecoder : ISchemaIdDecoder
 {
-    public byte[] Serialize(byte[] payload, SerializationContext context, SchemaId schemaId)
+    public ReadOnlyMemory<byte> Decode(ReadOnlyMemory<byte> payload, SerializationContext context,
+        ref SchemaId schemaId)
     {
-        byte[] idBytes = schemaId.IdToBytes();
-        byte[] result = new byte[idBytes.Length + payload.Length];
-        Buffer.BlockCopy(idBytes, 0, result, 0, idBytes.Length);
-        Buffer.BlockCopy(payload, 0, result, idBytes.Length, payload.Length);
-        return result;
-    }
-}
-
-public class DualSchemaIdDeserializer : ISchemaIdDeserializer
-{
-    public Stream Deserialize(byte[] payload, SerializationContext context, ref SchemaId schemaId)
-    {
-        string headerKey = context.Component == MessageComponentType.Key
-            ? SchemaId.KEY_SCHEMA_ID_HEADER : SchemaId.VALUE_SCHEMA_ID_HEADER;
+        var headerKey = context.Component == MessageComponentType.Key
+            ? SchemaId.KEY_SCHEMA_ID_HEADER 
+            : SchemaId.VALUE_SCHEMA_ID_HEADER;
+        
         if (context.Headers != null && context.Headers.TryGetLastBytes(headerKey, out var headerValue))
         {
-            schemaId.FromBytes(new MemoryStream(headerValue));
-            return new MemoryStream(payload);
+            schemaId.FromBytes(headerValue);
+            return payload;
         }
-
-        return schemaId.FromBytes(new MemoryStream(payload));
-    }
-}
-
-public class PrefixSchemaIdDeserializer : ISchemaIdDeserializer
-{
-    public Stream Deserialize(byte[] payload, SerializationContext context, ref SchemaId schemaId)
-    {
-        return schemaId.FromBytes(new MemoryStream(payload));
+        return schemaId.FromBytes(payload);
     }
 }
