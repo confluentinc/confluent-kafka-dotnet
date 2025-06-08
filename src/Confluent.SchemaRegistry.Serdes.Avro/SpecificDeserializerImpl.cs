@@ -154,9 +154,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 DatumReader<T> datumReader = null;
                 if (migrations.Count > 0)
                 {
-                    // TODO: We should be able to write a wrapper around ReadOnlyMemory<byte> that allows us to
-                    // pass it to the BinaryDecoder without copying the data to a MemoryStream.
-                    using (var memoryStream = new MemoryStream(payload.ToArray()))
+                    using (var memoryStream = new ReadOnlyMemoryStream(payload))
                     {
                         data = new GenericReader<GenericRecord>(writerSchema, writerSchema)
                             .Read(default(GenericRecord), new BinaryDecoder(memoryStream));
@@ -187,10 +185,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 else
                 {
                     datumReader = await GetDatumReader(writerSchema, ReaderSchema).ConfigureAwait(false);
-
-                    // TODO: We should be able to write a wrapper around ReadOnlyMemory<byte> that allows us to
-                    // pass it to the BinaryDecoder without copying the data to a MemoryStream.
-                    using var stream = new MemoryStream(payload.ToArray());
+                    
+                    using var stream = new ReadOnlyMemoryStream(payload);
                     data = Read(datumReader, new BinaryDecoder(stream));
                 }
 
