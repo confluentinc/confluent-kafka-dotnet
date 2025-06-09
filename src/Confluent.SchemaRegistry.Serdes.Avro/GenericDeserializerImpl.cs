@@ -58,8 +58,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 : await Deserialize(context.Topic, context.Headers, data,
                     context.Component == MessageComponentType.Key).ConfigureAwait(false);
         }
-        
-        public async Task<GenericRecord> Deserialize(string topic, Headers headers, ReadOnlyMemory<byte> array, bool isKey)
+
+        private async Task<GenericRecord> Deserialize(string topic, Headers headers, ReadOnlyMemory<byte> array, bool isKey)
         {
             try
             {
@@ -105,7 +105,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 DatumReader<GenericRecord> datumReader;
                 if (migrations.Count > 0)
                 {
-                    using (var stream = new MemoryStream(payload.ToArray()))
+                    using (var stream = new ReadOnlyMemoryStream(payload))
                     {
                         data = new GenericReader<GenericRecord>(writerSchema, writerSchema)
                             .Read(default(GenericRecord), new BinaryDecoder(stream));
@@ -149,7 +149,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                     datumReader = await GetDatumReader(writerSchema, readerSchema).ConfigureAwait(false);
 
-                    using (var stream = new MemoryStream(payload.ToArray()))
+                    using (var stream = new ReadOnlyMemoryStream(payload))
                     {
                         data = datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
                     }
