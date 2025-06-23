@@ -3,6 +3,24 @@
 ## Enhancements
 
 * References librdkafka.redist 2.10.1. Refer to the [librdkafka v2.10.1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.10.1) for more information.
+* Refactor serializer implementations to remove unnecessary ContinueWith calls (#2448)
+* Remove shared mutex from CachedSchemaRegistryClient (#2449)
+* Protobuf serialization perf improvements (#2459)
+* Refactor AuthenticationHeaderValueProvider construction (#2463)
+* Remove redundant ConfigureAwait (#2469)
+* Support for schema id in header (#2465)
+* Use vectorized null-terminated C-string parsing in PtrToStringUTF8 for .NET 6+ (#2466)
+* Rework SchemaId encoding in headers to minimize heap allocations (#2480)
+* Raise an error if Protobuf deprecated format is specified (#2479)
+* Avoid array copy on Avro deserialization (#2483)
+
+## Fixes
+
+* Fix JSON Schema validation to use latest schema if needed (#2406)
+* Minor check for null client (#2462)
+* Fix possible NPE in CSFLE executor (#2467)
+* Add missing ConfigureAwait calls (#2477)
+* Fix rule transformation of list properties (#2475)
 
 
 # 2.10.0
