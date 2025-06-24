@@ -592,8 +592,14 @@ namespace Confluent.Kafka.Examples
                 try
                 {
                     var topic = commandArgs[i];
-                    var partition = Int32.Parse(commandArgs[i + 1]);
-                    var offset = Int64.Parse(commandArgs[i + 2]);
+                    if (!int.TryParse(commandArgs[i + 1], out int partition))
+                    {
+                        throw new ArgumentException($"Invalid partition value: {commandArgs[i + 1]}");
+                    }
+                    if (!long.TryParse(commandArgs[i + 2], out long offset))
+                    {
+                        throw new ArgumentException($"Invalid offset value: {commandArgs[i + 2]}");
+                    }
                     tpoes.Add(new TopicPartitionOffset(topic, partition, offset));
                 }
                 catch (Exception e)
