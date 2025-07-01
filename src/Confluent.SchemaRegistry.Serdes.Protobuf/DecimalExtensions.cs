@@ -35,8 +35,10 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             var bytes = GetBytesFromDecimal(value);
 
-            var unscaledValueBytes = new byte[12];
-            Array.Copy(bytes, unscaledValueBytes, unscaledValueBytes.Length);
+            // Copy the 12 bytes into an array of size 13 so that the last byte is 0,
+            // which will ensure that the unscaled value is positive.
+            var unscaledValueBytes = new byte[13];
+            Array.Copy(bytes, unscaledValueBytes, 12);
 
             var unscaledValue = new BigInteger(unscaledValueBytes);
             var scale = bytes[14];
