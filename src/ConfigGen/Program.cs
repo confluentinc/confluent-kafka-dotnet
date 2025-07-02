@@ -317,7 +317,9 @@ namespace Confluent.Kafka
             { "read_uncommitted", "ReadUncommitted" },
             { "read_committed", "ReadCommitted" },
             { "use_all_dns_ips", "UseAllDnsIps"},
-            { "resolve_canonical_bootstrap_servers_only", "ResolveCanonicalBootstrapServersOnly"}
+            { "resolve_canonical_bootstrap_servers_only", "ResolveCanonicalBootstrapServersOnly"},
+            { "client_credentials", "ClientCredentials"},
+            { "urn:ietf:params:oauth:grant-type:jwt-bearer", "JwtBearer"},
         };
 
         static string EnumNameToDotnetName(string enumName)

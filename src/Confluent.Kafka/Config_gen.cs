@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.10.1 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.11.0-RC2 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -169,6 +169,38 @@ namespace Confluent.Kafka
         ///     Oidc
         /// </summary>
         Oidc
+    }
+
+    /// <summary>
+    ///     SaslOauthbearerGrantType enum values
+    /// </summary>
+    public enum SaslOauthbearerGrantType
+    {
+        /// <summary>
+        ///     ClientCredentials
+        /// </summary>
+        ClientCredentials,
+
+        /// <summary>
+        ///     JwtBearer
+        /// </summary>
+        JwtBearer
+    }
+
+    /// <summary>
+    ///     SaslOauthbearerAssertionAlgorithm enum values
+    /// </summary>
+    public enum SaslOauthbearerAssertionAlgorithm
+    {
+        /// <summary>
+        ///     RS256
+        /// </summary>
+        RS256,
+
+        /// <summary>
+        ///     ES256
+        /// </summary>
+        ES256
     }
 
     /// <summary>
@@ -468,13 +500,23 @@ namespace Confluent.Kafka
 
         /// <summary>
         /// <![CDATA[
-        ///     Controls how the client recovers when none of the brokers known to it is available. If set to `none`, the client fails with a fatal error. If set to `rebootstrap`, the client repeats the bootstrap process using `bootstrap.servers` and brokers added through `rd_kafka_brokers_add()`. Rebootstrapping is useful when a client communicates with brokers so infrequently that the set of brokers may change entirely before the client refreshes metadata. Metadata recovery is triggered when all last-known brokers appear unavailable simultaneously.
+        ///     Controls how the client recovers when none of the brokers known to it is available. If set to `none`, the client doesn't re-bootstrap. If set to `rebootstrap`, the client repeats the bootstrap process using `bootstrap.servers` and brokers added through `rd_kafka_brokers_add()`. Rebootstrapping is useful when a client communicates with brokers so infrequently that the set of brokers may change entirely before the client refreshes metadata. Metadata recovery is triggered when all last-known brokers appear unavailable simultaneously or the client cannot refresh metadata within `metadata.recovery.rebootstrap.trigger.ms` or it's requested in a metadata response.
         ///
         ///     default: rebootstrap
         ///     importance: low
         /// ]]>
         /// </summary>
         public MetadataRecoveryStrategy? MetadataRecoveryStrategy { get { return (MetadataRecoveryStrategy?)GetEnum(typeof(MetadataRecoveryStrategy), "metadata.recovery.strategy"); } set { this.SetObject("metadata.recovery.strategy", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     If a client configured to rebootstrap using `metadata.recovery.strategy=rebootstrap` is unable to obtain metadata from any of the brokers for this interval, client repeats the bootstrap process using `bootstrap.servers` configuration and brokers added through `rd_kafka_brokers_add()`.
+        ///
+        ///     default: 300000
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public int? MetadataRecoveryRebootstrapTriggerMs { get { return GetInt("metadata.recovery.rebootstrap.trigger.ms"); } set { this.SetObject("metadata.recovery.rebootstrap.trigger.ms", value); } }
 
         /// <summary>
         /// <![CDATA[
@@ -878,6 +920,26 @@ namespace Confluent.Kafka
 
         /// <summary>
         /// <![CDATA[
+        ///     File or directory path to CA certificate(s) for verifying HTTPS endpoints, like `sasl.oauthbearer.token.endpoint.url` used for OAUTHBEARER/OIDC authentication. Mutually exclusive with `https.ca.pem`. Defaults: On Windows the system's CA certificates are automatically looked up in the Windows Root certificate store. On Mac OSX this configuration defaults to `probe`. It is recommended to install openssl using Homebrew, to provide CA certificates. On Linux install the distribution's ca-certificates package. If OpenSSL is statically linked or `https.ca.location` is set to `probe` a list of standard paths will be probed and the first one found will be used as the default CA certificate location path. If OpenSSL is dynamically linked the OpenSSL library's default path will be used (see `OPENSSLDIR` in `openssl version -a`).
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string HttpsCaLocation { get { return Get("https.ca.location"); } set { this.SetObject("https.ca.location", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     CA certificate string (PEM format) for verifying HTTPS endpoints. Mutually exclusive with `https.ca.location`. Optional: see `https.ca.location`.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string HttpsCaPem { get { return Get("https.ca.pem"); } set { this.SetObject("https.ca.pem", value); } }
+
+        /// <summary>
+        /// <![CDATA[
         ///     CA certificate string (PEM format) for verifying the broker's key.
         ///
         ///     default: ''
@@ -1125,6 +1187,136 @@ namespace Confluent.Kafka
         /// ]]>
         /// </summary>
         public string SaslOauthbearerTokenEndpointUrl { get { return Get("sasl.oauthbearer.token.endpoint.url"); } set { this.SetObject("sasl.oauthbearer.token.endpoint.url", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     OAuth grant type to use when communicating with the identity provider.
+        ///
+        ///     default: client_credentials
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public SaslOauthbearerGrantType? SaslOauthbearerGrantType { get { return (SaslOauthbearerGrantType?)GetEnum(typeof(SaslOauthbearerGrantType), "sasl.oauthbearer.grant.type"); } set { this.SetObject("sasl.oauthbearer.grant.type", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     Algorithm the client should use to sign the assertion sent to the identity provider and in the OAuth alg header in the JWT assertion.
+        ///
+        ///     default: RS256
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public SaslOauthbearerAssertionAlgorithm? SaslOauthbearerAssertionAlgorithm { get { return (SaslOauthbearerAssertionAlgorithm?)GetEnum(typeof(SaslOauthbearerAssertionAlgorithm), "sasl.oauthbearer.assertion.algorithm"); } set { this.SetObject("sasl.oauthbearer.assertion.algorithm", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     Path to client's private key (PEM) used for authentication when using the JWT assertion.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string SaslOauthbearerAssertionPrivateKeyFile { get { return Get("sasl.oauthbearer.assertion.private.key.file"); } set { this.SetObject("sasl.oauthbearer.assertion.private.key.file", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     Private key passphrase for `sasl.oauthbearer.assertion.private.key.file` or `sasl.oauthbearer.assertion.private.key.pem`.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string SaslOauthbearerAssertionPrivateKeyPassphrase { get { return Get("sasl.oauthbearer.assertion.private.key.passphrase"); } set { this.SetObject("sasl.oauthbearer.assertion.private.key.passphrase", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     Client's private key (PEM) used for authentication when using the JWT assertion.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string SaslOauthbearerAssertionPrivateKeyPem { get { return Get("sasl.oauthbearer.assertion.private.key.pem"); } set { this.SetObject("sasl.oauthbearer.assertion.private.key.pem", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     Path to the assertion file. Only used when `sasl.oauthbearer.method` is set to "oidc" and JWT assertion is needed.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string SaslOauthbearerAssertionFile { get { return Get("sasl.oauthbearer.assertion.file"); } set { this.SetObject("sasl.oauthbearer.assertion.file", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     JWT audience claim. Only used when `sasl.oauthbearer.method` is set to "oidc" and JWT assertion is needed.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string SaslOauthbearerAssertionClaimAud { get { return Get("sasl.oauthbearer.assertion.claim.aud"); } set { this.SetObject("sasl.oauthbearer.assertion.claim.aud", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     Assertion expiration time in seconds. Only used when `sasl.oauthbearer.method` is set to "oidc" and JWT assertion is needed.
+        ///
+        ///     default: 300
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public int? SaslOauthbearerAssertionClaimExpSeconds { get { return GetInt("sasl.oauthbearer.assertion.claim.exp.seconds"); } set { this.SetObject("sasl.oauthbearer.assertion.claim.exp.seconds", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     JWT issuer claim. Only used when `sasl.oauthbearer.method` is set to "oidc" and JWT assertion is needed.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string SaslOauthbearerAssertionClaimIss { get { return Get("sasl.oauthbearer.assertion.claim.iss"); } set { this.SetObject("sasl.oauthbearer.assertion.claim.iss", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     JWT ID claim. When set to `true`a random UUID is generated. Only used when `sasl.oauthbearer.method` is set to "oidc" and JWT assertion is needed.
+        ///
+        ///     default: false
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public bool? SaslOauthbearerAssertionClaimJtiInclude { get { return GetBool("sasl.oauthbearer.assertion.claim.jti.include"); } set { this.SetObject("sasl.oauthbearer.assertion.claim.jti.include", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     Assertion not before time in seconds. Only used when `sasl.oauthbearer.method` is set to "oidc" and JWT assertion is needed.
+        ///
+        ///     default: 60
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public int? SaslOauthbearerAssertionClaimNbfSeconds { get { return GetInt("sasl.oauthbearer.assertion.claim.nbf.seconds"); } set { this.SetObject("sasl.oauthbearer.assertion.claim.nbf.seconds", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     JWT subject claim. Only used when `sasl.oauthbearer.method` is set to "oidc" and JWT assertion is needed.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string SaslOauthbearerAssertionClaimSub { get { return Get("sasl.oauthbearer.assertion.claim.sub"); } set { this.SetObject("sasl.oauthbearer.assertion.claim.sub", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     Path to the JWT template file. Only used when `sasl.oauthbearer.method` is set to "oidc" and JWT assertion is needed.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string SaslOauthbearerAssertionJwtTemplateFile { get { return Get("sasl.oauthbearer.assertion.jwt.template.file"); } set { this.SetObject("sasl.oauthbearer.assertion.jwt.template.file", value); } }
 
         /// <summary>
         /// <![CDATA[
