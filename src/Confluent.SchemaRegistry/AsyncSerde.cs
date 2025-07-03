@@ -318,7 +318,7 @@ namespace Confluent.SchemaRegistry
             foreach (Migration m in migrations)
             {
                 message = await ExecuteRules(isKey, subject, topic, headers,
-                        m.RuleMode, RulePhase.Migration,
+                        RulePhase.Migration, m.RuleMode,
                         m.Source, m.Target, message, null)
                     .ConfigureAwait(continueOnCapturedContext: false);
             }
@@ -351,7 +351,7 @@ namespace Confluent.SchemaRegistry
             object message,
             FieldTransformer fieldTransformer)
         {
-            return await ExecuteRules(isKey, subject, topic, headers, ruleMode, RulePhase.Domain,
+            return await ExecuteRules(isKey, subject, topic, headers, RulePhase.Domain, ruleMode,
                 source, target, message, fieldTransformer)
                 .ConfigureAwait(false);
         }
@@ -363,8 +363,8 @@ namespace Confluent.SchemaRegistry
         /// <param name="subject"></param>
         /// <param name="topic"></param>
         /// <param name="headers"></param>
-        /// <param name="ruleMode"></param>
         /// <param name="rulePhase"></param>
+        /// <param name="ruleMode"></param>
         /// <param name="source"></param>
         /// <param name="target"></param>
         /// <param name="message"></param>
@@ -377,8 +377,8 @@ namespace Confluent.SchemaRegistry
             string subject, 
             string topic, 
             Headers headers,
-            RuleMode ruleMode, 
             RulePhase rulePhase,
+            RuleMode ruleMode,
             Schema source,
             Schema target, 
             object message,

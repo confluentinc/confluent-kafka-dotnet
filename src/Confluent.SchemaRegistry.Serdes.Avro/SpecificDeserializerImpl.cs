@@ -144,7 +144,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
-                payload = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read, RulePhase.Encoding,
+                payload = await ExecuteRules(isKey, subject, topic, headers, RulePhase.Encoding, RuleMode.Read,
                         null, writerSchemaJson, payload, null)
                     .ContinueWith(t => t.Result is byte[] bytes ? new ReadOnlyMemory<byte>(bytes) : (ReadOnlyMemory<byte>)t.Result)
                     .ConfigureAwait(continueOnCapturedContext: false);

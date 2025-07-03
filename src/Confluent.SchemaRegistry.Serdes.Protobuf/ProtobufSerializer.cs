@@ -284,7 +284,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 var buffer = new byte[value.CalculateSize()];
                 value.WriteTo(buffer);
                 buffer = await ExecuteRules(context.Component == MessageComponentType.Key,
-                        subject, context.Topic, context.Headers, RuleMode.Write, RulePhase.Encoding,
+                        subject, context.Topic, context.Headers, RulePhase.Encoding, RuleMode.Write,
                         null, latestSchema, buffer, null)
                     .ContinueWith(t => (byte[])t.Result)
                     .ConfigureAwait(continueOnCapturedContext: false);
