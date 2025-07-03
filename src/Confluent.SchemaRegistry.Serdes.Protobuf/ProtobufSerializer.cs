@@ -272,25 +272,31 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await ProtobufUtils.Transform(ctx, fdSet, message, transform).ConfigureAwait(false);
                     };
-                    value = (T) await ExecuteRules(context.Component == MessageComponentType.Key, subject,
-                            context.Topic, context.Headers, RuleMode.Write, null,
-                            latestSchema, value, fieldTransformer)
+                    value = await ExecuteRules(context.Component == MessageComponentType.Key,
+                            subject, context.Topic, context.Headers, RuleMode.Write,
+                            null, latestSchema, value, fieldTransformer)
+                        .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
-                
+
                 schemaId.MessageIndexes = indexArray;
 
+                var buffer = new byte[value.CalculateSize()];
+                value.WriteTo(buffer);
+                buffer = await ExecuteRules(context.Component == MessageComponentType.Key,
+                        subject, context.Topic, context.Headers, RuleMode.Write, RulePhase.Encoding,
+                        null, latestSchema, buffer, null)
+                    .ContinueWith(t => (byte[])t.Result)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+
                 var schemaIdSize = schemaIdEncoder.CalculateSize(ref schemaId);
-                var serializedMessageSize = value.CalculateSize();
+                var serializedMessageSize = buffer.Length;
 
-                var bufferSize = schemaIdSize // Schema ID size
-                                 + serializedMessageSize; // Serialized message size
-                
-                var buffer = new byte[bufferSize];
-                schemaIdEncoder.Encode(buffer, ref context, ref schemaId);
-                value.WriteTo(buffer.AsSpan(schemaIdSize));
+                var result = new byte[schemaIdSize + serializedMessageSize];
+                schemaIdEncoder.Encode(result, ref context, ref schemaId);
+                buffer.AsSpan().CopyTo(result.AsSpan(schemaIdSize));
 
-                return buffer;
+                return result;
             }
             catch (AggregateException e)
             {

@@ -95,6 +95,10 @@ namespace Confluent.SchemaRegistry.Serdes
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
+                payload = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read, RulePhase.Encoding,
+                        null, writerSchemaJson, payload, null)
+                    .ContinueWith(t => t.Result is byte[] bytes ? new ReadOnlyMemory<byte>(bytes) : (ReadOnlyMemory<byte>)t.Result)
+                    .ConfigureAwait(continueOnCapturedContext: false);
 
                 if (latestSchema != null)
                 {
@@ -159,8 +163,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     return await AvroUtils.Transform(ctx, readerSchema, message, transform).ConfigureAwait(false);
                 };
-                data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read, null,
-                    readerSchemaJson, data, fieldTransformer)
+                data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read,
+                        null, readerSchemaJson, data, fieldTransformer)
                     .ContinueWith(t => (GenericRecord)t.Result)
                     .ConfigureAwait(continueOnCapturedContext: false);
 

@@ -1035,6 +1035,81 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void PayloadEncryption()
+        {
+            var schemaStr = @"{
+              ""type"": ""object"",
+              ""properties"": {
+                ""favorite_color"": {
+                  ""type"": ""string""
+                },
+                ""favorite_number"": {
+                  ""type"": ""number""
+                },
+                ""name"": {
+                  ""type"": ""string"",
+                  ""confluent:tags"": [ ""PII"" ]
+                }
+              }
+            }";
+
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
+                {
+                    ["$.name"] = new HashSet<string> { "PII" }
+
+                }, new Dictionary<string, string>(), new HashSet<string>()
+            );
+            schema.RuleSet = new RuleSet(new List<Rule>(), new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("encryptPII", RuleKind.Transform, RuleMode.WriteRead, "ENCRYPT_PAYLOAD", new HashSet<string>
+                    {
+                        "PII"
+                    }, new Dictionary<string, string>
+                    {
+                        ["encrypt.kek.name"] = "kek1",
+                        ["encrypt.kms.type"] = "local-kms",
+                        ["encrypt.kms.key.id"] = "mykey"
+                    })
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
+            IRuleExecutor ruleExecutor = new EncryptionExecutor(dekRegistryClient, clock);
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var serializer = new JsonSerializer<Customer>(schemaRegistryClient, config, null,
+                ruleRegistry);
+            var deserializer = new JsonDeserializer<Customer>(schemaRegistryClient, null, null,
+                ruleRegistry);
+
+            var user = new Customer
+            {
+                FavoriteColor = "blue",
+                FavoriteNumber = 100,
+                Name = "awesome"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer
+                .SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false,
+                new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            // The user name has been modified
+            Assert.Equal("awesome", result.Name);
+            Assert.Equal(user.FavoriteColor, result.FavoriteColor);
+            Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
+        }
+
+        [Fact]
         public void JSONataFullyCompatible()
         {
             var rule1To2 = "$merge([$sift($, function($v, $k) {$k != 'name'}), {'full_name': $.'name'}])";

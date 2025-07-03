@@ -244,9 +244,10 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await JsonUtils.Transform(ctx, parsedSchema, "$", message, transform).ConfigureAwait(false);
                     };
-                    value = (T) await ExecuteRules(context.Component == MessageComponentType.Key, subject,
-                            context.Topic, context.Headers, RuleMode.Write, null,
-                            latestSchema, value, fieldTransformer)
+                    value = await ExecuteRules(context.Component == MessageComponentType.Key,
+                            subject, context.Topic, context.Headers, RuleMode.Write,
+                            null, latestSchema, value, fieldTransformer)
+                        .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
                 else
@@ -264,15 +265,22 @@ namespace Confluent.SchemaRegistry.Serdes
                         throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
                     }
                 }
-                
-                var schemaIdSize = schemaIdEncoder.CalculateSize(ref schemaId);
-                var serializedMessageSize = System.Text.Encoding.UTF8.GetByteCount(serializedString);
-                
-                var buffer = new byte[schemaIdSize + serializedMessageSize];
-                schemaIdEncoder.Encode(buffer, ref context, ref schemaId);
-                System.Text.Encoding.UTF8.GetBytes(serializedString).AsSpan().CopyTo(buffer.AsSpan(schemaIdSize));
 
-                return buffer;
+                var buffer = System.Text.Encoding.UTF8.GetBytes(serializedString);
+                buffer = await ExecuteRules(context.Component == MessageComponentType.Key,
+                        subject, context.Topic, context.Headers, RuleMode.Write, RulePhase.Encoding,
+                        null, latestSchema, buffer, null)
+                    .ContinueWith(t => (byte[])t.Result)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+
+                var schemaIdSize = schemaIdEncoder.CalculateSize(ref schemaId);
+                var serializedMessageSize = buffer.Length;
+
+                var result = new byte[schemaIdSize + serializedMessageSize];
+                schemaIdEncoder.Encode(result, ref context, ref schemaId);
+                buffer.AsSpan().CopyTo(result.AsSpan(schemaIdSize));
+
+                return result;
             }
             catch (AggregateException e)
             {

@@ -228,7 +228,8 @@ namespace Confluent.SchemaRegistry
                 previous = current;
                 continue;
               }
-              if (current.RuleSet != null && current.RuleSet.HasRules(migrationMode)) {
+              if (current.RuleSet != null &&
+                  current.RuleSet.HasRules(RulePhase.Migration, migrationMode)) {
                 Migration m;
                 if (migrationMode == RuleMode.Upgrade) {
                   m = new Migration(migrationMode, previous, current);
@@ -317,13 +318,14 @@ namespace Confluent.SchemaRegistry
             foreach (Migration m in migrations)
             {
                 message = await ExecuteRules(isKey, subject, topic, headers, m.RuleMode,
-                    m.Source, m.Target, message, null).ConfigureAwait(continueOnCapturedContext: false);
+                    m.Source, m.Target, message, null)
+                    .ConfigureAwait(continueOnCapturedContext: false);
             }
             return message;
         }
 
         /// <summary>
-        ///     Execute rules 
+        ///     Execute rules
         /// </summary>
         /// <param name="isKey"></param>
         /// <param name="subject"></param>
@@ -338,12 +340,45 @@ namespace Confluent.SchemaRegistry
         /// <exception cref="RuleConditionException"></exception>
         /// <exception cref="ArgumentException"></exception>
         protected async Task<object> ExecuteRules(
+            bool isKey,
+            string subject,
+            string topic,
+            Headers headers,
+            RuleMode ruleMode,
+            Schema source,
+            Schema target,
+            object message,
+            FieldTransformer fieldTransformer)
+        {
+            return await ExecuteRules(isKey, subject, topic, headers, ruleMode, RulePhase.Domain,
+                source, target, message, fieldTransformer)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        ///     Execute rules 
+        /// </summary>
+        /// <param name="isKey"></param>
+        /// <param name="subject"></param>
+        /// <param name="topic"></param>
+        /// <param name="headers"></param>
+        /// <param name="ruleMode"></param>
+        /// <param name="rulePhase"></param>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <param name="message"></param>
+        /// <param name="fieldTransformer"></param>
+        /// <returns></returns>
+        /// <exception cref="RuleConditionException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        protected async Task<object> ExecuteRules(
             bool isKey, 
             string subject, 
             string topic, 
             Headers headers,
             RuleMode ruleMode, 
-            Schema source, 
+            RulePhase rulePhase,
+            Schema source,
             Schema target, 
             object message,
             FieldTransformer fieldTransformer)
@@ -365,7 +400,9 @@ namespace Confluent.SchemaRegistry
             }
             else
             {
-                rules = target.RuleSet?.DomainRules;
+                rules = rulePhase == RulePhase.Encoding
+                    ? target.RuleSet?.EncodingRules
+                    : target.RuleSet?.DomainRules;
                 if (rules != null && ruleMode == RuleMode.Read)
                 {
                     // Execute read rules in reverse order for symmetry

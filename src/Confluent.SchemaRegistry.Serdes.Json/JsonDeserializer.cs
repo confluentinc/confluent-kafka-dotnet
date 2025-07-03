@@ -205,6 +205,11 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
                     }
                 }
+                payload = await ExecuteRules(context.Component == MessageComponentType.Key,
+                        subject, context.Topic, context.Headers, RuleMode.Read, RulePhase.Encoding,
+                        null, writerSchemaJson, payload, null)
+                    .ContinueWith(t => t.Result is byte[] bytes ? new ReadOnlyMemory<byte>(bytes) : (ReadOnlyMemory<byte>)t.Result)
+                    .ConfigureAwait(continueOnCapturedContext: false);
 
                 if (latestSchema != null)
                 {
@@ -269,9 +274,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await JsonUtils.Transform(ctx, readerSchema, "$", message, transform).ConfigureAwait(false);
                     };
-                    value = await ExecuteRules(context.Component == MessageComponentType.Key, subject,
-                            context.Topic, context.Headers, RuleMode.Read, null,
-                            readerSchemaJson, value, fieldTransformer)
+                    value = await ExecuteRules(context.Component == MessageComponentType.Key,
+                            subject, context.Topic, context.Headers, RuleMode.Read,
+                            null, readerSchemaJson, value, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
