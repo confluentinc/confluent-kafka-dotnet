@@ -317,8 +317,9 @@ namespace Confluent.SchemaRegistry
         {
             foreach (Migration m in migrations)
             {
-                message = await ExecuteRules(isKey, subject, topic, headers, m.RuleMode,
-                    m.Source, m.Target, message, null)
+                message = await ExecuteRules(isKey, subject, topic, headers,
+                        m.RuleMode, RulePhase.Migration,
+                        m.Source, m.Target, message, null)
                     .ConfigureAwait(continueOnCapturedContext: false);
             }
             return message;
