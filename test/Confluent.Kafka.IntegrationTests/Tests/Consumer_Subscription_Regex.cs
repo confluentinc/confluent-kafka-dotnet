@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 // KIP-848: regex is resolved by the coordinator
                 // at given intervals
-                topicMetadataRefreshPeriodMs += 10000;
+                topicMetadataRefreshPeriodMs += 20000;
             }
             var rebalanceWaitMs = 2000;
 
