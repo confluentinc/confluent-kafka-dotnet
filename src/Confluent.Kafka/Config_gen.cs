@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.11.0-RC2 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.11.0 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -1280,7 +1280,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         /// <![CDATA[
-        ///     JWT ID claim. When set to `true`a random UUID is generated. Only used when `sasl.oauthbearer.method` is set to "oidc" and JWT assertion is needed.
+        ///     JWT ID claim. When set to `true`, a random UUID is generated. Only used when `sasl.oauthbearer.method` is set to "oidc" and JWT assertion is needed.
         ///
         ///     default: false
         ///     importance: low
