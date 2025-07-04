@@ -29,7 +29,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A high level producer with serialization capability.
     /// </summary>
-    internal class Producer<TKey, TValue> : IProducer<TKey, TValue>, IClient
+    internal class Producer<TKey, TValue> : IProducer<TKey, TValue>
     {
         internal class Config
         {
@@ -57,7 +57,7 @@ namespace Confluent.Kafka
             { typeof(double), Serializers.Double },
             { typeof(byte[]), Serializers.ByteArray }
         };
-
+        
         private int cancellationDelayMaxMs;
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
@@ -741,6 +741,40 @@ namespace Confluent.Kafka
                 builder.AsyncKeySerializer, builder.AsyncValueSerializer);
         }
 
+        /// <inheritdoc/>
+        public async Task<ProduceResult> ProduceAsync(
+            string topic, 
+            Partition partition, 
+            ArraySegment<byte>? key, 
+            ArraySegment<byte>? value, 
+            IReadOnlyList<IHeader> headers, 
+            Timestamp timestamp)
+        {
+            // Start produce request
+            DeliveryHandlerSlim deliveryHandler = new();
+            ProduceImpl(topic, 
+                value?.Array, value?.Offset ?? 0, value?.Count ?? 0, 
+                key?.Array, key?.Offset ?? 0, key?.Count ?? 0, 
+                timestamp, 
+                partition, 
+                headers ?? Array.Empty<IHeader>(), 
+                deliveryHandler);
+
+            // Wait for response
+            DeliveryReport<Null, Null> deliveryReport = await deliveryHandler.Task.ConfigureAwait(false);
+
+            // Return response
+            return new(deliveryReport.Partition, deliveryReport.Offset, deliveryReport.Status);
+        }
+
+        /// <summary>
+        /// Implements light-weight delivery handler for produce requests.
+        /// </summary>
+        class DeliveryHandlerSlim : TaskCompletionSource<DeliveryReport<Null, Null>>, IDeliveryHandler
+        {
+            public DeliveryHandlerSlim() : base(TaskCreationOptions.RunContinuationsAsynchronously) {}
+            public void HandleDeliveryReport(DeliveryReport<Null, Null> deliveryReport) => TrySetResult(deliveryReport);
+        }
 
         /// <inheritdoc/>
         public async Task<DeliveryResult<TKey, TValue>> ProduceAsync(
@@ -815,7 +849,7 @@ namespace Confluent.Kafka
                 else
                 {
                     ProduceImpl(
-                        topicPartition.Topic, 
+                        topicPartition.Topic,
                         valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
                         keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
                         message.Timestamp, topicPartition.Partition, headers.BackingList, 
