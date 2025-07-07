@@ -15,7 +15,9 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers.Binary;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Decimal = Confluent.SchemaRegistry.Serdes.Protobuf.Decimal;
 
@@ -33,24 +35,35 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <returns>Protobuf decimal value</returns>
         public static Decimal ToProtobufDecimal(this decimal value)
         {
-            var bytes = GetBytesFromDecimal(value);
+            Span<byte> bytes = stackalloc byte[16];
+            WriteBytesFromDecimal(value, bytes);
 
             // Copy the 12 bytes into an array of size 13 so that the last byte is 0,
             // which will ensure that the unscaled value is positive.
-            var unscaledValueBytes = new byte[13];
-            Array.Copy(bytes, unscaledValueBytes, 12);
+            Span<byte> unscaledValueBytes = stackalloc byte[13];
+            bytes.Slice(0, 12).CopyTo(unscaledValueBytes);
 
+#if NET6_0_OR_GREATER
             var unscaledValue = new BigInteger(unscaledValueBytes);
-            var scale = bytes[14];
-
+#else
+            var unscaledValue = new BigInteger(unscaledValueBytes.ToArray());
+#endif
+            
             if (bytes[15] == 128)
             {
                 unscaledValue *= BigInteger.MinusOne;
             }
-
+            var scale = bytes[14];
+            
+#if NET6_0_OR_GREATER
+            Span<byte> buffer = stackalloc byte[16];
+            unscaledValue.TryWriteBytes(buffer, out var bytesWritten, isBigEndian: true);
+            buffer = buffer.Slice(0, bytesWritten);
+#else
             var buffer = unscaledValue.ToByteArray();
             Array.Reverse(buffer);
-
+#endif
+            
             return new Decimal {
                 Value = ByteString.CopyFrom(buffer),
                 Scale = scale,
@@ -64,61 +77,42 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <returns>Decimal value</returns>
         public static decimal ToSystemDecimal(this Decimal value)
         {
+#if NET6_0_OR_GREATER
+            var unscaledValue = new BigInteger(value.Value.Span, isBigEndian: true);
+#else
             var buffer = value.Value.ToByteArray();
             Array.Reverse(buffer);
-
             var unscaledValue = new BigInteger(buffer);
+#endif
 
             var scaleDivisor = BigInteger.Pow(new BigInteger(10), value.Scale);
-            var remainder = BigInteger.Remainder(unscaledValue, scaleDivisor);
-            var scaledValue = BigInteger.Divide(unscaledValue, scaleDivisor);
+            var quotient = BigInteger.DivRem(unscaledValue, scaleDivisor, out var remainder);
 
-            if (scaledValue > new BigInteger(decimal.MaxValue))
+            if (quotient > new BigInteger(decimal.MaxValue))
             {
                 throw new OverflowException($"The value {unscaledValue} cannot fit into decimal.");
             }
 
-            var leftOfDecimal = (decimal)scaledValue;
-            var rightOfDecimal = ((decimal)remainder) / ((decimal)scaleDivisor);
+            var leftOfDecimal = (decimal)quotient;
+            var rightOfDecimal = (decimal)remainder / (decimal)scaleDivisor;
 
             return leftOfDecimal + rightOfDecimal;
         }
 
-        /// <summary>
-        /// Gets the bytes from decimal.
-        /// </summary>
-        /// <param name="d">The <see cref="decimal" />.</param>
-        /// <returns>
-        /// A byte array.
-        /// </returns>
-        private static byte[] GetBytesFromDecimal(decimal d)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteBytesFromDecimal(decimal value, Span<byte> destination)
         {
-            byte[] bytes = new byte[16];
-
-            int[] bits = decimal.GetBits(d);
-            int lo = bits[0];
-            int mid = bits[1];
-            int hi = bits[2];
-            int flags = bits[3];
-
-            bytes[0] = (byte)lo;
-            bytes[1] = (byte)(lo >> 8);
-            bytes[2] = (byte)(lo >> 0x10);
-            bytes[3] = (byte)(lo >> 0x18);
-            bytes[4] = (byte)mid;
-            bytes[5] = (byte)(mid >> 8);
-            bytes[6] = (byte)(mid >> 0x10);
-            bytes[7] = (byte)(mid >> 0x18);
-            bytes[8] = (byte)hi;
-            bytes[9] = (byte)(hi >> 8);
-            bytes[10] = (byte)(hi >> 0x10);
-            bytes[11] = (byte)(hi >> 0x18);
-            bytes[12] = (byte)flags;
-            bytes[13] = (byte)(flags >> 8);
-            bytes[14] = (byte)(flags >> 0x10);
-            bytes[15] = (byte)(flags >> 0x18);
-
-            return bytes;
+#if NET6_0_OR_GREATER
+            Span<int> bits = stackalloc int[4];
+            _ = decimal.GetBits(value, bits);
+#else
+            var bits = decimal.GetBits(value);
+#endif 
+            
+            BinaryPrimitives.WriteInt32LittleEndian(destination, bits[0]);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(4), bits[1]);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(8), bits[2]);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(12), bits[3]);
         }
     }
 }
