@@ -209,8 +209,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await AvroUtils.Transform(ctx, schema, message, transform).ConfigureAwait(false);
                     };
-                    data = (T) await ExecuteRules(isKey, subject, topic, headers, RuleMode.Write, null,
-                        latestSchema, data, fieldTransformer)
+                    data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Write,
+                            null, latestSchema, data, fieldTransformer)
+                        .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
@@ -221,14 +222,19 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     currentSchemaData.AvroWriter.Write(data, new BinaryEncoder(stream));
                     
+                    var buffer = await ExecuteRules(isKey, subject, topic, headers, RulePhase.Encoding, RuleMode.Write,
+                            null, latestSchema, stream.GetBuffer(), null)
+                        .ContinueWith(t => (byte[])t.Result)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+
                     var schemaIdSize = schemaIdEncoder.CalculateSize(ref schemaId);
-                    var serializedMessageSize = (int) stream.Length;
+                    var serializedMessageSize = (int) buffer.Length;
 
-                    var buffer = new byte[schemaIdSize + serializedMessageSize];
-                    schemaIdEncoder.Encode(buffer, ref context, ref schemaId);
-                    stream.GetBuffer().AsSpan(0, serializedMessageSize).CopyTo(buffer.AsSpan(schemaIdSize));
+                    var result = new byte[schemaIdSize + serializedMessageSize];
+                    schemaIdEncoder.Encode(result, ref context, ref schemaId);
+                    buffer.AsSpan(0, serializedMessageSize).CopyTo(result.AsSpan(schemaIdSize));
 
-                    return buffer;
+                    return result;
                 }
             }
             catch (AggregateException e)
