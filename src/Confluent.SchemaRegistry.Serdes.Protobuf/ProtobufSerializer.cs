@@ -250,7 +250,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 .ConfigureAwait(continueOnCapturedContext: false)
                             : await schemaRegistryClient.LookupSchemaAsync(subject,
                                     new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
-                                        SchemaType.Protobuf), normalizeSchemas)
+                                        SchemaType.Protobuf), true, normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
                         // note: different values for schemaId should never be seen here.
