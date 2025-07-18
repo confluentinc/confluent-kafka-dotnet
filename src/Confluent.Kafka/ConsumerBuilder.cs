@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -41,8 +42,18 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected Action<IConsumer<TKey, TValue>, LogMessage> LogHandler { get; set; }
 
+#if NET6_0_OR_GREATER
         /// <summary>
-        ///     The configured statistics handler.
+        ///     The configured statistics handler. Unlike <see cref="StatisticsHandler"/>, this handler gives access
+        ///     to the raw UTF-8 which is more performance friendly to UTF-8 parsers such as System.Text.Json. Also,
+        ///     if <see cref="StatisticsHandler"/> is not set, the JSON string allocation is completely avoided.
+        /// </summary>
+        internal protected ReadOnlySpanAction<byte, IConsumer<TKey, TValue>> StatisticsUtf8Handler { get; set; }
+#endif
+
+        /// <summary>
+        ///     The configured statistics handler. With .NET 6+, prefer the <see cref="StatisticsUtf8Handler"/> which
+        ///     doesn't allocate the JSON string and gives access to the raw UTF-8 bytes.
         /// </summary>
         internal protected Action<IConsumer<TKey, TValue>, string> StatisticsHandler { get; set; }
 
@@ -98,6 +109,11 @@ namespace Confluent.Kafka
                 logHandler = this.LogHandler == null
                     ? default(Action<LogMessage>)
                     : logMessage => this.LogHandler(consumer, logMessage),
+#if NET6_0_OR_GREATER
+                statisticsUtf8Handler = this.StatisticsUtf8Handler == null
+                    ? default(ReadOnlySpanAction<byte, object>)
+                    : (stats, _) => this.StatisticsUtf8Handler(stats, consumer),
+#endif
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(consumer, stats),
@@ -135,6 +151,24 @@ namespace Confluent.Kafka
         {
             this.Config = config;
         }
+
+#if NET6_0_OR_GREATER
+        /// <summary>
+        ///     Set the handler to call on statistics events. Unlike <see cref="SetStatisticsHandler"/>, this handler
+        ///     gives access to the raw UTF-8 which is more performance friendly to UTF-8 parsers such as
+        ///     System.Text.Json. Also, it doesn't allocate a potentially large string for the JSON.
+        /// </summary>
+        public ConsumerBuilder<TKey, TValue> SetStatisticsUtf8Handler(
+            ReadOnlySpanAction<byte, IConsumer<TKey, TValue>> statisticsHandler)
+        {
+            if (this.StatisticsUtf8Handler != null)
+            {
+                throw new InvalidOperationException("Statistics handler may not be specified more than once.");
+            }
+            this.StatisticsUtf8Handler = statisticsHandler;
+            return this;
+        }
+#endif
 
         /// <summary>
         ///     Set the handler to call on statistics events. Statistics 
