@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 
 namespace Confluent.Kafka.SyncOverAsync
 {
@@ -72,9 +73,22 @@ namespace Confluent.Kafka.SyncOverAsync
         ///     The deserialized value.
         /// </returns>
         public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
-            => asyncDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(data.ToArray()), isNull, context)
+        {
+            var rentedBuffer = ArrayPool<byte>.Shared.Rent(data.Length);
+            data.CopyTo(rentedBuffer);
+
+            var memorySegment = new ReadOnlyMemory<byte>(rentedBuffer, 0, data.Length);
+            try
+            {
+                return asyncDeserializer.DeserializeAsync(memorySegment, isNull, context)
                     .GetAwaiter()
                     .GetResult();
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(rentedBuffer);
+            }
+        }
     }
 
     /// <summary>
