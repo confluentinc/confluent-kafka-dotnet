@@ -184,6 +184,10 @@ Vault.  See the encryption examples in the examples directory.
 - Added compatibility methods to CachedSchemaRegistryClient ([ISBronny](https://github.com/ISBronny), #2097).
 - Add support for AdminAPI `DescribeCluster()` and `DescribeTopics()` (#2021, @jainruchir).
 
+## Fixes
+
+- Remove System.Net.Http v4.3.4 security vulnerability ([#2098]).
+
 
 # 2.2.0
 
