@@ -173,7 +173,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     var schemaId = autoRegisterSchema
                         ? await schemaRegistryClient.RegisterSchemaAsync(subject, schema, normalizeSchemas).ConfigureAwait(continueOnCapturedContext: false)
                         : await schemaRegistryClient.GetSchemaIdAsync(subject, schema, normalizeSchemas).ConfigureAwait(continueOnCapturedContext: false);
-                    var registeredDependentSchema = await schemaRegistryClient.LookupSchemaAsync(subject, schema, true, normalizeSchemas).ConfigureAwait(continueOnCapturedContext: false);
+                    var registeredDependentSchema = await schemaRegistryClient.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas: true, normalize: normalizeSchemas).ConfigureAwait(continueOnCapturedContext: false);
                     return new SchemaReference(dependency.Name, subject, registeredDependentSchema.Version);
                 };
                 tasks.Add(t(fileDescriptor));
@@ -250,7 +250,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 .ConfigureAwait(continueOnCapturedContext: false)
                             : await schemaRegistryClient.LookupSchemaAsync(subject,
                                     new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
-                                        SchemaType.Protobuf), true, normalizeSchemas)
+                                        SchemaType.Protobuf), ignoreDeletedSchemas: true, normalize: normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
                         // note: different values for schemaId should never be seen here.
