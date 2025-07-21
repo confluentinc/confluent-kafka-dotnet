@@ -86,7 +86,7 @@ namespace Confluent.SchemaRegistry
             ///     USER_INFO: Credentials are specified via the `schema.registry.basic.auth.user.info` config property in the form username:password.
             ///                If `schema.registry.basic.auth.user.info` is not set, authentication is disabled.
             ///     SASL_INHERIT: Credentials are specified via the `sasl.username` and `sasl.password` configuration properties.
-            /// 
+            ///
             ///     default: USER_INFO
             /// </summary>
             public const string SchemaRegistryBasicAuthCredentialsSource =
@@ -94,7 +94,7 @@ namespace Confluent.SchemaRegistry
 
             /// <summary>
             ///     Basic auth credentials in the form {username}:{password}.
-            /// 
+            ///
             ///     default: "" (no authentication).
             /// </summary>
             public const string SchemaRegistryBasicAuthUserInfo = "schema.registry.basic.auth.user.info";
@@ -111,7 +111,7 @@ namespace Confluent.SchemaRegistry
             ///     Specifies the bearer authentication token.
             /// </summary>
             public const string SchemaRegistryBearerAuthToken = "schema.registry.bearer.auth.token";
-            
+
             /// <summary>
             ///     Specifies the logical cluster for the bearer authentication credentials.
             /// </summary>
@@ -243,7 +243,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Specifies the timeout for requests to Confluent Schema Registry.
-        /// 
+        ///
         ///     default: 30000
         /// </summary>
         public int? RequestTimeoutMs
@@ -307,7 +307,7 @@ namespace Confluent.SchemaRegistry
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation, value?.ToString()); }
-            
+
         }
 
         ///    <summary>
@@ -337,7 +337,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
         ///     should cache locally.
-        /// 
+        ///
         ///     default: 1000
         /// </summary>
         public int? MaxCachedSchemas
@@ -349,7 +349,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Specifies the TTL for caches holding latest schemas, or -1 for no TTL.
-        /// 
+        ///
         ///     default: -1
         /// </summary>
         public int? LatestCacheTtlSecs
@@ -442,7 +442,7 @@ namespace Confluent.SchemaRegistry
             get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster, value); }
         }
-        
+
         /// <summary>
         ///     Specifies the identity pool for the bearer authentication credentials.
         /// </summary>
@@ -450,7 +450,7 @@ namespace Confluent.SchemaRegistry
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId, value); }
-        } 
+        }
 
         /// <summary>
         ///     Specifies the client ID for the bearer authentication credentials.
@@ -478,7 +478,7 @@ namespace Confluent.SchemaRegistry
             get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope, value); }
         }
-        
+
         /// <summary>
         ///     Specifies the token endpoint for the bearer authentication credentials.
         /// </summary>
@@ -490,7 +490,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Key subject name strategy.
-        ///     
+        ///
         ///     default: SubjectNameStrategy.Topic
         /// </summary>
         [Obsolete(
@@ -595,7 +595,7 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Gets a configuration property value given a key. Returns null if 
+        ///     Gets a configuration property value given a key. Returns null if
         ///     the property has not been set.
         /// </summary>
         /// <param name="key">
