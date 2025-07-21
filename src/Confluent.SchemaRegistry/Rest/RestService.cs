@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using X509Certificate2 = System.Security.Cryptography.X509Certificates.X509Certificate2;
 
 using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 
 namespace Confluent.SchemaRegistry
@@ -40,6 +41,8 @@ namespace Confluent.SchemaRegistry
         public const int DefaultRetriesWaitMs = 1000;
 
         public const int DefaultRetriesMaxWaitMs = 20000;
+
+        public const int DefaultMaxConnectionsPerServer = 20;
 
         /// <summary>
         ///     The index of the last client successfully used (or random if none worked).
@@ -71,21 +74,33 @@ namespace Confluent.SchemaRegistry
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
             bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null,
             int maxRetries = DefaultMaxRetries, int retriesWaitMs = DefaultRetriesWaitMs,
-            int retriesMaxWaitMs = DefaultRetriesMaxWaitMs)
+            int retriesMaxWaitMs = DefaultRetriesMaxWaitMs, int maxConnectionsPerServer = DefaultMaxConnectionsPerServer)
         {
             this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
             this.maxRetries = maxRetries;
             this.retriesWaitMs = retriesWaitMs;
             this.retriesMaxWaitMs = retriesMaxWaitMs;
 
+            // For .NET 6 and later, use SocketsHttpHandler to support connection pooling
+#if NET6_0_OR_GREATER
+            this.clients = schemaRegistryUrl
+                .Split(',')
+                .Select(SanitizeUri) // need http or https - use http if not present
+                .Select(client => new HttpClient(CreateSocketsHandler(certificates, enableSslCertificateVerification, sslCaCertificate, proxy, maxConnectionsPerServer, timeoutMs))
+                {
+                    BaseAddress = new Uri(client, UriKind.Absolute),
+                })
+                .ToList();
+#else
             this.clients = schemaRegistryUrl
                 .Split(',')
                 .Select(SanitizeUri) // need http or https - use http if not present.
-                .Select(uri => new HttpClient(CreateHandler(certificates, enableSslCertificateVerification, sslCaCertificate, proxy))
+                .Select(uri => new HttpClient(CreateHandler(certificates, enableSslCertificateVerification, sslCaCertificate, proxy, maxConnectionsPerServer))
                 {
                     BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs)
                 })
                 .ToList();
+#endif
         }
 
         private static string SanitizeUri(string uri)
@@ -94,9 +109,69 @@ namespace Confluent.SchemaRegistry
             return $"{sanitized.TrimEnd('/')}/";
         }
 
+#if NET6_0_OR_GREATER
+        private static SocketsHttpHandler CreateSocketsHandler(List<X509Certificate2> certificates,
+            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate,
+            IWebProxy proxy, int maxConnectionsPerServer, int timeoutMs)
+        {
+            var handler = new SocketsHttpHandler();
+
+            // Configure the max number of connections to support connection pooling
+            handler.MaxConnectionsPerServer = maxConnectionsPerServer;
+            // Configure the timeout for establishing the connection
+            // Note this excludes the time for the request to acquire a connection slot from the connection pool
+            handler.ConnectTimeout = TimeSpan.FromMilliseconds(timeoutMs);
+
+            if (proxy != null)
+            {
+                handler.Proxy = proxy;
+            }
+            if (!enableSslCertificateVerification)
+            {
+                handler.SslOptions.RemoteCertificateValidationCallback = (_, __, ___, ____) => { return true; };
+            }
+            else if (sslCaCertificate != null)
+            {
+                handler.SslOptions.RemoteCertificateValidationCallback = (_, __, chain, policyErrors) => {
+                    if (policyErrors == SslPolicyErrors.None)
+                    {
+                        return true;
+                    }
+
+                    // The second element of the chain should be the issuer of the certificate
+                    if (chain.ChainElements.Count < 2)
+                    {
+                        return false;
+                    }
+                    var connectionCertHash = chain.ChainElements[1].Certificate.GetCertHash();
+                    var expectedCertHash = sslCaCertificate.GetCertHash();
+
+                    if (connectionCertHash.Length != expectedCertHash.Length)
+                    {
+                        return false;
+                    }
+
+                    for (int i = 0; i < connectionCertHash.Length; i++)
+                    {
+                        if (connectionCertHash[i] != expectedCertHash[i])
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                };
+            }
+
+            if (certificates.Count > 0)
+            {
+                handler.SslOptions.ClientCertificates = new X509CertificateCollection(certificates.ToArray());
+            }
+            return handler;
+        }
+#endif
         private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates,
             bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate,
-            IWebProxy proxy)
+            IWebProxy proxy, int maxConnectionsPerServer)
         {
             var handler = new HttpClientHandler();
 
@@ -118,7 +193,7 @@ namespace Confluent.SchemaRegistry
                         return true;
                     }
 
-                    //The second element of the chain should be the issuer of the certificate
+                    // The second element of the chain should be the issuer of the certificate
                     if (chain.ChainElements.Count < 2)
                     {
                         return false;
@@ -197,10 +272,10 @@ namespace Confluent.SchemaRegistry
         {
             // There may be many base urls - roll until one is found that works.
             //
-            // Start with the last client that was used by this method, which only gets set on 
+            // Start with the last client that was used by this method, which only gets set on
             // success, so it's probably going to work.
             //
-            // Otherwise, try every client until a successful call is made (true even under 
+            // Otherwise, try every client until a successful call is made (true even under
             // concurrent access).
 
             string aggregatedErrorMessage = null;
@@ -386,7 +461,7 @@ namespace Confluent.SchemaRegistry
                     {
                         await bearerProvider.InitOrRefreshAsync().ConfigureAwait(continueOnCapturedContext: false);
                     }
-                
+
                     request.Headers.Add("Confluent-Identity-Pool-Id", bearerProvider.GetIdentityPool());
                     request.Headers.Add("target-sr-cluster", bearerProvider.GetLogicalCluster());
                 }
@@ -447,7 +522,7 @@ namespace Confluent.SchemaRegistry
                 await RequestAsync<RegisteredSchema>($"subjects/{Uri.EscapeDataString(subject)}/metadata?{getKeyValuePairs(metadata)}&deleted={!ignoreDeletedSchemas}",
                         HttpMethod.Get)
                     .ConfigureAwait(continueOnCapturedContext: false));
-        
+
         private string getKeyValuePairs(IDictionary<string, string> metadata)
         {
             return string.Join("&", metadata.Select(x => $"key={x.Key}&value={x.Value}"));
@@ -487,18 +562,18 @@ namespace Confluent.SchemaRegistry
                     schema)
                 .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
-        #endregion Compatibility 
+        #endregion Compatibility
 
         #region Config
 
         public async Task<Compatibility> UpdateCompatibilityAsync(string subject, Compatibility compatibility)
             => (await RequestAsync<ServerConfig>(
-                    string.IsNullOrEmpty(subject) ? "config" : $"config/{Uri.EscapeDataString(subject)}", HttpMethod.Put, 
+                    string.IsNullOrEmpty(subject) ? "config" : $"config/{Uri.EscapeDataString(subject)}", HttpMethod.Put,
                     new ServerConfig(compatibility))
                 .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
         public async Task<Compatibility> GetCompatibilityAsync(string subject)
             => (await RequestAsync<ServerConfig>(
-                    string.IsNullOrEmpty(subject) ? "config" : $"config/{Uri.EscapeDataString(subject)}", HttpMethod.Get) 
+                    string.IsNullOrEmpty(subject) ? "config" : $"config/{Uri.EscapeDataString(subject)}", HttpMethod.Get)
                 .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
 
 
