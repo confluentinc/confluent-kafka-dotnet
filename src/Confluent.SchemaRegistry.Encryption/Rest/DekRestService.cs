@@ -32,9 +32,9 @@ namespace Confluent.SchemaRegistry.Encryption
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
             bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null,
             int maxRetries = DefaultMaxRetries, int retriesWaitMs = DefaultRetriesWaitMs,
-            int retriesMaxWaitMs = DefaultRetriesMaxWaitMs) :
+            int retriesMaxWaitMs = DefaultRetriesMaxWaitMs, int maxConnectionsPerServer = DefaultMaxConnectionsPerServer) :
             base(schemaRegistryUrl, timeoutMs, authenticationHeaderValueProvider, certificates,
-                enableSslCertificateVerification, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs)
+                enableSslCertificateVerification, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, maxConnectionsPerServer)
         {
         }
 

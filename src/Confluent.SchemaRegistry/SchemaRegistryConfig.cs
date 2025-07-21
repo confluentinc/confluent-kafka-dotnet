@@ -67,6 +67,13 @@ namespace Confluent.SchemaRegistry
             public const string SchemaRegistryRetriesMaxWaitMs = "schema.registry.retries.max.wait.ms";
 
             /// <summary>
+            ///     Specifies the maximum number of connections per server.
+            ///
+            ///     default: 20
+            /// </summary>
+            public const string SchemaRegistryMaxConnectionsPerServer = "schema.registry.connections.max.per.server";
+
+            /// <summary>
             ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
             ///     should cache locally.
             ///
@@ -283,6 +290,17 @@ namespace Confluent.SchemaRegistry
         {
             get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs, value?.ToString()); }
+        }
+
+        /// <summary>
+        ///     Specifies the maximum number of connections per server.
+        ///
+        ///     default: 20
+        /// </summary>
+        public int? MaxConnectionsPerServer
+        {
+            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxConnectionsPerServer); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxConnectionsPerServer, value?.ToString()); }
         }
 
         ///    <summary>
