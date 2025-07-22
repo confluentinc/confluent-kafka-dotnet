@@ -25,24 +25,24 @@ using System.Security.Cryptography.X509Certificates;
 namespace Confluent.SchemaRegistry.Encryption
 {
     public record KekId(string Name, bool LookupDeletedKeks);
-    
+
     public record DekId(string KekName, string Subject, int? Version, DekFormat? DekFormat, bool LookupDeletedDeks);
-    
+
     /// <summary>
     ///     A caching DEK Registry client.
     /// </summary>
     public class CachedDekRegistryClient : IDekRegistryClient
     {
         private DekRestService restService;
-        
+
         private int identityMapCapacity;
-        
+
         private readonly IDictionary<KekId, RegisteredKek> keks = new Dictionary<KekId, RegisteredKek>();
 
         private readonly IDictionary<DekId, RegisteredDek> deks = new Dictionary<DekId, RegisteredDek>();
 
         private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
-        
+
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
         /// </summary>
@@ -62,6 +62,11 @@ namespace Confluent.SchemaRegistry.Encryption
         ///     The default time to wait for any retry.
         /// </summary>
         public const int DefaultRetriesMaxWaitMs = RestService.DefaultRetriesMaxWaitMs;
+
+        /// <summary>
+        ///     The default maximum number of connections per server.
+        /// </summary>
+        public const int DefaultMaxConnectionsPerServer = 20;
 
         /// <summary>
         ///     The default maximum capacity of the local cache.
@@ -159,6 +164,19 @@ namespace Confluent.SchemaRegistry.Encryption
                     $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs} must be an integer.");
             }
 
+            var maxConnectionsPerServerMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxConnectionsPerServer);
+            int maxConnectionsPerServer;
+            try
+            {
+                maxConnectionsPerServer = maxConnectionsPerServerMaybe.Value == null ? DefaultMaxConnectionsPerServer : Convert.ToInt32(maxConnectionsPerServerMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxConnectionsPerServer} must be an integer.");
+            }
+
             var identityMapCapacityMaybe = config.FirstOrDefault(prop =>
                 prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas);
             try
@@ -188,6 +206,7 @@ namespace Confluent.SchemaRegistry.Encryption
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxConnectionsPerServer &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
@@ -229,7 +248,7 @@ namespace Confluent.SchemaRegistry.Encryption
             var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
             var sslCaCertificate = string.IsNullOrEmpty(sslCaLocation) ? null : new X509Certificate2(sslCaLocation);
             this.restService = new DekRestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
-                    SetSslConfig(config), sslVerify, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs);
+                    SetSslConfig(config), sslVerify, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, maxConnectionsPerServer);
         }
 
         /// <summary>
@@ -246,10 +265,10 @@ namespace Confluent.SchemaRegistry.Encryption
 
         /// <remarks>
         ///     This is to make sure memory doesn't explode in the case of incorrect usage.
-        /// 
-        ///     It's behavior is pretty extreme - remove everything and start again if the 
+        ///
+        ///     It's behavior is pretty extreme - remove everything and start again if the
         ///     cache gets full. However, in practical situations this is not expected.
-        /// 
+        ///
         ///     TODO: Implement an LRU Cache here or something instead.
         /// </remarks>
         private bool CleanCacheIfFull()
@@ -327,7 +346,7 @@ namespace Confluent.SchemaRegistry.Encryption
 
         /// <inheritdoc/>
         public Task<List<int>> GetDekVersionsAsync(string kekName, string subject, DekFormat? algorithm,
-            bool ignoreDeletedDeks) 
+            bool ignoreDeletedDeks)
             => restService.GetDekVersionsAsync(kekName, subject, algorithm, ignoreDeletedDeks);
 
         /// <inheritdoc/>
@@ -397,7 +416,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, true));
             }
         }
-        
+
         /// <summary>
         ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.
         /// </summary>
