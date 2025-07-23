@@ -224,7 +224,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                     new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false)
                             : await schemaRegistryClient.LookupSchemaAsync(subject,
-                                    new Schema(this.schemaText, ReferenceList, SchemaType.Json), normalizeSchemas)
+                                    new Schema(this.schemaText, ReferenceList, SchemaType.Json), ignoreDeletedSchemas: true, normalize: normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
                         schemaId = new SchemaId(SchemaType.Json, outputSchema.Id, outputSchema.Guid);

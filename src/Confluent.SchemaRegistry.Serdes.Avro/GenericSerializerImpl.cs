@@ -148,7 +148,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 .RegisterSchemaWithResponseAsync(subject, inputSchema, normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false)
                             : await schemaRegistryClient
-                                .LookupSchemaAsync(subject, inputSchema, normalizeSchemas)
+                                .LookupSchemaAsync(subject, inputSchema, ignoreDeletedSchemas: true, normalize: normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
                         schemaId = new SchemaId(SchemaType.Avro, outputSchema.Id, outputSchema.Guid);
