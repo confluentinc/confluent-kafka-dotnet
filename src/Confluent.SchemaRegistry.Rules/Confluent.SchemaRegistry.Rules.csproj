@@ -15,6 +15,7 @@
         <PackageId>Confluent.SchemaRegistry.Rules</PackageId>
         <Title>Confluent.SchemaRegistry.Rules</Title>
         <AssemblyName>Confluent.SchemaRegistry.Rules</AssemblyName>
+        <TargetFrameworks>$(TargetFrameworks);netstandard2.1;net462</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <SignAssembly>true</SignAssembly>

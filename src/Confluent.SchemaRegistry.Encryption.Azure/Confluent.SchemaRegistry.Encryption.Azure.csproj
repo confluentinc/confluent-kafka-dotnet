@@ -15,6 +15,7 @@
         <PackageId>Confluent.SchemaRegistry.Encryption.Azure</PackageId>
         <Title>Confluent.SchemaRegistry.Encryption.Azure</Title>
         <AssemblyName>Confluent.SchemaRegistry.Encryption.Azure</AssemblyName>
+        <TargetFrameworks>$(TargetFrameworks);netstandard2.1;net462</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <SignAssembly>true</SignAssembly>
