@@ -15,6 +15,7 @@
     <PackageId>Confluent.SchemaRegistry.Serdes.Avro</PackageId>
     <Title>Confluent.SchemaRegistry.Serdes.Avro</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Avro</AssemblyName>
+    <TargetFrameworks>$(TargetFrameworks);netstandard2.0;net462</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>

@@ -15,6 +15,7 @@
     <PackageId>Confluent.SchemaRegistry.Serdes.Json</PackageId>
     <Title>Confluent.SchemaRegistry.Serdes.Json</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Json</AssemblyName>
+    <TargetFrameworks>$(TargetFrameworks);netstandard2.0;net462</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
