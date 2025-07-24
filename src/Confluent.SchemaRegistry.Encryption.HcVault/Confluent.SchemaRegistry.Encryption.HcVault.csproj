@@ -15,6 +15,7 @@
         <PackageId>Confluent.SchemaRegistry.Encryption.HcVault</PackageId>
         <Title>Confluent.SchemaRegistry.Encryption.HcVault</Title>
         <AssemblyName>Confluent.SchemaRegistry.Encryption.HcVault</AssemblyName>
+        <TargetFrameworks>$(TargetFrameworks);netstandard2.1;net462</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <SignAssembly>true</SignAssembly>
