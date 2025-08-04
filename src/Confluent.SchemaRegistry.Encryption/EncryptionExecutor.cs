@@ -38,6 +38,7 @@ namespace Confluent.SchemaRegistry.Encryption
         public static readonly string EncryptKmsType = "encrypt.kms.type";
         public static readonly string EncryptDekAlgorithm = "encrypt.dek.algorithm";
         public static readonly string EncryptDekExpiryDays = "encrypt.dek.expiry.days";
+        public static readonly string EncryptAlternateKmsKeyIds = "encrypt.alternate.kms.key.ids";
 
         public static readonly string KmsTypeSuffix = "://";
 
@@ -337,7 +338,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 byte[] encryptedDek = null;
                 if (!kek.Shared)
                 {
-                    kmsClient = GetKmsClient(executor.Configs, kek);
+                    kmsClient = new KmsClientWrapper(executor.Configs, kek);
                     // Generate new dek
                     byte[] rawDek = cryptor.GenerateKey();
                     encryptedDek = await kmsClient.Encrypt(rawDek)
@@ -363,7 +364,7 @@ namespace Confluent.SchemaRegistry.Encryption
             {
                 if (kmsClient == null)
                 {
-                    kmsClient = GetKmsClient(executor.Configs, kek);
+                    kmsClient = new KmsClientWrapper(executor.Configs, kek);
                 }
 
                 byte[] rawDek = await kmsClient.Decrypt(dek.EncryptedKeyMaterialBytes)
@@ -565,21 +566,6 @@ namespace Confluent.SchemaRegistry.Encryption
                     return (version, remaining);
                 }
             }
-        }
-        
-        private static IKmsClient GetKmsClient(IEnumerable<KeyValuePair<string, string>> configs, RegisteredKek kek)
-        {
-            string keyUrl = kek.KmsType + EncryptionExecutor.KmsTypeSuffix + kek.KmsKeyId;
-            IKmsClient kmsClient = KmsRegistry.GetKmsClient(keyUrl);
-            if (kmsClient == null)
-            {
-                IKmsDriver kmsDriver = KmsRegistry.GetKmsDriver(keyUrl);
-                kmsClient = kmsDriver.NewKmsClient(
-                    configs.ToDictionary(it => it.Key, it => it.Value), keyUrl);
-                KmsRegistry.RegisterKmsClient(kmsClient);
-            }
-
-            return kmsClient;
         }
     }
 
