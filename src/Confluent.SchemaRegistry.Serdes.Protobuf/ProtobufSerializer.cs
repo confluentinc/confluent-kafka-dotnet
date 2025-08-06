@@ -148,6 +148,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw new InvalidOperationException("MessageDescriptor not found.");
             }
 
+            // The indexes are built in reverse order, so reverse them to get the correct order
+            indices.Reverse();
+
             return indices;
         }
 
