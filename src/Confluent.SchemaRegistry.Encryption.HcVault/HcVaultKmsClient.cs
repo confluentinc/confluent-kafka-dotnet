@@ -36,8 +36,8 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
             {
               throw new ArgumentException(string.Format($"key URI must contain a key name"));
             }
-            keyName = uri.Segments[^1];
-            
+            keyName = uri.Segments[uri.Segments.Length - 1];
+
             var vaultClientSettings = new VaultClientSettings(uri.Scheme + "://" + uri.Authority, authMethod);
             if (ns != null)
             {
