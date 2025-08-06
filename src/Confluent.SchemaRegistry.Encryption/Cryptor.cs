@@ -117,10 +117,17 @@ namespace Confluent.SchemaRegistry.Encryption
 
         static byte[] EncryptWithAesGcm(byte[] key, byte[] plaintext)
         {
+#if NET462
+            using (var aes = new AesGcm(key, AesGcm.TagByteSizes.MaxSize))
+#else
             using (var aes = new AesGcm(key))
+#endif
             {
                 var nonce = new byte[AesGcm.NonceByteSizes.MaxSize];
-                RandomNumberGenerator.Fill(nonce);
+                using (var rng = RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(nonce);
+                }
 
                 var tag = new byte[AesGcm.TagByteSizes.MaxSize];
                 var ciphertext = new byte[plaintext.Length];
@@ -156,7 +163,11 @@ namespace Confluent.SchemaRegistry.Encryption
                 }
             }
 
+#if NET462
+            using (var aes = new AesGcm(key, AesGcm.TagByteSizes.MaxSize))
+#else
             using (var aes = new AesGcm(key))
+#endif
             {
                 var plaintextBytes = new byte[ciphertext.Length];
 
