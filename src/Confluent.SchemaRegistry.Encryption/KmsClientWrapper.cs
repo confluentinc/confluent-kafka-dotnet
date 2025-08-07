@@ -45,7 +45,7 @@ namespace Confluent.SchemaRegistry.Encryption
                     }
                 }
             }
-            return null;
+            throw new RuleException("No KEK found for encryption");
         }
 
         public async Task<byte[]> Decrypt(byte[] ciphertext)
@@ -65,7 +65,7 @@ namespace Confluent.SchemaRegistry.Encryption
                     }
                 }
             }
-            return null;
+            throw new RuleException("No KEK found for decryption");
         }
 
         private IList<string> GetKmsKeyIds()
