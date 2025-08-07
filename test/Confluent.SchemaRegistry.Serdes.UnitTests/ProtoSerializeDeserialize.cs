@@ -22,6 +22,7 @@ using Xunit;
 using System.Collections.Generic;
 using System.Linq;
 using Confluent.Kafka;
+using Confluent.Kafka.Examples.Protobuf;
 using Confluent.SchemaRegistry.Encryption;
 using Example;
 using Google.Protobuf;
@@ -539,6 +540,22 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.FavoriteColor, result.FavoriteColor);
             Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
             Assert.True(pic.SequenceEqual(result.Picture));
+        }
+
+        [Fact]
+        public void ProtobufSerializerEncodesMessageIndexes()
+        {
+            var protoSerializer = new ProtobufSerializer<NestedOuter.Types.NestedMid2.Types.NestedLower>(schemaRegistryClient);
+
+            var value = new NestedOuter.Types.NestedMid2.Types.NestedLower();
+            value.Field2 = "field_2_value";
+
+            var bytes = protoSerializer.SerializeAsync(value, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            var schemaId = new SchemaId(SchemaType.Protobuf);
+            schemaId.FromBytes(bytes);
+
+            Assert.Equal(new[] {2, 1, 0}, schemaId.MessageIndexes);
         }
 
         [Fact]
