@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package confluent.kafka.examples.protobuf;
+
+message Outer1 {
+    string FieldA = 1;
+}
+
+message Outer2 {
+    string FieldB = 1;
+}
+
+message NestedOuter {
+
+    message NestedMid1 {
+        string Field1 = 1;
+    }
+
+    message NestedMid2 {
+
+        message NestedLower {
+            string Field2 = 1;
+        }
+
+        string Field3 = 1;
+        NestedLower Field4 = 2;
+    }
+
+    string Field4 = 1;
+}
+
+message Outer3 {
+    string FieldC = 1;
+}
