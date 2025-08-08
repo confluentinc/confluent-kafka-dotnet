@@ -650,6 +650,69 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void ISpecificRecordEncryptionAlternateKeks()
+        {
+            var schemaStr = "{\"type\":\"record\",\"name\":\"UserWithPic\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
+                    "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\"," +
+                    "\"type\":[\"int\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}," +
+                    "{\"name\":\"picture\",\"type\":[\"null\",\"bytes\"],\"default\":null}]}";
+
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
+                {
+                    ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.name"] = new HashSet<string> { "PII" },
+                    ["Confluent.Kafka.Examples.AvroSpecific.UserWithPic.picture"] = new HashSet<string> { "PII" }
+
+                }, new Dictionary<string, string>(), new HashSet<string>()
+            );
+            schema.RuleSet = new RuleSet(new List<Rule>(), new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("encryptPII", RuleKind.Transform, RuleMode.WriteRead, "ENCRYPT_PAYLOAD", null,
+                    new Dictionary<string, string>
+                    {
+                        ["encrypt.kek.name"] = "kek1",
+                        ["encrypt.kms.type"] = "local-kms",
+                        ["encrypt.kms.key.id"] = "mykey"
+                    })
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            config.Set("rules.secret", "mysecret");
+            config.Set("rules.encrypt.alternate.kms.key.ids", "mykey2,mykey3");
+            RuleRegistry ruleRegistry = new RuleRegistry();
+            IRuleExecutor ruleExecutor = new EncryptionExecutor(dekRegistryClient, clock);
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var serializer = new AvroSerializer<UserWithPic>(schemaRegistryClient, config, ruleRegistry);
+            var deserializer = new AvroDeserializer<UserWithPic>(schemaRegistryClient, null, ruleRegistry);
+
+            var pic = new byte[] { 1, 2, 3 };
+            var user = new UserWithPic()
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome",
+                picture = pic
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            // The user name has been modified
+            Assert.Equal("awesome", result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+            Assert.True(pic.SequenceEqual(result.picture));
+        }
+
+        [Fact]
         public void ISpecificRecordFieldEncryptionDekRotation()
         {
             var schemaStr =
