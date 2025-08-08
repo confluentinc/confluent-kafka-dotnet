@@ -73,16 +73,12 @@ namespace Confluent.SchemaRegistry.Encryption
             IList<string> kmsKeyIds = new List<string>();
             kmsKeyIds.Add(Kek.KmsKeyId);
             string alternateKmsKeyIds = null;
-            if (Kek.KmsProps != null && Kek.KmsProps.TryGetValue(EncryptionExecutor.EncryptAlternateKmsKeyIds, out alternateKmsKeyIds))
+            if (Kek.KmsProps != null)
             {
-                char[] separators = { ',' };
-                string[] ids = alternateKmsKeyIds.Split(separators, StringSplitOptions.RemoveEmptyEntries);
-                foreach (string id in ids) {
-                    if (!string.IsNullOrEmpty(id)) {
-                        kmsKeyIds.Add(id);
-                    }
-                }
-            } else
+                Kek.KmsProps.TryGetValue(EncryptionExecutor.EncryptAlternateKmsKeyIds,
+                    out alternateKmsKeyIds);
+            }
+            if (string.IsNullOrEmpty(alternateKmsKeyIds))
             {
                 var kvp = Configs.FirstOrDefault(x =>
                     x.Key == EncryptionExecutor.EncryptAlternateKmsKeyIds);
@@ -91,12 +87,14 @@ namespace Confluent.SchemaRegistry.Encryption
                     alternateKmsKeyIds = kvp.Value;
                 }
             }
-            if (alternateKmsKeyIds != null)
+            if (!string.IsNullOrEmpty(alternateKmsKeyIds))
             {
                 char[] separators = { ',' };
                 string[] ids = alternateKmsKeyIds.Split(separators, StringSplitOptions.RemoveEmptyEntries);
-                foreach (string id in ids) {
-                    if (!string.IsNullOrEmpty(id)) {
+                foreach (string id in ids)
+                {
+                    if (!string.IsNullOrEmpty(id))
+                    {
                         kmsKeyIds.Add(id);
                     }
                 }
