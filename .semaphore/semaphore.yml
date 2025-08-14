@@ -23,7 +23,6 @@ blocks:
       jobs:
         - name: 'Build and test'
           commands:
-            - mise use dotnet@6
             - mise use dotnet@8
             - dotnet tool install --tool-path $PWD dotnet-coverage
             - dotnet restore
@@ -79,7 +78,6 @@ blocks:
         - name: 'Build and push artifacts'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Channel 6.0 -Quality GA -InstallDir C:\dotnet
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Channel 8.0 -Quality GA -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
             - dotnet restore
@@ -109,7 +107,6 @@ blocks:
         - name: 'Build and push artifacts'
           commands:
             - wget https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Channel 6.0 -Quality GA -InstallDir C:\dotnet
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Channel 8.0 -Quality GA -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
             - dotnet restore
