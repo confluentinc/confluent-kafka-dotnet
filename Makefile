@@ -30,7 +30,7 @@ test:
 
 test-coverage:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
-		dotnet-coverage collect "dotnet test test/$$d/$$d.csproj" \
+		$(DOTNET_COVERAGE_TOOL) collect "dotnet test -f $(DEFAULT_TEST_FRAMEWORK) test/$$d/$$d.csproj" \
 			-f xml -o test/$$d/coverage.xml ; \
 	done)
 
