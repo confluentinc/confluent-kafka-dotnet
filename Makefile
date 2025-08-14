@@ -20,8 +20,8 @@ all:
 .PHONY: test
 
 build:
-	for d in $(EXAMPLE_DIRS) ; do dotnet $@ $$d; done ; \
-	for d in $(TEST_DIRS) ; do dotnet $@ $$d; done ;
+	for d in $(EXAMPLE_DIRS) ; do dotnet $@ -f $(DEFAULT_TEST_FRAMEWORK) $$d; done ; \
+	for d in $(TEST_DIRS) ; do dotnet $@ -f $(DEFAULT_TEST_FRAMEWORK) $$d; done ;
 
 test:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
@@ -30,7 +30,7 @@ test:
 
 test-coverage:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
-		dotnet-coverage collect "dotnet test test/$$d/$$d.csproj" \
+		dotnet-coverage collect "dotnet test -f $(DEFAULT_TEST_FRAMEWORK) test/$$d/$$d.csproj" \
 			-f xml -o test/$$d/coverage.xml ; \
 	done)
 
