@@ -23,16 +23,13 @@ blocks:
       jobs:
         - name: 'Build and test'
           commands:
-            # TODO: install .NET 8.0 SDK in this agent image
-            - sudo apt remove dotnet-sdk* dotnet-host* dotnet* aspnetcore* netstandard* -y
-            # TODO: remove incorrect focal repos from this agent
-            - sudo rm /etc/apt/sources.list.d/*microsoft*
-            - sudo apt update && sudo apt install -y dotnet-sdk-6.0 dotnet-sdk-8.0
-            - dotnet tool install --global dotnet-coverage
+            - mise use dotnet@6
+            - mise use dotnet@8
+            - dotnet tool install --tool-path $PWD dotnet-coverage
             - dotnet restore
             - make build
-            - make test-coverage
-            - dotnet-coverage merge test/**/coverage.xml -o unit-coverage.xml -f xml
+            - make test-coverage DOTNET_COVERAGE_TOOL=$PWD/dotnet-coverage
+            - ./dotnet-coverage merge test/**/coverage.xml -o unit-coverage.xml -f xml
             - artifact push workflow unit-coverage.xml || true
   - name: 'OSX x64'
     dependencies: [ ]
@@ -138,12 +135,9 @@ blocks:
       prologue:
         commands:
           - '[[ -z $DOCKERHUB_APIKEY ]] || docker login --username $DOCKERHUB_USER --password $DOCKERHUB_APIKEY'
-          # TODO: install .NET 8.0 SDK in this agent image
-          - sudo apt remove dotnet-sdk* dotnet-host* dotnet* aspnetcore* netstandard* -y
-          # TODO: remove incorrect focal repos from this agent
-          - sudo rm /etc/apt/sources.list.d/*microsoft*
-          - sudo apt update && sudo apt install -y dotnet-sdk-8.0
-          - dotnet tool install --global dotnet-coverage
+          - mise use dotnet@8
+          - dotnet tool install --tool-path $PWD dotnet-coverage
+          - export DOTNET_COVERAGE_TOOL=$PWD/dotnet-coverage
       jobs:
         - name: 'Build documentation'
           commands:
@@ -154,7 +148,7 @@ blocks:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - dotnet restore -p:TargetFramework=net8.0
-            - cd test/Confluent.Kafka.IntegrationTests && dotnet-coverage collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../classic-coverage.xml && cd ../..
+            - cd test/Confluent.Kafka.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../classic-coverage.xml && cd ../..
             - artifact push workflow classic-coverage.xml || true
         - name: 'Build and test with "consumer" protocol'
           commands:
@@ -163,15 +157,15 @@ blocks:
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - export TEST_CONSUMER_GROUP_PROTOCOL=consumer
             - dotnet restore -p:TargetFramework=net8.0
-            - cd test/Confluent.Kafka.IntegrationTests && dotnet-coverage collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../consumer-coverage.xml && cd ../..
+            - cd test/Confluent.Kafka.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../consumer-coverage.xml && cd ../..
             - artifact push workflow consumer-coverage.xml || true
         - name: 'Schema registry and serdes integration tests'
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - dotnet restore -p:TargetFramework=net8.0
-            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && dotnet-coverage collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../sr-target/serdes-coverage.xml && cd ../..
-            - cd test/Confluent.SchemaRegistry.IntegrationTests && dotnet-coverage collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../sr-target/coverage.xml && cd ../..
+            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../sr-target/serdes-coverage.xml && cd ../..
+            - cd test/Confluent.SchemaRegistry.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net8.0 -l "console;verbosity=normal"' -f xml -o ../../sr-target/coverage.xml && cd ../..
             - artifact push workflow sr-target || true
 
 after_pipeline:
@@ -184,15 +178,11 @@ after_pipeline:
         commands:
           - checkout
           - sem-version java 11
-          # TODO: install .NET 8.0 SDK in this agent image
-          - sudo apt remove dotnet-sdk* dotnet-host* dotnet* aspnetcore* netstandard* -y
-          # TODO: remove incorrect focal repos from this agent
-          - sudo rm /etc/apt/sources.list.d/*microsoft*
-          - sudo apt update && sudo apt install -y dotnet-sdk-8.0
-          - dotnet tool install --global dotnet-coverage
+          - mise use dotnet@8
+          - dotnet tool install --tool-path $PWD dotnet-coverage
           - artifact pull workflow unit-coverage.xml || true
           - artifact pull workflow classic-coverage.xml || true
           - artifact pull workflow consumer-coverage.xml || true
           - artifact pull workflow sr-target || true
-          - dotnet-coverage merge *coverage.xml **/*coverage.xml -o coverage.xml -f xml --remove-input-files
+          - ./dotnet-coverage merge *coverage.xml **/*coverage.xml -o coverage.xml -f xml --remove-input-files
           - emit-sonarqube-data --run_only_sonar_scan
