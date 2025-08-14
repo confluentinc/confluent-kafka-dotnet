@@ -27,7 +27,8 @@ blocks:
             - sudo apt remove dotnet-sdk* dotnet-host* dotnet* aspnetcore* netstandard* -y
             # TODO: remove incorrect focal repos from this agent
             - sudo rm /etc/apt/sources.list.d/*microsoft*
-            - sudo apt update && sudo apt install -y dotnet-sdk-6.0 dotnet-sdk-8.0
+            - sudo apt update && sudo apt install -y dotnet-sdk-8.0
+            - export PATH="$PATH:~/.dotnet/tools"
             - dotnet tool install --global dotnet-coverage
             - dotnet restore
             - make build
@@ -143,6 +144,7 @@ blocks:
           # TODO: remove incorrect focal repos from this agent
           - sudo rm /etc/apt/sources.list.d/*microsoft*
           - sudo apt update && sudo apt install -y dotnet-sdk-8.0
+          - export PATH="$PATH:~/.dotnet/tools"
           - dotnet tool install --global dotnet-coverage
       jobs:
         - name: 'Build documentation'
@@ -189,6 +191,7 @@ after_pipeline:
           # TODO: remove incorrect focal repos from this agent
           - sudo rm /etc/apt/sources.list.d/*microsoft*
           - sudo apt update && sudo apt install -y dotnet-sdk-8.0
+          - export PATH="$PATH:~/.dotnet/tools"
           - dotnet tool install --global dotnet-coverage
           - artifact pull workflow unit-coverage.xml || true
           - artifact pull workflow classic-coverage.xml || true
