@@ -13,6 +13,8 @@ UNIT_TEST_DIRS=$(shell find . -type d -regex '.*UnitTests$$' -exec basename {} \
 # We want to run tests by default with latest version of .NET
 DEFAULT_TEST_FRAMEWORK?=net8.0
 
+export PATH
+
 all:
 	@echo "Usage:   make <dotnet-command>"
 	@echo "Example: make build - runs 'dotnet build' for all projects"
@@ -30,7 +32,7 @@ test:
 
 test-coverage:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
-		dotnet-coverage collect "dotnet test test/$$d/$$d.csproj" \
+		dotnet-coverage collect "dotnet test -f $(DEFAULT_TEST_FRAMEWORK) test/$$d/$$d.csproj" \
 			-f xml -o test/$$d/coverage.xml ; \
 	done)
 
