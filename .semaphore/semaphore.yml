@@ -23,7 +23,6 @@ blocks:
       jobs:
         - name: 'Build and test'
           commands:
-            - mise use dotnet@6
             - mise use dotnet@8
             - dotnet tool install --tool-path $PWD dotnet-coverage
             - dotnet restore
