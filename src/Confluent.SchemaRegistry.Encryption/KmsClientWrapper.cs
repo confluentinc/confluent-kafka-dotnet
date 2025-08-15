@@ -89,7 +89,7 @@ namespace Confluent.SchemaRegistry.Encryption
             }
             if (!string.IsNullOrEmpty(alternateKmsKeyIds))
             {
-                string[] ids = alternateKmsKeyIds.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                string[] ids = alternateKmsKeyIds.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (string id in ids)
                 {
                     if (!string.IsNullOrEmpty(id))
