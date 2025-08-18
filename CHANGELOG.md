@@ -1,3 +1,10 @@
+# 2.11.1
+
+## Enhancements
+
+* References librdkafka.redist 2.11.1. Refer to the [librdkafka v2.11.1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.11.1) for more information.
+
+
 # 2.11.0
 
 ## Enhancements

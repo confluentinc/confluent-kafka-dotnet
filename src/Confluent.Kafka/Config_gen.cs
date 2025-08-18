@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.11.0 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.11.1-RC2 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -680,7 +680,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         /// <![CDATA[
-        ///     Close broker connections after the specified time of inactivity. Disable with 0. If this property is left at its default value some heuristics are performed to determine a suitable default value, this is currently limited to identifying brokers on Azure (see librdkafka issue #3109 for more info).
+        ///     Close broker connections after the specified time of inactivity. Disable with 0. If this property is left at its default value some heuristics are performed to determine a suitable default value, this is currently limited to identifying brokers on Azure (see librdkafka issue #3109 for more info). Actual value can be lower, up to 2s lower, only if `connections.max.idle.ms` >= 4s, as jitter is added to avoid disconnecting all brokers at the same time.
         ///
         ///     default: 0
         ///     importance: medium
