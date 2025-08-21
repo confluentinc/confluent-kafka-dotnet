@@ -707,6 +707,57 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void CELFieldTransformWithNullable()
+        {
+            var schemaStr = @"{
+              ""type"": ""object"",
+              ""properties"": {
+                ""favorite_color"": {
+                  ""type"": ""string""
+                },
+                ""favorite_number"": {
+                  ""type"": ""number""
+                },
+                ""name"": {
+                  ""type"": [""string"", ""null""]
+                }
+              }
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
+                        "typeName == 'STRING' ; value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new JsonSerializer<Customer>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<Customer>(schemaRegistryClient);
+
+            var user = new Customer
+            {
+                FavoriteColor = "blue",
+                FavoriteNumber = 100,
+                Name = "awesome"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("awesome-suffix", result.Name);
+            Assert.Equal("blue-suffix", result.FavoriteColor);
+            Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
+        }
+
+        [Fact]
         public void CELFieldTransformWithDef()
         {
             var schemaStr = @"{

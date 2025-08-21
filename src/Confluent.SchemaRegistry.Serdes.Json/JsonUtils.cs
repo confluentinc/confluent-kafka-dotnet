@@ -46,7 +46,27 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 fieldContext.Type = GetType(schema);
             }
-            
+
+            if (HasMultipleFlags(schema.Type))
+            {
+                JToken jsonObject = JToken.FromObject(message);
+                foreach (JsonObjectType flag in Enum.GetValues(typeof(JsonObjectType)))
+                {
+                    if (schema.Type.HasFlag(flag) && !flag.Equals(default(JsonObjectType)))
+                    {
+                        string schemaJson = schema.ToJson();
+                        var subschema = await JsonSchema.FromJsonAsync(schemaJson).ConfigureAwait(false);
+                        subschema.Type = flag;
+                        var validator = new JsonSchemaValidator();
+                        var errors = validator.Validate(jsonObject, subschema);
+                        if (errors.Count == 0)
+                        {
+                            return await Transform(ctx, subschema, path, message, fieldTransform).ConfigureAwait(false);
+                        }
+                    }
+                }
+
+            }
             if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
             {
                 JToken jsonObject = JToken.FromObject(message);
@@ -139,9 +159,20 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+        private static bool HasMultipleFlags<T>(T flags) where T : Enum
+        {
+            var value = Convert.ToInt32(flags);
+            return value != 0 && (value & (value - 1)) != 0;
+        }
+
         private static RuleContext.Type GetType(JsonSchema schema)
         {
-            switch (schema.Type)
+            return GetType(schema.Type);
+        }
+
+        private static RuleContext.Type GetType(JsonObjectType type)
+        {
+            switch (type)
             {
                 case JsonObjectType.Object:
                     return RuleContext.Type.Record;
