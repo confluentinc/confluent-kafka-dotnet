@@ -54,14 +54,21 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     if (schema.Type.HasFlag(flag) && !flag.Equals(default(JsonObjectType)))
                     {
-                        string schemaJson = schema.ToJson();
-                        var subschema = await JsonSchema.FromJsonAsync(schemaJson).ConfigureAwait(false);
-                        subschema.Type = flag;
-                        var validator = new JsonSchemaValidator();
-                        var errors = validator.Validate(jsonObject, subschema);
-                        if (errors.Count == 0)
+                        JsonObjectType originalType = schema.Type;
+                        try
                         {
-                            return await Transform(ctx, subschema, path, message, fieldTransform).ConfigureAwait(false);
+                            schema.Type = flag;
+                            var validator = new JsonSchemaValidator();
+                            var errors = validator.Validate(jsonObject, schema);
+                            if (errors.Count == 0)
+                            {
+                                return await Transform(ctx, schema, path, message,
+                                    fieldTransform).ConfigureAwait(false);
+                            }
+                        }
+                        finally
+                        {
+                            schema.Type = originalType;
                         }
                     }
                 }
