@@ -1,0 +1,12 @@
+# editorconfig.org
+# top-most EditorConfig file
+root = true
+
+# Visual Studio XML project files
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
+indent_size = 2
+charset = utf-8
+
+# Visual Studio and .NET related XML config files
+[*.{props,targets,ruleset,config,nuspec,resx,vsixmanifest,vsct,stylecop}]
+indent_size = 2
