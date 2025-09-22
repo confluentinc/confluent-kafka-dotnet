@@ -223,7 +223,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     currentSchemaData.AvroWriter.Write(data, new BinaryEncoder(stream));
                     
                     var buffer = await ExecuteRules(isKey, subject, topic, headers, RulePhase.Encoding, RuleMode.Write,
-                            null, latestSchema, stream.GetBuffer(), null)
+                            null, latestSchema, stream.ToArray(), null)
                         .ContinueWith(t => (byte[])t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
