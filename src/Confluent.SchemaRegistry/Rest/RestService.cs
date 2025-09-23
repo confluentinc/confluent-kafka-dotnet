@@ -67,6 +67,27 @@ namespace Confluent.SchemaRegistry
 
         private int retriesMaxWaitMs;
 
+        private static readonly
+            Dictionary<string, Func<
+                        IAuthenticationHeaderValueProvider,
+                        IEnumerable<KeyValuePair<string, string>>,
+                        IAuthenticationBearerHeaderValueProviderBuilder>>
+                bearerAuthenticationHeaderValueProviderBuilders =
+            new Dictionary<string, Func<
+                        IAuthenticationHeaderValueProvider,
+                        IEnumerable<KeyValuePair<string, string>>,
+                        IAuthenticationBearerHeaderValueProviderBuilder>>()
+                {
+                    {"STATIC_TOKEN", (authenticationHeaderValueProvider, config) =>
+                        new StaticAuthenticationHeaderValueProviderBuilder(authenticationHeaderValueProvider, config) },
+                    {"CUSTOM", (authenticationHeaderValueProvider, config) =>
+                        new CustomAuthenticationHeaderValueProviderBuilder(authenticationHeaderValueProvider, config) },
+                    {"OAUTHBEARER", (authenticationHeaderValueProvider, config) =>
+                        new BearerAuthenticationHeaderValueProviderBuilder(authenticationHeaderValueProvider, config) },
+                    {"OAUTHBEARER_AZURE_IMDS", (authenticationHeaderValueProvider, config) =>
+                        new AzureIMDSBearerAuthenticationHeaderValueProviderBuilder(authenticationHeaderValueProvider, config) }
+                };
+
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
@@ -677,88 +698,19 @@ namespace Confluent.SchemaRegistry
                     $"Invalid authentication header value provider configuration: Cannot specify both basic and bearer authentication");
             }
 
-            string logicalCluster = null;
-            string identityPoolId = null;
-            string bearerToken = null;
-            string clientId = null;
-            string clientSecret = null;
-            string scope = null;
-            string tokenEndpointUrl = null;
-
-            if (bearerAuthSource == "STATIC_TOKEN" || bearerAuthSource == "OAUTHBEARER")
+            if (bearerAuthSource != "")
             {
-                if (authenticationHeaderValueProvider != null)
+                if (!bearerAuthenticationHeaderValueProviderBuilders.ContainsKey(bearerAuthSource))
                 {
-                    throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and bearer authentication");
-                }
-                logicalCluster = config.FirstOrDefault(prop =>
-                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster).Value;
-
-                identityPoolId = config.FirstOrDefault(prop =>
-                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId).Value;
-                if (logicalCluster == null || identityPoolId == null)
-                {
-                    throw new ArgumentException(
-                        $"Invalid bearer authentication provider configuration: Logical cluster and identity pool ID must be specified");
-                }
-            }
-
-            switch (bearerAuthSource)
-            {
-                case "STATIC_TOKEN":
-                    bearerToken = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken).Value;
-
-                    if (bearerToken == null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Bearer authentication token not specified");
-                    }
-                    authenticationHeaderValueProvider = new StaticBearerAuthenticationHeaderValueProvider(bearerToken, logicalCluster, identityPoolId);
-                    break;
-
-                case "OAUTHBEARER":
-                    clientId = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId).Value;
-
-                    clientSecret = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret).Value;
-
-                    scope = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope).Value;
-
-                    tokenEndpointUrl = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl).Value;
-
-                    if (tokenEndpointUrl == null || clientId == null || clientSecret == null || scope == null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid bearer authentication provider configuration: Token endpoint URL, client ID, client secret, and scope must be specified");
-                    }
-                    authenticationHeaderValueProvider = new BearerAuthenticationHeaderValueProvider(
-                        new HttpClient(), clientId, clientSecret, scope, tokenEndpointUrl, logicalCluster, identityPoolId, maxRetries, retriesWaitMs, retriesMaxWaitMs);
-                    break;
-
-                case "CUSTOM":
-                    if (authenticationHeaderValueProvider == null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Custom authentication provider must be specified");
-                    }
-                    if(!(authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider))
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Custom authentication provider must implement IAuthenticationBearerHeaderValueProvider");
-                    }
-                    break;
-
-                case "":
-                    break;
-
-                default:
                     throw new ArgumentException(
                         $"Invalid value '{bearerAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource}'");
+                }
+
+                var bearerAuthenticationHeaderValueProviderBuilder =
+                    bearerAuthenticationHeaderValueProviderBuilders[bearerAuthSource];
+                authenticationHeaderValueProvider = bearerAuthenticationHeaderValueProviderBuilder(
+                    authenticationHeaderValueProvider, config)
+                    .Build(maxRetries, retriesWaitMs, retriesMaxWaitMs);
             }
 
             return authenticationHeaderValueProvider;
