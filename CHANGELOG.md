@@ -1,3 +1,12 @@
+# 2.12.0
+
+## Enhancements
+
+* References librdkafka.redist 2.12.0. Refer to the [librdkafka v2.12.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.12.0) for more information.
+* OAuth OIDC method for Schema Registry metadata based authentication with
+  an Azure IMDS endpoint using an attached managed identity as principal (#).
+
+
 # 2.11.1
 
 ## Enhancements
