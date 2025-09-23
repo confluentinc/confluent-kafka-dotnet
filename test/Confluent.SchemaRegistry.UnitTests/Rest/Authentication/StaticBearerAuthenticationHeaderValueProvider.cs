@@ -19,12 +19,13 @@ namespace Confluent.SchemaRegistry.UnitTests.Rest.Authentication
         }
 
         [Fact]
-        public async Task GetAuthenticationHeader() 
+        public void GetAuthenticationHeader() 
         {
             var provider = new StaticBearerAuthenticationHeaderValueProvider(token, logicalCluster, identityPool);
             var header = provider.GetAuthenticationHeader();
             Assert.Equal("Bearer test-token", header.ToString());
         }
+
         [Fact]
         public void GetLogicalClusterAndIdentityPool()
         {
