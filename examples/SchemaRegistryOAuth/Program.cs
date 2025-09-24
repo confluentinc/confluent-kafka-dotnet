@@ -129,6 +129,8 @@ namespace Confluent.Kafka.Examples.SchemaRegistryOAuth
                 Url = schemaRegistryUrl,
                 BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
                 BearerAuthTokenEndpointQuery = azureIMDSQueryParams,
+                BearerAuthLogicalCluster = logicalCluster,
+                BearerAuthIdentityPoolId = identityPool,
             };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(azureIMDSSchemaRegistryConfig))

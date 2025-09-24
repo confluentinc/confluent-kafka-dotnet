@@ -54,6 +54,8 @@ namespace Confluent.Kafka.Examples.OAuthOIDCAzureIMDS
     public class Program
     {
         private const string azureIMDSQueryParams = "api-version=&resource=&client_id=";
+        private const string kafkaLogicalCluster = "your-logical-cluster";
+        private const string identityPoolId = "your-identity-pool-id";
 
         public static async Task Main(string[] args)
         {
@@ -75,6 +77,7 @@ namespace Confluent.Kafka.Examples.OAuthOIDCAzureIMDS
                 SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
                 SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AzureIMDS,
                 SaslOauthbearerConfig = $"query={azureIMDSQueryParams}",
+                SaslOauthbearerExtensions = $"logicalCluster={kafkaLogicalCluster},identityPoolId={identityPoolId}"
             };
 
             var consumerConfig = new ConsumerConfig
@@ -93,6 +96,8 @@ namespace Confluent.Kafka.Examples.OAuthOIDCAzureIMDS
                 Url = schemaRegistryUrl,
                 BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
                 BearerAuthTokenEndpointQuery = azureIMDSQueryParams,
+                BearerAuthLogicalCluster = kafkaLogicalCluster,
+                BearerAuthIdentityPoolId = identityPoolId
             };
 
             try
