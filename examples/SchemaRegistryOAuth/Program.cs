@@ -50,9 +50,9 @@ namespace Confluent.Kafka.Examples.SchemaRegistryOAuth
 
         public static async Task Main(string[] args)
         {
-            if (args.Length != 9)
+            if (args.Length < 9)
             {
-                Console.WriteLine("Usage: .. schemaRegistryUrl clientId clientSecret scope tokenEndpoint logicalCluster identityPool token");
+                Console.WriteLine("Usage: .. schemaRegistryUrl clientId clientSecret scope tokenEndpoint logicalCluster identityPool token [azureIMDSQueryParams]");
                 return;
             }
             string schemaRegistryUrl = args[1];
@@ -63,10 +63,15 @@ namespace Confluent.Kafka.Examples.SchemaRegistryOAuth
             string logicalCluster = args[6];
             string identityPool = args[7];
             string token = args[8];
+            string? azureIMDSQueryParams = null;
+            if (args.Length >= 10)
+            { 
+                azureIMDSQueryParams = args[9];
+            }
 
             //using BearerAuthCredentialsSource.OAuthBearer
             var clientCredentialsSchemaRegistryConfig = new SchemaRegistryConfig
-            {   
+            {
                 Url = schemaRegistryUrl,
                 BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearer,
                 BearerAuthClientId = clientId,
@@ -85,7 +90,7 @@ namespace Confluent.Kafka.Examples.SchemaRegistryOAuth
 
             //using BearerAuthCredentialsSource.StaticToken
             var staticSchemaRegistryConfig = new SchemaRegistryConfig
-            {   
+            {
                 Url = schemaRegistryUrl,
                 BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
                 BearerAuthToken = token,
@@ -101,13 +106,34 @@ namespace Confluent.Kafka.Examples.SchemaRegistryOAuth
 
             //Using BearerAuthCredentialsSource.Custom
             var customSchemaRegistryConfig = new SchemaRegistryConfig
-            {   
+            {
                 Url = schemaRegistryUrl,
                 BearerAuthCredentialsSource = BearerAuthCredentialsSource.Custom
             };
 
             var customProvider = new ExampleBearerAuthProvider(token, logicalCluster, identityPool);
             using (var schemaRegistry = new CachedSchemaRegistryClient(customSchemaRegistryConfig, customProvider))
+            {
+                var subjects = await schemaRegistry.GetAllSubjectsAsync();
+                Console.WriteLine(string.Join(", ", subjects));
+            }
+            
+            if (azureIMDSQueryParams == null)
+            {
+                return;
+            }
+
+            //Using BearerAuthCredentialsSource.OAuthOIDCAzureIMDS
+            var azureIMDSSchemaRegistryConfig = new SchemaRegistryConfig
+            {
+                Url = schemaRegistryUrl,
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
+                BearerAuthTokenEndpointQuery = azureIMDSQueryParams,
+                BearerAuthLogicalCluster = logicalCluster,
+                BearerAuthIdentityPoolId = identityPool,
+            };
+
+            using (var schemaRegistry = new CachedSchemaRegistryClient(azureIMDSSchemaRegistryConfig))
             {
                 var subjects = await schemaRegistry.GetAllSubjectsAsync();
                 Console.WriteLine(string.Join(", ", subjects));
