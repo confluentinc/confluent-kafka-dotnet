@@ -77,20 +77,20 @@ namespace Confluent.SchemaRegistry.Serdes
             if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
             {
                 JToken jsonObject = JToken.FromObject(message);
-                ICollection<JsonSchema> subchemas;
+                ICollection<JsonSchema> subschemas;
                 if (schema.AllOf.Count > 0)
                 {
-                    subchemas = schema.AllOf;
+                    subschemas = schema.AllOf;
                 }
                 else if (schema.AnyOf.Count > 0)
                 {
-                    subchemas = schema.AnyOf;
+                    subschemas = schema.AnyOf;
                 }
                 else
                 {
-                    subchemas = schema.OneOf;
+                    subschemas = schema.OneOf;
                 }
-                foreach (JsonSchema subschema in subchemas)
+                foreach (JsonSchema subschema in subschemas)
                 {
                     var validator = new JsonSchemaValidator();
                     var errors = validator.Validate(jsonObject, subschema);
