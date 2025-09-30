@@ -77,7 +77,20 @@ namespace Confluent.SchemaRegistry.Serdes
             if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
             {
                 JToken jsonObject = JToken.FromObject(message);
-                foreach (JsonSchema subschema in schema.AllOf)
+                ICollection<JsonSchema> subschemas;
+                if (schema.AllOf.Count > 0)
+                {
+                    subschemas = schema.AllOf;
+                }
+                else if (schema.AnyOf.Count > 0)
+                {
+                    subschemas = schema.AnyOf;
+                }
+                else
+                {
+                    subschemas = schema.OneOf;
+                }
+                foreach (JsonSchema subschema in subschemas)
                 {
                     var validator = new JsonSchemaValidator();
                     var errors = validator.Validate(jsonObject, subschema);
@@ -105,14 +118,22 @@ namespace Confluent.SchemaRegistry.Serdes
                     Transform(ctx, subschema, path + '[' + index + ']', elem, fieldTransform);
                 return await Utils.TransformEnumerableAsync(message, transformer).ConfigureAwait(false);
             }
-            else if (schema.IsObject)
+            else if (schema.IsObject || schema.Properties.Count > 0)
             {
                 foreach (var it in schema.Properties)
                 {
                     string fullName = path + '.' + it.Key;
                     using (ctx.EnterField(message, fullName, it.Key, GetType(it.Value), GetInlineTags(it.Value)))
                     {
-                        FieldAccessor fieldAccessor = new FieldAccessor(message.GetType(), it.Key);
+                        FieldAccessor fieldAccessor;
+                        try
+                        {
+                            fieldAccessor = new FieldAccessor(message.GetType(), it.Key);
+                        }
+                        catch (ArgumentException)
+                        {
+                            continue;
+                        }
                         object value = fieldAccessor.GetFieldValue(message);
                         object newValue = await Transform(ctx, it.Value, fullName, value, fieldTransform).ConfigureAwait(false);
                         if (ctx.Rule.Kind == RuleKind.Condition)
