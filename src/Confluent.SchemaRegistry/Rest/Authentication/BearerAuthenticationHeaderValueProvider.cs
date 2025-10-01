@@ -1,6 +1,5 @@
 using System;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Newtonsoft.Json;
@@ -22,59 +21,75 @@ namespace Confluent.SchemaRegistry
         public double ExpiryTime { get; set; }
     }
 
-    public class BearerAuthenticationHeaderValueProvider : IAuthenticationBearerHeaderValueProvider, IDisposable
+    /// <summary>
+    /// Provides bearer token authentication header values for schema registry requests
+    /// based on OAuth2 client credentials flow.
+    /// </summary>
+    public class BearerAuthenticationHeaderValueProvider : AbstractBearerAuthenticationHeaderValueProvider
     {
         private readonly string clientId;
         private readonly string clientSecret;
         private readonly string scope;
         private readonly string tokenEndpoint;
-        private readonly string logicalCluster;
-        private readonly string identityPool;
-        private readonly int maxRetries;
-        private readonly int retriesWaitMs;
-        private readonly int retriesMaxWaitMs;
         private readonly HttpClient httpClient;
-        private volatile BearerToken token;
+        private volatile BearerToken tokenObject;
         private const float tokenExpiryThreshold = 0.8f;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BearerAuthenticationHeaderValueProvider"/> class.
+        /// </summary>
+        /// <param name="httpClient">The HTTP client used for requests.</param>
+        /// <param name="clientId">The OAuth client ID.</param>
+        /// <param name="clientSecret">The OAuth client secret.</param>
+        /// <param name="scope">The OAuth scope.</param>
+        /// <param name="tokenEndpoint">The OAuth token endpoint URL.</param>
+        /// <param name="logicalCluster">The logical cluster name.</param>
+        /// <param name="identityPool">The identity pool.</param>
+        /// <param name="maxRetries">The maximum number of retries.</param>
+        /// <param name="retriesWaitMs">The initial wait time between retries in milliseconds.</param>
+        /// <param name="retriesMaxWaitMs">The maximum wait time between retries in milliseconds.</param>
         public BearerAuthenticationHeaderValueProvider(
             HttpClient httpClient,
-            string clientId, 
-            string clientSecret, 
-            string scope, 
-            string tokenEndpoint, 
-            string logicalCluster, 
-            string identityPool, 
-            int maxRetries, 
-            int retriesWaitMs, 
+            string clientId,
+            string clientSecret,
+            string scope,
+            string tokenEndpoint,
+            string logicalCluster,
+            string identityPool,
+            int maxRetries,
+            int retriesWaitMs,
             int retriesMaxWaitMs)
+            : base(logicalCluster, identityPool, maxRetries, retriesWaitMs, retriesMaxWaitMs)
         {
             this.httpClient = httpClient;
             this.clientId = clientId;
             this.clientSecret = clientSecret;
             this.scope = scope;
             this.tokenEndpoint = tokenEndpoint;
-            this.logicalCluster = logicalCluster;
-            this.identityPool = identityPool;
-            this.maxRetries = maxRetries;
-            this.retriesWaitMs = retriesWaitMs;
-            this.retriesMaxWaitMs = retriesMaxWaitMs;
         }
 
-        public async Task InitOrRefreshAsync()
+        /// <inheritdoc/>
+        public override bool NeedsInitOrRefresh()
         {
-            await GenerateToken().ConfigureAwait(false);
+            return tokenObject == null || DateTimeOffset.UtcNow.ToUnixTimeSeconds() >= tokenObject.ExpiryTime;
         }
 
-        public bool NeedsInitOrRefresh()
+        /// <inheritdoc/>
+        protected override async Task<string> FetchToken(HttpRequestMessage request)
         {
-            return token == null || DateTimeOffset.UtcNow.ToUnixTimeSeconds() >= token.ExpiryTime;
+            var response = await httpClient.SendAsync(request).ConfigureAwait(continueOnCapturedContext: false);
+            response.EnsureSuccessStatusCode();
+            var tokenResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            tokenObject = JObject.Parse(tokenResponse).ToObject<BearerToken>(JsonSerializer.Create());
+            tokenObject.ExpiryTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (int)(tokenObject.ExpiresIn * tokenExpiryThreshold);
+            return tokenObject.AccessToken;
         }
 
-        private HttpRequestMessage CreateTokenRequest()
+        /// <inheritdoc/>
+        protected override HttpRequestMessage CreateTokenRequest()
         {
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint);
-            
+
             request.Content = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("grant_type", "client_credentials"),
@@ -85,50 +100,12 @@ namespace Confluent.SchemaRegistry
 
             return request;
         }
-
-        private async Task GenerateToken()
+        
+        /// <inheritdoc/>
+        protected override void DisposeSecrets()
         {
-            var request = CreateTokenRequest();
-
-            for (int i = 0; i < maxRetries + 1; i++){
-                try 
-                {
-                    var response = await httpClient.SendAsync(request).ConfigureAwait(continueOnCapturedContext: false);
-                    response.EnsureSuccessStatusCode();
-                    var tokenResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    token = JObject.Parse(tokenResponse).ToObject<BearerToken>(JsonSerializer.Create());
-                    token.ExpiryTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (int)(token.ExpiresIn * tokenExpiryThreshold);
-                    return;
-                }
-                catch (Exception e)
-                {
-                    if (i == maxRetries)
-                    {
-                        throw new Exception("Failed to fetch token from server: " + e.Message);
-                    }
-                    await Task.Delay(RetryUtility.CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i))
-                        .ConfigureAwait(false);
-                }
-            }
-        }
-
-        public AuthenticationHeaderValue GetAuthenticationHeader()
-        {
-            if (this.token == null)
-            {
-                throw new InvalidOperationException("Token not initialized");
-            }
-
-            return new AuthenticationHeaderValue("Bearer", this.token.AccessToken);
-        }
-
-        public string GetLogicalCluster() => this.logicalCluster;
-
-        public string GetIdentityPool() => this.identityPool;
-
-        public void Dispose()
-        {
-            this.token = null;
+            base.DisposeSecrets();
+            tokenObject = null;
         }
     }
 }
