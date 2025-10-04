@@ -16,8 +16,8 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
         public static readonly string Prefix = "hcvault://";
         public static readonly string TokenId = "token.id";
         public static readonly string Namespace = "namespace";
-        public static readonly string AppRoleId = "app.role.id";
-        public static readonly string AppRoleSecretId = "app.role.secret.id";
+        public static readonly string ApproleRoleId = "approle.role.id";
+        public static readonly string ApproleSecretId = "approle.secret.id";
 
         public string GetKeyUrlPrefix()
         {
@@ -36,21 +36,21 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
             {
                 ns = Environment.GetEnvironmentVariable("VAULT_NAMESPACE");
             }
-            config.TryGetValue(AppRoleId, out string appRoleId);
-            if (appRoleId == null)
+            config.TryGetValue(ApproleRoleId, out string roleId);
+            if (roleId == null)
             {
-                appRoleId = Environment.GetEnvironmentVariable("VAULT_APP_ROLE_ID");
+                roleId = Environment.GetEnvironmentVariable("VAULT_APPROLE_ROLE_ID");
             }
-            config.TryGetValue(AppRoleSecretId, out string appRoleSecretId);
-            if (appRoleSecretId == null)
+            config.TryGetValue(ApproleSecretId, out string secretId);
+            if (secretId == null)
             {
-                appRoleSecretId = Environment.GetEnvironmentVariable("VAULT_APP_ROLE_SECRET_ID");
+                secretId = Environment.GetEnvironmentVariable("VAULT_APPROLE_SECRET_ID");
             }
 
             IAuthMethodInfo authMethod;
-            if (appRoleId != null && appRoleSecretId != null)
+            if (roleId != null && secretId != null)
             {
-                authMethod = new AppRoleAuthMethodInfo(appRoleId, appRoleSecretId);
+                authMethod = new AppRoleAuthMethodInfo(roleId, secretId);
             }
             else if (tokenId != null)
             {
@@ -58,7 +58,7 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
             }
             else
             {
-                throw new ArgumentException($"Either {TokenId} or both {AppRoleId} and {AppRoleSecretId} " +
+                throw new ArgumentException($"Either {TokenId} or both {ApproleRoleId} and {ApproleSecretId} " +
                                             $"must be provided in config or environment variables.");
             }
 
