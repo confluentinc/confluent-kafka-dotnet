@@ -23,7 +23,6 @@ using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.SyncOverAsync;
-using Newtonsoft.Json;
 
 /// <summary>
 ///     An example demonstrating how to produce a message to 
