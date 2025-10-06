@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.11.1 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.12.0-RC2 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -201,6 +201,22 @@ namespace Confluent.Kafka
         ///     ES256
         /// </summary>
         ES256
+    }
+
+    /// <summary>
+    ///     SaslOauthbearerMetadataAuthenticationType enum values
+    /// </summary>
+    public enum SaslOauthbearerMetadataAuthenticationType
+    {
+        /// <summary>
+        ///     None
+        /// </summary>
+        None,
+
+        /// <summary>
+        ///     AzureIMDS
+        /// </summary>
+        AzureIMDS
     }
 
     /// <summary>
@@ -1317,6 +1333,16 @@ namespace Confluent.Kafka
         /// ]]>
         /// </summary>
         public string SaslOauthbearerAssertionJwtTemplateFile { get { return Get("sasl.oauthbearer.assertion.jwt.template.file"); } set { this.SetObject("sasl.oauthbearer.assertion.jwt.template.file", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     Type of metadata-based authentication to use for OAUTHBEARER/OIDC `azure_imds` authenticates using the Azure IMDS endpoint. Sets a default value for `sasl.oauthbearer.token.endpoint.url` if missing. Configuration values specific of chosen authentication type can be passed through `sasl.oauthbearer.config`.
+        ///
+        ///     default: none
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public SaslOauthbearerMetadataAuthenticationType? SaslOauthbearerMetadataAuthenticationType { get { return (SaslOauthbearerMetadataAuthenticationType?)GetEnum(typeof(SaslOauthbearerMetadataAuthenticationType), "sasl.oauthbearer.metadata.authentication.type"); } set { this.SetObject("sasl.oauthbearer.metadata.authentication.type", value); } }
 
         /// <summary>
         /// <![CDATA[
