@@ -39,12 +39,12 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
         private const String OAuthBearerScope = "<scope>";
         public static async Task Main(string[] args)
         {
-            if (args.Length != 2)
+            if (args.Length != 1)
             {
                 Console.WriteLine("Usage: .. brokerList");
                 return;
             }
-            var bootstrapServers = args[1];
+            var bootstrapServers = args[0];
             var topicName = Guid.NewGuid().ToString();
             var groupId = Guid.NewGuid().ToString();
 
@@ -142,12 +142,12 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
             }
         }
 
-        private static void createTopic(ClientConfig config, String topicName)
+        private static void createTopic(ClientConfig config, string topicName)
         {
             using (var adminClient = new AdminClientBuilder(config).Build())
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] {
-                            new TopicSpecification { Name = topicName, ReplicationFactor = 3, NumPartitions = 1 } }).Wait(); ;
+                            new TopicSpecification { Name = topicName, ReplicationFactor = 3, NumPartitions = 1 } }).Wait();
             }
         }
     }
