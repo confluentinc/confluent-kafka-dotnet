@@ -17,20 +17,22 @@ namespace Confluent.SchemaRegistry.Encryption.HcVault
         
         public string KekId { get; }
         public string Namespace { get; }
-        public string TokenId { get; }
-        
+
         public HcVaultKmsClient(string kekId, string ns, string tokenId)
+            : this(kekId, ns, new TokenAuthMethodInfo(tokenId))
+        {
+        }
+
+        public HcVaultKmsClient(string kekId, string ns, IAuthMethodInfo authMethod)
         {
             KekId = kekId;
             Namespace = ns;
-            TokenId = tokenId;
-            
+
             if (!kekId.StartsWith(HcVaultKmsDriver.Prefix))
             {
               throw new ArgumentException(string.Format($"key URI must start with {HcVaultKmsDriver.Prefix}"));
             }
             keyId = KekId.Substring(HcVaultKmsDriver.Prefix.Length);
-            IAuthMethodInfo authMethod = new TokenAuthMethodInfo(tokenId);
             Uri uri = new Uri(keyId);
             if (uri.Segments.Length == 0)
             {
