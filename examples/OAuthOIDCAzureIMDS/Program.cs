@@ -22,21 +22,24 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
-using Newtonsoft.Json;
+using Confluent.Kafka.SyncOverAsync;
 
 /// <summary>
 ///     An example demonstrating how to produce a message to 
 ///     a topic, and then reading it back again using a consumer.
 ///     The authentication uses the OpenID Connect method of the OAUTHBEARER SASL mechanism.
+///     The token is acquired from the Azure Instance Metadata Service (IMDS)
+///     using metadata based secret-less authentication.
 /// </summary>
-namespace Confluent.Kafka.Examples.OAuthOIDC
+namespace Confluent.Kafka.Examples.OAuthOIDCAzureIMDS
 {
+
     public class Program
     {
-        private const String OAuthBearerClientId = "<oauthbearer_client_id>";
-        private const String OAuthBearerClientSecret = "<oauthbearer_client_secret>";
-        private const String OAuthBearerTokenEndpointURL = "<token_endpoint_url>";
-        private const String OAuthBearerScope = "<scope>";
+        private const string azureIMDSQueryParams = "api-version=&resource=&client_id=";
+        private const string kafkaLogicalCluster = "your-logical-cluster";
+        private const string identityPoolId = "your-identity-pool-id";
+
         public static async Task Main(string[] args)
         {
             if (args.Length != 1)
@@ -54,10 +57,9 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
                 SecurityProtocol = SecurityProtocol.SaslPlaintext,
                 SaslMechanism = SaslMechanism.OAuthBearer,
                 SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
-                SaslOauthbearerClientId = OAuthBearerClientId,
-                SaslOauthbearerClientSecret = OAuthBearerClientSecret,
-                SaslOauthbearerTokenEndpointUrl = OAuthBearerTokenEndpointURL,
-                SaslOauthbearerScope = OAuthBearerScope
+                SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AzureIMDS,
+                SaslOauthbearerConfig = $"query={azureIMDSQueryParams}",
+                SaslOauthbearerExtensions = $"logicalCluster={kafkaLogicalCluster},identityPoolId={identityPoolId}"
             };
 
             var consumerConfig = new ConsumerConfig
@@ -66,10 +68,6 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
                 SecurityProtocol = SecurityProtocol.SaslPlaintext,
                 SaslMechanism = SaslMechanism.OAuthBearer,
                 SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
-                SaslOauthbearerClientId = OAuthBearerClientId,
-                SaslOauthbearerClientSecret = OAuthBearerClientSecret,
-                SaslOauthbearerTokenEndpointUrl = OAuthBearerTokenEndpointURL,
-                SaslOauthbearerScope = OAuthBearerScope,
                 GroupId = groupId,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 EnableAutoOffsetStore = false
@@ -85,8 +83,10 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
                 Environment.Exit(1);
             }
 
-            using (var producer = new ProducerBuilder<String, String>(commonConfig).Build())
-            using (var consumer = new ConsumerBuilder<String, String>(consumerConfig).Build())
+            using (var producer = new ProducerBuilder<Null, string>(commonConfig)
+                .Build())
+            using (var consumer = new ConsumerBuilder<Ignore, string>(consumerConfig)
+                .Build())
             {
                 consumer.Subscribe(topicName);
 
@@ -104,13 +104,14 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
                 {
                     while (!cancelled)
                     {
-                        var msg = Guid.NewGuid().ToString();
+                        var msg = "User";
+
                         try
                         {
-                            var deliveryReport = await producer.ProduceAsync(topicName, new Message<string, string> { Value = msg });
+                            var deliveryReport = await producer.ProduceAsync(topicName, new Message<Null, string> { Value = msg });
                             Console.WriteLine($"Produced message to {deliveryReport.TopicPartitionOffset}, {msg}");
                         }
-                        catch (ProduceException<string, string> e)
+                        catch (ProduceException<Null, string> e)
                         {
                             Console.WriteLine($"failed to deliver message: {e.Message} [{e.Error.Code}]");
                         }
