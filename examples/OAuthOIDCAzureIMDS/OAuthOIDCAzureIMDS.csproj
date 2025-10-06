@@ -13,8 +13,4 @@
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="NJsonSchema" Version="10.8.0" />
-  </ItemGroup>
-
 </Project>
