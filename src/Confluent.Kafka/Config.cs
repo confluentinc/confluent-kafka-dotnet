@@ -37,7 +37,8 @@ namespace Confluent.Kafka
             { "readuncommitted", "read_uncommitted" },
             { "cooperativesticky", "cooperative-sticky" },
             { "usealldnsips", "use_all_dns_ips"},
-            { "resolvecanonicalbootstrapserversonly", "resolve_canonical_bootstrap_servers_only"}
+            { "resolvecanonicalbootstrapserversonly", "resolve_canonical_bootstrap_servers_only"},
+            { "azureimds", "azure_imds"},
         };
 
         /// <summary>
