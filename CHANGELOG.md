@@ -1,15 +1,15 @@
 # 2.12.0
 
-## Enhancements
-
-* [KIP-848](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol) – General Availability
+## [KIP-848](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol) – General Availability
 Starting with __Confluent.Kafka 2.12.0__, the next generation consumer group rebalance protocol defined in **[KIP-848](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol)** is **production-ready**. Please refer to the following [migration guide](doc/kip-848-migration-guide.md) for moving from `Classic` to `Consumer` protocol.
+
+**Note:** The new consumer group protocol defined in [KIP-848](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol) is not enabled by default. There are few contract change associated with the new protocol and might cause breaking changes. `GroupProtocol` configuration property dictates whether to use the new `Consumer` protocol or older `Classic` protocol. It defaults to `Classic` if not provided.
+
+## Enhancements
 
 * References librdkafka.redist 2.12.0. Refer to the [librdkafka v2.12.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.12.0) for more information.
 * OAuth OIDC method example for Kafka metadata based authentication with
   an Azure IMDS endpoint using an attached managed identity as principal (#2526).
-
-**Note:** The new consumer group protocol defined in [KIP-848](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol) is not enabled by default. There are few contract change associated with the new protocol and might cause breaking changes. `GroupProtocol` configuration property dictates whether to use the new `Consumer` protocol or older `Classic` protocol. It defaults to `Classic` if not provided.
 
 
 # 2.11.1
