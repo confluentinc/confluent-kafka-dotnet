@@ -17,6 +17,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -39,6 +40,9 @@ namespace Confluent.Kafka
             internal IEnumerable<KeyValuePair<string, string>> config;
             internal Action<Error> errorHandler;
             internal Action<LogMessage> logHandler;
+#if NET6_0_OR_GREATER
+            internal ReadOnlySpanAction<byte, object> statisticsUtf8Handler;
+#endif
             internal Action<string> statisticsHandler;
             internal Action<CommittedOffsets> offsetsCommittedHandler;
             internal Action<string> oAuthBearerTokenRefreshHandler;
@@ -104,6 +108,9 @@ namespace Confluent.Kafka
             }
         }
 
+#if NET6_0_OR_GREATER
+        private ReadOnlySpanAction<byte, object> statisticsUtf8Handler;
+#endif
         private Action<string> statisticsHandler;
         private Librdkafka.StatsDelegate statisticsCallbackDelegate;
         private int StatisticsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
@@ -112,7 +119,20 @@ namespace Confluent.Kafka
             try
             {
                 // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-                statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json, json_len));
+#if NET6_0_OR_GREATER
+                if (statisticsUtf8Handler != null)
+                {
+                    unsafe
+                    {
+                        statisticsUtf8Handler.Invoke(new ReadOnlySpan<byte>(json.ToPointer(), (int)json_len), null);
+                    }
+                }
+#endif
+
+                if (statisticsHandler != null)
+                {
+                    statisticsHandler.Invoke(Util.Marshal.PtrToStringUTF8(json, json_len));
+                }
             }
             catch (Exception e)
             {
@@ -645,6 +665,9 @@ namespace Confluent.Kafka
         {
             var baseConfig = builder.ConstructBaseConfig(this);
 
+#if NET6_0_OR_GREATER
+            this.statisticsUtf8Handler = baseConfig.statisticsUtf8Handler;
+#endif
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
@@ -727,7 +750,11 @@ namespace Confluent.Kafka
             {
                 Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
             }
+#if NET6_0_OR_GREATER
+            if (statisticsUtf8Handler != null || statisticsHandler != null)
+#else
             if (statisticsHandler != null)
+#endif
             {
                 Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
             }
