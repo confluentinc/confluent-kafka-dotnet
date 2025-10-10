@@ -39,7 +39,7 @@ namespace Confluent.Kafka
                     return null;
                 }
 
-                #if NETCOREAPP2_1
+                #if NET6_0_OR_GREATER
                     return Encoding.UTF8.GetString(data);
                 #else
                     return Encoding.UTF8.GetString(data.ToArray());
@@ -171,7 +171,7 @@ namespace Confluent.Kafka
                 }
                 else
                 {
-                    #if NETCOREAPP2_1
+                    #if NET6_0_OR_GREATER
                         return BitConverter.ToSingle(data);
                     #else
                         return BitConverter.ToSingle(data.ToArray(), 0);
@@ -219,7 +219,7 @@ namespace Confluent.Kafka
                 }
                 else
                 {
-                    #if NETCOREAPP2_1
+                    #if NET6_0_OR_GREATER
                                     return BitConverter.ToDouble(data);
                     #else
                                     return BitConverter.ToDouble(data.ToArray(), 0);
