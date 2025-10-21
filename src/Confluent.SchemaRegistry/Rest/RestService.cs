@@ -224,7 +224,7 @@ namespace Confluent.SchemaRegistry
                 handler.ClientCertificateOptions = ClientCertificateOption.Manual;
                 certificates.ForEach(c => handler.ClientCertificates.Add(c));
             }
-            
+
             return handler;
         }
 
