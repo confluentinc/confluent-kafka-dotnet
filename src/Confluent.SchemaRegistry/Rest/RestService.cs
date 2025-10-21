@@ -224,7 +224,7 @@ namespace Confluent.SchemaRegistry
                 handler.ClientCertificateOptions = ClientCertificateOption.Manual;
                 certificates.ForEach(c => handler.ClientCertificates.Add(c));
             }
-
+            
             return handler;
         }
 
@@ -279,6 +279,7 @@ namespace Confluent.SchemaRegistry
             // concurrent access).
 
             string aggregatedErrorMessage = null;
+            List<Exception> aggregatedExceptions = new List<Exception>();
             HttpResponseMessage response = null;
             bool firstError = true;
 
@@ -314,26 +315,39 @@ namespace Confluent.SchemaRegistry
 
                     if (!IsRetriable((int)response.StatusCode))
                     {
-                        try
+                        string content = await response.Content.ReadAsStringAsync()
+                            .ConfigureAwait(continueOnCapturedContext: false);
+
+                        if (!string.IsNullOrWhiteSpace(content))
                         {
-                            JObject errorObject = null;
-                            errorObject = JObject.Parse(
-                                await response.Content.ReadAsStringAsync()
-                                    .ConfigureAwait(continueOnCapturedContext: false));
-                            message = errorObject.Value<string>("message");
-                            errorCode = errorObject.Value<int>("error_code");
-                        }
-                        catch (Exception)
-                        {
-                            // consider an unauthorized response from any server to be conclusive.
-                            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                            try
                             {
-                                finished = true;
-                                throw new HttpRequestException($"Unauthorized");
+                                var errorObject = JObject.Parse(content);
+                                message = errorObject.Value<string>("message");
+                                errorCode = errorObject.Value<int>("error_code");
+
+                                throw new SchemaRegistryException(message, response.StatusCode, errorCode);
+                            }
+                            catch (JsonReaderException)
+                            {
+                                // content isn’t json
+                                throw new HttpRequestException(
+                                    $"Unexpected non-JSON response from server ({(int)response.StatusCode} {response.StatusCode}): {content}"
+                                );
+                            }
+                            catch
+                            {
+                                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                                {
+                                    finished = true;
+                                    throw new HttpRequestException("Unauthorized");
+                                }
                             }
                         }
 
-                        throw new SchemaRegistryException(message, response.StatusCode, errorCode);
+                        // no content
+                        throw new HttpRequestException(
+                            $"Server returned {(int)response.StatusCode} ({response.StatusCode}) with no content.");
                     }
 
                     if (!firstError)
@@ -351,9 +365,10 @@ namespace Confluent.SchemaRegistry
                         message = errorObject.Value<string>("message");
                         errorCode = errorObject.Value<int>("error_code");
                     }
-                    catch
+                    catch (Exception e)
                     {
                         aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {response.StatusCode}";
+                        aggregatedExceptions.Add(e);
                     }
 
                     aggregatedErrorMessage +=
@@ -375,10 +390,16 @@ namespace Confluent.SchemaRegistry
                     firstError = false;
 
                     aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] HttpRequestException: {e.Message}";
+                    aggregatedExceptions.Add(e);
                 }
             }
 
-            throw new HttpRequestException(aggregatedErrorMessage);
+            AggregateException aggregatedException = null;
+            if (aggregatedExceptions.Count > 0)
+            {
+                aggregatedException = new AggregateException(aggregatedErrorMessage, aggregatedExceptions);
+            }
+            throw new HttpRequestException(aggregatedErrorMessage, aggregatedException);
         }
 
         private async Task<HttpResponseMessage> SendRequest(
