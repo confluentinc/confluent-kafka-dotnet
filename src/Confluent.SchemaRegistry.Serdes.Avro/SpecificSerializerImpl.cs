@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Avro;
 using Avro.IO;
 using Avro.Specific;
 using Confluent.Kafka;
@@ -243,9 +244,11 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
         
-        protected override Task<Avro.Schema> ParseSchema(Schema schema)
+        protected override async Task<Avro.Schema> ParseSchema(Schema schema)
         {
-            return Task.FromResult(Avro.Schema.Parse(schema.SchemaString));
+            SchemaNames namedSchemas = await AvroUtils.ResolveNamedSchema(schema, schemaRegistryClient)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            return Avro.Schema.Parse(schema.SchemaString, namedSchemas);
         }
     }
 }
