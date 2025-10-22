@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         ""type"": ""record"",
         ""name"": ""test"",
         ""fields"": [
-            {""name"": ""refField"", ""type"": ""test2""},
+            {""name"": ""refField"", ""type"": ""test2""}
         ]
     }
 ";
@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {""name"": ""doubleField"", ""type"": ""double""},
             {""name"": ""stringField"", ""type"": ""string""},
             {""name"": ""booleanField"", ""type"": ""boolean""},
-            {""name"": ""bytesField"", ""type"": ""bytes""},
+            {""name"": ""bytesField"", ""type"": ""bytes""}
         ]
     }
 ";
