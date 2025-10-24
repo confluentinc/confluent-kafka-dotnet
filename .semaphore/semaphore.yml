@@ -177,7 +177,7 @@ after_pipeline:
       - name: SonarQube
         commands:
           - checkout
-          - sem-version java 11
+          - sem-version java 17
           - mise use dotnet@8
           - dotnet tool install --tool-path $PWD dotnet-coverage
           - artifact pull workflow unit-coverage.xml || true
@@ -185,4 +185,4 @@ after_pipeline:
           - artifact pull workflow consumer-coverage.xml || true
           - artifact pull workflow sr-target || true
           - ./dotnet-coverage merge *coverage.xml **/*coverage.xml -o coverage.xml -f xml --remove-input-files
-          - emit-sonarqube-data --run_only_sonar_scan
+          - emit-sonarqube-data --enable_sonarqube_enterprise --run_only_sonar_scan
