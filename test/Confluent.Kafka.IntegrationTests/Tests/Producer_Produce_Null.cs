@@ -89,6 +89,31 @@ namespace Confluent.Kafka.IntegrationTests
 
             Assert.Equal(2, count);
 
+            // Memory<byte>? case.
+
+            count = 0;
+            Action<DeliveryReport<ReadOnlyMemory<byte>?, Memory<byte>?>> dh3 = dr =>
+            {
+                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                Assert.Equal((Partition)0, dr.Partition);
+                Assert.Equal(singlePartitionTopic, dr.Topic);
+                Assert.True(dr.Offset >= 0);
+                Assert.Null(dr.Message.Key);
+                Assert.Null(dr.Message.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                count += 1;
+            };
+
+            using (var producer = new TestProducerBuilder<ReadOnlyMemory<byte>?, Memory<byte>?>(producerConfig).Build())
+            {
+                producer.Produce(new TopicPartition(singlePartitionTopic, 0), new Message<ReadOnlyMemory<byte>?, Memory<byte>?>(), dh3);
+                producer.Produce(singlePartitionTopic, new Message<ReadOnlyMemory<byte>?, Memory<byte>?>(), dh3);
+                producer.Flush(TimeSpan.FromSeconds(10));
+            }
+
+            Assert.Equal(2, count);
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_Produce_Null");
         }
