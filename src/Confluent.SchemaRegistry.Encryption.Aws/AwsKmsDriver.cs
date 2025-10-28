@@ -42,6 +42,8 @@ namespace Confluent.SchemaRegistry.Encryption.Aws
             {
                 roleExternalId = Environment.GetEnvironmentVariable("AWS_ROLE_EXTERNAL_ID");
             }
+            string roleWebIdentityTokenFile =
+                Environment.GetEnvironmentVariable("AWS_WEB_IDENTITY_TOKEN_FILE");
             AWSCredentials credentials = null;
             if (config.TryGetValue(AccessKeyId, out string accessKeyId) 
                 && config.TryGetValue(SecretAccessKey, out string secretAccessKey))
@@ -59,7 +61,8 @@ namespace Confluent.SchemaRegistry.Encryption.Aws
             {
                 credentials = FallbackCredentialsFactory.GetCredentials();
             }
-            if (roleArn != null)
+            // If roleWebIdentityTokenFile is set, use the DefaultCredentialsProvider
+            if (roleArn != null && roleWebIdentityTokenFile == null)
             {
                 if (string.IsNullOrEmpty(roleExternalId))
                 {
