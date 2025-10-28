@@ -36,6 +36,8 @@ namespace Confluent.SchemaRegistry
 
         private static readonly string acceptHeader = string.Join(", ", Versions.PreferredResponseTypes);
 
+        private static readonly string acceptVersionHeader = "8.0";
+
         public const int DefaultMaxRetries = 3;
 
         public const int DefaultRetriesWaitMs = 1000;
@@ -445,6 +447,7 @@ namespace Confluent.SchemaRegistry
         {
             HttpRequestMessage request = new HttpRequestMessage(method, endPoint);
             request.Headers.Add("Accept", acceptHeader);
+            request.Headers.Add("Accept-Version", acceptVersionHeader);
             if (jsonBody.Length != 0)
             {
                 string stringContent = string.Join("\n", jsonBody.Select(x => JsonConvert.SerializeObject(x)));
