@@ -221,7 +221,15 @@ namespace Confluent.SchemaRegistry.Serdes
                 
                 using (var stream = new MemoryStream(initialBufferSize))
                 {
-                    currentSchemaData.AvroWriter.Write(data, new BinaryEncoder(stream));
+                    // If the writer schema is a simple bytes type, write bytes directly
+                    if (currentSchemaData.WriterSchema.Tag == Avro.Schema.Type.Bytes && data is byte[] byteData)
+                    {
+                        stream.Write(byteData, 0, byteData.Length);
+                    }
+                    else
+                    {
+                        currentSchemaData.AvroWriter.Write(data, new BinaryEncoder(stream));
+                    }
                     
                     var buffer = await ExecuteRules(isKey, subject, topic, headers, RulePhase.Encoding, RuleMode.Write,
                             null, latestSchema, stream.ToArray(), null)
