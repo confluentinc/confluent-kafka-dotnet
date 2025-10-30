@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Avro;
 using Avro.Specific;
 using Avro.IO;
 using Avro.Generic;
@@ -144,7 +145,11 @@ namespace Confluent.SchemaRegistry.Serdes
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
-                    
+                payload = await ExecuteRules(isKey, subject, topic, headers, RulePhase.Encoding, RuleMode.Read,
+                        null, writerSchemaJson, payload, null)
+                    .ContinueWith(t => t.Result is byte[] bytes ? new ReadOnlyMemory<byte>(bytes) : (ReadOnlyMemory<byte>)t.Result)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+
                 if (latestSchema != null)
                 {
                     migrations = await GetMigrations(subject, writerSchemaJson, latestSchema)
@@ -198,8 +203,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     return await AvroUtils.Transform(ctx, readerSchema, message, transform).ConfigureAwait(false);
                 };
-                data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read, null,
-                    readerSchemaJson, data, fieldTransformer)
+                data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read,
+                        null, readerSchemaJson, data, fieldTransformer)
                     .ConfigureAwait(continueOnCapturedContext: false);
 
                 return (T) data;
@@ -210,11 +215,13 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
-        protected override Task<Avro.Schema> ParseSchema(Schema schema)
+        protected override async Task<Avro.Schema> ParseSchema(Schema schema)
         {
-            return Task.FromResult(Avro.Schema.Parse(schema.SchemaString));
+            SchemaNames namedSchemas = await AvroUtils.ResolveNamedSchema(schema, schemaRegistryClient)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            return Avro.Schema.Parse(schema.SchemaString, namedSchemas);
         }
-        
+
         private async Task<DatumReader<T>> GetDatumReader(Avro.Schema writerSchema, Avro.Schema readerSchema)
         {
             DatumReader<T> datumReader = null;

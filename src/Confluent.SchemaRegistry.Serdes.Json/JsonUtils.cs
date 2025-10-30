@@ -46,11 +46,51 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 fieldContext.Type = GetType(schema);
             }
-            
+
+            if (HasMultipleFlags(schema.Type))
+            {
+                JToken jsonObject = JToken.FromObject(message);
+                foreach (JsonObjectType flag in Enum.GetValues(typeof(JsonObjectType)))
+                {
+                    if (schema.Type.HasFlag(flag) && !flag.Equals(default(JsonObjectType)))
+                    {
+                        JsonObjectType originalType = schema.Type;
+                        try
+                        {
+                            schema.Type = flag;
+                            var validator = new JsonSchemaValidator();
+                            var errors = validator.Validate(jsonObject, schema);
+                            if (errors.Count == 0)
+                            {
+                                return await Transform(ctx, schema, path, message,
+                                    fieldTransform).ConfigureAwait(false);
+                            }
+                        }
+                        finally
+                        {
+                            schema.Type = originalType;
+                        }
+                    }
+                }
+
+            }
             if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
             {
                 JToken jsonObject = JToken.FromObject(message);
-                foreach (JsonSchema subschema in schema.AllOf)
+                ICollection<JsonSchema> subschemas;
+                if (schema.AllOf.Count > 0)
+                {
+                    subschemas = schema.AllOf;
+                }
+                else if (schema.AnyOf.Count > 0)
+                {
+                    subschemas = schema.AnyOf;
+                }
+                else
+                {
+                    subschemas = schema.OneOf;
+                }
+                foreach (JsonSchema subschema in subschemas)
                 {
                     var validator = new JsonSchemaValidator();
                     var errors = validator.Validate(jsonObject, subschema);
@@ -78,14 +118,22 @@ namespace Confluent.SchemaRegistry.Serdes
                     Transform(ctx, subschema, path + '[' + index + ']', elem, fieldTransform);
                 return await Utils.TransformEnumerableAsync(message, transformer).ConfigureAwait(false);
             }
-            else if (schema.IsObject)
+            else if (schema.IsObject || schema.Properties.Count > 0)
             {
                 foreach (var it in schema.Properties)
                 {
                     string fullName = path + '.' + it.Key;
                     using (ctx.EnterField(message, fullName, it.Key, GetType(it.Value), GetInlineTags(it.Value)))
                     {
-                        FieldAccessor fieldAccessor = new FieldAccessor(message.GetType(), it.Key);
+                        FieldAccessor fieldAccessor;
+                        try
+                        {
+                            fieldAccessor = new FieldAccessor(message.GetType(), it.Key);
+                        }
+                        catch (ArgumentException)
+                        {
+                            continue;
+                        }
                         object value = fieldAccessor.GetFieldValue(message);
                         object newValue = await Transform(ctx, it.Value, fullName, value, fieldTransform).ConfigureAwait(false);
                         if (ctx.Rule.Kind == RuleKind.Condition)
@@ -139,9 +187,20 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+        private static bool HasMultipleFlags<T>(T flags) where T : Enum
+        {
+            var value = Convert.ToInt32(flags);
+            return value != 0 && (value & (value - 1)) != 0;
+        }
+
         private static RuleContext.Type GetType(JsonSchema schema)
         {
-            switch (schema.Type)
+            return GetType(schema.Type);
+        }
+
+        private static RuleContext.Type GetType(JsonObjectType type)
+        {
+            switch (type)
             {
                 case JsonObjectType.Object:
                     return RuleContext.Type.Record;

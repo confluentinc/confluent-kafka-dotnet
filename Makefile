@@ -7,7 +7,7 @@
 OS=$(shell uname -s)
 
 EXAMPLE_DIRS=$(shell find ./examples -name '*.csproj' -exec dirname {} \;)
-TEST_DIRS=$(shell find ./test -name '*.csproj'   \;)
+TEST_DIRS=$(shell find ./test -name '*.csproj' -exec dirname {} \;)
 UNIT_TEST_DIRS=$(shell find . -type d -regex '.*UnitTests$$' -exec basename {} \;)
 
 # We want to run tests by default with latest version of .NET
@@ -30,7 +30,7 @@ test:
 
 test-coverage:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
-		dotnet-coverage collect "dotnet test test/$$d/$$d.csproj" \
+		$(DOTNET_COVERAGE_TOOL) collect "dotnet test -f $(DEFAULT_TEST_FRAMEWORK) test/$$d/$$d.csproj" \
 			-f xml -o test/$$d/coverage.xml ; \
 	done)
 

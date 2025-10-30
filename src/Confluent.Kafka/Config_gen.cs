@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.11.0 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.12.0 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -201,6 +201,22 @@ namespace Confluent.Kafka
         ///     ES256
         /// </summary>
         ES256
+    }
+
+    /// <summary>
+    ///     SaslOauthbearerMetadataAuthenticationType enum values
+    /// </summary>
+    public enum SaslOauthbearerMetadataAuthenticationType
+    {
+        /// <summary>
+        ///     None
+        /// </summary>
+        None,
+
+        /// <summary>
+        ///     AzureIMDS
+        /// </summary>
+        AzureIMDS
     }
 
     /// <summary>
@@ -680,7 +696,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         /// <![CDATA[
-        ///     Close broker connections after the specified time of inactivity. Disable with 0. If this property is left at its default value some heuristics are performed to determine a suitable default value, this is currently limited to identifying brokers on Azure (see librdkafka issue #3109 for more info).
+        ///     Close broker connections after the specified time of inactivity. Disable with 0. If this property is left at its default value some heuristics are performed to determine a suitable default value, this is currently limited to identifying brokers on Azure (see librdkafka issue #3109 for more info). Actual value can be lower, up to 2s lower, only if `connections.max.idle.ms` >= 4s, as jitter is added to avoid disconnecting all brokers at the same time.
         ///
         ///     default: 0
         ///     importance: medium
@@ -1317,6 +1333,16 @@ namespace Confluent.Kafka
         /// ]]>
         /// </summary>
         public string SaslOauthbearerAssertionJwtTemplateFile { get { return Get("sasl.oauthbearer.assertion.jwt.template.file"); } set { this.SetObject("sasl.oauthbearer.assertion.jwt.template.file", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     Type of metadata-based authentication to use for OAUTHBEARER/OIDC `azure_imds` authenticates using the Azure IMDS endpoint. Sets a default value for `sasl.oauthbearer.token.endpoint.url` if missing. Configuration values specific of chosen authentication type can be passed through `sasl.oauthbearer.config`.
+        ///
+        ///     default: none
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public SaslOauthbearerMetadataAuthenticationType? SaslOauthbearerMetadataAuthenticationType { get { return (SaslOauthbearerMetadataAuthenticationType?)GetEnum(typeof(SaslOauthbearerMetadataAuthenticationType), "sasl.oauthbearer.metadata.authentication.type"); } set { this.SetObject("sasl.oauthbearer.metadata.authentication.type", value); } }
 
         /// <summary>
         /// <![CDATA[

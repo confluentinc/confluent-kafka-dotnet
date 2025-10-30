@@ -22,6 +22,7 @@ using Xunit;
 using System.Collections.Generic;
 using System.Linq;
 using Confluent.Kafka;
+using Confluent.Kafka.Examples.Protobuf;
 using Confluent.SchemaRegistry.Encryption;
 using Example;
 using Google.Protobuf;
@@ -467,6 +468,94 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.FavoriteColor, result.FavoriteColor);
             Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
             Assert.True(pic.SequenceEqual(result.Picture));
+        }
+
+        [Fact]
+        public void PayloadEncryption()
+        {
+            string schemaStr = @"syntax = ""proto3"";
+            import ""confluent/meta.proto"";
+
+            package example;
+
+            message PersonWithPic {
+                string favorite_color = 1;
+                int32 favorite_number = 2;
+                string name = 3 [(.confluent.field_meta) = { tags: ""PII"" }];
+                bytes picture = 4 [(.confluent.field_meta) = { tags: ""PII"" }];
+            }";
+
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Protobuf, null);
+            schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
+                {
+                    ["example.PersonWithPic.name"] = new HashSet<string> { "PII" },
+                    ["example.PersonWithPic.picture"] = new HashSet<string> { "PII" }
+
+                }, new Dictionary<string, string>(), new HashSet<string>()
+            );
+            schema.RuleSet = new RuleSet(new List<Rule>(), new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("encryptPII", RuleKind.Transform, RuleMode.WriteRead, "ENCRYPT_PAYLOAD", new HashSet<string>
+                    {
+                        "PII"
+                    }, new Dictionary<string, string>
+                    {
+                        ["encrypt.kek.name"] = "kek1",
+                        ["encrypt.kms.type"] = "local-kms",
+                        ["encrypt.kms.key.id"] = "mykey"
+                    })
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new ProtobufSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
+            IRuleExecutor ruleExecutor = new EncryptionExecutor(dekRegistryClient, clock);
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var serializer = new ProtobufSerializer<PersonWithPic>(schemaRegistryClient, config, ruleRegistry);
+            var deserializer = new ProtobufDeserializer<PersonWithPic>(schemaRegistryClient, null, ruleRegistry);
+
+
+            var pic = new byte[] { 1, 2, 3 };
+            var user = new PersonWithPic
+            {
+                FavoriteColor = "blue",
+                FavoriteNumber = 100,
+                Name = "awesome",
+                Picture = ByteString.CopyFrom(pic)
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            // The user name has been modified
+            Assert.Equal("awesome", result.Name);
+            Assert.Equal(user.FavoriteColor, result.FavoriteColor);
+            Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
+            Assert.True(pic.SequenceEqual(result.Picture));
+        }
+
+        [Fact]
+        public void ProtobufSerializerEncodesMessageIndexes()
+        {
+            var protoSerializer = new ProtobufSerializer<NestedOuter.Types.NestedMid2.Types.NestedLower>(schemaRegistryClient);
+
+            var value = new NestedOuter.Types.NestedMid2.Types.NestedLower();
+            value.Field2 = "field_2_value";
+
+            var bytes = protoSerializer.SerializeAsync(value, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            var schemaId = new SchemaId(SchemaType.Protobuf);
+            schemaId.FromBytes(bytes);
+
+            Assert.Equal(new[] {2, 1, 0}, schemaId.MessageIndexes);
         }
 
         [Fact]

@@ -148,6 +148,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw new InvalidOperationException("MessageDescriptor not found.");
             }
 
+            // The indexes are built in reverse order, so reverse them to get the correct order
+            indices.Reverse();
+
             return indices;
         }
 
@@ -173,7 +176,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     var schemaId = autoRegisterSchema
                         ? await schemaRegistryClient.RegisterSchemaAsync(subject, schema, normalizeSchemas).ConfigureAwait(continueOnCapturedContext: false)
                         : await schemaRegistryClient.GetSchemaIdAsync(subject, schema, normalizeSchemas).ConfigureAwait(continueOnCapturedContext: false);
-                    var registeredDependentSchema = await schemaRegistryClient.LookupSchemaAsync(subject, schema, true, normalizeSchemas).ConfigureAwait(continueOnCapturedContext: false);
+                    var registeredDependentSchema = await schemaRegistryClient.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas: true, normalize: normalizeSchemas).ConfigureAwait(continueOnCapturedContext: false);
                     return new SchemaReference(dependency.Name, subject, registeredDependentSchema.Version);
                 };
                 tasks.Add(t(fileDescriptor));
@@ -250,7 +253,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 .ConfigureAwait(continueOnCapturedContext: false)
                             : await schemaRegistryClient.LookupSchemaAsync(subject,
                                     new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
-                                        SchemaType.Protobuf), normalizeSchemas)
+                                        SchemaType.Protobuf), ignoreDeletedSchemas: true, normalize: normalizeSchemas)
                                 .ConfigureAwait(continueOnCapturedContext: false);
 
                         // note: different values for schemaId should never be seen here.
@@ -272,25 +275,31 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await ProtobufUtils.Transform(ctx, fdSet, message, transform).ConfigureAwait(false);
                     };
-                    value = (T) await ExecuteRules(context.Component == MessageComponentType.Key, subject,
-                            context.Topic, context.Headers, RuleMode.Write, null,
-                            latestSchema, value, fieldTransformer)
+                    value = await ExecuteRules(context.Component == MessageComponentType.Key,
+                            subject, context.Topic, context.Headers, RuleMode.Write,
+                            null, latestSchema, value, fieldTransformer)
+                        .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
-                
+
                 schemaId.MessageIndexes = indexArray;
 
+                var buffer = new byte[value.CalculateSize()];
+                value.WriteTo(buffer);
+                buffer = await ExecuteRules(context.Component == MessageComponentType.Key,
+                        subject, context.Topic, context.Headers, RulePhase.Encoding, RuleMode.Write,
+                        null, latestSchema, buffer, null)
+                    .ContinueWith(t => (byte[])t.Result)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+
                 var schemaIdSize = schemaIdEncoder.CalculateSize(ref schemaId);
-                var serializedMessageSize = value.CalculateSize();
+                var serializedMessageSize = buffer.Length;
 
-                var bufferSize = schemaIdSize // Schema ID size
-                                 + serializedMessageSize; // Serialized message size
-                
-                var buffer = new byte[bufferSize];
-                schemaIdEncoder.Encode(buffer, ref context, ref schemaId);
-                value.WriteTo(buffer.AsSpan(schemaIdSize));
+                var result = new byte[schemaIdSize + serializedMessageSize];
+                schemaIdEncoder.Encode(result, ref context, ref schemaId);
+                buffer.AsSpan().CopyTo(result.AsSpan(schemaIdSize));
 
-                return buffer;
+                return result;
             }
             catch (AggregateException e)
             {

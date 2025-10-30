@@ -50,15 +50,15 @@ namespace Confluent.Kafka.Examples.OAuthConsumer
 
         public static async Task Main(string[] args)
         {
-            if (args.Length != 5)
+            if (args.Length != 4)
             {
                 Console.WriteLine("Usage: .. brokerList topic group \"principal=<value> scope=<scope>\"");
                 return;
             }
-            string bootstrapServers = args[1];
-            string topicName = args[2];
-            string groupId = args[3];
-            string oauthConf = args[4];
+            string bootstrapServers = args[0];
+            string topicName = args[1];
+            string groupId = args[2];
+            string oauthConf = args[3];
 
             if (!Regex.IsMatch(oauthConf, OauthConfigRegexPattern))
             {

@@ -15,8 +15,8 @@
         <PackageId>Confluent.SchemaRegistry.Rules</PackageId>
         <Title>Confluent.SchemaRegistry.Rules</Title>
         <AssemblyName>Confluent.SchemaRegistry.Rules</AssemblyName>
-        <VersionPrefix>2.11.0</VersionPrefix>
-        <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+        <VersionPrefix>2.12.0</VersionPrefix>
+        <TargetFrameworks>netstandard2.1;net462;net6.0;net8.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <SignAssembly>true</SignAssembly>
@@ -34,7 +34,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Cel.NET" Version="0.3.2" />
+      <PackageReference Include="Cel.NET" Version="0.4.0" />
     </ItemGroup>
 
     <ItemGroup>

@@ -320,6 +320,7 @@ namespace Confluent.Kafka
             { "resolve_canonical_bootstrap_servers_only", "ResolveCanonicalBootstrapServersOnly"},
             { "client_credentials", "ClientCredentials"},
             { "urn:ietf:params:oauth:grant-type:jwt-bearer", "JwtBearer"},
+            { "azure_imds", "AzureIMDS"},
         };
 
         static string EnumNameToDotnetName(string enumName)

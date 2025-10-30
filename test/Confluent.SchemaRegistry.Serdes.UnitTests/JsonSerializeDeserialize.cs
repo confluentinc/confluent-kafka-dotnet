@@ -707,6 +707,162 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void CELFieldTransformWithNullable()
+        {
+            var schemaStr = @"{
+              ""type"": ""object"",
+              ""properties"": {
+                ""favorite_color"": {
+                  ""type"": ""string""
+                },
+                ""favorite_number"": {
+                  ""type"": ""number""
+                },
+                ""name"": {
+                  ""type"": [""string"", ""null""]
+                }
+              }
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
+                        "typeName == 'STRING' ; value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new JsonSerializer<Customer>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<Customer>(schemaRegistryClient);
+
+            var user = new Customer
+            {
+                FavoriteColor = "blue",
+                FavoriteNumber = 100,
+                Name = "awesome"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("awesome-suffix", result.Name);
+            Assert.Equal("blue-suffix", result.FavoriteColor);
+            Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
+        }
+
+        [Fact]
+        public void CELFieldTransformWithUnionOfRefs()
+        {
+            var schemaStr = @"{
+                ""type"": ""object"",
+                ""properties"": {
+                    ""messageType"": {
+                        ""type"": ""string""
+                    },
+                    ""version"": {
+                        ""type"": ""string""
+                    },
+                    ""payload"": {
+                        ""type"": ""object"",
+                        ""oneOf"": [
+                            {
+                                ""$ref"": ""#/$defs/authentication_request""
+                            },
+                            {
+                                ""$ref"": ""#/$defs/authentication_status""
+                            }
+                        ]
+                    }
+                },
+                ""required"": [
+                    ""payload"",
+                    ""messageType"",
+                    ""version""
+                ],
+                ""$defs"": {
+                    ""authentication_request"": {
+                        ""properties"": {
+                            ""messageId"": {
+                                ""type"": ""string"",
+                                ""confluent:tags"": [""PII""]
+                            },
+                            ""timestamp"": {
+                                ""type"": ""integer"",
+                                ""minimum"": 0
+                            },
+                            ""requestId"": {
+                                ""type"": ""string""
+                            }
+                        },
+                        ""required"": [
+                            ""messageId"",
+                            ""timestamp""
+                        ]
+                    },
+                    ""authentication_status"": {
+                        ""properties"": {
+                            ""messageId"": {
+                                ""type"": ""string"",
+                                ""confluent:tags"": [""PII""]
+                            },
+                            ""authType"": {
+                                ""type"": [
+                                    ""string"",
+                                    ""null""
+                                ]
+                            }
+                        },
+                        ""required"": [
+                            ""messageId"",
+                            ""authType""
+                        ]
+                    }
+                }
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
+                        "typeName == 'STRING' ; value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new JsonSerializer<Message>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<Message>(schemaRegistryClient);
+
+            var msg = new Message
+            {
+                MessageType = "authentication_request",
+                Version = "1.0",
+                Payload = new Payload
+                {
+                    MessageId = "12345",
+                    Timestamp = 1757410647
+                }
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(msg, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("12345-suffix", result.Payload.MessageId);
+        }
+
+        [Fact]
         public void CELFieldTransformWithDef()
         {
             var schemaStr = @"{
@@ -1035,6 +1191,81 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void PayloadEncryption()
+        {
+            var schemaStr = @"{
+              ""type"": ""object"",
+              ""properties"": {
+                ""favorite_color"": {
+                  ""type"": ""string""
+                },
+                ""favorite_number"": {
+                  ""type"": ""number""
+                },
+                ""name"": {
+                  ""type"": ""string"",
+                  ""confluent:tags"": [ ""PII"" ]
+                }
+              }
+            }";
+
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
+                {
+                    ["$.name"] = new HashSet<string> { "PII" }
+
+                }, new Dictionary<string, string>(), new HashSet<string>()
+            );
+            schema.RuleSet = new RuleSet(new List<Rule>(), new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("encryptPII", RuleKind.Transform, RuleMode.WriteRead, "ENCRYPT_PAYLOAD", new HashSet<string>
+                    {
+                        "PII"
+                    }, new Dictionary<string, string>
+                    {
+                        ["encrypt.kek.name"] = "kek1",
+                        ["encrypt.kms.type"] = "local-kms",
+                        ["encrypt.kms.key.id"] = "mykey"
+                    })
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
+            IRuleExecutor ruleExecutor = new EncryptionExecutor(dekRegistryClient, clock);
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var serializer = new JsonSerializer<Customer>(schemaRegistryClient, config, null,
+                ruleRegistry);
+            var deserializer = new JsonDeserializer<Customer>(schemaRegistryClient, null, null,
+                ruleRegistry);
+
+            var user = new Customer
+            {
+                FavoriteColor = "blue",
+                FavoriteNumber = 100,
+                Name = "awesome"
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer
+                .SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false,
+                new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            // The user name has been modified
+            Assert.Equal("awesome", result.Name);
+            Assert.Equal(user.FavoriteColor, result.FavoriteColor);
+            Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
+        }
+
+        [Fact]
         public void JSONataFullyCompatible()
         {
             var rule1To2 = "$merge([$sift($, function($v, $k) {$k != 'name'}), {'full_name': $.'name'}])";
@@ -1278,4 +1509,23 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public int DoorNumber { get; set; }
         public string DoorPin { get; set; }
     }
+
+    class Message
+    {
+        [JsonProperty("messageType")]
+        public string MessageType { get; set; }
+        [JsonProperty("version")]
+        public string Version { get; set; }
+        [JsonProperty("payload")]
+        public Payload Payload { get; set; }
+    }
+
+    class Payload
+    {
+        [JsonProperty("messageId")]
+        public string MessageId { get; set; }
+        [JsonProperty("timestamp")]
+        public int Timestamp { get; set; }
+    }
+
 }

@@ -15,8 +15,8 @@
     <PackageId>Confluent.SchemaRegistry.Serdes.Json</PackageId>
     <Title>Confluent.SchemaRegistry.Serdes.Json</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Json</AssemblyName>
-    <VersionPrefix>2.11.0</VersionPrefix>
-    <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
+    <VersionPrefix>2.12.0</VersionPrefix>
+    <TargetFrameworks>netstandard2.0;net462;net6.0;net8.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
@@ -35,7 +35,7 @@
     <ProjectReference Include="..\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'net462'">
     <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
     <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
   </ItemGroup>

@@ -1,7 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <AssemblyName>OAuthOIDCAzureIMDS</AssemblyName>
     <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -74,12 +74,12 @@ namespace Confluent.SchemaRegistry
 
         private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<int, Task<RegisteredSchema>>> schemaByVersionBySubject =
             new ConcurrentDictionary<string, ConcurrentDictionary<int, Task<RegisteredSchema>>>();
-        
+
         private readonly ConcurrentDictionary<string /*subject*/, ConcurrentDictionary<Schema, Task<RegisteredSchema>>> registeredSchemaBySchemaBySubject =
             new ConcurrentDictionary<string, ConcurrentDictionary<Schema, Task<RegisteredSchema>>>();
 
         private readonly MemoryCache latestVersionBySubject = new MemoryCache(new MemoryCacheOptions());
-        
+
         private readonly MemoryCache latestWithMetadataBySubject = new MemoryCache(new MemoryCacheOptions());
 
         private SubjectNameStrategyDelegate keySubjectNameStrategy;
@@ -107,6 +107,11 @@ namespace Confluent.SchemaRegistry
         public const int DefaultRetriesMaxWaitMs = RestService.DefaultRetriesMaxWaitMs;
 
         /// <summary>
+        ///     The default maximum number of connections per server.
+        /// </summary>
+        public const int DefaultMaxConnectionsPerServer = 20;
+
+        /// <summary>
         ///     The default maximum capacity of the local schema cache.
         /// </summary>
         public const int DefaultMaxCachedSchemas = 1000;
@@ -131,7 +136,6 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Topic;
 
-        
         /// <inheritdoc />
         public IEnumerable<KeyValuePair<string, string>> Config
             => config;
@@ -208,7 +212,7 @@ namespace Confluent.SchemaRegistry
             {
                 throw new ArgumentNullException("config");
             }
-            
+
             this.config = config;
             this.authHeaderProvider = authenticationHeaderValueProvider;
             this.proxy = proxy;
@@ -278,6 +282,19 @@ namespace Confluent.SchemaRegistry
                     $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs} must be an integer.");
             }
 
+            var maxConnectionsPerServerMaybe = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxConnectionsPerServer);
+            int maxConnectionsPerServer;
+            try
+            {
+                maxConnectionsPerServer = maxConnectionsPerServerMaybe.Value == null ? DefaultMaxConnectionsPerServer : Convert.ToInt32(maxConnectionsPerServerMaybe.Value);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(
+                    $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxConnectionsPerServer} must be an integer.");
+            }
+
             var identityMapCapacityMaybe = config.FirstOrDefault(prop =>
                 prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas);
             try
@@ -305,7 +322,7 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentException(
                     $"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs} must be an integer.");
             }
-            
+
             authenticationHeaderValueProvider = RestService.AuthenticationHeaderValueProvider(
                 config, authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs);
 
@@ -321,6 +338,7 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxConnectionsPerServer &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
@@ -362,7 +380,7 @@ namespace Confluent.SchemaRegistry
             var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
             var sslCaCertificate = string.IsNullOrEmpty(sslCaLocation) ? null : new X509Certificate2(sslCaLocation);
             this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
-                SetSslConfig(config), sslVerify, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs);
+                SetSslConfig(config), sslVerify, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, maxConnectionsPerServer);
         }
 
         /// <summary>
@@ -393,10 +411,10 @@ namespace Confluent.SchemaRegistry
 
         /// <remarks>
         ///     This is to make sure memory doesn't explode in the case of incorrect usage.
-        /// 
-        ///     It's behavior is pretty extreme - remove everything and start again if the 
+        ///
+        ///     It's behavior is pretty extreme - remove everything and start again if the
         ///     cache gets full. However, in practical situations this is not expected.
-        /// 
+        ///
         ///     TODO: Implement an LRU Cache here or something instead.
         /// </remarks>
         private bool CleanCacheIfFull()
@@ -504,9 +522,9 @@ namespace Confluent.SchemaRegistry
                     registeredSchemaBySchema.TryRemove(schema, out registeredSchema);
                 }
             }
-            
+
             CleanCacheIfFull();
-            
+
             registeredSchemaBySchema = registeredSchemaBySchemaBySubject.GetOrAdd(subject, _ => new ConcurrentDictionary<Schema, Task<RegisteredSchema>>());
             return await registeredSchemaBySchema.GetOrAddAsync(schema, _ => restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas, normalize)).ConfigureAwait(continueOnCapturedContext: false);
         }
@@ -519,7 +537,7 @@ namespace Confluent.SchemaRegistry
             {
                 return await schema.ConfigureAwait(false);
             }
-            
+
             CleanCacheIfFull();
             return await schemaById.GetOrAddAsync(schemaId, _ => restService.GetSchemaAsync(id, format)).ConfigureAwait(continueOnCapturedContext: false);
         }
@@ -546,7 +564,7 @@ namespace Confluent.SchemaRegistry
             {
                 return await schema.ConfigureAwait(false);
             }
-            
+
             return await schemaByGuid.GetOrAddAsync(schemaGuid, _ => restService.GetSchemaByGuidAsync(guid, format)).ConfigureAwait(continueOnCapturedContext: false);
         }
 
@@ -561,13 +579,13 @@ namespace Confluent.SchemaRegistry
                     return await schema.ConfigureAwait(false);
                 }
             }
-            
+
             CleanCacheIfFull();
             schemaByVersion = schemaByVersionBySubject.GetOrAdd(subject, _ => new ConcurrentDictionary<int, Task<RegisteredSchema>>());
             return await schemaByVersion.GetOrAddAsync(version, async _ =>
             {
                 var schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(continueOnCapturedContext: false);
-                
+
                 // We already have the schema so we can add it to the cache.
                 var format = GetSchemaFormat(schema.SchemaString);
                 schemaById.TryAdd(new SchemaId(schema.Id, format), Task.FromResult(schema.Schema));
