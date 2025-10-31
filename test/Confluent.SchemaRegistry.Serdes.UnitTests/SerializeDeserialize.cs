@@ -129,6 +129,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroDeserializer = new AvroDeserializer<byte[]>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.SerializeAsync(new byte[] { 2, 3, 4 }, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            Assert.Equal(new byte[] { 0, 0, 0, 0, 1, 2, 3, 4 }, bytes);
             Assert.Equal(new byte[] { 2, 3, 4 }, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
