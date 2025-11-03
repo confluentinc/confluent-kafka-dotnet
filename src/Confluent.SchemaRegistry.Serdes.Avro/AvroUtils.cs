@@ -114,23 +114,40 @@ namespace Confluent.SchemaRegistry.Serdes
                     return await Utils.TransformDictionaryAsync(message, mapTransformer).ConfigureAwait(false);
                 case Avro.Schema.Type.Record:
                     RecordSchema rs = (RecordSchema)schema;
+                    if (message is ISpecificRecord)
+                    {
+                        ISpecificRecord specificRecord = (ISpecificRecord)message;
+                        rs = (RecordSchema)specificRecord.Schema;
+                    }
+                    else if (message is GenericRecord)
+                    {
+                        GenericRecord genericRecord = (GenericRecord)message;
+                        rs = (RecordSchema)genericRecord.Schema;
+                    }
                     foreach (Field f in rs.Fields)
                     {
+                        Field originalField = null;
+                        if (!((RecordSchema)schema).TryGetField(f.Name, out originalField))
+                        {
+                            originalField = f;
+                        }
+
                         string fullName = rs.Fullname + "." + f.Name;
-                        using (ctx.EnterField(message, fullName, f.Name, GetType(f.Schema), GetInlineTags(f)))
+                        using (ctx.EnterField(message, fullName, f.Name, GetType(originalField.Schema), GetInlineTags(originalField)))
                         {
                             if (message is ISpecificRecord)
                             {
                                 ISpecificRecord specificRecord = (ISpecificRecord)message;
                                 object value = specificRecord.Get(f.Pos);
-                                object newValue = await Transform(ctx, f.Schema, value, fieldTransform).ConfigureAwait(false);
+                                object newValue = await Transform(ctx, originalField.Schema, value, fieldTransform).ConfigureAwait(false);
                                 if (ctx.Rule.Kind == RuleKind.Condition)
                                 {
                                     if (newValue is bool b && !b)
                                     {
                                         throw new RuleConditionException(ctx.Rule);
                                     }
-                                } else
+                                }
+                                else
                                 {
                                     specificRecord.Put(f.Pos, newValue);
                                 }
@@ -139,7 +156,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             {
                                 GenericRecord genericRecord = (GenericRecord)message;
                                 object value = genericRecord.GetValue(f.Pos);
-                                object newValue = await Transform(ctx, f.Schema, value, fieldTransform).ConfigureAwait(false);
+                                object newValue = await Transform(ctx, originalField.Schema, value, fieldTransform).ConfigureAwait(false);
                                 if (ctx.Rule.Kind == RuleKind.Condition)
                                 {
                                     if (newValue is bool b && !b)
