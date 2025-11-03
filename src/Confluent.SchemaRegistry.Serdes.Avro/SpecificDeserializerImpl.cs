@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Avro;
 using Avro.Specific;
 using Avro.IO;
 using Avro.Generic;
@@ -158,10 +159,18 @@ namespace Confluent.SchemaRegistry.Serdes
                 DatumReader<T> datumReader = null;
                 if (migrations.Count > 0)
                 {
-                    using (var memoryStream = new ReadOnlyMemoryStream(payload))
+                    // If the writer schema is a simple bytes type, read bytes directly
+                    if (writerSchema.Tag == Avro.Schema.Type.Bytes)
                     {
-                        data = new GenericReader<GenericRecord>(writerSchema, writerSchema)
-                            .Read(default(GenericRecord), new BinaryDecoder(memoryStream));
+                        data = payload.ToArray();
+                    }
+                    else
+                    {
+                        using (var memoryStream = new ReadOnlyMemoryStream(payload))
+                        {
+                            data = new GenericReader<GenericRecord>(writerSchema, writerSchema)
+                                .Read(default(GenericRecord), new BinaryDecoder(memoryStream));
+                        }
                     }
                         
                     string jsonString = null;
@@ -188,10 +197,18 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
                 else
                 {
-                    datumReader = await GetDatumReader(writerSchema, ReaderSchema).ConfigureAwait(false);
-                    
-                    using var stream = new ReadOnlyMemoryStream(payload);
-                    data = Read(datumReader, new BinaryDecoder(stream));
+                    // If the writer schema is a simple bytes type, read bytes directly
+                    if (writerSchema.Tag == Avro.Schema.Type.Bytes)
+                    {
+                        data = payload.ToArray();
+                    }
+                    else
+                    {
+                        datumReader = await GetDatumReader(writerSchema, ReaderSchema).ConfigureAwait(false);
+
+                        using var stream = new ReadOnlyMemoryStream(payload);
+                        data = Read(datumReader, new BinaryDecoder(stream));
+                    }
                 }
 
                 Schema readerSchemaJson = latestSchema ?? writerSchemaJson;
@@ -214,11 +231,13 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
-        protected override Task<Avro.Schema> ParseSchema(Schema schema)
+        protected override async Task<Avro.Schema> ParseSchema(Schema schema)
         {
-            return Task.FromResult(Avro.Schema.Parse(schema.SchemaString));
+            SchemaNames namedSchemas = await AvroUtils.ResolveNamedSchema(schema, schemaRegistryClient)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            return Avro.Schema.Parse(schema.SchemaString, namedSchemas);
         }
-        
+
         private async Task<DatumReader<T>> GetDatumReader(Avro.Schema writerSchema, Avro.Schema readerSchema)
         {
             DatumReader<T> datumReader = null;

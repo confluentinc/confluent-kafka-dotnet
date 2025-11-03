@@ -34,6 +34,30 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 {
     public class SerializeDeserializeTests : BaseSerializeDeserializeTests
     {
+        public string schema1 = @"
+{
+        ""type"": ""record"",
+        ""name"": ""test"",
+        ""fields"": [
+            {""name"": ""refField"", ""type"": ""test2""}
+        ]
+    }
+";
+
+        public string schema2 = @"
+{
+        ""type"": ""record"",
+        ""name"": ""test2"",
+        ""fields"": [
+            {""name"": ""intField"", ""type"": ""int""},
+            {""name"": ""doubleField"", ""type"": ""double""},
+            {""name"": ""stringField"", ""type"": ""string""},
+            {""name"": ""booleanField"", ""type"": ""boolean""},
+            {""name"": ""bytesField"", ""type"": ""bytes""}
+        ]
+    }
+";
+
         public SerializeDeserializeTests() : base()
         {
         }
@@ -105,6 +129,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroDeserializer = new AvroDeserializer<byte[]>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.SerializeAsync(new byte[] { 2, 3, 4 }, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            Assert.Equal(new byte[] { 0, 0, 0, 0, 1, 2, 3, 4 }, bytes);
             Assert.Equal(new byte[] { 2, 3, 4 }, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
@@ -1016,32 +1041,87 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
             var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
 
-            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            var user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "awesome");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = serializer.SerializeAsync(user,
+                new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false,
+                new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
 
             Assert.Equal(user["name"], result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
             Assert.Equal(user["favorite_number"], result["favorite_number"]);
 
             // serialize second object
-            user = new GenericRecord((RecordSchema) User._SCHEMA);
+            user = new GenericRecord((RecordSchema)User._SCHEMA);
             user.Add("name", "cool");
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "red");
 
-            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            bytes = serializer.SerializeAsync(user,
+                new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
 
-            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            result = deserializer.DeserializeAsync(bytes, false,
+                new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
 
             Assert.Equal(user["name"], result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
             Assert.Equal(user["favorite_number"], result["favorite_number"]);
+        }
+
+        [Fact]
+        public void GenericRecordWithReferences()
+        {
+            var subject1 = "topic-value";
+            var subject2 = "ref";
+
+            var registeredSchema2 = new RegisteredSchema(subject2, 1, 1, schema2, SchemaType.Avro, null);
+            store[schema2] = 1;
+            subjectStore[subject2] = new List<RegisteredSchema> { registeredSchema2 };
+
+            var refs = new List<SchemaReference> { new SchemaReference("test2", subject2, 1) };
+            var registeredSchema1 = new RegisteredSchema(subject1, 1, 2, schema1, SchemaType.Avro, refs);
+            store[schema1] = 2;
+            subjectStore[subject1] = new List<RegisteredSchema> { registeredSchema1 };
+
+            var config = new AvroSerializerConfig
+            {
+                UseLatestVersion = true,
+                AutoRegisterSchemas = false,
+                SubjectNameStrategy = SubjectNameStrategy.Topic
+            };
+
+            Avro.RecordSchema parsedSchema2 = (RecordSchema) Avro.Schema.Parse(schema2);
+            SchemaNames schemaNames = new SchemaNames();
+            schemaNames.Add(parsedSchema2.SchemaName, parsedSchema2);
+            Avro.Schema parsedSchema1 = Avro.Schema.Parse(schema1, schemaNames);
+
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
+            var obj2 = new GenericRecord((RecordSchema) parsedSchema2);
+            obj2.Add("intField", 123);
+            obj2.Add("doubleField", 45.67);
+            obj2.Add("stringField", "hi");
+            obj2.Add("booleanField", true);
+            obj2.Add("bytesField", new byte[]{1, 2, 3});
+
+            var obj1 = new GenericRecord((RecordSchema) parsedSchema1);
+            obj1.Add("refField", obj2);
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(obj1, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            var refField = (GenericRecord) result["refField"];
+            Assert.Equal(obj2["intField"], refField["intField"]);
+            Assert.Equal(obj2["doubleField"], refField["doubleField"]);
+            Assert.Equal(obj2["stringField"], refField["stringField"]);
+            Assert.Equal(obj2["booleanField"], refField["booleanField"]);
+            Assert.Equal(obj2["bytesField"], refField["bytesField"]);
         }
 
         [Fact]

@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Avro;
 using Avro.IO;
 using Avro.Specific;
 using Confluent.Kafka;
@@ -220,7 +221,15 @@ namespace Confluent.SchemaRegistry.Serdes
                 
                 using (var stream = new MemoryStream(initialBufferSize))
                 {
-                    currentSchemaData.AvroWriter.Write(data, new BinaryEncoder(stream));
+                    // If the writer schema is a simple bytes type, write bytes directly
+                    if (currentSchemaData.WriterSchema.Tag == Avro.Schema.Type.Bytes && data is byte[] byteData)
+                    {
+                        stream.Write(byteData, 0, byteData.Length);
+                    }
+                    else
+                    {
+                        currentSchemaData.AvroWriter.Write(data, new BinaryEncoder(stream));
+                    }
                     
                     var buffer = await ExecuteRules(isKey, subject, topic, headers, RulePhase.Encoding, RuleMode.Write,
                             null, latestSchema, stream.ToArray(), null)
@@ -243,9 +252,11 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
         
-        protected override Task<Avro.Schema> ParseSchema(Schema schema)
+        protected override async Task<Avro.Schema> ParseSchema(Schema schema)
         {
-            return Task.FromResult(Avro.Schema.Parse(schema.SchemaString));
+            SchemaNames namedSchemas = await AvroUtils.ResolveNamedSchema(schema, schemaRegistryClient)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            return Avro.Schema.Parse(schema.SchemaString, namedSchemas);
         }
     }
 }
