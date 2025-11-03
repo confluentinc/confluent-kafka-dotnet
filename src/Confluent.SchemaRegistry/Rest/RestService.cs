@@ -331,9 +331,8 @@ namespace Confluent.SchemaRegistry
                             catch (JsonReaderException)
                             {
                                 // content isn’t json
-                                throw new HttpRequestException(
-                                    $"Unexpected non-JSON response from server ({(int)response.StatusCode} {response.StatusCode}): {content}"
-                                );
+                                throw new SchemaRegistryException(message, response.StatusCode, errorCode, 
+                                    new HttpRequestException($"Unexpected non-JSON response from server ({(int)response.StatusCode} {response.StatusCode}): {content}"));
                             }
                             catch
                             {
@@ -346,8 +345,8 @@ namespace Confluent.SchemaRegistry
                         }
 
                         // no content
-                        throw new HttpRequestException(
-                            $"Server returned {(int)response.StatusCode} ({response.StatusCode}) with no content.");
+                        throw new SchemaRegistryException(message, response.StatusCode, errorCode, 
+                            new HttpRequestException($"Server returned {(int)response.StatusCode} ({response.StatusCode}) with no content."));
                     }
 
                     if (!firstError)
