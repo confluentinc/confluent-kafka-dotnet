@@ -80,6 +80,14 @@ public struct SchemaId
         MessageIndexes = null;
     }
     
+    public SchemaId(SchemaType schemaType, int id, string guid, IReadOnlyList<int> messageIndexes)
+    {
+        SchemaType = schemaType;
+        Id = id;
+        Guid = guid != null ? System.Guid.Parse(guid) : null;
+        MessageIndexes = messageIndexes;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> FromBytes(ReadOnlyMemory<byte> payload)
     {
