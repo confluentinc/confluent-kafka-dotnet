@@ -328,10 +328,14 @@ namespace Confluent.SchemaRegistry
 
                                 throw new SchemaRegistryException(message, response.StatusCode, errorCode);
                             }
+                            catch (SchemaRegistryException)
+                            {
+                                throw;
+                            }
                             catch (JsonReaderException)
                             {
                                 // content isn’t json
-                                throw new SchemaRegistryException(message, response.StatusCode, errorCode, 
+                                throw new SchemaRegistryException(message, response.StatusCode, errorCode,
                                     new HttpRequestException($"Unexpected non-JSON response from server ({(int)response.StatusCode} {response.StatusCode}): {content}"));
                             }
                             catch
