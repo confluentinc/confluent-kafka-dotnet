@@ -237,8 +237,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     
                     if (latestSchema != null)
                     {
-                        schemaId = new SchemaId(SchemaType.Protobuf, latestSchema.Id, latestSchema.Guid);
-                        schemaId.MessageIndexes = indexArray;
+                        schemaId = new SchemaId(SchemaType.Protobuf, latestSchema.Id, latestSchema.Guid, indexArray);
                     }
                     else if (!subjectsRegistered.Contains(subject))
                     {
@@ -260,8 +259,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         // note: different values for schemaId should never be seen here.
                         // TODO: but fail fast may be better here.
 
-                        schemaId = new SchemaId(SchemaType.Protobuf, outputSchema.Id, outputSchema.Guid);
-                        schemaId.MessageIndexes = indexArray;
+                        schemaId = new SchemaId(SchemaType.Protobuf, outputSchema.Id, outputSchema.Guid, indexArray);
                         subjectsRegistered.Add(subject);
                     }
                 }
