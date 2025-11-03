@@ -238,6 +238,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     if (latestSchema != null)
                     {
                         schemaId = new SchemaId(SchemaType.Protobuf, latestSchema.Id, latestSchema.Guid);
+                        schemaId.MessageIndexes = indexArray;
                     }
                     else if (!subjectsRegistered.Contains(subject))
                     {
@@ -260,6 +261,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         // TODO: but fail fast may be better here.
 
                         schemaId = new SchemaId(SchemaType.Protobuf, outputSchema.Id, outputSchema.Guid);
+                        schemaId.MessageIndexes = indexArray;
                         subjectsRegistered.Add(subject);
                     }
                 }
@@ -281,8 +283,6 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
-
-                schemaId.MessageIndexes = indexArray;
 
                 var buffer = new byte[value.CalculateSize()];
                 value.WriteTo(buffer);
