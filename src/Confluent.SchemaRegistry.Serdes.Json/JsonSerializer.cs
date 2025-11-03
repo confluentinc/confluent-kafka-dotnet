@@ -65,12 +65,6 @@ namespace Confluent.SchemaRegistry.Serdes
         
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 
-        /// <remarks>
-        ///     A given schema is uniquely identified by a schema id, even when
-        ///     registered against multiple subjects.
-        /// </remarks>
-        private SchemaId schemaId;
-
         private JsonSchema schema;
         private string schemaText;
         private string schemaFullname;
@@ -205,6 +199,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 string subject;
                 RegisteredSchema latestSchema = null;
+                SchemaId schemaId = default;
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {

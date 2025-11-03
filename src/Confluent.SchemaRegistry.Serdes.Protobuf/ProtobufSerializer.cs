@@ -55,12 +55,6 @@ namespace Confluent.SchemaRegistry.Serdes
         private bool skipKnownTypes = true;
         private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy;
 
-        /// <remarks>
-        ///     A given schema is uniquely identified by a schema id, even when
-        ///     registered against multiple subjects.
-        /// </remarks>
-        private SchemaId schemaId;
-
         private List<int> indexArray;
 
 
@@ -228,6 +222,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 string subject;
                 RegisteredSchema latestSchema;
+                SchemaId schemaId = default;
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
