@@ -400,7 +400,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordCELFieldTransformEvolve()
+        public void ISpecificRecordCELFieldTransformMissingProp()
         {
             var schemaStr =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific\",\"fields\":[" +
