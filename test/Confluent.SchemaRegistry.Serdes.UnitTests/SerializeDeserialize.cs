@@ -407,7 +407,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 "{\"name\":\"name\",\"type\":\"string\"}," +
                 "{\"name\":\"favorite_number\",\"type\":[\"int\",\"null\"]}," +
                 "{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}," +
-                "{\"name\":\"missing\",\"type\":[\"string\",\"null\"],\"default\":null}]}";
+                "{\"name\":\"missing\",\"type\":[\"null\",\"string\"],\"default\":null}]}";
 
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
             schema.RuleSet = new RuleSet(new List<Rule>(),
