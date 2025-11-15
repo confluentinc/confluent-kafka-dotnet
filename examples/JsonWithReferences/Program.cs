@@ -22,7 +22,12 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+#if NET8_0_OR_GREATER
 using NJsonSchema.NewtonsoftJson.Generation;
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.NewtonsoftJson.Generation.NewtonsoftJsonSchemaGeneratorSettings;
+#else
+using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.Generation.JsonSchemaGeneratorSettings;
+#endif
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
