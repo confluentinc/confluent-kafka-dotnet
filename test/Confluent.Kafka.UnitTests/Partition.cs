@@ -67,6 +67,17 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
+        public void CompareTo()
+        {
+            Partition a = new Partition(42);
+            Partition a2 = new Partition(42);
+            Partition b = new Partition(37);
+            Assert.True(a.CompareTo(b) > 0);
+            Assert.True(b.CompareTo(a) < 0);
+            Assert.True(a.CompareTo(a2) == 0);
+        }
+
+        [Fact]
         public void Hash()
         {
             Partition partition = new Partition(42);
