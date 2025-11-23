@@ -129,6 +129,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroDeserializer = new AvroDeserializer<byte[]>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.SerializeAsync(new byte[] { 2, 3, 4 }, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            Assert.Equal(new byte[] { 0, 0, 0, 0, 1, 2, 3, 4 }, bytes);
             Assert.Equal(new byte[] { 2, 3, 4 }, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
@@ -395,6 +396,52 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             Assert.Equal("awesome-suffix", result.name);
             Assert.Equal("blue-suffix", result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
+        public void ISpecificRecordCELFieldTransformMissingProp()
+        {
+            var schemaStr =
+                "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific\",\"fields\":[" +
+                "{\"name\":\"name\",\"type\":\"string\"}," +
+                "{\"name\":\"favorite_number\",\"type\":[\"int\",\"null\"]}," +
+                "{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}," +
+                "{\"name\":\"missing\",\"type\":[\"null\",\"string\"],\"default\":null}]}";
+
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.WriteRead, "CEL_FIELD", null, null,
+                        "typeName == 'STRING' ; value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new AvroSerializer<UserWithPic>(schemaRegistryClient, config);
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, null);
+
+            var pic = new byte[] { 1, 2, 3 };
+            var user = new UserWithPic()
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome",
+                picture = pic
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("awesome-suffix-suffix", result.name);
+            Assert.Equal("blue-suffix-suffix", result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
         }
 

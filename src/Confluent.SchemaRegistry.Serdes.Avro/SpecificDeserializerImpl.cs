@@ -159,10 +159,18 @@ namespace Confluent.SchemaRegistry.Serdes
                 DatumReader<T> datumReader = null;
                 if (migrations.Count > 0)
                 {
-                    using (var memoryStream = new ReadOnlyMemoryStream(payload))
+                    // If the writer schema is a simple bytes type, read bytes directly
+                    if (writerSchema.Tag == Avro.Schema.Type.Bytes)
                     {
-                        data = new GenericReader<GenericRecord>(writerSchema, writerSchema)
-                            .Read(default(GenericRecord), new BinaryDecoder(memoryStream));
+                        data = payload.ToArray();
+                    }
+                    else
+                    {
+                        using (var memoryStream = new ReadOnlyMemoryStream(payload))
+                        {
+                            data = new GenericReader<GenericRecord>(writerSchema, writerSchema)
+                                .Read(default(GenericRecord), new BinaryDecoder(memoryStream));
+                        }
                     }
                         
                     string jsonString = null;
@@ -189,10 +197,18 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
                 else
                 {
-                    datumReader = await GetDatumReader(writerSchema, ReaderSchema).ConfigureAwait(false);
-                    
-                    using var stream = new ReadOnlyMemoryStream(payload);
-                    data = Read(datumReader, new BinaryDecoder(stream));
+                    // If the writer schema is a simple bytes type, read bytes directly
+                    if (writerSchema.Tag == Avro.Schema.Type.Bytes)
+                    {
+                        data = payload.ToArray();
+                    }
+                    else
+                    {
+                        datumReader = await GetDatumReader(writerSchema, ReaderSchema).ConfigureAwait(false);
+
+                        using var stream = new ReadOnlyMemoryStream(payload);
+                        data = Read(datumReader, new BinaryDecoder(stream));
+                    }
                 }
 
                 Schema readerSchemaJson = latestSchema ?? writerSchemaJson;

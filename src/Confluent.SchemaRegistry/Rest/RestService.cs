@@ -445,6 +445,7 @@ namespace Confluent.SchemaRegistry
         {
             HttpRequestMessage request = new HttpRequestMessage(method, endPoint);
             request.Headers.Add("Accept", acceptHeader);
+            request.Headers.Add("Confluent-Accept-Unknown-Properties", "true");
             if (jsonBody.Length != 0)
             {
                 string stringContent = string.Join("\n", jsonBody.Select(x => JsonConvert.SerializeObject(x)));

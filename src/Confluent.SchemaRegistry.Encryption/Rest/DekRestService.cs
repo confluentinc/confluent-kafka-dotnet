@@ -94,9 +94,28 @@ namespace Confluent.SchemaRegistry.Encryption
                 .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<RegisteredDek> CreateDekAsync(string kekName, Dek dek)
-            => await RequestAsync<RegisteredDek>($"dek-registry/v1/keks/{Uri.EscapeDataString(kekName)}/deks",
-                    HttpMethod.Post, dek)
-                .ConfigureAwait(continueOnCapturedContext: false);
+        {
+            try
+            {
+                // Try the new API with subject in the path
+                return await RequestAsync<RegisteredDek>(
+                        $"dek-registry/v1/keks/{Uri.EscapeDataString(kekName)}/deks/{Uri.EscapeDataString(dek.Subject)}",
+                        HttpMethod.Post, dek)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+            }
+            catch (SchemaRegistryException e)
+            {
+                if (e.Status == HttpStatusCode.MethodNotAllowed)
+                {
+                    // Try fallback to older API that does not have subject in the path
+                    return await RequestAsync<RegisteredDek>(
+                            $"dek-registry/v1/keks/{Uri.EscapeDataString(kekName)}/deks",
+                            HttpMethod.Post, dek)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                }
+                throw;
+            }
+        }
 
         #endregion Deks
 
