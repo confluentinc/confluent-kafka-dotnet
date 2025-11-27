@@ -61,7 +61,7 @@ namespace Confluent.SchemaRegistry.Encryption.Vendored.Miscreant
 		{
 			if (disposed)
 			{
-				throw new ObjectDisposedException(nameof(StreamEncryptor));
+				throw new ObjectDisposedException(nameof(StreamDecryptor));
 			}
 
 			if (finished)

@@ -78,7 +78,7 @@ namespace Confluent.SchemaRegistry.Encryption.Vendored.Miscreant
 		{
 			if (disposed)
 			{
-				throw new ObjectDisposedException(nameof(AesCmac));
+				throw new ObjectDisposedException(nameof(AesPmac));
 			}
 
 			var seg = new ArraySegment<byte>(input, index, size);
@@ -120,7 +120,7 @@ namespace Confluent.SchemaRegistry.Encryption.Vendored.Miscreant
 		{
 			if (disposed)
 			{
-				throw new ObjectDisposedException(nameof(AesCmac));
+				throw new ObjectDisposedException(nameof(AesPmac));
 			}
 
 			if (position == BlockSize)
