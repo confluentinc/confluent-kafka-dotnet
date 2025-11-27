@@ -34,7 +34,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Cel.NET" Version="0.4.0" />
+      <PackageReference Include="Cel.NET" Version="1.0.0" />
     </ItemGroup>
 
     <ItemGroup>
