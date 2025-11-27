@@ -28,7 +28,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-        <PackageReference Include="Microsoft.Bcl.Cryptography" Version="10.0.0-preview.6.25358.103" />
+        <PackageReference Include="Microsoft.Bcl.Cryptography" Version="10.0.0" />
     </ItemGroup>
 
     <ItemGroup>
