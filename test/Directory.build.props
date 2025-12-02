@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <Import Project="../Directory.Build.props"/>
+</Project>

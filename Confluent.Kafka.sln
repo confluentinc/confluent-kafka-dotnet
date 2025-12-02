@@ -101,6 +101,28 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{B544BD
 		src\Shared\SetEqualityComparer.cs = src\Shared\SetEqualityComparer.cs
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{D5322057-682D-49F2-A2FB-68FA69187B28}"
+				ProjectSection(SolutionItems) = preProject
+								README.md = README.md
+								Directory.Build.props = Directory.Build.props
+								.editorconfig = .editorconfig
+				EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BA928213-B366-4290-A4AA-E0FA094333FE}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.build.props = src\Directory.build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{EDA3CED2-A80E-44F5-B5E4-79E38BC1376F}"
+	ProjectSection(SolutionItems) = preProject
+		test\Directory.build.props = test\Directory.build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{A4A6EEAB-8053-4746-892F-683FC7C21622}"
+	ProjectSection(SolutionItems) = preProject
+		examples\Directory.build.props = examples\Directory.build.props
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -673,6 +695,9 @@ Global
 		{6988FB1F-3648-4E5E-821F-55D67CA00FD7} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
 		{10CD6000-59A3-40C9-905F-20F4EE03C1B4} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
 		{B544BD2C-F46D-4C68-8A31-3010E371E640} = {1EFCD839-0726-4BCE-B745-1E829991B1BC}
+		{BA928213-B366-4290-A4AA-E0FA094333FE} = {D5322057-682D-49F2-A2FB-68FA69187B28}
+		{EDA3CED2-A80E-44F5-B5E4-79E38BC1376F} = {D5322057-682D-49F2-A2FB-68FA69187B28}
+		{A4A6EEAB-8053-4746-892F-683FC7C21622} = {D5322057-682D-49F2-A2FB-68FA69187B28}
 		{85ABD85A-53A2-4222-BE99-CE51F639F623} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
 		{493C1E83-B424-488D-B6D6-713D07EF4152} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
 		{E72DAB16-FAF7-4365-8151-9450007C93A0} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
