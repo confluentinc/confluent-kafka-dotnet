@@ -110,17 +110,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{D5322057
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BA928213-B366-4290-A4AA-E0FA094333FE}"
 	ProjectSection(SolutionItems) = preProject
-		src\Directory.build.props = src\Directory.build.props
+		src\Directory.Build.props = src\Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{EDA3CED2-A80E-44F5-B5E4-79E38BC1376F}"
 	ProjectSection(SolutionItems) = preProject
-		test\Directory.build.props = test\Directory.build.props
+		test\Directory.Build.props = test\Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{A4A6EEAB-8053-4746-892F-683FC7C21622}"
 	ProjectSection(SolutionItems) = preProject
-		examples\Directory.build.props = examples\Directory.build.props
+		examples\Directory.Build.props = examples\Directory.Build.props
 	EndProjectSection
 EndProject
 Global
