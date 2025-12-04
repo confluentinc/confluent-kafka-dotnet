@@ -47,9 +47,9 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Gets the client version header value in the format "dotnet/{version}".
         /// </summary>
-        /// <returns>The client version header value (e.g., "dotnet/2.12.0")</returns>
         private static string GetClientVersionHeaderValue()
         {
+            // Use the version set in the csproj file, currently in <VersionPrefix> property.
             var version = typeof(RestService).Assembly.GetName().Version;
             return $"dotnet/{version.Major}.{version.Minor}.{version.Build}";
         }
