@@ -45,6 +45,16 @@ namespace Confluent.SchemaRegistry
         public const int DefaultMaxConnectionsPerServer = 20;
 
         /// <summary>
+        ///     Gets the client version header value in the format "dotnet/{version}".
+        /// </summary>
+        /// <returns>The client version header value (e.g., "dotnet/2.12.0")</returns>
+        private static string GetClientVersionHeaderValue()
+        {
+            var version = typeof(RestService).Assembly.GetName().Version;
+            return $"dotnet/{version.Major}.{version.Minor}.{version.Build}";
+        }
+
+        /// <summary>
         ///     The index of the last client successfully used (or random if none worked).
         /// </summary>
         private int lastClientUsed;
@@ -454,6 +464,8 @@ namespace Confluent.SchemaRegistry
                 content.Headers.ContentType.CharSet = string.Empty;
                 request.Content = content;
             }
+
+            request.Headers.Add("Confluent-Client-Version", GetClientVersionHeaderValue());
 
             if (authenticationHeaderValueProvider != null)
             {
