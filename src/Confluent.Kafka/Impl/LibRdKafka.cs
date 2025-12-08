@@ -152,10 +152,7 @@ namespace Confluent.Kafka.Impl
             public static void Load(string path)
             {
 #if NETCOREAPP3_0_OR_GREATER
-                if (NativeLibrary.Load(path) == IntPtr.Zero)
-                {
-                    throw new InvalidOperationException($"Failed to load librdkafka at location '{path}'.");
-                }
+                NativeLibrary.Load(path);
 #else
                 if (dlopen(path, RTLD_NOW) == IntPtr.Zero)
                 {
