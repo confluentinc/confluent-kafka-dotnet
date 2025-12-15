@@ -51,6 +51,10 @@ namespace Confluent.SchemaRegistry
         {
             // Use the version set in the csproj file, currently in <VersionPrefix> property.
             var version = typeof(RestService).Assembly.GetName().Version;
+            if (version == null)
+            {
+                return "dotnet/unknown";
+            }
             return $"dotnet/{version.Major}.{version.Minor}.{version.Build}";
         }
 
