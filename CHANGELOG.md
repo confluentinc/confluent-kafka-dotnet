@@ -1,3 +1,10 @@
+# 2.13.0
+
+## Enhancements
+
+* References librdkafka.redist 2.13.0. Refer to the [librdkafka v2.13.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.13.0) for more information.
+
+
 # 2.12.0
 
 ## [KIP-848](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol) – General Availability
