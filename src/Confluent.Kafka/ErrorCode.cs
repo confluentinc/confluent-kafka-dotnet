@@ -342,6 +342,11 @@ namespace Confluent.Kafka
         Local_InvalidDifferentRecord = -138,
 
         /// <summary>
+        ///     Broker is going away but client isn't terminating
+        /// </summary>
+        Local_DestroyBroker = -137,
+
+        /// <summary>
         ///     Unknown broker error
         /// </summary>
         Unknown = -1,
@@ -880,6 +885,11 @@ namespace Confluent.Kafka
         ///     the broker will accept.
         /// </summary>
         TelemetryTooLarge = 118,
+
+        /// <summary>
+        ///     Client metadata is stale, client should rebootstrap to obtain new metadata.
+        /// </summary>
+        RebootstrapRequired = 129,
     };
 
     /// <summary>

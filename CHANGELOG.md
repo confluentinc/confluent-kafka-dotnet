@@ -1,3 +1,19 @@
+# 2.13.0
+
+## Enhancements
+
+* References librdkafka.redist 2.13.0. Refer to the [librdkafka v2.13.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.13.0) for more information.
+* Support Avro schema references for C# client (#2534)
+* Add Accept-Version header for Schema Registry requests (#2536)
+* Re-enable deserialization optimization by removing unnecessary array conversions (#2531)
+
+## Fixes
+
+* Ensure schemaId initialization is thread-safe (#2540)
+* Handle evolution during field transformation (#2541)
+* Ensure all dependencies are strongly named (#2548)
+
+
 # 2.12.0
 
 ## [KIP-848](https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol) – General Availability
