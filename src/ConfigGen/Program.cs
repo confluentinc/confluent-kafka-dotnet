@@ -704,7 +704,7 @@ namespace Confluent.Kafka
             }
 
             string gitBranchName = args[0];
-            string url = $"https://raw.githubusercontent.com/edenhill/librdkafka/{gitBranchName}/CONFIGURATION.md";
+            string url = $"https://raw.githubusercontent.com/confluentinc/librdkafka/{gitBranchName}/CONFIGURATION.md";
             var configDoc = await (await (new HttpClient())
                 .GetAsync(url))
                 .Content.ReadAsStringAsync();
