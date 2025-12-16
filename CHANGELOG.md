@@ -1,8 +1,8 @@
-# 2.13.0
+# 2.13.0-RC1
 
 ## Enhancements
 
-* References librdkafka.redist 2.13.0. Refer to the [librdkafka v2.13.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.13.0) for more information.
+* References librdkafka.redist 2.13.0-RC1. Refer to the [librdkafka v2.13.0-RC1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.13.0-RC1) for more information.
 * Support Avro schema references for C# client (#2534)
 * Add Accept-Version header for Schema Registry requests (#2536)
 * Re-enable deserialization optimization by removing unnecessary array conversions (#2531)
