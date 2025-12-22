@@ -134,7 +134,6 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             [Newtonsoft.Json.JsonProperty(Required = Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
             public string Value { get; set; } = "";
         }
-        
         public class NestedNonNullStringValue
         {
             public string Value { get; set; } = "";
