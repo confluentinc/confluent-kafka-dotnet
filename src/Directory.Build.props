@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>2.12.0</VersionPrefix>
+    <VersionPrefix>2.13.0</VersionPrefix>
     <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
   </PropertyGroup>
 
