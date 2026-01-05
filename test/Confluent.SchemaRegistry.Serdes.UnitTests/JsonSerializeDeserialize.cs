@@ -124,6 +124,16 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             public NestedNonNullStringValue Nested { get; set; } = new();
         }
 
+        public class NestedInArrayMessageType
+        {
+            public NestedRequiredValue[] ArrayOfNestedProperties { get; set; }
+        }
+
+        public class NestedRequiredValue
+        {
+            [Newtonsoft.Json.JsonProperty(Required = Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+            public string Value { get; set; } = "";
+        }
         public class NestedNonNullStringValue
         {
             public string Value { get; set; } = "";
@@ -452,6 +462,38 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             catch (InvalidDataException ex)
             {
                 Assert.Equal("Schema validation failed for properties: [#/Nested.Value]", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Assert.True(false,
+                    $"Serialization threw exception of type {ex.GetType().FullName} instead of the expected {typeof(InvalidDataException).FullName}");
+            }
+        }
+        
+        [Fact]
+        public async Task ChildValidationErrorsAreIncludedInErrorMessage()
+        {
+            var jsonSerializer = new JsonSerializer<NestedInArrayMessageType>(schemaRegistryClient);
+
+            var v = new NestedInArrayMessageType
+            {
+                ArrayOfNestedProperties = new []
+                {
+                    new  NestedRequiredValue()
+                    {
+                        Value = null
+                    }
+                }
+            };
+
+            try
+            {
+                await jsonSerializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic));
+                Assert.True(false, "Serialization did not throw an expected exception");
+            }
+            catch (InvalidDataException ex)
+            {
+                Assert.Equal("Schema validation failed for properties: [#/ArrayOfNestedProperties[0].Value]", ex.Message);
             }
             catch (Exception ex)
             {
