@@ -15,8 +15,7 @@
         <PackageId>Confluent.SchemaRegistry.Encryption.Aws</PackageId>
         <Title>Confluent.SchemaRegistry.Encryption.Aws</Title>
         <AssemblyName>Confluent.SchemaRegistry.Encryption.Aws</AssemblyName>
-        <VersionPrefix>2.13.0</VersionPrefix>
-        <TargetFrameworks>netstandard2.1;net462;net6.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>$(TargetFrameworks);netstandard2.1;net462</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <SignAssembly>true</SignAssembly>
