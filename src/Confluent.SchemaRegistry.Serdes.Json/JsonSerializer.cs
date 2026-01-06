@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using NJsonSchema;
 using Newtonsoft.Json;
@@ -262,7 +261,10 @@ namespace Confluent.SchemaRegistry.Serdes
                     var validationResult = validator.Validate(serializedString, parsedSchema);
                     if (validationResult.Count > 0)
                     {
-                        throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
+                        var flattenedErrors = FlattenPropertyValidationErrors(validationResult);
+                        throw new InvalidDataException("Schema validation failed for properties: [" +
+                                                       string.Join(", ", flattenedErrors.Select(r => r.Path)) +
+                                                       "]");
                     }
                 }
 
@@ -293,6 +295,37 @@ namespace Confluent.SchemaRegistry.Serdes
             JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, jsonSchemaGeneratorSettings);
             return await utils.GetResolvedSchema().ConfigureAwait(false);
+        }
+
+        private ICollection<ValidationError> FlattenPropertyValidationErrors(
+            IEnumerable<ValidationError> validationResult,
+            ICollection<ValidationError>? flattenedErrors = null,
+            int depth = 0)
+        {
+            flattenedErrors ??= new List<ValidationError>();
+            const int maxDepth = 32;
+
+            if (validationResult is null) return flattenedErrors;
+
+            foreach (var error in validationResult)
+            {
+                if (error is null) continue;
+
+                if (error is ChildSchemaValidationError child && depth < maxDepth)
+                {
+                    foreach (var nested in child.Errors?.Values ?? Enumerable.Empty<ICollection<ValidationError>>())
+                    {
+                        if (nested is null || nested.Count == 0) continue;
+                        FlattenPropertyValidationErrors(nested, flattenedErrors, depth + 1);
+                    }
+                }
+                else
+                {
+                    flattenedErrors.Add(error);
+                }
+            }
+
+            return flattenedErrors;
         }
     }
 }
