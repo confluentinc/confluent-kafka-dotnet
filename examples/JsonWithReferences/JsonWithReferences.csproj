@@ -3,13 +3,13 @@
   <PropertyGroup>
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <AssemblyName>JsonWithReferences</AssemblyName>
-    <OutputType>Exe</OutputType>
+
+    <!-- Temporary: Direct target framework reference required due to NJsonSchema dependencies -->
     <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" Version="2.12.0" /> -->
+    <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" Version="2.13.0" /> -->
     <ProjectReference Include="../../src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj" />
     <ProjectReference Include="../../src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj" />
   </ItemGroup>

@@ -3,13 +3,10 @@
   <PropertyGroup>
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <AssemblyName>Producer</AssemblyName>
-    <TargetFramework>net8.0</TargetFramework>
-    <OutputType>Exe</OutputType>
-    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="2.12.0" /> -->
+    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="2.13.0" /> -->
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
   </ItemGroup>
 
