@@ -75,12 +75,12 @@ namespace Confluent.SchemaRegistry.Encryption.Vendored.HkdfStandard
 
             using (var hmac = CreateHMAC(hashAlgorithmName, prk))
             {
-                for (byte i = 1; i <= n; i++)
+                for (int i = 1; i <= n; i++)
                 {
                     byte[] input = new byte[t.Length + info.Length + 1];
                     Buffer.BlockCopy(t, 0, input, 0, t.Length);
                     Buffer.BlockCopy(info, 0, input, t.Length, info.Length);
-                    input[input.Length - 1] = i;
+                    input[input.Length - 1] = (byte)i;
 
                     t = hmac.ComputeHash(input);
                     
