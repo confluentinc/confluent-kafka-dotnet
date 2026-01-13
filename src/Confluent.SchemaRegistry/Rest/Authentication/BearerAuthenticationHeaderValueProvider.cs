@@ -87,12 +87,11 @@ namespace Confluent.SchemaRegistry
         }
 
         private async Task GenerateToken()
-        {
-            var request = CreateTokenRequest();
-
+        { 
             for (int i = 0; i < maxRetries + 1; i++){
                 try 
                 {
+                    var request = CreateTokenRequest();
                     var response = await httpClient.SendAsync(request).ConfigureAwait(continueOnCapturedContext: false);
                     response.EnsureSuccessStatusCode();
                     var tokenResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -104,7 +103,8 @@ namespace Confluent.SchemaRegistry
                 {
                     if (i == maxRetries)
                     {
-                        throw new Exception("Failed to fetch token from server: " + e.Message);
+                        throw new Exception(
+                            $"Failed to fetch token from server: {e.GetType().FullName} - {e.Message}");
                     }
                     await Task.Delay(RetryUtility.CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i))
                         .ConfigureAwait(false);
