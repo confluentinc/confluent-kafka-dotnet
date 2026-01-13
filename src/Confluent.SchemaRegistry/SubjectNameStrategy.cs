@@ -61,7 +61,7 @@ namespace Confluent.SchemaRegistry
         TopicRecord,
 
         /// <summary>
-        ///     The subject name is determined by looking up an associated subject in Schema Registry.
+        ///     Retrieves the associated subject name from schema registry.
         ///     This strategy requires an <see cref="AssociatedSubjectNameStrategy"/> instance to be provided.
         /// </summary>
         Associated
