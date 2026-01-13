@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
 using Confluent.Kafka;
 
 
@@ -57,7 +58,49 @@ namespace Confluent.SchemaRegistry
         ///     is the fully-qualified name of the Avro record type of the message. This setting also allows any number of event
         ///     types in the same topic, and further constrains the compatibility check to the current topic only.
         /// </summary>
-        TopicRecord
+        TopicRecord,
+
+        /// <summary>
+        ///     The subject name is determined by looking up an associated subject in Schema Registry.
+        ///     This strategy requires an <see cref="AssociatedSubjectNameStrategy"/> instance to be provided.
+        /// </summary>
+        Associated
+    }
+
+
+    /// <summary>
+    ///     Associated subject name strategy implementation that uses a schema registry client
+    ///     and configuration to determine subject names.
+    /// </summary>
+    public class AssociatedSubjectNameStrategy
+    {
+        private readonly ISchemaRegistryClient schemaRegistryClient;
+        private readonly IEnumerable<KeyValuePair<string, string>> config;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="AssociatedSubjectNameStrategy"/> class.
+        /// </summary>
+        /// <param name="schemaRegistryClient">The schema registry client to use for lookups.</param>
+        /// <param name="config">The configuration.</param>
+        public AssociatedSubjectNameStrategy(
+            ISchemaRegistryClient schemaRegistryClient,
+            IEnumerable<KeyValuePair<string, string>> config)
+        {
+            this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
+            this.config = config;
+        }
+
+        /// <summary>
+        ///     Gets the subject name for the given serialization context and record type.
+        /// </summary>
+        /// <param name="context">The serialization context.</param>
+        /// <param name="recordType">The type name of the data being written.</param>
+        /// <returns>The subject name.</returns>
+        public string GetSubjectName(SerializationContext context, string recordType)
+        {
+            // TODO: Implement associated subject name lookup logic
+            throw new NotImplementedException();
+        }
     }
 
 
@@ -69,7 +112,20 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Provide a functional implementation corresponding to the enum value.
         /// </summary>
-        public static SubjectNameStrategyDelegate ToDelegate(this SubjectNameStrategy strategy)
+        /// <param name="strategy">The subject name strategy.</param>
+        /// <param name="schemaRegistryClient">
+        ///     Optional. Required when strategy is <see cref="SubjectNameStrategy.Associated"/>.
+        ///     The schema registry client to use for lookups.
+        /// </param>
+        /// <param name="config">
+        ///     Optional. Used when strategy is <see cref="SubjectNameStrategy.Associated"/>.
+        ///     The configuration.
+        /// </param>
+        /// <returns>A SubjectNameStrategyDelegate.</returns>
+        public static SubjectNameStrategyDelegate ToDelegate(
+            this SubjectNameStrategy strategy,
+            ISchemaRegistryClient schemaRegistryClient = null,
+            IEnumerable<KeyValuePair<string, string>> config = null)
         {
             switch (strategy)
             {
@@ -93,6 +149,14 @@ namespace Confluent.SchemaRegistry
                             }
                             return $"{context.Topic}-{recordType}";
                         };
+                case SubjectNameStrategy.Associated:
+                    if (schemaRegistryClient == null)
+                    {
+                        throw new ArgumentException(
+                            $"SubjectNameStrategy.Associated requires a {nameof(schemaRegistryClient)} to be provided.");
+                    }
+                    var associatedStrategy = new AssociatedSubjectNameStrategy(schemaRegistryClient, config);
+                    return (context, recordType) => associatedStrategy.GetSubjectName(context, recordType);
                 default:
                     throw new ArgumentException($"Unknown SubjectNameStrategy: {strategy}");
             }
@@ -101,12 +165,14 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Helper method to construct the key subject name given the specified parameters.
         /// </summary>
+        [Obsolete]
         public static string ConstructKeySubjectName(this SubjectNameStrategy strategy, string topic, string recordType = null)
             => strategy.ToDelegate()(new SerializationContext(MessageComponentType.Key, topic), recordType);
 
         /// <summary>
         ///     Helper method to construct the value subject name given the specified parameters.
         /// </summary>
+        [Obsolete]
         public static string ConstructValueSubjectName(this SubjectNameStrategy strategy, string topic, string recordType = null)
             => strategy.ToDelegate()(new SerializationContext(MessageComponentType.Value, topic), recordType);
     }
