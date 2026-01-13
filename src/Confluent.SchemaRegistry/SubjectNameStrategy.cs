@@ -62,7 +62,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Retrieves the associated subject name from schema registry.
-        ///     This strategy requires an <see cref="AssociatedSubjectNameStrategy"/> instance to be provided.
+        ///     This strategy requires an <see cref="AssociatedNameStrategy"/> instance to be provided.
         /// </summary>
         Associated
     }
@@ -72,17 +72,17 @@ namespace Confluent.SchemaRegistry
     ///     Associated subject name strategy implementation that uses a schema registry client
     ///     and configuration to determine subject names.
     /// </summary>
-    public class AssociatedSubjectNameStrategy
+    public class AssociatedNameStrategy
     {
         private readonly ISchemaRegistryClient schemaRegistryClient;
         private readonly IEnumerable<KeyValuePair<string, string>> config;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AssociatedSubjectNameStrategy"/> class.
+        ///     Initializes a new instance of the <see cref="AssociatedNameStrategy"/> class.
         /// </summary>
         /// <param name="schemaRegistryClient">The schema registry client to use for lookups.</param>
         /// <param name="config">The configuration.</param>
-        public AssociatedSubjectNameStrategy(
+        public AssociatedNameStrategy(
             ISchemaRegistryClient schemaRegistryClient,
             IEnumerable<KeyValuePair<string, string>> config)
         {
@@ -155,7 +155,7 @@ namespace Confluent.SchemaRegistry
                         throw new ArgumentException(
                             $"SubjectNameStrategy.Associated requires a {nameof(schemaRegistryClient)} to be provided.");
                     }
-                    var associatedStrategy = new AssociatedSubjectNameStrategy(schemaRegistryClient, config);
+                    var associatedStrategy = new AssociatedNameStrategy(schemaRegistryClient, config);
                     return (context, recordType) => associatedStrategy.GetSubjectName(context, recordType);
                 default:
                     throw new ArgumentException($"Unknown SubjectNameStrategy: {strategy}");
