@@ -87,7 +87,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(schemaRegistryClient, config); }
+            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToAsyncDelegate(schemaRegistryClient, config); }
             if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 
@@ -114,7 +114,7 @@ namespace Confluent.SchemaRegistry.Serdes
             
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
-            string subject = GetSubjectName(topic, isKey, null);
+            string subject = await GetSubjectName(topic, isKey, null).ConfigureAwait(false);
 
             // Currently Protobuf does not support migration rules because of lack of support for DynamicMessage
             // See https://github.com/protocolbuffers/protobuf/issues/658

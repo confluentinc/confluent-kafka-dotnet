@@ -94,7 +94,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 throw new NotSupportedException("ProtobufSerializer: UseDeprecatedFormat is no longer supported");
             }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(schemaRegistryClient, config); }
+            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToAsyncDelegate(schemaRegistryClient, config); }
             if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
                 ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()
@@ -231,7 +231,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    subject = GetSubjectName(context.Topic, context.Component == MessageComponentType.Key, fullname);
+                    subject = await GetSubjectName(context.Topic, context.Component == MessageComponentType.Key, fullname)
+                        .ConfigureAwait(false);
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     

@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 
 
@@ -33,6 +34,19 @@ namespace Confluent.SchemaRegistry
     ///     The type name of the data being written.
     /// </param>
     public delegate string SubjectNameStrategyDelegate(SerializationContext context, string recordType);
+
+
+    /// <summary>
+    ///     Asynchronously construct the subject name under which the schema
+    ///     associated with a record should be registered in Schema Registry.
+    /// </summary>
+    /// <param name="context">
+    ///     The serialization context.
+    /// </param>
+    /// <param name="recordType">
+    ///     The type name of the data being written.
+    /// </param>
+    public delegate Task<string> AsyncSubjectNameStrategyDelegate(SerializationContext context, string recordType);
 
 
     /// <summary>
@@ -91,12 +105,12 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Gets the subject name for the given serialization context and record type.
+        ///     Asynchronously gets the subject name for the given serialization context and record type.
         /// </summary>
         /// <param name="context">The serialization context.</param>
         /// <param name="recordType">The type name of the data being written.</param>
-        /// <returns>The subject name.</returns>
-        public string GetSubjectName(SerializationContext context, string recordType)
+        /// <returns>A task that resolves to the subject name.</returns>
+        public Task<string> GetSubjectNameAsync(SerializationContext context, string recordType)
         {
             // TODO: Implement associated subject name lookup logic
             throw new NotImplementedException();
@@ -122,10 +136,9 @@ namespace Confluent.SchemaRegistry
         ///     The configuration.
         /// </param>
         /// <returns>A SubjectNameStrategyDelegate.</returns>
+        [Obsolete]
         public static SubjectNameStrategyDelegate ToDelegate(
-            this SubjectNameStrategy strategy,
-            ISchemaRegistryClient schemaRegistryClient = null,
-            IEnumerable<KeyValuePair<string, string>> config = null)
+            this SubjectNameStrategy strategy)
         {
             switch (strategy)
             {
@@ -150,13 +163,62 @@ namespace Confluent.SchemaRegistry
                             return $"{context.Topic}-{recordType}";
                         };
                 case SubjectNameStrategy.Associated:
+                    throw new ArgumentException(
+                        $"SubjectNameStrategy.Associated requires async execution. Use {nameof(ToAsyncDelegate)} instead.");
+                default:
+                    throw new ArgumentException($"Unknown SubjectNameStrategy: {strategy}");
+            }
+        }
+
+        /// <summary>
+        ///     Provide an async functional implementation corresponding to the enum value.
+        /// </summary>
+        /// <param name="strategy">The subject name strategy.</param>
+        /// <param name="schemaRegistryClient">
+        ///     Optional. Required when strategy is <see cref="SubjectNameStrategy.Associated"/>.
+        ///     The schema registry client to use for lookups.
+        /// </param>
+        /// <param name="config">
+        ///     Optional. Used when strategy is <see cref="SubjectNameStrategy.Associated"/>.
+        ///     The configuration.
+        /// </param>
+        /// <returns>An AsyncSubjectNameStrategyDelegate.</returns>
+        public static AsyncSubjectNameStrategyDelegate ToAsyncDelegate(
+            this SubjectNameStrategy strategy,
+            ISchemaRegistryClient schemaRegistryClient = null,
+            IEnumerable<KeyValuePair<string, string>> config = null)
+        {
+            switch (strategy)
+            {
+                case SubjectNameStrategy.Topic:
+                    return (context, recordType) => Task.FromResult(
+                        $"{context.Topic}" + (context.Component == MessageComponentType.Key ? "-key" : "-value"));
+                case SubjectNameStrategy.Record:
+                    return (context, recordType) =>
+                        {
+                            if (recordType == null)
+                            {
+                                throw new ArgumentNullException($"recordType must not be null for SubjectNameStrategy.Record");
+                            }
+                            return Task.FromResult(recordType);
+                        };
+                case SubjectNameStrategy.TopicRecord:
+                    return (context, recordType) =>
+                        {
+                            if (recordType == null)
+                            {
+                                throw new ArgumentNullException($"recordType must not be null for SubjectNameStrategy.TopicRecord");
+                            }
+                            return Task.FromResult($"{context.Topic}-{recordType}");
+                        };
+                case SubjectNameStrategy.Associated:
                     if (schemaRegistryClient == null)
                     {
                         throw new ArgumentException(
                             $"SubjectNameStrategy.Associated requires a {nameof(schemaRegistryClient)} to be provided.");
                     }
                     var associatedStrategy = new AssociatedNameStrategy(schemaRegistryClient, config);
-                    return (context, recordType) => associatedStrategy.GetSubjectName(context, recordType);
+                    return (context, recordType) => associatedStrategy.GetSubjectNameAsync(context, recordType);
                 default:
                     throw new ArgumentException($"Unknown SubjectNameStrategy: {strategy}");
             }
