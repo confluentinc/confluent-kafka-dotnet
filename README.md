@@ -1,5 +1,5 @@
-Confluent's .NET Client for Apache Kafka<sup>TM</sup>
-=====================================================
+Confluent's .NET Client for Apache Kafka®
+=========================================
 
 [![Chat on Slack](https://img.shields.io/badge/chat-on%20slack-7A5979.svg)](https://launchpass.com/confluentcommunity)
 
