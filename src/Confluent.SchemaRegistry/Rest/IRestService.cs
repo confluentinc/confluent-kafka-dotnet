@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2018 Confluent Inc.
+// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,5 +43,13 @@ namespace Confluent.SchemaRegistry
         Task<bool> TestCompatibilityAsync(string subject, int versionId, Schema schema);
         Task<bool> TestLatestCompatibilityAsync(string subject, Schema schema);
         Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas, bool normalize);
+        Task<List<Association>> GetAssociationsByResourceNameAsync(
+            string resourceName,
+            string resourceNamespace,
+            string resourceType,
+            List<string> associationTypes,
+            string lifecycle,
+            int offset,
+            int limit);
     }
 }

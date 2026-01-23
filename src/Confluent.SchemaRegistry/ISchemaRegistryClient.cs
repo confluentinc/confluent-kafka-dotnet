@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2018 Confluent Inc.
+// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -429,5 +429,42 @@ namespace Confluent.SchemaRegistry
         ///     Clears all caches.
         /// </summary>
         void ClearCaches();
+
+
+        /// <summary>
+        ///     Gets associations by resource name.
+        /// </summary>
+        /// <param name="resourceName">
+        ///     The resource name (e.g., topic name).
+        /// </param>
+        /// <param name="resourceNamespace">
+        ///     The resource namespace (e.g., Kafka cluster ID). Use "-" as a wildcard.
+        /// </param>
+        /// <param name="resourceType">
+        ///     The type of resource (e.g., "topic"). Can be null.
+        /// </param>
+        /// <param name="associationTypes">
+        ///     The types of associations to filter by (e.g., "key", "value"). Can be null.
+        /// </param>
+        /// <param name="lifecycle">
+        ///     The lifecycle policy to filter by. Can be null.
+        /// </param>
+        /// <param name="offset">
+        ///     The offset for pagination. Use 0 to start from the beginning.
+        /// </param>
+        /// <param name="limit">
+        ///     The maximum number of results to return. Use -1 for no limit.
+        /// </param>
+        /// <returns>
+        ///     A list of associations matching the specified criteria.
+        /// </returns>
+        Task<List<Association>> GetAssociationsByResourceNameAsync(
+            string resourceName,
+            string resourceNamespace,
+            string resourceType,
+            List<string> associationTypes,
+            string lifecycle,
+            int offset,
+            int limit);
     }
 }

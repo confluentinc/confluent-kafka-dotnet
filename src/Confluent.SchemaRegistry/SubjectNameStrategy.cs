@@ -85,11 +85,41 @@ namespace Confluent.SchemaRegistry
     /// <summary>
     ///     Associated subject name strategy implementation that uses a schema registry client
     ///     and configuration to determine subject names.
+    ///     
+    ///     This strategy queries schema registry for the associated subject name for the topic.
+    ///     The topic is passed as the resource name to schema registry. If there is a configuration
+    ///     property named "kafka.cluster.id", then its value will be passed as the resource namespace;
+    ///     otherwise the value "-" will be passed as the resource namespace.
+    ///     
+    ///     If more than one subject is returned from the query, an exception will be thrown.
+    ///     If no subjects are returned from the query, then the behavior will fall back
+    ///     to Topic strategy, unless the configuration property "fallback.subject.name.strategy.type"
+    ///     is set to "RECORD", "TOPIC_RECORD", or "NONE".
     /// </summary>
     public class AssociatedNameStrategy
     {
+        /// <summary>
+        ///     Configuration property name for the Kafka cluster ID.
+        /// </summary>
+        public const string KafkaClusterIdConfig = "strategy.kafka.cluster.id";
+
+        /// <summary>
+        ///     Wildcard value for resource namespace.
+        /// </summary>
+        public const string NamespaceWildcard = "-";
+
+        /// <summary>
+        ///     Configuration property name for the fallback subject name strategy type.
+        /// </summary>
+        public const string FallbackSubjectNameStrategyTypeConfig = "strategy.fallback.subject.name.strategy.type";
+
+        private const int DefaultCacheCapacity = 1000;
+
         private readonly ISchemaRegistryClient schemaRegistryClient;
-        private readonly IEnumerable<KeyValuePair<string, string>> config;
+        private readonly string kafkaClusterId;
+        private readonly SubjectNameStrategy? fallbackSubjectNameStrategy;
+        private readonly Dictionary<CacheKey, string> subjectNameCache;
+        private readonly object cacheLock = new object();
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="AssociatedNameStrategy"/> class.
@@ -101,7 +131,61 @@ namespace Confluent.SchemaRegistry
             IEnumerable<KeyValuePair<string, string>> config)
         {
             this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
-            this.config = config;
+            this.subjectNameCache = new Dictionary<CacheKey, string>();
+
+            if (config != null)
+            {
+                foreach (var kvp in config)
+                {
+                    if (kvp.Key == KafkaClusterIdConfig)
+                    {
+                        this.kafkaClusterId = kvp.Value;
+                    }
+                    else if (kvp.Key == FallbackSubjectNameStrategyTypeConfig)
+                    {
+                        switch (kvp.Value?.ToUpperInvariant())
+                        {
+                            case "TOPIC":
+                                this.fallbackSubjectNameStrategy = SubjectNameStrategy.Topic;
+                                break;
+                            case "RECORD":
+                                this.fallbackSubjectNameStrategy = SubjectNameStrategy.Record;
+                                break;
+                            case "TOPIC_RECORD":
+                                this.fallbackSubjectNameStrategy = SubjectNameStrategy.TopicRecord;
+                                break;
+                            case "NONE":
+                                this.fallbackSubjectNameStrategy = null;
+                                break;
+                            default:
+                                throw new ArgumentException(
+                                    $"Invalid value for {FallbackSubjectNameStrategyTypeConfig}: {kvp.Value}");
+                        }
+                    }
+                }
+            }
+
+            // Default fallback is Topic strategy
+            if (this.fallbackSubjectNameStrategy == null && config != null)
+            {
+                var hasFallbackConfig = false;
+                foreach (var kvp in config)
+                {
+                    if (kvp.Key == FallbackSubjectNameStrategyTypeConfig)
+                    {
+                        hasFallbackConfig = true;
+                        break;
+                    }
+                }
+                if (!hasFallbackConfig)
+                {
+                    this.fallbackSubjectNameStrategy = SubjectNameStrategy.Topic;
+                }
+            }
+            else if (config == null)
+            {
+                this.fallbackSubjectNameStrategy = SubjectNameStrategy.Topic;
+            }
         }
 
         /// <summary>
@@ -110,10 +194,127 @@ namespace Confluent.SchemaRegistry
         /// <param name="context">The serialization context.</param>
         /// <param name="recordType">The type name of the data being written.</param>
         /// <returns>A task that resolves to the subject name.</returns>
-        public Task<string> GetSubjectNameAsync(SerializationContext context, string recordType)
+        public async Task<string> GetSubjectNameAsync(SerializationContext context, string recordType)
         {
-            // TODO: Implement associated subject name lookup logic
-            throw new NotImplementedException();
+            if (context.Topic == null)
+            {
+                return null;
+            }
+
+            var cacheKey = new CacheKey(context.Topic, context.Component == MessageComponentType.Key, recordType);
+
+            lock (cacheLock)
+            {
+                if (subjectNameCache.TryGetValue(cacheKey, out var cachedSubject))
+                {
+                    return cachedSubject;
+                }
+            }
+
+            var subjectName = await LoadSubjectNameAsync(context, recordType).ConfigureAwait(false);
+
+            lock (cacheLock)
+            {
+                // Clean cache if it's getting too large
+                if (subjectNameCache.Count >= DefaultCacheCapacity)
+                {
+                    subjectNameCache.Clear();
+                }
+                subjectNameCache[cacheKey] = subjectName;
+            }
+
+            return subjectName;
+        }
+
+        private async Task<string> LoadSubjectNameAsync(SerializationContext context, string recordType)
+        {
+            var isKey = context.Component == MessageComponentType.Key;
+            var associationTypes = new List<string> { isKey ? "key" : "value" };
+
+            var associations = await schemaRegistryClient.GetAssociationsByResourceNameAsync(
+                context.Topic,
+                kafkaClusterId ?? NamespaceWildcard,
+                "topic",
+                associationTypes,
+                null,
+                0,
+                -1).ConfigureAwait(false);
+
+            if (associations.Count > 1)
+            {
+                throw new InvalidOperationException(
+                    $"Multiple associated subjects found for topic {context.Topic}");
+            }
+            else if (associations.Count == 1)
+            {
+                return associations[0].Subject;
+            }
+            else if (fallbackSubjectNameStrategy.HasValue)
+            {
+                return GetFallbackSubjectName(context, recordType);
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"No associated subject found for topic {context.Topic}");
+            }
+        }
+
+        private string GetFallbackSubjectName(SerializationContext context, string recordType)
+        {
+            switch (fallbackSubjectNameStrategy)
+            {
+                case SubjectNameStrategy.Topic:
+                    return $"{context.Topic}" + (context.Component == MessageComponentType.Key ? "-key" : "-value");
+                case SubjectNameStrategy.Record:
+                    if (recordType == null)
+                    {
+                        throw new ArgumentNullException(
+                            "recordType must not be null for SubjectNameStrategy.Record");
+                    }
+                    return recordType;
+                case SubjectNameStrategy.TopicRecord:
+                    if (recordType == null)
+                    {
+                        throw new ArgumentNullException(
+                            "recordType must not be null for SubjectNameStrategy.TopicRecord");
+                    }
+                    return $"{context.Topic}-{recordType}";
+                default:
+                    throw new ArgumentException($"Unknown SubjectNameStrategy: {fallbackSubjectNameStrategy}");
+            }
+        }
+
+        /// <summary>
+        ///     Cache key that combines topic, isKey, and recordType values.
+        /// </summary>
+        private readonly struct CacheKey : IEquatable<CacheKey>
+        {
+            public readonly string Topic;
+            public readonly bool IsKey;
+            public readonly string RecordType;
+
+            public CacheKey(string topic, bool isKey, string recordType)
+            {
+                Topic = topic;
+                IsKey = isKey;
+                RecordType = recordType;
+            }
+
+            public bool Equals(CacheKey other)
+            {
+                return Topic == other.Topic && IsKey == other.IsKey && RecordType == other.RecordType;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is CacheKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(Topic, IsKey, RecordType);
+            }
         }
     }
 
