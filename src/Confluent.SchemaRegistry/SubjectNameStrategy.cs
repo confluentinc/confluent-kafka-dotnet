@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -118,8 +119,7 @@ namespace Confluent.SchemaRegistry
         private readonly ISchemaRegistryClient schemaRegistryClient;
         private readonly string kafkaClusterId;
         private readonly SubjectNameStrategy? fallbackSubjectNameStrategy;
-        private readonly Dictionary<CacheKey, string> subjectNameCache;
-        private readonly object cacheLock = new object();
+        private readonly ConcurrentDictionary<CacheKey, string> subjectNameCache;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="AssociatedNameStrategy"/> class.
@@ -131,7 +131,7 @@ namespace Confluent.SchemaRegistry
             IEnumerable<KeyValuePair<string, string>> config)
         {
             this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
-            this.subjectNameCache = new Dictionary<CacheKey, string>();
+            this.subjectNameCache = new ConcurrentDictionary<CacheKey, string>();
 
             if (config != null)
             {
@@ -203,25 +203,19 @@ namespace Confluent.SchemaRegistry
 
             var cacheKey = new CacheKey(context.Topic, context.Component == MessageComponentType.Key, recordType);
 
-            lock (cacheLock)
+            if (subjectNameCache.TryGetValue(cacheKey, out var cachedSubject))
             {
-                if (subjectNameCache.TryGetValue(cacheKey, out var cachedSubject))
-                {
-                    return cachedSubject;
-                }
+                return cachedSubject;
             }
 
             var subjectName = await LoadSubjectNameAsync(context, recordType).ConfigureAwait(false);
 
-            lock (cacheLock)
+            // Clean cache if it's getting too large
+            if (subjectNameCache.Count >= DefaultCacheCapacity)
             {
-                // Clean cache if it's getting too large
-                if (subjectNameCache.Count >= DefaultCacheCapacity)
-                {
-                    subjectNameCache.Clear();
-                }
-                subjectNameCache[cacheKey] = subjectName;
+                subjectNameCache.Clear();
             }
+            subjectNameCache.TryAdd(cacheKey, subjectName);
 
             return subjectName;
         }
