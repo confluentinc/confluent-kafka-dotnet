@@ -55,6 +55,12 @@ namespace Confluent.SchemaRegistry
     /// </summary>
     public enum SubjectNameStrategy
     {
+
+        /// <summary>
+        ///     No subject name strategy.
+        /// </summary>
+        None,
+
         /// <summary>
         ///     (default): The subject name for message keys is &lt;topic&gt;-key, and &lt;topic&gt;-value for message values.
         ///     This means that the schemas of all messages in the topic must be compatible with each other.
@@ -118,7 +124,7 @@ namespace Confluent.SchemaRegistry
 
         private readonly ISchemaRegistryClient schemaRegistryClient;
         private readonly string kafkaClusterId;
-        private readonly SubjectNameStrategy? fallbackSubjectNameStrategy;
+        private readonly SubjectNameStrategy fallbackSubjectNameStrategy;
         private readonly ConcurrentDictionary<CacheKey, string> subjectNameCache;
 
         /// <summary>
@@ -132,6 +138,9 @@ namespace Confluent.SchemaRegistry
         {
             this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
             this.subjectNameCache = new ConcurrentDictionary<CacheKey, string>();
+            
+            // Default fallback is Topic strategy
+            this.fallbackSubjectNameStrategy = SubjectNameStrategy.Topic;
 
             if (config != null)
             {
@@ -155,7 +164,7 @@ namespace Confluent.SchemaRegistry
                                 this.fallbackSubjectNameStrategy = SubjectNameStrategy.TopicRecord;
                                 break;
                             case "NONE":
-                                this.fallbackSubjectNameStrategy = null;
+                                this.fallbackSubjectNameStrategy = SubjectNameStrategy.None;
                                 break;
                             default:
                                 throw new ArgumentException(
@@ -163,28 +172,6 @@ namespace Confluent.SchemaRegistry
                         }
                     }
                 }
-            }
-
-            // Default fallback is Topic strategy
-            if (this.fallbackSubjectNameStrategy == null && config != null)
-            {
-                var hasFallbackConfig = false;
-                foreach (var kvp in config)
-                {
-                    if (kvp.Key == FallbackSubjectNameStrategyTypeConfig)
-                    {
-                        hasFallbackConfig = true;
-                        break;
-                    }
-                }
-                if (!hasFallbackConfig)
-                {
-                    this.fallbackSubjectNameStrategy = SubjectNameStrategy.Topic;
-                }
-            }
-            else if (config == null)
-            {
-                this.fallbackSubjectNameStrategy = SubjectNameStrategy.Topic;
             }
         }
 
@@ -243,7 +230,7 @@ namespace Confluent.SchemaRegistry
             {
                 return associations[0].Subject;
             }
-            else if (fallbackSubjectNameStrategy.HasValue)
+            else if (fallbackSubjectNameStrategy != SubjectNameStrategy.None)
             {
                 return GetFallbackSubjectName(context, recordType);
             }
