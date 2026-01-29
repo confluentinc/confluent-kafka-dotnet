@@ -770,6 +770,22 @@ namespace Confluent.SchemaRegistry
                 .ConfigureAwait(continueOnCapturedContext: false);
 
 
+        /// <inheritdoc/>
+        public async Task<AssociationResponse> CreateAssociationAsync(AssociationCreateOrUpdateRequest request)
+            => await restService.CreateAssociationAsync(request)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task DeleteAssociationsAsync(
+            string resourceId,
+            string resourceType,
+            List<string> associationTypes,
+            bool cascadeLifecycle)
+            => await restService.DeleteAssociationsAsync(resourceId, resourceType, associationTypes, cascadeLifecycle)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+
         /// <summary>
         ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.
         /// </summary>

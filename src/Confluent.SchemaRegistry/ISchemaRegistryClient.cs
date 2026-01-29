@@ -466,5 +466,42 @@ namespace Confluent.SchemaRegistry
             string lifecycle,
             int offset,
             int limit);
+
+
+        /// <summary>
+        ///     Creates an association between a subject and a resource.
+        /// </summary>
+        /// <param name="request">
+        ///     The association create or update request.
+        /// </param>
+        /// <returns>
+        ///     The response containing the created associations.
+        /// </returns>
+        Task<AssociationResponse> CreateAssociationAsync(AssociationCreateOrUpdateRequest request);
+
+
+        /// <summary>
+        ///     Deletes associations for a resource.
+        /// </summary>
+        /// <param name="resourceId">
+        ///     The resource identifier.
+        /// </param>
+        /// <param name="resourceType">
+        ///     The type of resource (e.g., "topic"). Can be null.
+        /// </param>
+        /// <param name="associationTypes">
+        ///     The types of associations to delete (e.g., "key", "value"). Can be null to delete all.
+        /// </param>
+        /// <param name="cascadeLifecycle">
+        ///     Whether to cascade the lifecycle policy to dependent schemas.
+        /// </param>
+        /// <returns>
+        ///     A task representing the asynchronous operation.
+        /// </returns>
+        Task DeleteAssociationsAsync(
+            string resourceId,
+            string resourceType,
+            List<string> associationTypes,
+            bool cascadeLifecycle);
     }
 }

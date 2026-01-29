@@ -51,5 +51,11 @@ namespace Confluent.SchemaRegistry
             string lifecycle,
             int offset,
             int limit);
+        Task<AssociationResponse> CreateAssociationAsync(AssociationCreateOrUpdateRequest request);
+        Task DeleteAssociationsAsync(
+            string resourceId,
+            string resourceType,
+            List<string> associationTypes,
+            bool cascadeLifecycle);
     }
 }
