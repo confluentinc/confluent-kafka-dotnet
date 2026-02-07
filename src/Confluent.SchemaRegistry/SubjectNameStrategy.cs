@@ -212,14 +212,27 @@ namespace Confluent.SchemaRegistry
             var isKey = context.Component == MessageComponentType.Key;
             var associationTypes = new List<string> { isKey ? "key" : "value" };
 
-            var associations = await schemaRegistryClient.GetAssociationsByResourceNameAsync(
-                context.Topic,
-                kafkaClusterId ?? NamespaceWildcard,
-                "topic",
-                associationTypes,
-                null,
-                0,
-                -1).ConfigureAwait(false);
+            IList<Association> associations;
+            try
+            {
+                associations = await schemaRegistryClient.GetAssociationsByResourceNameAsync(
+                    context.Topic,
+                    kafkaClusterId ?? NamespaceWildcard,
+                    "topic",
+                    associationTypes,
+                    null,
+                    0,
+                    -1).ConfigureAwait(false);
+            }
+            catch (SchemaRegistryException e) when (e.Status == System.Net.HttpStatusCode.NotFound)
+            {
+                if (fallbackSubjectNameStrategy != SubjectNameStrategy.None)
+                {
+                    return GetFallbackSubjectName(context, recordType);
+                }
+                throw new InvalidOperationException(
+                    $"No associated subject found for topic {context.Topic}");
+            }
 
             if (associations.Count > 1)
             {
