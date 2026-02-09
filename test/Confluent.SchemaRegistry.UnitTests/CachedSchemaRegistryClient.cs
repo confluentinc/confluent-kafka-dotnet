@@ -137,9 +137,102 @@ namespace Confluent.SchemaRegistry.UnitTests
             { 
                 Url = "irrelevanthost:8081",
                 BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
-                BearerAuthToken = "test-token" // Missing required LogicalCluster and IdentityPoolId
+                BearerAuthToken = "test-token" // Missing required LogicalCluster
             };
             Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
+        }
+
+        [Fact]
+        public void BearerAuthWithStaticTokenWithoutIdentityPool()
+        {
+            // IdentityPoolId is optional to support union of pools/SDS v3
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
+                BearerAuthToken = "test-token",
+                BearerAuthLogicalCluster = "test-cluster"
+                // Note: BearerAuthIdentityPoolId is intentionally not set
+            };
+            var client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void BearerAuthWithOAuthBearerWithoutIdentityPool()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearer,
+                BearerAuthClientId = "test-client",
+                BearerAuthClientSecret = "test-secret",
+                BearerAuthScope = "test-scope",
+                BearerAuthTokenEndpointUrl = "https://test.com/token",
+                BearerAuthLogicalCluster = "test-cluster"
+            };
+            var client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void BearerAuthWithCommaSeparatedIdentityPools()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
+                BearerAuthToken = "test-token",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "pool-1,pool-2,pool-3"
+            };
+            var client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void BearerAuthWithSetIdentityPoolIdsHelper()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
+                BearerAuthToken = "test-token",
+                BearerAuthLogicalCluster = "test-cluster"
+            };
+            config.SetBearerAuthIdentityPoolIds(new[] { "pool-1", "pool-2", "pool-3" });
+            Assert.Equal("pool-1,pool-2,pool-3", config.BearerAuthIdentityPoolId);
+            
+            var client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void SetBearerAuthIdentityPoolIds_SinglePool()
+        {
+            var config = new SchemaRegistryConfig { Url = "irrelevanthost:8081" };
+            config.SetBearerAuthIdentityPoolIds(new[] { "pool-1" });
+            Assert.Equal("pool-1", config.BearerAuthIdentityPoolId);
+        }
+
+        [Fact]
+        public void SetBearerAuthIdentityPoolIds_NullClearsValue()
+        {
+            var config = new SchemaRegistryConfig 
+            { 
+                Url = "irrelevanthost:8081",
+                BearerAuthIdentityPoolId = "existing-pool"
+            };
+            config.SetBearerAuthIdentityPoolIds(null);
+            Assert.Null(config.BearerAuthIdentityPoolId);
+        }
+
+        [Fact]
+        public void SetBearerAuthIdentityPoolIds_EmptyList()
+        {
+            var config = new SchemaRegistryConfig { Url = "irrelevanthost:8081" };
+            config.SetBearerAuthIdentityPoolIds(new string[] { });
+            Assert.Equal("", config.BearerAuthIdentityPoolId);
         }
 
         [Fact]
