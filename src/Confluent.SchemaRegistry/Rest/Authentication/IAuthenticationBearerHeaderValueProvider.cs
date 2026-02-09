@@ -45,10 +45,10 @@ namespace Confluent.SchemaRegistry
         /// </returns>  
         string GetLogicalCluster();
         /// <summary>
-        ///   Get the identity pool for HTTP requests
+        ///   Get the identity pool IDs for HTTP requests
         /// </summary>
         /// <returns>
-        ///   The identity pool for HTTP request messages
+        ///   The identity pool ID(s) for HTTP request messages, or null if not specified.
         /// </returns>
         string GetIdentityPool();
     }
