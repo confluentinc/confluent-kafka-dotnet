@@ -36,21 +36,31 @@ namespace Confluent.SchemaRegistry.Serdes
         // Lock to protect schema.Type mutation during validation of union types
         private static readonly object SchemaTypeLock = new object();
 
-        public static async Task<object> Transform(RuleContext ctx, JsonSchema schema, string path, object message,
+        public static Task<object> Transform(RuleContext ctx, JsonSchema schema, string path, object message,
             IFieldTransform fieldTransform)
+        {
+            return Transform(ctx, schema, path, message, fieldTransform, null);
+        }
+
+        private static async Task<object> Transform(RuleContext ctx, JsonSchema schema, string path, object message,
+            IFieldTransform fieldTransform, JsonObjectType? typeOverride)
         {
             if (schema == null || message == null)
             {
                 return message;
             }
 
+            // Use typeOverride if provided, otherwise use schema.Type
+            JsonObjectType effectiveType = typeOverride ?? schema.Type;
+
             RuleContext.FieldContext fieldContext = ctx.CurrentField();
             if (fieldContext != null)
             {
-                fieldContext.Type = GetType(schema);
+                fieldContext.Type = GetType(effectiveType);
             }
 
-            if (HasMultipleFlags(schema.Type))
+            // Only enter this block if we haven't already resolved the type via typeOverride
+            if (typeOverride == null && HasMultipleFlags(schema.Type))
             {
                 JToken jsonObject = JToken.FromObject(message);
                 foreach (JsonObjectType flag in Enum.GetValues(typeof(JsonObjectType)))
@@ -77,8 +87,9 @@ namespace Confluent.SchemaRegistry.Serdes
 
                         if (isValid)
                         {
+                            // Pass flag as typeOverride - recursive call uses resolved type
                             return await Transform(ctx, schema, path, message,
-                                fieldTransform).ConfigureAwait(false);
+                                fieldTransform, flag).ConfigureAwait(false);
                         }
                     }
                 }
@@ -105,17 +116,18 @@ namespace Confluent.SchemaRegistry.Serdes
                     var errors = validator.Validate(jsonObject, subschema);
                     if (errors.Count == 0)
                     {
-                        return await Transform(ctx, subschema, path, message, fieldTransform).ConfigureAwait(false);
+                        // New subschema, no type override needed
+                        return await Transform(ctx, subschema, path, message, fieldTransform, null).ConfigureAwait(false);
                     }
                 }
 
                 return message;
             }
-            else if (schema.IsArray)
+            else if (effectiveType.HasFlag(JsonObjectType.Array))
             {
-                bool isList = typeof(IList).IsAssignableFrom(message.GetType()) 
-                              || (message.GetType().IsGenericType 
-                                  && (message.GetType().GetGenericTypeDefinition() == typeof(List<>) 
+                bool isList = typeof(IList).IsAssignableFrom(message.GetType())
+                              || (message.GetType().IsGenericType
+                                  && (message.GetType().GetGenericTypeDefinition() == typeof(List<>)
                                       || message.GetType().GetGenericTypeDefinition() == typeof(IList<>)));
                 if (!isList)
                 {
@@ -124,10 +136,10 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 JsonSchema subschema = schema.Item;
                 var transformer = (int index, object elem) =>
-                    Transform(ctx, subschema, path + '[' + index + ']', elem, fieldTransform);
+                    Transform(ctx, subschema, path + '[' + index + ']', elem, fieldTransform, null);
                 return await Utils.TransformEnumerableAsync(message, transformer).ConfigureAwait(false);
             }
-            else if (schema.IsObject || schema.Properties.Count > 0)
+            else if (effectiveType.HasFlag(JsonObjectType.Object) || schema.Properties.Count > 0)
             {
                 foreach (var it in schema.Properties)
                 {
@@ -144,7 +156,8 @@ namespace Confluent.SchemaRegistry.Serdes
                             continue;
                         }
                         object value = fieldAccessor.GetFieldValue(message);
-                        object newValue = await Transform(ctx, it.Value, fullName, value, fieldTransform).ConfigureAwait(false);
+                        // New field schema, no type override needed
+                        object newValue = await Transform(ctx, it.Value, fullName, value, fieldTransform, null).ConfigureAwait(false);
                         if (ctx.Rule.Kind == RuleKind.Condition)
                         {
                             if (newValue is bool b && !b)
@@ -163,14 +176,15 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             else if (schema.HasReference)
             {
-                return await Transform(ctx, schema.ActualTypeSchema, path, message, fieldTransform).ConfigureAwait(false);
+                // Follow reference, no type override needed
+                return await Transform(ctx, schema.ActualTypeSchema, path, message, fieldTransform, null).ConfigureAwait(false);
             }
             else
             {
                 fieldContext = ctx.CurrentField();
                 if (fieldContext != null)
                 {
-                    switch (schema.Type)
+                    switch (effectiveType)
                     {
                         case JsonObjectType.Boolean:
                         case JsonObjectType.Integer:
@@ -179,7 +193,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             ISet<string> ruleTags = ctx.Rule.Tags ?? new HashSet<string>();
                             ISet<string> intersect = new HashSet<string>(fieldContext.Tags);
                             intersect.IntersectWith(ruleTags);
-                            
+
                             if (ruleTags.Count == 0 || intersect.Count != 0)
                             {
                                 return await fieldTransform.Transform(ctx, fieldContext, message)

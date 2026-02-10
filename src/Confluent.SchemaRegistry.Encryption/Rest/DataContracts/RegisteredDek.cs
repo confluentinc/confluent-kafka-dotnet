@@ -32,7 +32,7 @@ namespace Confluent.SchemaRegistry.Encryption
         /// <summary>
         ///     Mutex for synchronizing async key material decryption.
         /// </summary>
-        public SemaphoreSlim KeyMaterialMutex => _keyMaterialMutex;
+        internal SemaphoreSlim KeyMaterialMutex => _keyMaterialMutex;
         
         /// <summary>
         ///     The KEK name for the DEK.
