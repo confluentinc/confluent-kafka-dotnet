@@ -59,8 +59,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 fieldContext.Type = GetType(effectiveType);
             }
 
-            // Only enter this block if we haven't already resolved the type via typeOverride
-            if (typeOverride == null && HasMultipleFlags(schema.Type))
+            // Only enter this block if effectiveType has multiple flags (needs resolution)
+            // If typeOverride was provided, effectiveType is a single flag, so this is skipped
+            if (HasMultipleFlags(effectiveType))
             {
                 JToken jsonObject = JToken.FromObject(message);
                 foreach (JsonObjectType flag in Enum.GetValues(typeof(JsonObjectType)))
