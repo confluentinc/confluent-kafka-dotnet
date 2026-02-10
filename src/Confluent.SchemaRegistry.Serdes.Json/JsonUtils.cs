@@ -33,6 +33,9 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </summary>
     public static class JsonUtils
     {
+        // Lock to protect schema.Type mutation during validation of union types
+        private static readonly object SchemaTypeLock = new object();
+
         public static async Task<object> Transform(RuleContext ctx, JsonSchema schema, string path, object message,
             IFieldTransform fieldTransform)
         {
@@ -40,7 +43,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 return message;
             }
-            
+
             RuleContext.FieldContext fieldContext = ctx.CurrentField();
             if (fieldContext != null)
             {
@@ -54,25 +57,31 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     if (schema.Type.HasFlag(flag) && !flag.Equals(default(JsonObjectType)))
                     {
-                        JsonObjectType originalType = schema.Type;
-                        try
+                        // Check if this type flag matches the message, with lock to protect schema mutation
+                        bool isValid;
+                        lock (SchemaTypeLock)
                         {
-                            schema.Type = flag;
-                            var validator = new JsonSchemaValidator();
-                            var errors = validator.Validate(jsonObject, schema);
-                            if (errors.Count == 0)
+                            JsonObjectType originalType = schema.Type;
+                            try
                             {
-                                return await Transform(ctx, schema, path, message,
-                                    fieldTransform).ConfigureAwait(false);
+                                schema.Type = flag;
+                                var validator = new JsonSchemaValidator();
+                                var errors = validator.Validate(jsonObject, schema);
+                                isValid = errors.Count == 0;
+                            }
+                            finally
+                            {
+                                schema.Type = originalType;
                             }
                         }
-                        finally
+
+                        if (isValid)
                         {
-                            schema.Type = originalType;
+                            return await Transform(ctx, schema, path, message,
+                                fieldTransform).ConfigureAwait(false);
                         }
                     }
                 }
-
             }
             if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
             {
