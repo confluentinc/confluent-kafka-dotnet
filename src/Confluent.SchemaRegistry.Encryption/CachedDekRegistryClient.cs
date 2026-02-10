@@ -403,18 +403,24 @@ namespace Confluent.SchemaRegistry.Encryption
             => GetDekVersionAsync(kekName, subject, -1, algorithm, ignoreDeletedDeks);
 
         /// <inheritdoc/>
-        public Task<RegisteredDek> CreateDekAsync(string kekName, Dek dek)
+        public async Task<RegisteredDek> CreateDekAsync(string kekName, Dek dek)
         {
+            var result = await restService.CreateDekAsync(kekName, dek)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+            // Ensure latest dek is invalidated, such as in case of conflict (409)
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                return restService.CreateDekAsync(kekName, dek);
-            }
-            finally
-            {
-                // Ensure latest dek is invalidated, such as in case of conflict (409)
                 this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, false));
                 this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, true));
             }
+            finally
+            {
+                cacheMutex.Release();
+            }
+
+            return result;
         }
 
         /// <summary>
