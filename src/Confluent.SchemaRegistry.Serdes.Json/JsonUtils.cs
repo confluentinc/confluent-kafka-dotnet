@@ -66,7 +66,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 JToken jsonObject = JToken.FromObject(message);
                 foreach (JsonObjectType flag in Enum.GetValues(typeof(JsonObjectType)))
                 {
-                    if (schema.Type.HasFlag(flag) && !flag.Equals(default(JsonObjectType)))
+                    if (effectiveType.HasFlag(flag) && !flag.Equals(default(JsonObjectType)))
                     {
                         // Check if this type flag matches the message, with lock to protect schema mutation
                         bool isValid;
