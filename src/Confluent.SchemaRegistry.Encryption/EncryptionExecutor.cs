@@ -373,17 +373,28 @@ namespace Confluent.SchemaRegistry.Encryption
                 }
             }
 
+            // Double-checked locking with mutex for thread-safe key material decryption
             if (dek.KeyMaterialBytes == null)
             {
-                if (kmsClient == null)
+                await dek.KeyMaterialMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+                try
                 {
-                    kmsClient = new KmsClientWrapper(executor.Configs, kek);
+                    if (dek.KeyMaterialBytes == null)
+                    {
+                        if (kmsClient == null)
+                        {
+                            kmsClient = new KmsClientWrapper(executor.Configs, kek);
+                        }
+
+                        byte[] rawDek = await kmsClient.Decrypt(dek.EncryptedKeyMaterialBytes)
+                            .ConfigureAwait(continueOnCapturedContext: false);
+                        dek.SetKeyMaterial(rawDek);
+                    }
                 }
-
-                byte[] rawDek = await kmsClient.Decrypt(dek.EncryptedKeyMaterialBytes)
-                    .ConfigureAwait(continueOnCapturedContext: false);
-                dek.SetKeyMaterial(rawDek);
-
+                finally
+                {
+                    dek.KeyMaterialMutex.Release();
+                }
             }
 
             return dek;
