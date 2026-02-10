@@ -405,22 +405,28 @@ namespace Confluent.SchemaRegistry.Encryption
         /// <inheritdoc/>
         public async Task<RegisteredDek> CreateDekAsync(string kekName, Dek dek)
         {
-            var result = await restService.CreateDekAsync(kekName, dek)
-                .ConfigureAwait(continueOnCapturedContext: false);
-
-            // Ensure latest dek is invalidated, such as in case of conflict (409)
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, false));
-                this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, true));
+                return await restService.CreateDekAsync(kekName, dek)
+                    .ConfigureAwait(continueOnCapturedContext: false);
             }
             finally
             {
-                cacheMutex.Release();
+                // Ensure latest dek is invalidated, such as in case of conflict (409) or error
+                // Invalidate both version=-1 (from GetDekLatestVersionAsync) and version=null (from GetDekAsync)
+                await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+                try
+                {
+                    this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, false));
+                    this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, true));
+                    this.deks.Remove(new DekId(kekName, dek.Subject, null, dek.Algorithm, false));
+                    this.deks.Remove(new DekId(kekName, dek.Subject, null, dek.Algorithm, true));
+                }
+                finally
+                {
+                    cacheMutex.Release();
+                }
             }
-
-            return result;
         }
 
         /// <summary>
