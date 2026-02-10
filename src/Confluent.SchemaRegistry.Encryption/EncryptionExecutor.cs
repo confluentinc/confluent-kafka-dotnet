@@ -95,13 +95,16 @@ namespace Confluent.SchemaRegistry.Encryption
 
         public async Task<object> Transform(RuleContext ctx, object message)
         {
-            EncryptionExecutorTransform transform = NewTransform(ctx);
-            var result = await transform.Transform(ctx, RuleContext.Type.Bytes, message)
-                .ConfigureAwait(false);
-            return result;
+            using (EncryptionExecutorTransform transform = NewTransform(ctx))
+            {
+                var result = await transform.Transform(ctx, RuleContext.Type.Bytes, message)
+                    .ConfigureAwait(false);
+                return result;
+            }
         }
 
         public EncryptionExecutorTransform NewTransform(RuleContext ctx)
+
         {
             EncryptionExecutorTransform transform = new EncryptionExecutorTransform(this);
             transform.Init(ctx);
@@ -157,7 +160,7 @@ namespace Confluent.SchemaRegistry.Encryption
         }
     }
 
-    public class EncryptionExecutorTransform
+    public class EncryptionExecutorTransform : IDisposable
     {
         private readonly SemaphoreSlim kekMutex = new SemaphoreSlim(1);
         private EncryptionExecutor executor;
@@ -590,6 +593,11 @@ namespace Confluent.SchemaRegistry.Encryption
                     return (version, remaining);
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            kekMutex?.Dispose();
         }
     }
 
