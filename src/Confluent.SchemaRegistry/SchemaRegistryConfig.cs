@@ -478,7 +478,7 @@ namespace Confluent.SchemaRegistry
         {
             if (identityPoolIds == null)
             {
-                BearerAuthIdentityPoolId = null;
+                BearerAuthIdentityPoolId = "";
                 return;
             }
             BearerAuthIdentityPoolId = string.Join(",", identityPoolIds);

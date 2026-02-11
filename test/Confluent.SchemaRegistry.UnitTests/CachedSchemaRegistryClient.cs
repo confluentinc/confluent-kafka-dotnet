@@ -224,7 +224,7 @@ namespace Confluent.SchemaRegistry.UnitTests
                 BearerAuthIdentityPoolId = "existing-pool"
             };
             config.SetBearerAuthIdentityPoolIds(null);
-            Assert.Null(config.BearerAuthIdentityPoolId);
+            Assert.Equal("", config.BearerAuthIdentityPoolId);
         }
 
         [Fact]
