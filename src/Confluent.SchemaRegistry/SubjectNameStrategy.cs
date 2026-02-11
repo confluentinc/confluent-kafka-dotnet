@@ -226,12 +226,7 @@ namespace Confluent.SchemaRegistry
             }
             catch (SchemaRegistryException e) when (e.Status == System.Net.HttpStatusCode.NotFound)
             {
-                if (fallbackSubjectNameStrategy != SubjectNameStrategy.None)
-                {
-                    return GetFallbackSubjectName(context, recordType);
-                }
-                throw new InvalidOperationException(
-                    $"No associated subject found for topic {context.Topic}");
+                associations = Array.Empty<Association>();
             }
 
             if (associations.Count > 1)
