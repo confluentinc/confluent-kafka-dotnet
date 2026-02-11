@@ -479,7 +479,11 @@ namespace Confluent.SchemaRegistry
                         await bearerProvider.InitOrRefreshAsync().ConfigureAwait(continueOnCapturedContext: false);
                     }
 
-                    request.Headers.Add("Confluent-Identity-Pool-Id", bearerProvider.GetIdentityPool());
+                    var identityPool = bearerProvider.GetIdentityPool();
+                    if (!string.IsNullOrEmpty(identityPool))
+                    {
+                        request.Headers.Add("Confluent-Identity-Pool-Id", identityPool);
+                    }
                     request.Headers.Add("target-sr-cluster", bearerProvider.GetLogicalCluster());
                 }
                 request.Headers.Authorization = authenticationHeaderValueProvider.GetAuthenticationHeader();
@@ -714,10 +718,10 @@ namespace Confluent.SchemaRegistry
 
                 identityPoolId = config.FirstOrDefault(prop =>
                     prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId).Value;
-                if (logicalCluster == null || identityPoolId == null)
+                if (logicalCluster == null)
                 {
                     throw new ArgumentException(
-                        $"Invalid bearer authentication provider configuration: Logical cluster and identity pool ID must be specified");
+                        $"Invalid bearer authentication provider configuration: Logical cluster must be specified");
                 }
             }
 
