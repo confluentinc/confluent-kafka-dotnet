@@ -14,4 +14,4 @@
     <ProjectReference Include="../../src/Confluent.SchemaRegistry.Encryption.HcVault/Confluent.SchemaRegistry.Encryption.HcVault.csproj" />
   </ItemGroup>
 
-</Project>  
+</Project>
