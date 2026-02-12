@@ -16,7 +16,6 @@
 
 using System;
 using System.Runtime.Serialization;
-using System.Threading;
 
 namespace Confluent.SchemaRegistry.Encryption
 {
@@ -27,12 +26,6 @@ namespace Confluent.SchemaRegistry.Encryption
         private volatile byte[] keyMaterialBytes;
         private volatile byte[] encryptedKeyMaterialBytes;
         private object _lock = new object();
-        private readonly SemaphoreSlim _keyMaterialMutex = new SemaphoreSlim(1);
-
-        /// <summary>
-        ///     Mutex for synchronizing async key material decryption.
-        /// </summary>
-        internal SemaphoreSlim KeyMaterialMutex => _keyMaterialMutex;
         
         /// <summary>
         ///     The KEK name for the DEK.

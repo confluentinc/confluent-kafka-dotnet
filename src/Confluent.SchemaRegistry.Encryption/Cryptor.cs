@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using Google.Crypto.Tink;
 using Google.Protobuf;
-using Confluent.SchemaRegistry.Encryption.Vendored.Miscreant;
+using Miscreant;
 
 namespace Confluent.SchemaRegistry.Encryption
 {

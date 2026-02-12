@@ -15,7 +15,8 @@
         <PackageId>Confluent.SchemaRegistry.Encryption</PackageId>
         <Title>Confluent.SchemaRegistry.Encryption</Title>
         <AssemblyName>Confluent.SchemaRegistry.Encryption</AssemblyName>
-        <TargetFrameworks>$(TargetFrameworks);netstandard2.1;net462</TargetFrameworks>
+        <VersionPrefix>2.11.1</VersionPrefix>
+        <TargetFrameworks>netstandard2.1;net462;net6.0;net8.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <SignAssembly>true</SignAssembly>
@@ -27,13 +28,13 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-        <PackageReference Include="Microsoft.Bcl.Cryptography" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Bcl.Cryptography" Version="10.0.0-preview.6.25358.103" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" Version="3.26.1" />
-        <!-- HKDF.Standard and Miscreant packages are vendored (source copied) instead of referenced as NuGet packages -->
-        <!-- because they are not strongly named. See Vendored/Miscreant and Vendored/HkdfStandard directories. -->
+        <PackageReference Include="HKDF.Standard" Version="2.0.0" />
+        <PackageReference Include="Miscreant" Version="0.3.3" />
     </ItemGroup>
 
     <ItemGroup>
@@ -44,13 +45,6 @@
     <ItemGroup>
         <Compile Include="..\Shared\SetEqualityComparer.cs" Link="Includes/SetEqualityComparer.cs"/>
         <Compile Include="..\Shared\DictionaryEqualityComparer.cs" Link="Includes/DictionaryEqualityComparer.cs"/>
-    </ItemGroup>
-
-    <!-- Vendored source code for packages that are not strongly named -->
-    <!-- The .NET SDK automatically includes all .cs files, so we only need to include the license files -->
-    <ItemGroup>
-        <None Include="Vendored\Miscreant\LICENSE.txt" Pack="true" PackagePath="Vendored\Miscreant\" />
-        <None Include="Vendored\HkdfStandard\LICENSE" Pack="true" PackagePath="Vendored\HkdfStandard\" />
-    </ItemGroup>
+    </ItemGroup>    
 
 </Project>
