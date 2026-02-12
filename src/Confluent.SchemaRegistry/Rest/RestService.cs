@@ -45,20 +45,6 @@ namespace Confluent.SchemaRegistry
         public const int DefaultMaxConnectionsPerServer = 20;
 
         /// <summary>
-        ///     Gets the client version header value in the format "dotnet/{version}".
-        /// </summary>
-        private static string GetClientVersionHeaderValue()
-        {
-            // Use the version set in the csproj file, currently in <VersionPrefix> property.
-            var version = typeof(RestService).Assembly.GetName().Version;
-            if (version == null)
-            {
-                return "dotnet/unknown";
-            }
-            return $"dotnet/{version.Major}.{version.Minor}.{version.Build}";
-        }
-
-        /// <summary>
         ///     The index of the last client successfully used (or random if none worked).
         /// </summary>
         private int lastClientUsed;
@@ -80,6 +66,27 @@ namespace Confluent.SchemaRegistry
         private int retriesWaitMs;
 
         private int retriesMaxWaitMs;
+
+        private static readonly
+            Dictionary<string, Func<
+                        IAuthenticationHeaderValueProvider,
+                        IEnumerable<KeyValuePair<string, string>>,
+                        IAuthenticationBearerHeaderValueProviderBuilder>>
+                bearerAuthenticationHeaderValueProviderBuilders =
+            new Dictionary<string, Func<
+                        IAuthenticationHeaderValueProvider,
+                        IEnumerable<KeyValuePair<string, string>>,
+                        IAuthenticationBearerHeaderValueProviderBuilder>>()
+                {
+                    {"STATIC_TOKEN", (authenticationHeaderValueProvider, config) =>
+                        new StaticAuthenticationHeaderValueProviderBuilder(authenticationHeaderValueProvider, config) },
+                    {"CUSTOM", (authenticationHeaderValueProvider, config) =>
+                        new CustomAuthenticationHeaderValueProviderBuilder(authenticationHeaderValueProvider, config) },
+                    {"OAUTHBEARER", (authenticationHeaderValueProvider, config) =>
+                        new BearerAuthenticationHeaderValueProviderBuilder(authenticationHeaderValueProvider, config) },
+                    {"OAUTHBEARER_AZURE_IMDS", (authenticationHeaderValueProvider, config) =>
+                        new AzureIMDSBearerAuthenticationHeaderValueProviderBuilder(authenticationHeaderValueProvider, config) }
+                };
 
         /// <summary>
         ///     Initializes a new instance of the RestService class.
@@ -459,7 +466,6 @@ namespace Confluent.SchemaRegistry
         {
             HttpRequestMessage request = new HttpRequestMessage(method, endPoint);
             request.Headers.Add("Accept", acceptHeader);
-            request.Headers.Add("Confluent-Accept-Unknown-Properties", "true");
             if (jsonBody.Length != 0)
             {
                 string stringContent = string.Join("\n", jsonBody.Select(x => JsonConvert.SerializeObject(x)));
@@ -469,8 +475,6 @@ namespace Confluent.SchemaRegistry
                 request.Content = content;
             }
 
-            request.Headers.Add("Confluent-Client-Version", GetClientVersionHeaderValue());
-
             if (authenticationHeaderValueProvider != null)
             {
                 if (authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider bearerProvider){
@@ -479,11 +483,7 @@ namespace Confluent.SchemaRegistry
                         await bearerProvider.InitOrRefreshAsync().ConfigureAwait(continueOnCapturedContext: false);
                     }
 
-                    var identityPool = bearerProvider.GetIdentityPool();
-                    if (!string.IsNullOrEmpty(identityPool))
-                    {
-                        request.Headers.Add("Confluent-Identity-Pool-Id", identityPool);
-                    }
+                    request.Headers.Add("Confluent-Identity-Pool-Id", bearerProvider.GetIdentityPool());
                     request.Headers.Add("target-sr-cluster", bearerProvider.GetLogicalCluster());
                 }
                 request.Headers.Authorization = authenticationHeaderValueProvider.GetAuthenticationHeader();
@@ -698,88 +698,19 @@ namespace Confluent.SchemaRegistry
                     $"Invalid authentication header value provider configuration: Cannot specify both basic and bearer authentication");
             }
 
-            string logicalCluster = null;
-            string identityPoolId = null;
-            string bearerToken = null;
-            string clientId = null;
-            string clientSecret = null;
-            string scope = null;
-            string tokenEndpointUrl = null;
-
-            if (bearerAuthSource == "STATIC_TOKEN" || bearerAuthSource == "OAUTHBEARER")
+            if (bearerAuthSource != "")
             {
-                if (authenticationHeaderValueProvider != null)
+                if (!bearerAuthenticationHeaderValueProviderBuilders.ContainsKey(bearerAuthSource))
                 {
-                    throw new ArgumentException(
-                        $"Invalid authentication header value provider configuration: Cannot specify both custom provider and bearer authentication");
-                }
-                logicalCluster = config.FirstOrDefault(prop =>
-                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster).Value;
-
-                identityPoolId = config.FirstOrDefault(prop =>
-                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId).Value;
-                if (logicalCluster == null)
-                {
-                    throw new ArgumentException(
-                        $"Invalid bearer authentication provider configuration: Logical cluster must be specified");
-                }
-            }
-
-            switch (bearerAuthSource)
-            {
-                case "STATIC_TOKEN":
-                    bearerToken = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken).Value;
-
-                    if (bearerToken == null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Bearer authentication token not specified");
-                    }
-                    authenticationHeaderValueProvider = new StaticBearerAuthenticationHeaderValueProvider(bearerToken, logicalCluster, identityPoolId);
-                    break;
-
-                case "OAUTHBEARER":
-                    clientId = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId).Value;
-
-                    clientSecret = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret).Value;
-
-                    scope = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope).Value;
-
-                    tokenEndpointUrl = config.FirstOrDefault(prop =>
-                        prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl).Value;
-
-                    if (tokenEndpointUrl == null || clientId == null || clientSecret == null || scope == null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid bearer authentication provider configuration: Token endpoint URL, client ID, client secret, and scope must be specified");
-                    }
-                    authenticationHeaderValueProvider = new BearerAuthenticationHeaderValueProvider(
-                        new HttpClient(), clientId, clientSecret, scope, tokenEndpointUrl, logicalCluster, identityPoolId, maxRetries, retriesWaitMs, retriesMaxWaitMs);
-                    break;
-
-                case "CUSTOM":
-                    if (authenticationHeaderValueProvider == null)
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Custom authentication provider must be specified");
-                    }
-                    if(!(authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider))
-                    {
-                        throw new ArgumentException(
-                            $"Invalid authentication header value provider configuration: Custom authentication provider must implement IAuthenticationBearerHeaderValueProvider");
-                    }
-                    break;
-
-                case "":
-                    break;
-
-                default:
                     throw new ArgumentException(
                         $"Invalid value '{bearerAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource}'");
+                }
+
+                var bearerAuthenticationHeaderValueProviderBuilder =
+                    bearerAuthenticationHeaderValueProviderBuilders[bearerAuthSource];
+                authenticationHeaderValueProvider = bearerAuthenticationHeaderValueProviderBuilder(
+                    authenticationHeaderValueProvider, config)
+                    .Build(maxRetries, retriesWaitMs, retriesMaxWaitMs);
             }
 
             return authenticationHeaderValueProvider;

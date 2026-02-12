@@ -150,6 +150,12 @@ namespace Confluent.SchemaRegistry
             public const string SchemaRegistryBearerAuthTokenEndpointUrl = "schema.registry.bearer.auth.token.endpoint.url";
 
             /// <summary>
+            ///     Specifies the token query parameters for the bearer token endpoint.
+            ///     Currently valid only when using Azure IMDS for token retrieval.
+            /// </summary>
+            public const string SchemaRegistryBearerAuthTokenEndpointQuery = "schema.registry.bearer.auth.token.endpoint.query";
+
+            /// <summary>
             ///     Key subject name strategy.
             /// </summary>
             [Obsolete(
@@ -409,6 +415,11 @@ namespace Confluent.SchemaRegistry
                     return Confluent.SchemaRegistry.BearerAuthCredentialsSource.OAuthBearer;
                 }
 
+                if (r == "OAUTHBEARER_AZURE_IMDS")
+                {
+                    return Confluent.SchemaRegistry.BearerAuthCredentialsSource.OAuthBearerAzureIMDS;
+                }
+
                 if (r == "CUSTOM")
                 {
                     return Confluent.SchemaRegistry.BearerAuthCredentialsSource.Custom;
@@ -430,6 +441,10 @@ namespace Confluent.SchemaRegistry
                 else if (value == Confluent.SchemaRegistry.BearerAuthCredentialsSource.OAuthBearer)
                 {
                     this.properties[PropertyNames.SchemaRegistryBearerAuthCredentialsSource] = "OAUTHBEARER";
+                }
+                else if (value == Confluent.SchemaRegistry.BearerAuthCredentialsSource.OAuthBearerAzureIMDS)
+                {
+                    this.properties[PropertyNames.SchemaRegistryBearerAuthCredentialsSource] = "OAUTHBEARER_AZURE_IMDS";
                 }
                 else if (value == Confluent.SchemaRegistry.BearerAuthCredentialsSource.Custom)
                 {
@@ -471,20 +486,6 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Sets the identity pool for the bearer authentication credentials.
-        /// </summary>
-        /// <param name="identityPoolIds">A collection of identity pool IDs.</param>
-        public void SetBearerAuthIdentityPoolIds(IEnumerable<string> identityPoolIds)
-        {
-            if (identityPoolIds == null)
-            {
-                BearerAuthIdentityPoolId = "";
-                return;
-            }
-            BearerAuthIdentityPoolId = string.Join(",", identityPoolIds);
-        }
-
-        /// <summary>
         ///     Specifies the client ID for the bearer authentication credentials.
         /// </summary>
         public string BearerAuthClientId
@@ -519,6 +520,17 @@ namespace Confluent.SchemaRegistry
             get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl, value); }
         }
+
+        /// <summary>
+        ///     Specifies the token query parameters for the bearer token endpoint.
+        ///     Currently valid only when using Azure IMDS for token retrieval.
+        /// </summary>
+        public string BearerAuthTokenEndpointQuery
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointQuery); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointQuery, value); }
+        }
+
 
         /// <summary>
         ///     Key subject name strategy.

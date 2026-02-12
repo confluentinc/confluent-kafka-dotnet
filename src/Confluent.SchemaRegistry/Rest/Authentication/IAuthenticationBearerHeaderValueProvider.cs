@@ -23,19 +23,17 @@ namespace Confluent.SchemaRegistry
     /// </summary>
     public interface IAuthenticationBearerHeaderValueProvider : IAuthenticationHeaderValueProvider
     {
-        public Task InitOrRefreshAsync();
-
-        public bool NeedsInitOrRefresh();
 
         /// <summary>
-        ///   Get the authentication header for HTTP requests
+        ///     Initializes or refreshes the authentication credentials.
         /// </summary>
         /// <returns>
-        ///   The authentication header for HTTP request messages
+        ///     A task representing the asynchronous initialization or refresh operation.
         /// </returns>
-        /// 
+        public Task InitOrRefreshAsync();
 
-        AuthenticationHeaderValue GetAuthenticationHeader();
+        /// <inheritdoc/>
+        public bool NeedsInitOrRefresh();
 
         /// <summary>
         ///   Get the logical cluster for HTTP requests
@@ -45,10 +43,10 @@ namespace Confluent.SchemaRegistry
         /// </returns>  
         string GetLogicalCluster();
         /// <summary>
-        ///   Get the identity pool IDs for HTTP requests
+        ///   Get the identity pool for HTTP requests
         /// </summary>
         /// <returns>
-        ///   The identity pool ID(s) for HTTP request messages, or null if not specified.
+        ///   The identity pool for HTTP request messages
         /// </returns>
         string GetIdentityPool();
     }

@@ -20,7 +20,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Confluent.SchemaRegistry.Encryption
@@ -95,16 +94,13 @@ namespace Confluent.SchemaRegistry.Encryption
 
         public async Task<object> Transform(RuleContext ctx, object message)
         {
-            using (EncryptionExecutorTransform transform = NewTransform(ctx))
-            {
-                var result = await transform.Transform(ctx, RuleContext.Type.Bytes, message)
-                    .ConfigureAwait(false);
-                return result;
-            }
+            EncryptionExecutorTransform transform = NewTransform(ctx);
+            var result = await transform.Transform(ctx, RuleContext.Type.Bytes, message)
+                .ConfigureAwait(false);
+            return result;
         }
 
         public EncryptionExecutorTransform NewTransform(RuleContext ctx)
-
         {
             EncryptionExecutorTransform transform = new EncryptionExecutorTransform(this);
             transform.Init(ctx);
@@ -160,13 +156,13 @@ namespace Confluent.SchemaRegistry.Encryption
         }
     }
 
-    public class EncryptionExecutorTransform : IDisposable
+    public class EncryptionExecutorTransform
     {
-        private readonly SemaphoreSlim kekMutex = new SemaphoreSlim(1);
+
         private EncryptionExecutor executor;
         private Cryptor cryptor;
         private string kekName;
-        private volatile RegisteredKek registeredKek;
+        private RegisteredKek registeredKek;
         private int dekExpiryDays;
 
         public EncryptionExecutorTransform(EncryptionExecutor executor)
@@ -196,21 +192,9 @@ namespace Confluent.SchemaRegistry.Encryption
 
         private async Task<RegisteredKek> GetKek(RuleContext ctx)
         {
-            // Double-checked locking with volatile field for thread safety
             if (registeredKek == null)
             {
-                await kekMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-                try
-                {
-                    if (registeredKek == null)
-                    {
-                        registeredKek = await GetOrCreateKek(ctx).ConfigureAwait(continueOnCapturedContext: false);
-                    }
-                }
-                finally
-                {
-                    kekMutex.Release();
-                }
+                registeredKek = await GetOrCreateKek(ctx).ConfigureAwait(continueOnCapturedContext: false);
             }
 
             return registeredKek;
@@ -376,28 +360,17 @@ namespace Confluent.SchemaRegistry.Encryption
                 }
             }
 
-            // Double-checked locking with mutex for thread-safe key material decryption
             if (dek.KeyMaterialBytes == null)
             {
-                await dek.KeyMaterialMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-                try
+                if (kmsClient == null)
                 {
-                    if (dek.KeyMaterialBytes == null)
-                    {
-                        if (kmsClient == null)
-                        {
-                            kmsClient = new KmsClientWrapper(executor.Configs, kek);
-                        }
+                    kmsClient = new KmsClientWrapper(executor.Configs, kek);
+                }
 
-                        byte[] rawDek = await kmsClient.Decrypt(dek.EncryptedKeyMaterialBytes)
-                            .ConfigureAwait(continueOnCapturedContext: false);
-                        dek.SetKeyMaterial(rawDek);
-                    }
-                }
-                finally
-                {
-                    dek.KeyMaterialMutex.Release();
-                }
+                byte[] rawDek = await kmsClient.Decrypt(dek.EncryptedKeyMaterialBytes)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+                dek.SetKeyMaterial(rawDek);
+
             }
 
             return dek;
@@ -593,11 +566,6 @@ namespace Confluent.SchemaRegistry.Encryption
                     return (version, remaining);
                 }
             }
-        }
-
-        public void Dispose()
-        {
-            kekMutex?.Dispose();
         }
     }
 

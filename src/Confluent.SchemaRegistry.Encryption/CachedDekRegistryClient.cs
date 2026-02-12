@@ -194,6 +194,36 @@ namespace Confluent.SchemaRegistry.Encryption
             authenticationHeaderValueProvider = DekRestService.AuthenticationHeaderValueProvider(
                 config, authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs);
 
+
+            var propertyNames = new HashSet<string>
+            {
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxConnectionsPerServer },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointQuery },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy },
+                { SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy },
+                { SchemaRegistryConfig.PropertyNames.SslCaLocation },
+                { SchemaRegistryConfig.PropertyNames.SslKeystoreLocation },
+                { SchemaRegistryConfig.PropertyNames.SslKeystorePassword },
+                { SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification }
+            };
+
             foreach (var property in config)
             {
                 if (!property.Key.StartsWith("schema.registry."))
@@ -201,30 +231,7 @@ namespace Confluent.SchemaRegistry.Encryption
                     continue;
                 }
 
-                if (property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxRetries &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesWaitMs &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRetriesMaxWaitMs &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxConnectionsPerServer &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryLatestCacheTtlSecs &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthCredentialsSource &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthToken &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientId &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthClientSecret &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthScope &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthLogicalCluster &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthIdentityPoolId &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystoreLocation &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification)
+                if (!propertyNames.Contains(property.Key))
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
@@ -403,29 +410,17 @@ namespace Confluent.SchemaRegistry.Encryption
             => GetDekVersionAsync(kekName, subject, -1, algorithm, ignoreDeletedDeks);
 
         /// <inheritdoc/>
-        public async Task<RegisteredDek> CreateDekAsync(string kekName, Dek dek)
+        public Task<RegisteredDek> CreateDekAsync(string kekName, Dek dek)
         {
             try
             {
-                return await restService.CreateDekAsync(kekName, dek)
-                    .ConfigureAwait(continueOnCapturedContext: false);
+                return restService.CreateDekAsync(kekName, dek);
             }
             finally
             {
-                // Ensure latest dek is invalidated, such as in case of conflict (409) or error
-                // Invalidate both version=-1 (from GetDekLatestVersionAsync) and version=null (from GetDekAsync)
-                await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-                try
-                {
-                    this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, false));
-                    this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, true));
-                    this.deks.Remove(new DekId(kekName, dek.Subject, null, dek.Algorithm, false));
-                    this.deks.Remove(new DekId(kekName, dek.Subject, null, dek.Algorithm, true));
-                }
-                finally
-                {
-                    cacheMutex.Release();
-                }
+                // Ensure latest dek is invalidated, such as in case of conflict (409)
+                this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, false));
+                this.deks.Remove(new DekId(kekName, dek.Subject, -1, dek.Algorithm, true));
             }
         }
 
