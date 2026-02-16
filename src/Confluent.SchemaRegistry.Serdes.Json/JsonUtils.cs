@@ -33,13 +33,13 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </summary>
     public static class JsonUtils
     {
-        public static Task<object> Transform(RuleContext ctx, JsonSchema schema, string path, object message,
+        public static Task<object> Transform(RuleContext ctx, JsonSchema rootSchema, JsonSchema schema, string path, object message,
             IFieldTransform fieldTransform)
         {
-            return Transform(ctx, schema, path, message, fieldTransform, null);
+            return Transform(ctx, rootSchema, schema, path, message, fieldTransform, null);
         }
 
-        private static async Task<object> Transform(RuleContext ctx, JsonSchema schema, string path, object message,
+        private static async Task<object> Transform(RuleContext ctx, JsonSchema rootSchema, JsonSchema schema, string path, object message,
             IFieldTransform fieldTransform, JsonObjectType? typeOverride)
         {
             if (schema == null || message == null)
@@ -48,7 +48,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
 
             // Use typeOverride if provided, otherwise use schema.Type (thread-safe read)
-            JsonObjectType effectiveType = typeOverride ?? GetSchemaType(schema);
+            JsonObjectType effectiveType = typeOverride ?? GetSchemaType(rootSchema, schema);
 
             RuleContext.FieldContext fieldContext = ctx.CurrentField();
             if (fieldContext != null)
@@ -65,9 +65,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     if (effectiveType.HasFlag(flag) && !flag.Equals(default(JsonObjectType)))
                     {
-                        // Check if this type flag matches the message, with lock to protect schema mutation
+                        // Check if this type flag matches the message, with lock on root schema to protect mutation
                         bool isValid;
-                        lock (schema)
+                        lock (rootSchema)
                         {
                             JsonObjectType originalType = schema.Type;
                             try
@@ -86,7 +86,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         if (isValid)
                         {
                             // Pass flag as typeOverride - recursive call uses resolved type
-                            return await Transform(ctx, schema, path, message,
+                            return await Transform(ctx, rootSchema, schema, path, message,
                                 fieldTransform, flag).ConfigureAwait(false);
                         }
                     }
@@ -110,12 +110,17 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
                 foreach (JsonSchema subschema in subschemas)
                 {
-                    var validator = new JsonSchemaValidator();
-                    var errors = validator.Validate(jsonObject, subschema);
-                    if (errors.Count == 0)
+                    bool isValid;
+                    lock (rootSchema)
+                    {
+                        var validator = new JsonSchemaValidator();
+                        var errors = validator.Validate(jsonObject, subschema);
+                        isValid = errors.Count == 0;
+                    }
+                    if (isValid)
                     {
                         // New subschema, no type override needed
-                        return await Transform(ctx, subschema, path, message, fieldTransform, null).ConfigureAwait(false);
+                        return await Transform(ctx, rootSchema, subschema, path, message, fieldTransform, null).ConfigureAwait(false);
                     }
                 }
 
@@ -134,7 +139,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 JsonSchema subschema = schema.Item;
                 var transformer = (int index, object elem) =>
-                    Transform(ctx, subschema, path + '[' + index + ']', elem, fieldTransform, null);
+                    Transform(ctx, rootSchema, subschema, path + '[' + index + ']', elem, fieldTransform, null);
                 return await Utils.TransformEnumerableAsync(message, transformer).ConfigureAwait(false);
             }
             else if (effectiveType.HasFlag(JsonObjectType.Object) || schema.Properties.Count > 0)
@@ -142,7 +147,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 foreach (var it in schema.Properties)
                 {
                     string fullName = path + '.' + it.Key;
-                    using (ctx.EnterField(message, fullName, it.Key, GetType(it.Value), GetInlineTags(it.Value)))
+                    using (ctx.EnterField(message, fullName, it.Key, GetType(rootSchema, it.Value), GetInlineTags(it.Value)))
                     {
                         FieldAccessor fieldAccessor;
                         try
@@ -155,7 +160,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
                         object value = fieldAccessor.GetFieldValue(message);
                         // New field schema, no type override needed
-                        object newValue = await Transform(ctx, it.Value, fullName, value, fieldTransform, null).ConfigureAwait(false);
+                        object newValue = await Transform(ctx, rootSchema, it.Value, fullName, value, fieldTransform, null).ConfigureAwait(false);
                         if (ctx.Rule.Kind == RuleKind.Condition)
                         {
                             if (newValue is bool b && !b)
@@ -175,7 +180,7 @@ namespace Confluent.SchemaRegistry.Serdes
             else if (schema.HasReference)
             {
                 // Follow reference, no type override needed
-                return await Transform(ctx, schema.ActualTypeSchema, path, message, fieldTransform, null).ConfigureAwait(false);
+                return await Transform(ctx, rootSchema, schema.ActualTypeSchema, path, message, fieldTransform, null).ConfigureAwait(false);
             }
             else
             {
@@ -215,21 +220,21 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <summary>
-        ///     Thread-safe accessor for schema.Type./
+        ///     Thread-safe accessor for schema.Type.
         ///     Prevents reading temporarily mutated values during concurrent type validation.
+        ///     Locks on rootSchema to ensure consistency across the entire schema tree.
         /// </summary>
-        private static JsonObjectType GetSchemaType(JsonSchema schema)
+        private static JsonObjectType GetSchemaType(JsonSchema rootSchema, JsonSchema schema)
         {
-            lock (schema)
+            lock (rootSchema)
             {
                 return schema.Type;
             }
         }
 
-
-        private static RuleContext.Type GetType(JsonSchema schema)
+        private static RuleContext.Type GetType(JsonSchema rootSchema, JsonSchema schema)
         {
-            return GetType(GetSchemaType(schema));
+            return GetType(GetSchemaType(rootSchema, schema));
         }
 
         private static RuleContext.Type GetType(JsonObjectType type)
