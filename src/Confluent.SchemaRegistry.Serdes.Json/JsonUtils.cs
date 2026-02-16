@@ -39,15 +39,6 @@ namespace Confluent.SchemaRegistry.Serdes
             return Transform(ctx, rootSchema, schema, path, message, fieldTransform, null);
         }
 
-        /// <summary>
-        ///     Overload for backward compatibility - uses schema as root schema.
-        /// </summary>
-        public static Task<object> Transform(RuleContext ctx, JsonSchema schema, string path, object message,
-            IFieldTransform fieldTransform)
-        {
-            return Transform(ctx, schema, schema, path, message, fieldTransform, null);
-        }
-
         private static async Task<object> Transform(RuleContext ctx, JsonSchema rootSchema, JsonSchema schema, string path, object message,
             IFieldTransform fieldTransform, JsonObjectType? typeOverride)
         {
