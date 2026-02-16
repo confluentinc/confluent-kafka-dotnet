@@ -241,7 +241,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     parsedSchema = await GetParsedSchema(latestSchema).ConfigureAwait(false);
                     FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                     {
-                        return await JsonUtils.Transform(ctx, parsedSchema, "$", message, transform).ConfigureAwait(false);
+                        return await JsonUtils.Transform(ctx, parsedSchema, parsedSchema, "$", message, transform).ConfigureAwait(false);
                     };
                     value = await ExecuteRules(context.Component == MessageComponentType.Key,
                             subject, context.Topic, context.Headers, RuleMode.Write,
@@ -258,7 +258,11 @@ namespace Confluent.SchemaRegistry.Serdes
                 
                 if (validate)
                 {
-                    var validationResult = validator.Validate(serializedString, parsedSchema);
+                    ICollection<ValidationError> validationResult;
+                    lock (parsedSchema)
+                    {
+                        validationResult = validator.Validate(serializedString, parsedSchema);
+                    }
                     if (validationResult.Count > 0)
                     {
                         var flattenedErrors = FlattenPropertyValidationErrors(validationResult);
