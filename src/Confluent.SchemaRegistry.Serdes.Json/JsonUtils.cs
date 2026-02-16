@@ -47,8 +47,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 return message;
             }
 
-            // Use typeOverride if provided, otherwise use schema.Type
-            JsonObjectType effectiveType = typeOverride ?? schema.Type;
+            // Use typeOverride if provided, otherwise use schema.Type (thread-safe read)
+            JsonObjectType effectiveType = typeOverride ?? GetSchemaType(schema);
 
             RuleContext.FieldContext fieldContext = ctx.CurrentField();
             if (fieldContext != null)
@@ -214,9 +214,22 @@ namespace Confluent.SchemaRegistry.Serdes
             return value != 0 && (value & (value - 1)) != 0;
         }
 
+        /// <summary>
+        ///     Thread-safe accessor for schema.Type./
+        ///     Prevents reading temporarily mutated values during concurrent type validation.
+        /// </summary>
+        private static JsonObjectType GetSchemaType(JsonSchema schema)
+        {
+            lock (schema)
+            {
+                return schema.Type;
+            }
+        }
+
+
         private static RuleContext.Type GetType(JsonSchema schema)
         {
-            return GetType(schema.Type);
+            return GetType(GetSchemaType(schema));
         }
 
         private static RuleContext.Type GetType(JsonObjectType type)
