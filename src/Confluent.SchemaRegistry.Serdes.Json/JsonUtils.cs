@@ -214,8 +214,8 @@ namespace Confluent.SchemaRegistry.Serdes
             return value != 0 && (value & (value - 1)) != 0;
         }
 
-        /// <summary>f
-        ///     Thread-safe accessor for schema.Type.
+        /// <summary>
+        ///     Thread-safe accessor for schema.Type./
         ///     Prevents reading temporarily mutated values during concurrent type validation.
         /// </summary>
         private static JsonObjectType GetSchemaType(JsonSchema schema)
@@ -225,6 +225,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 return schema.Type;
             }
         }
+
 
         private static RuleContext.Type GetType(JsonSchema schema)
         {
