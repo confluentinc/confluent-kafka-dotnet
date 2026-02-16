@@ -240,7 +240,11 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (readerSchema != null && validate)
                     {
-                        var validationResult = validator.Validate(json, readerSchema);
+                        ICollection<ValidationError> validationResult;
+                        lock (readerSchema)
+                        {
+                            validationResult = validator.Validate(json, readerSchema);
+                        }
                         if (validationResult.Count > 0)
                         {
                             throw new InvalidDataException("Schema validation failed for properties: [" +
@@ -255,7 +259,11 @@ namespace Confluent.SchemaRegistry.Serdes
                     var serializedString = GetString(payload);
                     if (readerSchema != null && validate)
                     {
-                        var validationResult = validator.Validate(serializedString, readerSchema);
+                        ICollection<ValidationError> validationResult;
+                        lock (readerSchema)
+                        {
+                            validationResult = validator.Validate(serializedString, readerSchema);
+                        }
 
                         if (validationResult.Count > 0)
                         {
@@ -272,7 +280,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                     {
-                        return await JsonUtils.Transform(ctx, readerSchema, "$", message, transform).ConfigureAwait(false);
+                        return await JsonUtils.Transform(ctx, readerSchema, readerSchema, "$", message, transform).ConfigureAwait(false);
                     };
                     value = await ExecuteRules(context.Component == MessageComponentType.Key,
                             subject, context.Topic, context.Headers, RuleMode.Read,
