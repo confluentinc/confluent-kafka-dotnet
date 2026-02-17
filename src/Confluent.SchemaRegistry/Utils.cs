@@ -112,22 +112,14 @@ namespace Confluent.SchemaRegistry
             var listType   = typeof(List<>).MakeGenericType(elementType);
             var resultList = (IList)Activator.CreateInstance(listType);
 
-            // 4. Kick off all transforms in parallel
-            var tasks = new List<Task<object>>();
+            // 4. Transform each element sequentially to preserve field context stack integrity
+            // (RuleContext.fieldContexts is a shared stack that is not thread-safe)
             int index = 0;
             foreach (var item in (IEnumerable)sourceEnumerable)
             {
-                tasks.Add(indexedTransformer(index, item));
-                index++;
-            }
-
-            // 5. Await them all at once
-            var results = await Task.WhenAll(tasks).ConfigureAwait(false);
-
-            // 6. Populate the result list in original order
-            foreach (var transformed in results)
-            {
+                var transformed = await indexedTransformer(index, item).ConfigureAwait(false);
                 resultList.Add(transformed);
+                index++;
             }
 
             // 7. Return the List<T> as object
@@ -180,24 +172,14 @@ namespace Confluent.SchemaRegistry
             var resultDictType = typeof(Dictionary<,>).MakeGenericType(keyType, valueType);
             var resultDict     = (IDictionary)Activator.CreateInstance(resultDictType);
 
-            // 4. Enumerate the source via the non‐generic IDictionary interface
+            // 4. Transform each entry sequentially to preserve field context stack integrity
+            // (RuleContext.fieldContexts is a shared stack that is not thread-safe)
             var nonGenericDict = (IDictionary)sourceDictionary;
-            var keys       = new List<object>();
-            var tasks      = new List<Task<object>>();
 
             foreach (DictionaryEntry entry in nonGenericDict)
             {
-                keys.Add(entry.Key);
-                tasks.Add(transformer(entry.Key, entry.Value));
-            }
-
-            // 5. Await all transformations
-            var transformedValues = await Task.WhenAll(tasks).ConfigureAwait(false);
-
-            // 6. Reconstruct the new dictionary in original order
-            for (int i = 0; i < keys.Count; i++)
-            {
-                resultDict.Add(keys[i], transformedValues[i]);
+                var transformedValue = await transformer(entry.Key, entry.Value).ConfigureAwait(false);
+                resultDict.Add(entry.Key, transformedValue);
             }
 
             // 7. Return boxed Dictionary<K,V>
