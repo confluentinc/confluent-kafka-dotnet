@@ -122,7 +122,7 @@ namespace Confluent.SchemaRegistry
                 index++;
             }
 
-            // 7. Return the List<T> as object
+            // 5. Return the List<T> as object
             return resultList;
         }
 
@@ -182,7 +182,7 @@ namespace Confluent.SchemaRegistry
                 resultDict.Add(entry.Key, transformedValue);
             }
 
-            // 7. Return boxed Dictionary<K,V>
+            // 5. Return boxed Dictionary<K,V>
             return resultDict;
         }
     }
