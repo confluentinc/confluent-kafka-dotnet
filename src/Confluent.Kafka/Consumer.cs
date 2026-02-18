@@ -473,6 +473,11 @@ namespace Confluent.Kafka
 
 
         /// <inheritdoc/>
+        public void StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+            => kafkaHandle.StoreOffsets(offsets);
+
+
+        /// <inheritdoc/>
         public List<TopicPartitionOffset> Commit()
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Commit(null);
