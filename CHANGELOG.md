@@ -1,3 +1,10 @@
+# 2.13.1
+
+## Fixes
+
+* Processing arrays and maps sequentially to avoid race conditions (#2569)
+
+
 # 2.13.0
 
 ## Enhancements
