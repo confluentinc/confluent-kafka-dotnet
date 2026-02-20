@@ -287,6 +287,7 @@ namespace Confluent.SchemaRegistry
             // concurrent access).
 
             string aggregatedErrorMessage = null;
+            List<Exception> aggregatedExceptions = new List<Exception>();
             HttpResponseMessage response = null;
             bool firstError = true;
 
@@ -331,13 +332,13 @@ namespace Confluent.SchemaRegistry
                             message = errorObject.Value<string>("message");
                             errorCode = errorObject.Value<int>("error_code");
                         }
-                        catch (Exception)
+                        catch (Exception e)
                         {
                             // consider an unauthorized response from any server to be conclusive.
                             if (response.StatusCode == HttpStatusCode.Unauthorized)
                             {
                                 finished = true;
-                                throw new HttpRequestException($"Unauthorized");
+                                throw new HttpRequestException($"Unauthorized", e);
                             }
                         }
 
@@ -383,10 +384,14 @@ namespace Confluent.SchemaRegistry
                     firstError = false;
 
                     aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] HttpRequestException: {e.Message}";
+                    aggregatedExceptions.Add(e);
                 }
             }
 
-            throw new HttpRequestException(aggregatedErrorMessage);
+            Exception innerException = aggregatedExceptions.Count == 1
+                ? aggregatedExceptions[0]
+                : new AggregateException(aggregatedExceptions);
+            throw new HttpRequestException(aggregatedErrorMessage, innerException);
         }
 
         private async Task<HttpResponseMessage> SendRequest(
