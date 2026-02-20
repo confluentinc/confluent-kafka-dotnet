@@ -378,9 +378,9 @@ namespace Confluent.SchemaRegistry
             }
 
             var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
-            var sslCaCertificate = string.IsNullOrEmpty(sslCaLocation) ? null : new X509Certificate2(sslCaLocation);
+            var sslCaCertificates = LoadCaCertificates(sslCaLocation);
             this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
-                SetSslConfig(config), sslVerify, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, maxConnectionsPerServer);
+                SetSslConfig(config), sslVerify, sslCaCertificates, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, maxConnectionsPerServer);
         }
 
         /// <summary>
@@ -452,6 +452,51 @@ namespace Confluent.SchemaRegistry
             }
 
             return certificates;
+        }
+
+        /// <summary>
+        ///     Loads all CA certificates from a PEM file at the specified path.
+        ///     Supports PEM files containing multiple certificates (certificate bundles/chains).
+        ///     Falls back to loading as a single certificate (e.g. DER format) if no PEM certificates are found.
+        /// </summary>
+        /// <remarks>
+        ///     This method is public so it can be reused by CachedDekRegistryClient in the Encryption assembly.
+        /// </remarks>
+        public static List<X509Certificate2> LoadCaCertificates(string sslCaLocation)
+        {
+            if (string.IsNullOrEmpty(sslCaLocation))
+            {
+                return null;
+            }
+
+            var certs = new List<X509Certificate2>();
+
+#if NET5_0_OR_GREATER
+            var collection = new X509Certificate2Collection();
+            collection.ImportFromPemFile(sslCaLocation);
+            foreach (var cert in collection)
+            {
+                certs.Add(cert);
+            }
+#else
+            var pemContent = System.IO.File.ReadAllText(sslCaLocation);
+            var matches = System.Text.RegularExpressions.Regex.Matches(pemContent,
+                @"-----BEGIN CERTIFICATE-----\s*([\s\S]*?)\s*-----END CERTIFICATE-----");
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                var base64 = match.Groups[1].Value.Replace("\r", "").Replace("\n", "");
+                certs.Add(new X509Certificate2(Convert.FromBase64String(base64)));
+            }
+#endif
+
+            // Fallback: if no PEM certificates were found, try loading as a single certificate
+            // (e.g. DER-encoded file) for backwards compatibility.
+            if (certs.Count == 0)
+            {
+                certs.Add(new X509Certificate2(sslCaLocation));
+            }
+
+            return certs;
         }
 
         /// <inheritdoc/>
