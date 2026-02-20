@@ -86,7 +86,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public RestService(string schemaRegistryUrl, int timeoutMs,
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null,
+            bool enableSslCertificateVerification, List<X509Certificate2> sslCaCertificates = null, IWebProxy proxy = null,
             int maxRetries = DefaultMaxRetries, int retriesWaitMs = DefaultRetriesWaitMs,
             int retriesMaxWaitMs = DefaultRetriesMaxWaitMs, int maxConnectionsPerServer = DefaultMaxConnectionsPerServer)
         {
@@ -100,7 +100,7 @@ namespace Confluent.SchemaRegistry
             this.clients = schemaRegistryUrl
                 .Split(',')
                 .Select(SanitizeUri) // need http or https - use http if not present
-                .Select(client => new HttpClient(CreateSocketsHandler(certificates, enableSslCertificateVerification, sslCaCertificate, proxy, maxConnectionsPerServer, timeoutMs))
+                .Select(client => new HttpClient(CreateSocketsHandler(certificates, enableSslCertificateVerification, sslCaCertificates, proxy, maxConnectionsPerServer, timeoutMs))
                 {
                     BaseAddress = new Uri(client, UriKind.Absolute),
                 })
@@ -109,7 +109,7 @@ namespace Confluent.SchemaRegistry
             this.clients = schemaRegistryUrl
                 .Split(',')
                 .Select(SanitizeUri) // need http or https - use http if not present.
-                .Select(uri => new HttpClient(CreateHandler(certificates, enableSslCertificateVerification, sslCaCertificate, proxy, maxConnectionsPerServer))
+                .Select(uri => new HttpClient(CreateHandler(certificates, enableSslCertificateVerification, sslCaCertificates, proxy, maxConnectionsPerServer))
                 {
                     BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs)
                 })
@@ -125,7 +125,7 @@ namespace Confluent.SchemaRegistry
 
 #if NET6_0_OR_GREATER
         private static SocketsHttpHandler CreateSocketsHandler(List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate,
+            bool enableSslCertificateVerification, List<X509Certificate2> sslCaCertificates,
             IWebProxy proxy, int maxConnectionsPerServer, int timeoutMs)
         {
             var handler = new SocketsHttpHandler();
@@ -144,7 +144,7 @@ namespace Confluent.SchemaRegistry
             {
                 handler.SslOptions.RemoteCertificateValidationCallback = (_, __, ___, ____) => { return true; };
             }
-            else if (sslCaCertificate != null)
+            else if (sslCaCertificates != null && sslCaCertificates.Count > 0)
             {
                 handler.SslOptions.RemoteCertificateValidationCallback = (_, __, chain, policyErrors) => {
                     if (policyErrors == SslPolicyErrors.None)
@@ -152,27 +152,25 @@ namespace Confluent.SchemaRegistry
                         return true;
                     }
 
-                    // The second element of the chain should be the issuer of the certificate
-                    if (chain.ChainElements.Count < 2)
-                    {
-                        return false;
-                    }
-                    var connectionCertHash = chain.ChainElements[1].Certificate.GetCertHash();
-                    var expectedCertHash = sslCaCertificate.GetCertHash();
-
-                    if (connectionCertHash.Length != expectedCertHash.Length)
+                    if (chain == null || chain.ChainElements.Count == 0)
                     {
                         return false;
                     }
 
-                    for (int i = 0; i < connectionCertHash.Length; i++)
+                    // Check if any certificate in the chain matches any of the trusted CA certificates.
+                    // This supports multi-certificate PEM bundles (e.g. full CA chains with root + intermediates).
+                    foreach (var chainElement in chain.ChainElements)
                     {
-                        if (connectionCertHash[i] != expectedCertHash[i])
+                        var chainCertHash = chainElement.Certificate.GetCertHash();
+                        foreach (var caCert in sslCaCertificates)
                         {
-                            return false;
+                            if (chainCertHash.SequenceEqual(caCert.GetCertHash()))
+                            {
+                                return true;
+                            }
                         }
                     }
-                    return true;
+                    return false;
                 };
             }
 
@@ -184,7 +182,7 @@ namespace Confluent.SchemaRegistry
         }
 #endif
         private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate,
+            bool enableSslCertificateVerification, List<X509Certificate2> sslCaCertificates,
             IWebProxy proxy, int maxConnectionsPerServer)
         {
             var handler = new HttpClientHandler();
@@ -198,7 +196,7 @@ namespace Confluent.SchemaRegistry
             {
                 handler.ServerCertificateCustomValidationCallback = (_, __, ___, ____) => { return true; };
             }
-            else  if (sslCaCertificate != null)
+            else if (sslCaCertificates != null && sslCaCertificates.Count > 0)
             {
                 handler.ServerCertificateCustomValidationCallback = (_, __, chain, policyErrors) => {
 
@@ -207,29 +205,25 @@ namespace Confluent.SchemaRegistry
                         return true;
                     }
 
-                    // The second element of the chain should be the issuer of the certificate
-                    if (chain.ChainElements.Count < 2)
-                    {
-                        return false;
-                    }
-                    var connectionCertHash = chain.ChainElements[1].Certificate.GetCertHash();
-
-
-                    var expectedCertHash = sslCaCertificate.GetCertHash();
-
-                    if (connectionCertHash.Length != expectedCertHash.Length)
+                    if (chain == null || chain.ChainElements.Count == 0)
                     {
                         return false;
                     }
 
-                    for (int i = 0; i < connectionCertHash.Length; i++)
+                    // Check if any certificate in the chain matches any of the trusted CA certificates.
+                    // This supports multi-certificate PEM bundles (e.g. full CA chains with root + intermediates).
+                    foreach (var chainElement in chain.ChainElements)
                     {
-                        if (connectionCertHash[i] != expectedCertHash[i])
+                        var chainCertHash = chainElement.Certificate.GetCertHash();
+                        foreach (var caCert in sslCaCertificates)
                         {
-                            return false;
+                            if (chainCertHash.SequenceEqual(caCert.GetCertHash()))
+                            {
+                                return true;
+                            }
                         }
                     }
-                    return true;
+                    return false;
                 };
             }
 

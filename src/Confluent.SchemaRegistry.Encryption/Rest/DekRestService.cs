@@ -30,11 +30,11 @@ namespace Confluent.SchemaRegistry.Encryption
         /// </summary>
         public DekRestService(string schemaRegistryUrl, int timeoutMs,
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates,
-            bool enableSslCertificateVerification, X509Certificate2 sslCaCertificate = null, IWebProxy proxy = null,
+            bool enableSslCertificateVerification, List<X509Certificate2> sslCaCertificates = null, IWebProxy proxy = null,
             int maxRetries = DefaultMaxRetries, int retriesWaitMs = DefaultRetriesWaitMs,
             int retriesMaxWaitMs = DefaultRetriesMaxWaitMs, int maxConnectionsPerServer = DefaultMaxConnectionsPerServer) :
             base(schemaRegistryUrl, timeoutMs, authenticationHeaderValueProvider, certificates,
-                enableSslCertificateVerification, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, maxConnectionsPerServer)
+                enableSslCertificateVerification, sslCaCertificates, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, maxConnectionsPerServer)
         {
         }
 
