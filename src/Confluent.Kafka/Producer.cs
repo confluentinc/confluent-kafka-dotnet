@@ -803,14 +803,27 @@ namespace Confluent.Kafka
                             = cancellationToken.Register(() => handler.TrySetCanceled());
                     }
 
-                    ProduceImpl(
-                        topicPartition.Topic,
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
-                        message.Timestamp, topicPartition.Partition, headers.BackingList,
-                        handler);
+                    // Ensure cancellation registration is disposed if ProduceImpl fails before a delivery report is possible.
+                    var produced = false;
+                    try
+                    {
+                        ProduceImpl(
+                            topicPartition.Topic,
+                            valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                            keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                            message.Timestamp, topicPartition.Partition, headers.BackingList,
+                            handler);
+                        produced = true;
 
-                    return await handler.Task.ConfigureAwait(false);
+                        return await handler.Task.ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        if (!produced && cancellationToken.CanBeCanceled)
+                        {
+                            handler.CancellationTokenRegistration.Dispose();
+                        }
+                    }
                 }
                 else
                 {
