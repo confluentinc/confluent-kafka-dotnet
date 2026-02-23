@@ -77,7 +77,8 @@ namespace Confluent.SchemaRegistry.Serdes
             }
 
             var nonProtobufConfig = config
-                .Where(item => !item.Key.StartsWith("protobuf.") && !item.Key.StartsWith("rules."));
+                .Where(item => !item.Key.StartsWith("protobuf.") && !item.Key.StartsWith("rules.")
+                    && !item.Key.StartsWith("strategy."));
             if (nonProtobufConfig.Count() > 0)
             {
                 throw new ArgumentException($"ProtobufSerializer: unknown configuration parameter {nonProtobufConfig.First().Key}");
@@ -94,7 +95,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 throw new NotSupportedException("ProtobufSerializer: UseDeprecatedFormat is no longer supported");
             }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToAsyncDelegate(schemaRegistryClient, config); }
             if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
                 ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()
@@ -231,7 +232,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    subject = GetSubjectName(context.Topic, context.Component == MessageComponentType.Key, fullname);
+                    subject = await GetSubjectName(context.Topic, context.Component == MessageComponentType.Key, fullname)
+                        .ConfigureAwait(false);
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     
