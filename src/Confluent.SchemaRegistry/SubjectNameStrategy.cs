@@ -100,7 +100,7 @@ namespace Confluent.SchemaRegistry
     ///     
     ///     If more than one subject is returned from the query, an exception will be thrown.
     ///     If no subjects are returned from the query, then the behavior will fall back
-    ///     to Topic strategy, unless the configuration property "fallback.subject.name.strategy.type"
+    ///     to Topic strategy, unless the configuration property "subject.name.strategy.fallback.type"
     ///     is set to "RECORD", "TOPIC_RECORD", or "NONE".
     /// </summary>
     public class AssociatedNameStrategy
@@ -108,7 +108,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Configuration property name for the Kafka cluster ID.
         /// </summary>
-        public const string KafkaClusterIdConfig = "strategy.kafka.cluster.id";
+        public const string KafkaClusterIdConfig = "subject.name.strategy.kafka.cluster.id";
 
         /// <summary>
         ///     Wildcard value for resource namespace.
@@ -118,7 +118,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Configuration property name for the fallback subject name strategy type.
         /// </summary>
-        public const string FallbackSubjectNameStrategyTypeConfig = "strategy.fallback.subject.name.strategy.type";
+        public const string FallbackSubjectNameStrategyTypeConfig = "subject.name.strategy.fallback.type";
 
         private const int DefaultCacheCapacity = 1000;
 
