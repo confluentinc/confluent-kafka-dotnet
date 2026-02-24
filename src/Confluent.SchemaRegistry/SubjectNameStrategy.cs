@@ -15,6 +15,9 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 
 
@@ -35,10 +38,24 @@ namespace Confluent.SchemaRegistry
 
 
     /// <summary>
+    ///     Asynchronously construct the subject name under which the schema
+    ///     associated with a record should be registered in Schema Registry.
+    /// </summary>
+    /// <param name="context">
+    ///     The serialization context.
+    /// </param>
+    /// <param name="recordType">
+    ///     The type name of the data being written.
+    /// </param>
+    public delegate Task<string> AsyncSubjectNameStrategyDelegate(SerializationContext context, string recordType);
+
+
+    /// <summary>
     ///     Subject name strategy. Refer to: https://www.confluent.io/blog/put-several-event-types-kafka-topic/
     /// </summary>
     public enum SubjectNameStrategy
     {
+
         /// <summary>
         ///     (default): The subject name for message keys is &lt;topic&gt;-key, and &lt;topic&gt;-value for message values.
         ///     This means that the schemas of all messages in the topic must be compatible with each other.
@@ -57,7 +74,240 @@ namespace Confluent.SchemaRegistry
         ///     is the fully-qualified name of the Avro record type of the message. This setting also allows any number of event
         ///     types in the same topic, and further constrains the compatibility check to the current topic only.
         /// </summary>
-        TopicRecord
+        TopicRecord,
+
+        /// <summary>
+        ///     Retrieves the associated subject name from schema registry.
+        ///     This strategy requires an <see cref="AssociatedNameStrategy"/> instance to be provided.
+        /// </summary>
+        Associated,
+
+        /// <summary>
+        ///     No subject name strategy.
+        /// </summary>
+        None
+    }
+
+
+    /// <summary>
+    ///     Associated subject name strategy implementation that uses a schema registry client
+    ///     and configuration to determine subject names.
+    ///     
+    ///     This strategy queries schema registry for the associated subject name for the topic.
+    ///     The topic is passed as the resource name to schema registry. If there is a configuration
+    ///     property named "subject.name.strategy.kafka.cluster.id", then its value will be passed
+    ///     as the resource namespace; otherwise the value "-" will be passed as the resource namespace.
+    ///     
+    ///     If more than one subject is returned from the query, an exception will be thrown.
+    ///     If no subjects are returned from the query, then the behavior will fall back
+    ///     to Topic strategy, unless the configuration property "subject.name.strategy.fallback.type"
+    ///     is set to "RECORD", "TOPIC_RECORD", or "NONE".
+    /// </summary>
+    public class AssociatedNameStrategy
+    {
+        /// <summary>
+        ///     Configuration property name for the Kafka cluster ID.
+        /// </summary>
+        public const string KafkaClusterIdConfig = "subject.name.strategy.kafka.cluster.id";
+
+        /// <summary>
+        ///     Wildcard value for resource namespace.
+        /// </summary>
+        public const string NamespaceWildcard = "-";
+
+        /// <summary>
+        ///     Configuration property name for the fallback subject name strategy type.
+        /// </summary>
+        public const string FallbackSubjectNameStrategyTypeConfig = "subject.name.strategy.fallback.type";
+
+        private const int DefaultCacheCapacity = 1000;
+
+        private readonly ISchemaRegistryClient schemaRegistryClient;
+        private readonly string kafkaClusterId;
+        private readonly SubjectNameStrategy fallbackSubjectNameStrategy;
+        private readonly ConcurrentDictionary<CacheKey, string> subjectNameCache;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="AssociatedNameStrategy"/> class.
+        /// </summary>
+        /// <param name="schemaRegistryClient">The schema registry client to use for lookups.</param>
+        /// <param name="config">The configuration.</param>
+        public AssociatedNameStrategy(
+            ISchemaRegistryClient schemaRegistryClient,
+            IEnumerable<KeyValuePair<string, string>> config)
+        {
+            this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
+            this.subjectNameCache = new ConcurrentDictionary<CacheKey, string>();
+            
+            // Default fallback is Topic strategy
+            this.fallbackSubjectNameStrategy = SubjectNameStrategy.Topic;
+
+            if (config != null)
+            {
+                foreach (var kvp in config)
+                {
+                    if (kvp.Key == KafkaClusterIdConfig)
+                    {
+                        this.kafkaClusterId = kvp.Value;
+                    }
+                    else if (kvp.Key == FallbackSubjectNameStrategyTypeConfig)
+                    {
+                        switch (kvp.Value?.ToUpperInvariant())
+                        {
+                            case "TOPIC":
+                                this.fallbackSubjectNameStrategy = SubjectNameStrategy.Topic;
+                                break;
+                            case "RECORD":
+                                this.fallbackSubjectNameStrategy = SubjectNameStrategy.Record;
+                                break;
+                            case "TOPIC_RECORD":
+                                this.fallbackSubjectNameStrategy = SubjectNameStrategy.TopicRecord;
+                                break;
+                            case "NONE":
+                                this.fallbackSubjectNameStrategy = SubjectNameStrategy.None;
+                                break;
+                            default:
+                                throw new ArgumentException(
+                                    $"Invalid value for {FallbackSubjectNameStrategyTypeConfig}: {kvp.Value}");
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Asynchronously gets the subject name for the given serialization context and record type.
+        /// </summary>
+        /// <param name="context">The serialization context.</param>
+        /// <param name="recordType">The type name of the data being written.</param>
+        /// <returns>A task that resolves to the subject name.</returns>
+        public async Task<string> GetSubjectNameAsync(SerializationContext context, string recordType)
+        {
+            if (context.Topic == null)
+            {
+                return null;
+            }
+
+            // Cache key uses only topic + isKey since the registry lookup does not depend on recordType.
+            var cacheKey = new CacheKey(context.Topic, context.Component == MessageComponentType.Key);
+
+            if (!subjectNameCache.TryGetValue(cacheKey, out var associatedSubject))
+            {
+                associatedSubject = await LookupAssociationAsync(context).ConfigureAwait(false);
+
+                if (!subjectNameCache.TryAdd(cacheKey, associatedSubject)
+                    && subjectNameCache.TryGetValue(cacheKey, out var existingSubject))
+                {
+                    associatedSubject = existingSubject;
+                }
+                
+                // Clean cache if it's getting too large. This is done after attempting to add
+                // the current entry to avoid a race window between Clear() and TryAdd().
+                if (subjectNameCache.Count >= DefaultCacheCapacity)
+                {
+                    subjectNameCache.Clear();
+                }
+            }
+
+            if (associatedSubject != null)
+            {
+                return associatedSubject;
+            }
+
+            // No association found — apply fallback (cheap string computation, not cached).
+            if (fallbackSubjectNameStrategy != SubjectNameStrategy.None)
+            {
+                return GetFallbackSubjectName(context, recordType);
+            }
+
+            throw new InvalidOperationException(
+                $"No associated subject found for topic {context.Topic}");
+        }
+
+        // Returns the association subject, or null if no association was found.
+        private async Task<string> LookupAssociationAsync(SerializationContext context)
+        {
+            var isKey = context.Component == MessageComponentType.Key;
+            var associationTypes = new List<string> { isKey ? "key" : "value" };
+
+            IList<Association> associations;
+            try
+            {
+                associations = await schemaRegistryClient.GetAssociationsByResourceNameAsync(
+                    context.Topic,
+                    kafkaClusterId ?? NamespaceWildcard,
+                    "topic",
+                    associationTypes,
+                    null,
+                    0,
+                    -1).ConfigureAwait(false);
+            }
+            catch (SchemaRegistryException e) when (e.Status == System.Net.HttpStatusCode.NotFound)
+            {
+                associations = Array.Empty<Association>();
+            }
+
+            if (associations.Count > 1)
+            {
+                throw new InvalidOperationException(
+                    $"Multiple associated subjects found for topic {context.Topic}");
+            }
+
+            return associations.Count == 1 ? associations[0].Subject : null;
+        }
+
+        private string GetFallbackSubjectName(SerializationContext context, string recordType)
+        {
+            switch (fallbackSubjectNameStrategy)
+            {
+                case SubjectNameStrategy.Topic:
+                    return $"{context.Topic}" + (context.Component == MessageComponentType.Key ? "-key" : "-value");
+                case SubjectNameStrategy.Record:
+                    if (recordType == null)
+                    {
+                        throw new ArgumentNullException(nameof(recordType));
+                    }
+                    return recordType;
+                case SubjectNameStrategy.TopicRecord:
+                    if (recordType == null)
+                    {
+                        throw new ArgumentNullException(nameof(recordType));
+                    }
+                    return $"{context.Topic}-{recordType}";
+                default:
+                    throw new ArgumentException($"Unknown SubjectNameStrategy: {fallbackSubjectNameStrategy}");
+            }
+        }
+
+        /// <summary>
+        ///     Cache key for the association registry lookup, based on topic and isKey only.
+        /// </summary>
+        private readonly struct CacheKey : IEquatable<CacheKey>
+        {
+            public readonly string Topic;
+            public readonly bool IsKey;
+
+            public CacheKey(string topic, bool isKey)
+            {
+                Topic = topic;
+                IsKey = isKey;
+            }
+
+            public bool Equals(CacheKey other)
+            {
+                return Topic == other.Topic && IsKey == other.IsKey;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is CacheKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(Topic, IsKey);
+            }
+        }
     }
 
 
@@ -69,7 +319,11 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Provide a functional implementation corresponding to the enum value.
         /// </summary>
-        public static SubjectNameStrategyDelegate ToDelegate(this SubjectNameStrategy strategy)
+        /// <param name="strategy">The subject name strategy.</param>
+        /// <returns>A SubjectNameStrategyDelegate.</returns>
+        [Obsolete("Superseded by ToAsyncDelegate. This method cannot be used with SubjectNameStrategy.Associated.")]
+        public static SubjectNameStrategyDelegate ToDelegate(
+            this SubjectNameStrategy strategy)
         {
             switch (strategy)
             {
@@ -80,7 +334,7 @@ namespace Confluent.SchemaRegistry
                         {
                             if (recordType == null)
                             {
-                                throw new ArgumentNullException($"recordType must not be null for SubjectNameStrategy.Record");
+                                throw new ArgumentNullException(nameof(recordType));
                             }
                             return $"{recordType}";
                         };
@@ -89,10 +343,71 @@ namespace Confluent.SchemaRegistry
                         {
                             if (recordType == null)
                             {
-                                throw new ArgumentNullException($"recordType must not be null for SubjectNameStrategy.Record");
+                                throw new ArgumentNullException(nameof(recordType));
                             }
                             return $"{context.Topic}-{recordType}";
                         };
+                case SubjectNameStrategy.Associated:
+                    throw new ArgumentException(
+                        $"SubjectNameStrategy.Associated requires async execution. Use {nameof(ToAsyncDelegate)} instead.");
+                case SubjectNameStrategy.None:
+                    return (context, recordType) => null;
+                default:
+                    throw new ArgumentException($"Unknown SubjectNameStrategy: {strategy}");
+            }
+        }
+
+        /// <summary>
+        ///     Provide an async functional implementation corresponding to the enum value.
+        /// </summary>
+        /// <param name="strategy">The subject name strategy.</param>
+        /// <param name="schemaRegistryClient">
+        ///     Optional. Required when strategy is <see cref="SubjectNameStrategy.Associated"/>.
+        ///     The schema registry client to use for lookups.
+        /// </param>
+        /// <param name="config">
+        ///     Optional. Used when strategy is <see cref="SubjectNameStrategy.Associated"/>.
+        ///     The configuration.
+        /// </param>
+        /// <returns>An AsyncSubjectNameStrategyDelegate.</returns>
+        public static AsyncSubjectNameStrategyDelegate ToAsyncDelegate(
+            this SubjectNameStrategy strategy,
+            ISchemaRegistryClient schemaRegistryClient = null,
+            IEnumerable<KeyValuePair<string, string>> config = null)
+        {
+            switch (strategy)
+            {
+                case SubjectNameStrategy.Topic:
+                    return (context, recordType) => Task.FromResult(
+                        $"{context.Topic}" + (context.Component == MessageComponentType.Key ? "-key" : "-value"));
+                case SubjectNameStrategy.Record:
+                    return (context, recordType) =>
+                        {
+                            if (recordType == null)
+                            {
+                                throw new ArgumentNullException(nameof(recordType));
+                            }
+                            return Task.FromResult(recordType);
+                        };
+                case SubjectNameStrategy.TopicRecord:
+                    return (context, recordType) =>
+                        {
+                            if (recordType == null)
+                            {
+                                throw new ArgumentNullException(nameof(recordType));
+                            }
+                            return Task.FromResult($"{context.Topic}-{recordType}");
+                        };
+                case SubjectNameStrategy.Associated:
+                    if (schemaRegistryClient == null)
+                    {
+                        throw new ArgumentException(
+                            $"SubjectNameStrategy.Associated requires a {nameof(schemaRegistryClient)} to be provided.");
+                    }
+                    var associatedStrategy = new AssociatedNameStrategy(schemaRegistryClient, config);
+                    return (context, recordType) => associatedStrategy.GetSubjectNameAsync(context, recordType);
+                case SubjectNameStrategy.None:
+                    return (context, recordType) => Task.FromResult<string>(null);
                 default:
                     throw new ArgumentException($"Unknown SubjectNameStrategy: {strategy}");
             }
@@ -101,12 +416,14 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Helper method to construct the key subject name given the specified parameters.
         /// </summary>
+        [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public static string ConstructKeySubjectName(this SubjectNameStrategy strategy, string topic, string recordType = null)
             => strategy.ToDelegate()(new SerializationContext(MessageComponentType.Key, topic), recordType);
 
         /// <summary>
         ///     Helper method to construct the value subject name given the specified parameters.
         /// </summary>
+        [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public static string ConstructValueSubjectName(this SubjectNameStrategy strategy, string topic, string recordType = null)
             => strategy.ToDelegate()(new SerializationContext(MessageComponentType.Value, topic), recordType);
     }
