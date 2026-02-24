@@ -57,11 +57,6 @@ namespace Confluent.SchemaRegistry
     {
 
         /// <summary>
-        ///     No subject name strategy.
-        /// </summary>
-        None,
-
-        /// <summary>
         ///     (default): The subject name for message keys is &lt;topic&gt;-key, and &lt;topic&gt;-value for message values.
         ///     This means that the schemas of all messages in the topic must be compatible with each other.
         /// </summary>
@@ -85,7 +80,12 @@ namespace Confluent.SchemaRegistry
         ///     Retrieves the associated subject name from schema registry.
         ///     This strategy requires an <see cref="AssociatedNameStrategy"/> instance to be provided.
         /// </summary>
-        Associated
+        Associated,
+
+        /// <summary>
+        ///     No subject name strategy.
+        /// </summary>
+        None
     }
 
 
@@ -95,8 +95,8 @@ namespace Confluent.SchemaRegistry
     ///     
     ///     This strategy queries schema registry for the associated subject name for the topic.
     ///     The topic is passed as the resource name to schema registry. If there is a configuration
-    ///     property named "kafka.cluster.id", then its value will be passed as the resource namespace;
-    ///     otherwise the value "-" will be passed as the resource namespace.
+    ///     property named "subject.name.strategy.kafka.cluster.id", then its value will be passed
+    ///     as the resource namespace; otherwise the value "-" will be passed as the resource namespace.
     ///     
     ///     If more than one subject is returned from the query, an exception will be thrown.
     ///     If no subjects are returned from the query, then the behavior will fall back
@@ -258,15 +258,13 @@ namespace Confluent.SchemaRegistry
                 case SubjectNameStrategy.Record:
                     if (recordType == null)
                     {
-                        throw new ArgumentNullException(
-                            "recordType must not be null for SubjectNameStrategy.Record");
+                        throw new ArgumentNullException("recordType");
                     }
                     return recordType;
                 case SubjectNameStrategy.TopicRecord:
                     if (recordType == null)
                     {
-                        throw new ArgumentNullException(
-                            "recordType must not be null for SubjectNameStrategy.TopicRecord");
+                        throw new ArgumentNullException("recordType");
                     }
                     return $"{context.Topic}-{recordType}";
                 default:
@@ -317,14 +315,6 @@ namespace Confluent.SchemaRegistry
         ///     Provide a functional implementation corresponding to the enum value.
         /// </summary>
         /// <param name="strategy">The subject name strategy.</param>
-        /// <param name="schemaRegistryClient">
-        ///     Optional. Required when strategy is <see cref="SubjectNameStrategy.Associated"/>.
-        ///     The schema registry client to use for lookups.
-        /// </param>
-        /// <param name="config">
-        ///     Optional. Used when strategy is <see cref="SubjectNameStrategy.Associated"/>.
-        ///     The configuration.
-        /// </param>
         /// <returns>A SubjectNameStrategyDelegate.</returns>
         [Obsolete]
         public static SubjectNameStrategyDelegate ToDelegate(
@@ -339,7 +329,7 @@ namespace Confluent.SchemaRegistry
                         {
                             if (recordType == null)
                             {
-                                throw new ArgumentNullException($"recordType must not be null for SubjectNameStrategy.Record");
+                                throw new ArgumentNullException("recordType");
                             }
                             return $"{recordType}";
                         };
@@ -348,13 +338,15 @@ namespace Confluent.SchemaRegistry
                         {
                             if (recordType == null)
                             {
-                                throw new ArgumentNullException($"recordType must not be null for SubjectNameStrategy.Record");
+                                throw new ArgumentNullException("recordType");
                             }
                             return $"{context.Topic}-{recordType}";
                         };
                 case SubjectNameStrategy.Associated:
                     throw new ArgumentException(
                         $"SubjectNameStrategy.Associated requires async execution. Use {nameof(ToAsyncDelegate)} instead.");
+                case SubjectNameStrategy.None:
+                    return (context, recordType) => null;
                 default:
                     throw new ArgumentException($"Unknown SubjectNameStrategy: {strategy}");
             }
@@ -388,7 +380,7 @@ namespace Confluent.SchemaRegistry
                         {
                             if (recordType == null)
                             {
-                                throw new ArgumentNullException($"recordType must not be null for SubjectNameStrategy.Record");
+                                throw new ArgumentNullException("recordType");
                             }
                             return Task.FromResult(recordType);
                         };
@@ -397,7 +389,7 @@ namespace Confluent.SchemaRegistry
                         {
                             if (recordType == null)
                             {
-                                throw new ArgumentNullException($"recordType must not be null for SubjectNameStrategy.TopicRecord");
+                                throw new ArgumentNullException("recordType");
                             }
                             return Task.FromResult($"{context.Topic}-{recordType}");
                         };
@@ -409,6 +401,8 @@ namespace Confluent.SchemaRegistry
                     }
                     var associatedStrategy = new AssociatedNameStrategy(schemaRegistryClient, config);
                     return (context, recordType) => associatedStrategy.GetSubjectNameAsync(context, recordType);
+                case SubjectNameStrategy.None:
+                    return (context, recordType) => Task.FromResult<string>(null);
                 default:
                     throw new ArgumentException($"Unknown SubjectNameStrategy: {strategy}");
             }

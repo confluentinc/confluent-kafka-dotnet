@@ -92,13 +92,14 @@ namespace Confluent.SchemaRegistry
                    ResourceNamespace == other.ResourceNamespace &&
                    ResourceId == other.ResourceId &&
                    ResourceType == other.ResourceType &&
-                   Equals(Associations, other.Associations);
+                   Utils.ListEquals(Associations, other.Associations);
         }
 
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return HashCode.Combine(ResourceName, ResourceNamespace, ResourceId, ResourceType, Associations);
+            return HashCode.Combine(ResourceName, ResourceNamespace, ResourceId, ResourceType,
+                Utils.IEnumerableHashCode(Associations));
         }
     }
 }
