@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2020 Confluent Inc.
+// Copyright 2016-2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -754,6 +754,37 @@ namespace Confluent.SchemaRegistry
             latestVersionBySubject.Clear();
             latestWithMetadataBySubject.Clear();
         }
+
+
+        /// <inheritdoc/>
+        public async Task<List<Association>> GetAssociationsByResourceNameAsync(
+            string resourceName,
+            string resourceNamespace,
+            string resourceType,
+            List<string> associationTypes,
+            string lifecycle,
+            int offset,
+            int limit)
+            => await restService.GetAssociationsByResourceNameAsync(
+                    resourceName, resourceNamespace, resourceType, associationTypes, lifecycle, offset, limit)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task<AssociationResponse> CreateAssociationAsync(AssociationCreateOrUpdateRequest request)
+            => await restService.CreateAssociationAsync(request)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task DeleteAssociationsAsync(
+            string resourceId,
+            string resourceType,
+            List<string> associationTypes,
+            bool cascadeLifecycle)
+            => await restService.DeleteAssociationsAsync(resourceId, resourceType, associationTypes, cascadeLifecycle)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
 
         /// <summary>
         ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.
