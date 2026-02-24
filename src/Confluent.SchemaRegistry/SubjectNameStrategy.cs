@@ -188,26 +188,43 @@ namespace Confluent.SchemaRegistry
                 return null;
             }
 
-            var cacheKey = new CacheKey(context.Topic, context.Component == MessageComponentType.Key, recordType);
+            // Cache key uses only topic + isKey since the registry lookup does not depend on recordType.
+            var cacheKey = new CacheKey(context.Topic, context.Component == MessageComponentType.Key);
 
-            if (subjectNameCache.TryGetValue(cacheKey, out var cachedSubject))
+            if (!subjectNameCache.TryGetValue(cacheKey, out var associatedSubject))
             {
-                return cachedSubject;
+                associatedSubject = await LookupAssociationAsync(context).ConfigureAwait(false);
+
+                // Clean cache if it's getting too large
+                if (subjectNameCache.Count >= DefaultCacheCapacity)
+                {
+                    subjectNameCache.Clear();
+                }
+
+                if (!subjectNameCache.TryAdd(cacheKey, associatedSubject)
+                    && subjectNameCache.TryGetValue(cacheKey, out var existingSubject))
+                {
+                    associatedSubject = existingSubject;
+                }
             }
 
-            var subjectName = await LoadSubjectNameAsync(context, recordType).ConfigureAwait(false);
-
-            // Clean cache if it's getting too large
-            if (subjectNameCache.Count >= DefaultCacheCapacity)
+            if (associatedSubject != null)
             {
-                subjectNameCache.Clear();
+                return associatedSubject;
             }
-            subjectNameCache.TryAdd(cacheKey, subjectName);
 
-            return subjectName;
+            // No association found — apply fallback (cheap string computation, not cached).
+            if (fallbackSubjectNameStrategy != SubjectNameStrategy.None)
+            {
+                return GetFallbackSubjectName(context, recordType);
+            }
+
+            throw new InvalidOperationException(
+                $"No associated subject found for topic {context.Topic}");
         }
 
-        private async Task<string> LoadSubjectNameAsync(SerializationContext context, string recordType)
+        // Returns the association subject, or null if no association was found.
+        private async Task<string> LookupAssociationAsync(SerializationContext context)
         {
             var isKey = context.Component == MessageComponentType.Key;
             var associationTypes = new List<string> { isKey ? "key" : "value" };
@@ -234,19 +251,8 @@ namespace Confluent.SchemaRegistry
                 throw new InvalidOperationException(
                     $"Multiple associated subjects found for topic {context.Topic}");
             }
-            else if (associations.Count == 1)
-            {
-                return associations[0].Subject;
-            }
-            else if (fallbackSubjectNameStrategy != SubjectNameStrategy.None)
-            {
-                return GetFallbackSubjectName(context, recordType);
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"No associated subject found for topic {context.Topic}");
-            }
+
+            return associations.Count == 1 ? associations[0].Subject : null;
         }
 
         private string GetFallbackSubjectName(SerializationContext context, string recordType)
@@ -258,13 +264,13 @@ namespace Confluent.SchemaRegistry
                 case SubjectNameStrategy.Record:
                     if (recordType == null)
                     {
-                        throw new ArgumentNullException("recordType");
+                        throw new ArgumentNullException(nameof(recordType));
                     }
                     return recordType;
                 case SubjectNameStrategy.TopicRecord:
                     if (recordType == null)
                     {
-                        throw new ArgumentNullException("recordType");
+                        throw new ArgumentNullException(nameof(recordType));
                     }
                     return $"{context.Topic}-{recordType}";
                 default:
@@ -273,24 +279,22 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Cache key that combines topic, isKey, and recordType values.
+        ///     Cache key for the association registry lookup, based on topic and isKey only.
         /// </summary>
         private readonly struct CacheKey : IEquatable<CacheKey>
         {
             public readonly string Topic;
             public readonly bool IsKey;
-            public readonly string RecordType;
 
-            public CacheKey(string topic, bool isKey, string recordType)
+            public CacheKey(string topic, bool isKey)
             {
                 Topic = topic;
                 IsKey = isKey;
-                RecordType = recordType;
             }
 
             public bool Equals(CacheKey other)
             {
-                return Topic == other.Topic && IsKey == other.IsKey && RecordType == other.RecordType;
+                return Topic == other.Topic && IsKey == other.IsKey;
             }
 
             public override bool Equals(object obj)
@@ -300,7 +304,7 @@ namespace Confluent.SchemaRegistry
 
             public override int GetHashCode()
             {
-                return HashCode.Combine(Topic, IsKey, RecordType);
+                return HashCode.Combine(Topic, IsKey);
             }
         }
     }
@@ -316,7 +320,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         /// <param name="strategy">The subject name strategy.</param>
         /// <returns>A SubjectNameStrategyDelegate.</returns>
-        [Obsolete]
+        [Obsolete("Superseded by ToAsyncDelegate. This method cannot be used with SubjectNameStrategy.Associated.")]
         public static SubjectNameStrategyDelegate ToDelegate(
             this SubjectNameStrategy strategy)
         {
@@ -329,7 +333,7 @@ namespace Confluent.SchemaRegistry
                         {
                             if (recordType == null)
                             {
-                                throw new ArgumentNullException("recordType");
+                                throw new ArgumentNullException(nameof(recordType));
                             }
                             return $"{recordType}";
                         };
@@ -338,7 +342,7 @@ namespace Confluent.SchemaRegistry
                         {
                             if (recordType == null)
                             {
-                                throw new ArgumentNullException("recordType");
+                                throw new ArgumentNullException(nameof(recordType));
                             }
                             return $"{context.Topic}-{recordType}";
                         };
@@ -380,7 +384,7 @@ namespace Confluent.SchemaRegistry
                         {
                             if (recordType == null)
                             {
-                                throw new ArgumentNullException("recordType");
+                                throw new ArgumentNullException(nameof(recordType));
                             }
                             return Task.FromResult(recordType);
                         };
@@ -389,7 +393,7 @@ namespace Confluent.SchemaRegistry
                         {
                             if (recordType == null)
                             {
-                                throw new ArgumentNullException("recordType");
+                                throw new ArgumentNullException(nameof(recordType));
                             }
                             return Task.FromResult($"{context.Topic}-{recordType}");
                         };
@@ -411,14 +415,14 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Helper method to construct the key subject name given the specified parameters.
         /// </summary>
-        [Obsolete]
+        [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public static string ConstructKeySubjectName(this SubjectNameStrategy strategy, string topic, string recordType = null)
             => strategy.ToDelegate()(new SerializationContext(MessageComponentType.Key, topic), recordType);
 
         /// <summary>
         ///     Helper method to construct the value subject name given the specified parameters.
         /// </summary>
-        [Obsolete]
+        [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public static string ConstructValueSubjectName(this SubjectNameStrategy strategy, string topic, string recordType = null)
             => strategy.ToDelegate()(new SerializationContext(MessageComponentType.Value, topic), recordType);
     }

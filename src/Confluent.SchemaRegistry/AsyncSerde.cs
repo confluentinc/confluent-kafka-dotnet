@@ -84,7 +84,7 @@ namespace Confluent.SchemaRegistry
                             : schemaRegistryClient.ConstructValueSubjectName(topic, recordType);
                 return subject;
             }
-            catch (Exception e)
+            catch (ArgumentNullException)
             {
                 return null;
             }
