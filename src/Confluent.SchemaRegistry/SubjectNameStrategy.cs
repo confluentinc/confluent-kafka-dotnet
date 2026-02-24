@@ -195,16 +195,17 @@ namespace Confluent.SchemaRegistry
             {
                 associatedSubject = await LookupAssociationAsync(context).ConfigureAwait(false);
 
-                // Clean cache if it's getting too large
-                if (subjectNameCache.Count >= DefaultCacheCapacity)
-                {
-                    subjectNameCache.Clear();
-                }
-
                 if (!subjectNameCache.TryAdd(cacheKey, associatedSubject)
                     && subjectNameCache.TryGetValue(cacheKey, out var existingSubject))
                 {
                     associatedSubject = existingSubject;
+                }
+                
+                // Clean cache if it's getting too large. This is done after attempting to add
+                // the current entry to avoid a race window between Clear() and TryAdd().
+                if (subjectNameCache.Count >= DefaultCacheCapacity)
+                {
+                    subjectNameCache.Clear();
                 }
             }
 
