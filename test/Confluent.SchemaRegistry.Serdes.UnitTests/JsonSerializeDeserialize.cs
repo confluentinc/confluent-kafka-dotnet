@@ -1502,6 +1502,107 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.FavoriteColor, result3.FavoriteColor);
             Assert.Equal(user.FavoriteNumber, result3.FavoriteNumber);
         }
+
+        [Fact]
+        public void AssociatedNameStrategy()
+        {
+            // Setup association for the topic
+            var associatedSubject = "my-associated-json-subject-value";
+            var association = new Association(
+                subject: associatedSubject,
+                guid: Guid.NewGuid().ToString(),
+                resourceName: testTopic,
+                resourceNamespace: "-",
+                resourceId: "resource-id-1",
+                resourceType: "topic",
+                associationType: "value",
+                lifecycle: "WEAK",
+                frozen: false
+            );
+            associationStore[$"-/{testTopic}"] = new List<Association> { association };
+
+            var serializerConfig = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var serializer = new JsonSerializer<UInt32Value>(schemaRegistryClient, serializerConfig);
+            var deserializerConfig = new JsonDeserializerConfig
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var deserializer = new JsonDeserializer<UInt32Value>(schemaRegistryClient, deserializerConfig);
+
+            var v = new UInt32Value { Value = 1234 };
+            var bytes = serializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(v.Value, result.Value);
+        }
+
+        [Fact]
+        public void AssociatedNameStrategyWithFallback()
+        {
+            // No association is set up, so it should fall back to TopicNameStrategy
+            var serializerConfig = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var serializer = new JsonSerializer<UInt32Value>(schemaRegistryClient, serializerConfig);
+            var deserializerConfig = new JsonDeserializerConfig
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var deserializer = new JsonDeserializer<UInt32Value>(schemaRegistryClient, deserializerConfig);
+
+            var v = new UInt32Value { Value = 42 };
+            var bytes = serializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(v.Value, result.Value);
+        }
+
+        [Fact]
+        public void AssociatedNameStrategyWithKafkaClusterId()
+        {
+            // Setup association for the topic with a specific kafka cluster ID as namespace
+            var kafkaClusterId = "lkc-12345";
+            var associatedSubject = "cluster-specific-json-subject-value";
+            var association = new Association(
+                subject: associatedSubject,
+                guid: Guid.NewGuid().ToString(),
+                resourceName: testTopic,
+                resourceNamespace: kafkaClusterId,
+                resourceId: "resource-id-2",
+                resourceType: "topic",
+                associationType: "value",
+                lifecycle: "WEAK",
+                frozen: false
+            );
+            associationStore[$"{kafkaClusterId}/{testTopic}"] = new List<Association> { association };
+
+            var serializerConfig = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            serializerConfig.Set(Confluent.SchemaRegistry.AssociatedNameStrategy.KafkaClusterIdConfig, kafkaClusterId);
+            var serializer = new JsonSerializer<UInt32Value>(schemaRegistryClient, serializerConfig);
+
+            var deserializerConfig = new JsonDeserializerConfig
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            deserializerConfig.Set(Confluent.SchemaRegistry.AssociatedNameStrategy.KafkaClusterIdConfig, kafkaClusterId);
+            var deserializer = new JsonDeserializer<UInt32Value>(schemaRegistryClient, deserializerConfig);
+
+            var v = new UInt32Value { Value = 777 };
+            var bytes = serializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(v.Value, result.Value);
+        }
     }
 
     class Customer
