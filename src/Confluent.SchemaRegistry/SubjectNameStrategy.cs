@@ -188,39 +188,39 @@ namespace Confluent.SchemaRegistry
                 return null;
             }
 
-            // Cache key uses only topic + isKey since the registry lookup does not depend on recordType.
-            var cacheKey = new CacheKey(context.Topic, context.Component == MessageComponentType.Key);
+            var cacheKey = new CacheKey(context.Topic, context.Component == MessageComponentType.Key, recordType);
 
             if (!subjectNameCache.TryGetValue(cacheKey, out var associatedSubject))
             {
-                associatedSubject = await LookupAssociationAsync(context).ConfigureAwait(false);
-
+                var lookupSubject = await LookupAssociationAsync(context).ConfigureAwait(false);
+                string subjectToCache;
+                if (lookupSubject != null)
+                {
+                    subjectToCache = lookupSubject;
+                }
+                else if (fallbackSubjectNameStrategy != SubjectNameStrategy.None)
+                {
+                    // No association found — apply fallback and cache the final subject name.
+                    subjectToCache = GetFallbackSubjectName(context, recordType);
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"No associated subject found for topic {context.Topic}");
+                }
                 // Clean cache if it's getting too large
                 if (subjectNameCache.Count >= DefaultCacheCapacity)
                 {
                     subjectNameCache.Clear();
                 }
-
-                if (!subjectNameCache.TryAdd(cacheKey, associatedSubject)
+                associatedSubject = subjectToCache;
+                if (!subjectNameCache.TryAdd(cacheKey, subjectToCache)
                     && subjectNameCache.TryGetValue(cacheKey, out var existingSubject))
                 {
                     associatedSubject = existingSubject;
                 }
             }
-
-            if (associatedSubject != null)
-            {
-                return associatedSubject;
-            }
-
-            // No association found — apply fallback (cheap string computation, not cached).
-            if (fallbackSubjectNameStrategy != SubjectNameStrategy.None)
-            {
-                return GetFallbackSubjectName(context, recordType);
-            }
-
-            throw new InvalidOperationException(
-                $"No associated subject found for topic {context.Topic}");
+            return associatedSubject;
         }
 
         // Returns the association subject, or null if no association was found.
@@ -279,22 +279,24 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Cache key for the association registry lookup, based on topic and isKey only.
+        ///     Cache key for the association registry lookup, based on topic, isKey, and recordType.
         /// </summary>
         private readonly struct CacheKey : IEquatable<CacheKey>
         {
             public readonly string Topic;
             public readonly bool IsKey;
+            public readonly string RecordType;
 
-            public CacheKey(string topic, bool isKey)
+            public CacheKey(string topic, bool isKey, string recordType)
             {
                 Topic = topic;
                 IsKey = isKey;
+                RecordType = recordType;
             }
 
             public bool Equals(CacheKey other)
             {
-                return Topic == other.Topic && IsKey == other.IsKey;
+                return Topic == other.Topic && IsKey == other.IsKey && RecordType == other.RecordType;
             }
 
             public override bool Equals(object obj)
@@ -304,7 +306,7 @@ namespace Confluent.SchemaRegistry
 
             public override int GetHashCode()
             {
-                return HashCode.Combine(Topic, IsKey);
+                return HashCode.Combine(Topic, IsKey, RecordType);
             }
         }
     }
