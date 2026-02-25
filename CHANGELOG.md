@@ -1,3 +1,9 @@
+# 2.13.2
+
+## Fixes
+
+* Support multi-certificate PEM bundles in Schema Registry SslCa… (#2576)
+
 # 2.13.1
 
 ## Fixes
