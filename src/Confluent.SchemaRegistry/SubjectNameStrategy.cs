@@ -329,23 +329,9 @@ namespace Confluent.SchemaRegistry
                 case SubjectNameStrategy.Topic:
                     return (context, recordType) => $"{context.Topic}" + (context.Component == MessageComponentType.Key ? "-key" : "-value");
                 case SubjectNameStrategy.Record:
-                    return (context, recordType) =>
-                        {
-                            if (recordType == null)
-                            {
-                                throw new ArgumentNullException(nameof(recordType));
-                            }
-                            return $"{recordType}";
-                        };
+                    return (context, recordType) => recordType != null ? $"{recordType}" : null;
                 case SubjectNameStrategy.TopicRecord:
-                    return (context, recordType) =>
-                        {
-                            if (recordType == null)
-                            {
-                                throw new ArgumentNullException(nameof(recordType));
-                            }
-                            return $"{context.Topic}-{recordType}";
-                        };
+                    return (context, recordType) => recordType != null ? $"{context.Topic}-{recordType}" : null;
                 case SubjectNameStrategy.Associated:
                     throw new ArgumentException(
                         $"SubjectNameStrategy.Associated requires async execution. Use {nameof(ToAsyncDelegate)} instead.");
@@ -380,23 +366,9 @@ namespace Confluent.SchemaRegistry
                     return (context, recordType) => Task.FromResult(
                         $"{context.Topic}" + (context.Component == MessageComponentType.Key ? "-key" : "-value"));
                 case SubjectNameStrategy.Record:
-                    return (context, recordType) =>
-                        {
-                            if (recordType == null)
-                            {
-                                throw new ArgumentNullException(nameof(recordType));
-                            }
-                            return Task.FromResult(recordType);
-                        };
+                    return (context, recordType) => Task.FromResult(recordType != null ? $"{recordType}" : null);
                 case SubjectNameStrategy.TopicRecord:
-                    return (context, recordType) =>
-                        {
-                            if (recordType == null)
-                            {
-                                throw new ArgumentNullException(nameof(recordType));
-                            }
-                            return Task.FromResult($"{context.Topic}-{recordType}");
-                        };
+                    return (context, recordType) => Task.FromResult(recordType != null ? $"{context.Topic}-{recordType}" : null);
                 case SubjectNameStrategy.Associated:
                     if (schemaRegistryClient == null)
                     {
