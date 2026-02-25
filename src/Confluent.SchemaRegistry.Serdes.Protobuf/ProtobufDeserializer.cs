@@ -134,6 +134,10 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (schemaRegistryClient != null)
                 {
                     (writerSchema, fdSet) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
+                    if (subject == null)
+                    {
+                        subject = await GetSubjectName(topic, isKey, new T().Descriptor.FullName).ConfigureAwait(false);
+                    }
                 }
                 payload = await ExecuteRules(context.Component == MessageComponentType.Key,
                         subject, context.Topic, context.Headers, RulePhase.Encoding, RuleMode.Read,
