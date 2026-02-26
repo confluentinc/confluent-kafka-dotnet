@@ -471,20 +471,6 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Sets the identity pool for the bearer authentication credentials.
-        /// </summary>
-        /// <param name="identityPoolIds">A collection of identity pool IDs.</param>
-        public void SetBearerAuthIdentityPoolIds(IEnumerable<string> identityPoolIds)
-        {
-            if (identityPoolIds == null)
-            {
-                BearerAuthIdentityPoolId = "";
-                return;
-            }
-            BearerAuthIdentityPoolId = string.Join(",", identityPoolIds);
-        }
-
-        /// <summary>
         ///     Specifies the client ID for the bearer authentication credentials.
         /// </summary>
         public string BearerAuthClientId
