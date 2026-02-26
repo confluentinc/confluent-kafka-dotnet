@@ -23,9 +23,11 @@ CHANGELOG_FILE = Path(__file__).parent.parent / "CHANGELOG.md"
 # Stable release tag pattern (e.g. v2.13.1 — no RC, dev, alpha, beta suffixes)
 STABLE_TAG_RE = re.compile(r"^v\d+\.\d+\.\d+$")
 
+SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
+
 # Skip purely housekeeping commits (CHANGELOG updates, version bumps, CI chores)
 SKIP_SUBJECT_RE = re.compile(
-    r"^(update changelog|bump version|update version|chore:)",
+    r"^(update changelog|bump version|update version|chore(\([^)]*\))?:)",
     re.IGNORECASE,
 )
 
@@ -103,6 +105,8 @@ def main():
     raw_ver = args[0] if args else next_version(tag)
     # Strip v prefix — dotnet CHANGELOG uses bare version numbers (e.g. 2.13.2)
     version = raw_ver.lstrip("v")
+    if not SEMVER_RE.match(version):
+        sys.exit(f"Error: {raw_ver!r} is not a valid version; expected X.Y.Z")
     print(f"New version:       {version}")
 
     all_commits = commits_since(tag)
