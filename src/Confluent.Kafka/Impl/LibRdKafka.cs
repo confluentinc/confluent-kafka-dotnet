@@ -35,8 +35,6 @@ namespace Confluent.Kafka.Impl
 {
     internal static class Librdkafka
     {
-        const int RTLD_NOW = 2;
-
         internal enum DestroyFlags
         {
             /*!
@@ -149,16 +147,28 @@ namespace Confluent.Kafka.Impl
 
         private static class PosixNative
         {
+            private const int RTLD_NOW = 2;
+
+            public static void Load(string path)
+            {
+#if NETCOREAPP3_0_OR_GREATER
+                NativeLibrary.Load(path);
+#else
+                if (dlopen(path, RTLD_NOW) == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException($"Failed to load librdkafka at location '{path}'. dlerror: '{LastError}'.");
+                }
+#endif
+            }
+
+#if !NETCOREAPP3_0_OR_GREATER
             [DllImport("libdl")]
-            public static extern IntPtr dlopen(String fileName, int flags);
+            private static extern IntPtr dlopen(String fileName, int flags);
 
             [DllImport("libdl")]
-            public static extern IntPtr dlerror();
+            private static extern IntPtr dlerror();
 
-            [DllImport("libdl")]
-            public static extern IntPtr dlsym(IntPtr handle, String symbol);
-
-            public static string LastError
+            private static string LastError
             {
                 get
                 {
@@ -171,6 +181,7 @@ namespace Confluent.Kafka.Impl
                     return Marshal.PtrToStringAnsi(error);
                 }
             }
+#endif
         }
 
         static bool SetDelegates(Type nativeMethodsClass)
@@ -707,10 +718,7 @@ namespace Confluent.Kafka.Impl
         {
             if (userSpecifiedPath != null)
             {
-                if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
-                {
-                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
-                }
+                PosixNative.Load(userSpecifiedPath);
             }
 
             TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
@@ -720,10 +728,7 @@ namespace Confluent.Kafka.Impl
         {
             if (userSpecifiedPath != null)
             {
-                if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
-                {
-                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
-                }
+                PosixNative.Load(userSpecifiedPath);
 
                 TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
             }
