@@ -39,9 +39,6 @@ namespace Confluent.SchemaRegistry
 
         public string GetLogicalCluster() => this.logicalCluster;
 
-        /// <summary>
-        ///   Returns the identity pool ID(s).
-        /// </summary>
         public string GetIdentityPool() => this.identityPool;
 
         public void Dispose()

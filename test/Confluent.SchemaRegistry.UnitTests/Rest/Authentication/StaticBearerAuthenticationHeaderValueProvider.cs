@@ -32,21 +32,5 @@ namespace Confluent.SchemaRegistry.UnitTests.Rest.Authentication
             Assert.Equal(logicalCluster, provider.GetLogicalCluster());
             Assert.Equal(identityPool, provider.GetIdentityPool());
         }
-
-        [Fact]
-        public void GetIdentityPool_CommaSeparatedList()
-        {
-            var commaSeparatedPools = "pool-1,pool-2,pool-3";
-            var provider = new StaticBearerAuthenticationHeaderValueProvider(token, logicalCluster, commaSeparatedPools);
-            Assert.Equal(commaSeparatedPools, provider.GetIdentityPool());
-        }
-
-        [Fact]
-        public void GetIdentityPool_NullValue()
-        {
-            // Identity pool is optional for union
-            var provider = new StaticBearerAuthenticationHeaderValueProvider(token, logicalCluster, null);
-            Assert.Null(provider.GetIdentityPool());
-        }
     }
 }

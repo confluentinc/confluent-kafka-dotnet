@@ -1,13 +1,30 @@
 # 2.13.2
 
+## Enhancements
+
+* Preserve inner exceptions in RestService (#2571)
+
 ## Fixes
 
-* Support multi-certificate PEM bundles in Schema Registry SslCa… (#2576)
+* Support multi-certificate PEM bundles in Schema Registry SslCaLocation (#2576)
+
 
 # 2.13.1
 
+## Enhancements
+
+* Unify build configurations and remove redundant properties (#2464)
+* JSONSchema Validation Errors: Include paths to nested properties (#2554)
+* Add Confluent-Client-Version header to requests to SR, C# client (#2549)
+
 ## Fixes
 
+* Fix DeriveKey in Hkdf implementation (#2559)
+* Ensure single use of HttpRequestMessage for token fetch (#2544)
+* Fix race conditions when retrieving KEK/DEK (#2565)
+* Allowing for Confluent-Identity-Pool-Id to be optional (#2564)
+* Ensure JSON schema access is thread-safe (#2567)
+* Use lock on root schema when protecting access to subschemas (#2568)
 * Processing arrays and maps sequentially to avoid race conditions (#2569)
 
 
