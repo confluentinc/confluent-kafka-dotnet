@@ -47,7 +47,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            this.subjectNameStrategy = (config.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 
@@ -67,7 +67,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 // Note: topic is not necessary for deserialization (or knowing if it's a key 
                 // or value) only the schema id is needed.
 
-                string subject = GetSubjectName(topic, isKey, null);
+                string subject = await GetSubjectName(topic, isKey, null).ConfigureAwait(false);
                 RegisteredSchema latestSchema = null;
                 if (subject != null)
                 {
@@ -89,7 +89,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 (writerSchemaJson, writerSchema) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
                 if (subject == null)
                 {
-                    subject = GetSubjectName(topic, isKey, writerSchema.Fullname);
+                    subject = await GetSubjectName(topic, isKey, writerSchema.Fullname).ConfigureAwait(false);
                     if (subject != null)
                     {
                         latestSchema = await GetReaderSchema(subject)

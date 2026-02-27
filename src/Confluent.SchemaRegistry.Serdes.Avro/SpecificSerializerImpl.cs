@@ -75,7 +75,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseSchemaId != null) { this.useSchemaId = config.UseSchemaId.Value; }
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            this.subjectNameStrategy = (config.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
 
             if (this.useLatestVersion && this.autoRegisterSchema)
@@ -173,7 +173,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         fullname = ((Avro.RecordSchema)((ISpecificRecord)data).Schema).Fullname;
                     }
 
-                    subject = GetSubjectName(topic, isKey, fullname);
+                    subject = await GetSubjectName(topic, isKey, fullname).ConfigureAwait(false);
                     var subjectSchemaPair = new KeyValuePair<string, string>(subject, currentSchemaData.WriterSchemaString);
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
