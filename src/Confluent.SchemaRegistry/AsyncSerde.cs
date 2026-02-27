@@ -50,7 +50,6 @@ namespace Confluent.SchemaRegistry
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.ruleRegistry = ruleRegistry ?? RuleRegistry.GlobalInstance;
-            this.subjectNameStrategy = SubjectNameStrategy.Associated.ToAsyncDelegate(schemaRegistryClient, config);
 
             if (config == null) { return; }
 

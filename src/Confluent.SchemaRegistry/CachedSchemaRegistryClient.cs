@@ -698,6 +698,7 @@ namespace Confluent.SchemaRegistry
             return schema;
         }
 
+
         /// <inheritdoc/>
         public Task<List<string>> GetAllSubjectsAsync()
             => restService.GetSubjectsAsync();
@@ -725,8 +726,6 @@ namespace Confluent.SchemaRegistry
             "SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructKeySubjectName(string topic, string recordType = null)
             => keySubjectNameStrategy(new SerializationContext(MessageComponentType.Key, topic), recordType);
-
-
 
         /// <inheritdoc />
         [Obsolete(
