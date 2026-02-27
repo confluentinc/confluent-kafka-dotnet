@@ -112,7 +112,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <summary>
         ///     Subject name strategy.
         ///     
-        ///     default: SubjectNameStrategy.Topic
+        ///     default: SubjectNameStrategy.Associated
         /// </summary>
         public SubjectNameStrategy? SubjectNameStrategy
         {
