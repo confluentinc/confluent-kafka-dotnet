@@ -171,6 +171,12 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentException($"Unknown KeySubjectNameStrategy: {keySubjectNameStrategyString}");
             }
 
+            // Associated requires async; fall back to Topic for this deprecated sync path.
+            if (keySubjectNameStrategy == SubjectNameStrategy.Associated)
+            {
+                keySubjectNameStrategy = SubjectNameStrategy.Topic;
+            }
+
             return keySubjectNameStrategy.ToDelegate();
         }
 
@@ -187,6 +193,12 @@ namespace Confluent.SchemaRegistry
                 !Enum.TryParse<SubjectNameStrategy>(valueSubjectNameStrategyString, out valueSubjectNameStrategy))
             {
                 throw new ArgumentException($"Unknown ValueSubjectNameStrategy: {valueSubjectNameStrategyString}");
+            }
+
+            // Associated requires async; fall back to Topic for this deprecated sync path.
+            if (valueSubjectNameStrategy == SubjectNameStrategy.Associated)
+            {
+                valueSubjectNameStrategy = SubjectNameStrategy.Topic;
             }
 
             return valueSubjectNameStrategy.ToDelegate();
@@ -701,7 +713,6 @@ namespace Confluent.SchemaRegistry
             => await restService.TestLatestCompatibilityAsync(subject, schema)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
-
         /// <inheritdoc/>
         public async Task<bool> IsCompatibleAsync(string subject, string avroSchema)
             => await restService
@@ -714,6 +725,7 @@ namespace Confluent.SchemaRegistry
             "SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructKeySubjectName(string topic, string recordType = null)
             => keySubjectNameStrategy(new SerializationContext(MessageComponentType.Key, topic), recordType);
+
 
 
         /// <inheritdoc />
