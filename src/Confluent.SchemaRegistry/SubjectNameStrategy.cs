@@ -116,9 +116,9 @@ namespace Confluent.SchemaRegistry
         public const string NamespaceWildcard = "-";
 
         /// <summary>
-        ///     Configuration property name for the fallback subject name strategy type.
+        ///     Configuration property name for the subject name strategy fallback type.
         /// </summary>
-        public const string FallbackSubjectNameStrategyTypeConfig = "subject.name.strategy.fallback.type";
+        public const string FallbackTypeConfig = "subject.name.strategy.fallback.type";
 
         private const int DefaultCacheCapacity = 1000;
 
@@ -150,7 +150,7 @@ namespace Confluent.SchemaRegistry
                     {
                         this.kafkaClusterId = kvp.Value;
                     }
-                    else if (kvp.Key == FallbackSubjectNameStrategyTypeConfig)
+                    else if (kvp.Key == FallbackTypeConfig)
                     {
                         switch (kvp.Value?.ToUpperInvariant())
                         {
@@ -168,7 +168,7 @@ namespace Confluent.SchemaRegistry
                                 break;
                             default:
                                 throw new ArgumentException(
-                                    $"Invalid value for {FallbackSubjectNameStrategyTypeConfig}: {kvp.Value}");
+                                    $"Invalid value for {FallbackTypeConfig}: {kvp.Value}");
                         }
                     }
                 }
