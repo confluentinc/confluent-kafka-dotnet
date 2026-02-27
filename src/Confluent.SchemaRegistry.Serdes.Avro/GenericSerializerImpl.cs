@@ -41,6 +41,8 @@ namespace Confluent.SchemaRegistry.Serdes
             AvroSerializerConfig config,
             RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+
             if (config == null) { return; }
 
             if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
@@ -49,7 +51,6 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseSchemaId != null) { this.useSchemaId = config.UseSchemaId.Value; }
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
             if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
 
             if (this.useLatestVersion && this.autoRegisterSchema)
@@ -132,7 +133,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     // better to use hash functions based on the writerSchemaString 
                     // object reference, not value.
 
-                    subject = GetSubjectName(topic, isKey, data.Schema.Fullname);
+                    subject = await GetSubjectName(topic, isKey, data.Schema.Fullname).ConfigureAwait(false);
                     var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
                     latestSchema = await GetReaderSchema(subject)
                         .ConfigureAwait(continueOnCapturedContext: false);
