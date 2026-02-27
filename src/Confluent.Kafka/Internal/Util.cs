@@ -20,6 +20,8 @@ using System.Text;
 using SystemMarshal = System.Runtime.InteropServices.Marshal;
 using SystemGCHandle = System.Runtime.InteropServices.GCHandle;
 using SystemGCHandleType = System.Runtime.InteropServices.GCHandleType;
+using System.Buffers;
+using System.Runtime.InteropServices;
 
 
 namespace Confluent.Kafka.Internal
@@ -32,16 +34,45 @@ namespace Confluent.Kafka.Internal
             ///     Convenience class for generating and pinning the UTF8
             ///     representation of a string.
             /// </summary>
-            public class StringAsPinnedUTF8 : IDisposable
+            public sealed class StringAsPinnedUTF8 : IDisposable
             {
-                private SystemGCHandle gch;
+                private readonly GCHandle gch;
+
+#if NET6_0_OR_GREATER
+                private readonly byte[] strBytesNulTerminated;
+#endif
 
                 public StringAsPinnedUTF8(string str)
                 {
+#if NET6_0_OR_GREATER
+                    var size = Encoding.UTF8.GetMaxByteCount(str.Length);
+
+                    // Ask for one extra for the null byte
+                    strBytesNulTerminated = ArrayPool<byte>.Shared.Rent(size + 1);
+
+                    try
+                    {
+                        Span<byte> slice = strBytesNulTerminated.AsSpan().Slice(0, size);
+                        int bytesWritten = Encoding.UTF8.GetBytes(str, slice);
+
+                        // 0-init the remainder
+                        Array.Clear(strBytesNulTerminated, bytesWritten, strBytesNulTerminated.Length - bytesWritten);
+                    }
+                    catch
+                    {
+                        // An exception above means the object never creates, potentially leaving a
+                        // memory leak as there would be no object to Dispose() of later
+                        ArrayPool<byte>.Shared.Return(strBytesNulTerminated);
+                        throw;
+                    }
+
+                    this.gch = GCHandle.Alloc(strBytesNulTerminated, GCHandleType.Pinned);
+#else
                     byte[] strBytes = System.Text.UTF8Encoding.UTF8.GetBytes(str);
                     byte[] strBytesNulTerminated = new byte[strBytes.Length + 1]; // initialized to all 0's.
                     Array.Copy(strBytes, strBytesNulTerminated, strBytes.Length);
-                    this.gch = SystemGCHandle.Alloc(strBytesNulTerminated, SystemGCHandleType.Pinned);
+                    this.gch = GCHandle.Alloc(strBytesNulTerminated, GCHandleType.Pinned);
+#endif
                 }
 
                 public IntPtr Ptr { get => this.gch.AddrOfPinnedObject(); }
@@ -49,6 +80,9 @@ namespace Confluent.Kafka.Internal
                 public void Dispose()
                 {
                     gch.Free();
+#if NET6_0_OR_GREATER
+                    ArrayPool<byte>.Shared.Return(strBytesNulTerminated);
+#endif
                 }
             }
 
