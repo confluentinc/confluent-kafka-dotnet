@@ -129,12 +129,12 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     The default key subject name strategy.
         /// </summary>
-        public const SubjectNameStrategy DefaultKeySubjectNameStrategy = SubjectNameStrategy.Topic;
+        public const SubjectNameStrategy DefaultKeySubjectNameStrategy = SubjectNameStrategy.Associated;
 
         /// <summary>
         ///     The default value subject name strategy.
         /// </summary>
-        public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Topic;
+        public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Associated;
 
         /// <inheritdoc />
         public IEnumerable<KeyValuePair<string, string>> Config
@@ -164,7 +164,7 @@ namespace Confluent.SchemaRegistry
                                                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames
                                                        .SchemaRegistryKeySubjectNameStrategy).Value ??
                                                "";
-            SubjectNameStrategy keySubjectNameStrategy = SubjectNameStrategy.Topic;
+            SubjectNameStrategy keySubjectNameStrategy = SubjectNameStrategy.Associated;
             if (keySubjectNameStrategyString != "" &&
                 !Enum.TryParse<SubjectNameStrategy>(keySubjectNameStrategyString, out keySubjectNameStrategy))
             {
@@ -182,7 +182,7 @@ namespace Confluent.SchemaRegistry
             var valueSubjectNameStrategyString = config.FirstOrDefault(prop =>
                     prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy)
                 .Value ?? "";
-            SubjectNameStrategy valueSubjectNameStrategy = SubjectNameStrategy.Topic;
+            SubjectNameStrategy valueSubjectNameStrategy = SubjectNameStrategy.Associated;
             if (valueSubjectNameStrategyString != "" &&
                 !Enum.TryParse<SubjectNameStrategy>(valueSubjectNameStrategyString, out valueSubjectNameStrategy))
             {
