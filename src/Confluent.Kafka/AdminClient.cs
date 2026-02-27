@@ -30,7 +30,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Implements an Apache Kafka admin client.
     /// </summary>
-    internal class AdminClient : IAdminClient
+    internal sealed class AdminClient : IAdminClient
     {
         private int cancellationDelayMaxMs;
 
@@ -1353,7 +1353,7 @@ namespace Confluent.Kafka
                                 //       ignore the situation, we panic, destroy the librdkafka handle, 
                                 //       and exit the polling loop. Further usage of the AdminClient will
                                 //       result in exceptions. People will be sure to notice and tell us.
-                                this.DisposeResources();
+                                this.Dispose(true);
                                 break;
                             }
                             finally
@@ -1651,63 +1651,72 @@ namespace Confluent.Kafka
         public Handle Handle
             => handle;
 
+        ~AdminClient()
+        {
+            Dispose(false);
+        }
 
         /// <summary>
         ///     Releases all resources used by this AdminClient. In the current
-        ///     implementation, this method may block for up to 100ms. This 
-        ///     will be replaced with a non-blocking version in the future.
+        ///     implementation, this method may block for up to 100ms. With
+        ///     .NET 6+, it is recommended to use DisposeAsync instead.
         /// </summary>
         public void Dispose()
         {
+            callbackCts.Cancel();
+            try
+            {
+                callbackTask.Wait();
+            }
+            catch (AggregateException e)
+            {
+                if (e.InnerException.GetType() != typeof(TaskCanceledException))
+                {
+                    // program execution should never get here.
+                    throw e.InnerException;
+                }
+            }
+            finally
+            {
+                callbackCts.Dispose();
+            }
+
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+#if NET6_0_OR_GREATER
+        public async ValueTask DisposeAsync()
+        {
+            callbackCts.Cancel();
+            try
+            {
+                await callbackTask;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                callbackCts.Dispose();
+            }
 
-        /// <summary>
-        ///     Releases the unmanaged resources used by the
-        ///     <see cref="Confluent.Kafka.AdminClient" />
-        ///     and optionally disposes the managed resources.
-        /// </summary>
-        /// <param name="disposing">
-        ///     true to release both managed and unmanaged resources;
-        ///     false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+#endif
+
+        private void Dispose(bool disposing)
         {
             if (disposing)
             {
-                callbackCts.Cancel();
-                try
+                if (handle.Owner == this)
                 {
-                    callbackTask.Wait();
+                    ownedClient.Dispose();
                 }
-                catch (AggregateException e)
-                {
-                    if (e.InnerException.GetType() != typeof(TaskCanceledException))
-                    {
-                        // program execution should never get here.
-                        throw e.InnerException;
-                    }
-                }
-                finally
-                {
-                    callbackCts.Dispose();
-                }
-
-                DisposeResources();
             }
-        }
 
-
-        private void DisposeResources()
-        {
             kafkaHandle.DestroyQueue(resultQueue);
-
-            if (handle.Owner == this)
-            {
-                ownedClient.Dispose();
-            }
         }
 
         /// <summary>
