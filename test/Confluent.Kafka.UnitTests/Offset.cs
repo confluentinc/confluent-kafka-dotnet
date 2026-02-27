@@ -70,6 +70,17 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
+        public void CompareTo()
+        {
+            Offset a = new Offset(42);
+            Offset a2 = new Offset(42);
+            Offset b = new Offset(37);
+            Assert.True(a.CompareTo(b) > 0);
+            Assert.True(b.CompareTo(a) < 0);
+            Assert.True(a.CompareTo(a2) == 0);
+        }
+
+        [Fact]
         public void Addition_Int()
         {
             Offset a = new Offset(42);
