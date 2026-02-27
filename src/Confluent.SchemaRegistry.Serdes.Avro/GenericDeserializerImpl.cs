@@ -43,11 +43,11 @@ namespace Confluent.SchemaRegistry.Serdes
             AvroDeserializerConfig config,
             RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config == null) { return; }
 
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            this.subjectNameStrategy = (config.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 

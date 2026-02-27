@@ -70,8 +70,9 @@ namespace Confluent.SchemaRegistry.Serdes
         public ProtobufSerializer(ISchemaRegistryClient schemaRegistryClient, ProtobufSerializerConfig config = null, 
             RuleRegistry ruleRegistry = null) : base(schemaRegistryClient, config, ruleRegistry)
         {
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config == null)
-            { 
+            {
                 this.referenceSubjectNameStrategy = ReferenceSubjectNameStrategy.ReferenceName.ToDelegate();
                 return;
             }
@@ -95,7 +96,6 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 throw new NotSupportedException("ProtobufSerializer: UseDeprecatedFormat is no longer supported");
             }
-            this.subjectNameStrategy = (config.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
                 ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()

@@ -114,6 +114,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schemaText = schema.ToJson();
             this.schemaFullname = schema.Title;
             
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config == null) { return; }
 
             var nonJsonConfig = config
@@ -131,7 +132,6 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.LatestCompatibilityStrict != null) { this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            this.subjectNameStrategy = (config.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
             if (config.Validate != null) { this.validate = config.Validate.Value; }
 

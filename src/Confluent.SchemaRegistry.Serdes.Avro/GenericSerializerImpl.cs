@@ -41,6 +41,7 @@ namespace Confluent.SchemaRegistry.Serdes
             AvroSerializerConfig config,
             RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config == null) { return; }
 
             if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
@@ -49,7 +50,6 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseSchemaId != null) { this.useSchemaId = config.UseSchemaId.Value; }
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            this.subjectNameStrategy = (config.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
 
             if (this.useLatestVersion && this.autoRegisterSchema)

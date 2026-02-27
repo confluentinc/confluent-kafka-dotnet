@@ -70,6 +70,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             this.parser = new MessageParser<T>(() => new T());
 
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config == null) { return; }
 
             var nonProtobufConfig = config
@@ -88,7 +89,6 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            this.subjectNameStrategy = (config.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
             if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 
