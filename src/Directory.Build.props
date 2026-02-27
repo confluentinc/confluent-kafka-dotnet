@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>2.13.1</VersionPrefix>
+    <VersionPrefix>2.13.2-RC1</VersionPrefix>
     <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
   </PropertyGroup>
 
