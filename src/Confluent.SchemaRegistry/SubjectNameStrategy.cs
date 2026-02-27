@@ -136,7 +136,7 @@ namespace Confluent.SchemaRegistry
             ISchemaRegistryClient schemaRegistryClient,
             IEnumerable<KeyValuePair<string, string>> config)
         {
-            this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
+            this.schemaRegistryClient = schemaRegistryClient;
             this.subjectNameCache = new ConcurrentDictionary<CacheKey, string>();
             
             // Default fallback is Topic strategy
@@ -192,7 +192,9 @@ namespace Confluent.SchemaRegistry
 
             if (!subjectNameCache.TryGetValue(cacheKey, out var associatedSubject))
             {
-                var lookupSubject = await LookupAssociationAsync(context).ConfigureAwait(false);
+                var lookupSubject = schemaRegistryClient != null
+                    ? await LookupAssociationAsync(context).ConfigureAwait(false)
+                    : null;
                 string subjectToCache;
                 if (lookupSubject != null)
                 {
@@ -364,11 +366,6 @@ namespace Confluent.SchemaRegistry
                 case SubjectNameStrategy.TopicRecord:
                     return (context, recordType) => Task.FromResult(recordType != null ? $"{context.Topic}-{recordType}" : null);
                 case SubjectNameStrategy.Associated:
-                    if (schemaRegistryClient == null)
-                    {
-                        throw new ArgumentException(
-                            $"SubjectNameStrategy.Associated requires a {nameof(schemaRegistryClient)} to be provided.");
-                    }
                     var associatedStrategy = new AssociatedNameStrategy(schemaRegistryClient, config);
                     return (context, recordType) => associatedStrategy.GetSubjectNameAsync(context, recordType);
                 case SubjectNameStrategy.None:
