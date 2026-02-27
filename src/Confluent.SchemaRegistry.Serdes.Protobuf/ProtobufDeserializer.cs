@@ -73,7 +73,8 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config == null) { return; }
 
             var nonProtobufConfig = config
-                .Where(item => !item.Key.StartsWith("protobuf.") && !item.Key.StartsWith("rules."));
+                .Where(item => !item.Key.StartsWith("protobuf.") && !item.Key.StartsWith("rules.")
+                    && !item.Key.StartsWith("subject.name.strategy."));
             if (nonProtobufConfig.Count() > 0)
             {
                 throw new ArgumentException($"ProtobufDeserializer: unknown configuration parameter {nonProtobufConfig.First().Key}");
@@ -87,7 +88,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToAsyncDelegate(schemaRegistryClient, config); }
             if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
         }
 
@@ -114,7 +115,7 @@ namespace Confluent.SchemaRegistry.Serdes
             
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
-            string subject = GetSubjectName(topic, isKey, null);
+            string subject = await GetSubjectName(topic, isKey, null).ConfigureAwait(false);
 
             // Currently Protobuf does not support migration rules because of lack of support for DynamicMessage
             // See https://github.com/protocolbuffers/protobuf/issues/658
@@ -133,6 +134,10 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (schemaRegistryClient != null)
                 {
                     (writerSchema, fdSet) = await GetWriterSchema(subject, writerId).ConfigureAwait(false);
+                    if (subject == null)
+                    {
+                        subject = await GetSubjectName(topic, isKey, new T().Descriptor.FullName).ConfigureAwait(false);
+                    }
                 }
                 payload = await ExecuteRules(context.Component == MessageComponentType.Key,
                         subject, context.Topic, context.Headers, RulePhase.Encoding, RuleMode.Read,

@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2020 Confluent Inc.
+// Copyright 2016-2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -129,12 +129,12 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     The default key subject name strategy.
         /// </summary>
-        public const SubjectNameStrategy DefaultKeySubjectNameStrategy = SubjectNameStrategy.Topic;
+        public const SubjectNameStrategy DefaultKeySubjectNameStrategy = SubjectNameStrategy.Associated;
 
         /// <summary>
         ///     The default value subject name strategy.
         /// </summary>
-        public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Topic;
+        public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Associated;
 
         /// <inheritdoc />
         public IEnumerable<KeyValuePair<string, string>> Config
@@ -164,7 +164,7 @@ namespace Confluent.SchemaRegistry
                                                    prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames
                                                        .SchemaRegistryKeySubjectNameStrategy).Value ??
                                                "";
-            SubjectNameStrategy keySubjectNameStrategy = SubjectNameStrategy.Topic;
+            SubjectNameStrategy keySubjectNameStrategy = SubjectNameStrategy.Associated;
             if (keySubjectNameStrategyString != "" &&
                 !Enum.TryParse<SubjectNameStrategy>(keySubjectNameStrategyString, out keySubjectNameStrategy))
             {
@@ -182,7 +182,7 @@ namespace Confluent.SchemaRegistry
             var valueSubjectNameStrategyString = config.FirstOrDefault(prop =>
                     prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy)
                 .Value ?? "";
-            SubjectNameStrategy valueSubjectNameStrategy = SubjectNameStrategy.Topic;
+            SubjectNameStrategy valueSubjectNameStrategy = SubjectNameStrategy.Associated;
             if (valueSubjectNameStrategyString != "" &&
                 !Enum.TryParse<SubjectNameStrategy>(valueSubjectNameStrategyString, out valueSubjectNameStrategy))
             {
@@ -754,6 +754,37 @@ namespace Confluent.SchemaRegistry
             latestVersionBySubject.Clear();
             latestWithMetadataBySubject.Clear();
         }
+
+
+        /// <inheritdoc/>
+        public async Task<List<Association>> GetAssociationsByResourceNameAsync(
+            string resourceName,
+            string resourceNamespace,
+            string resourceType,
+            List<string> associationTypes,
+            string lifecycle,
+            int offset,
+            int limit)
+            => await restService.GetAssociationsByResourceNameAsync(
+                    resourceName, resourceNamespace, resourceType, associationTypes, lifecycle, offset, limit)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task<AssociationResponse> CreateAssociationAsync(AssociationCreateOrUpdateRequest request)
+            => await restService.CreateAssociationAsync(request)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task DeleteAssociationsAsync(
+            string resourceId,
+            string resourceType,
+            List<string> associationTypes,
+            bool cascadeLifecycle)
+            => await restService.DeleteAssociationsAsync(resourceId, resourceType, associationTypes, cascadeLifecycle)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
 
         /// <summary>
         ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.
