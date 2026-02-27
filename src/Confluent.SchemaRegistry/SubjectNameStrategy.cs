@@ -262,17 +262,9 @@ namespace Confluent.SchemaRegistry
                 case SubjectNameStrategy.Topic:
                     return $"{context.Topic}" + (context.Component == MessageComponentType.Key ? "-key" : "-value");
                 case SubjectNameStrategy.Record:
-                    if (recordType == null)
-                    {
-                        throw new ArgumentNullException(nameof(recordType));
-                    }
-                    return recordType;
+                    return recordType != null ? $"{recordType}" : null;
                 case SubjectNameStrategy.TopicRecord:
-                    if (recordType == null)
-                    {
-                        throw new ArgumentNullException(nameof(recordType));
-                    }
-                    return $"{context.Topic}-{recordType}";
+                    return recordType != null ? $"{context.Topic}-{recordType}" : null;
                 default:
                     throw new ArgumentException($"Unknown SubjectNameStrategy: {fallbackSubjectNameStrategy}");
             }
