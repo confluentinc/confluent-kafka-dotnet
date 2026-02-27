@@ -115,6 +115,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schemaFullname = schema.Title;
             
             this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+
             if (config == null) { return; }
 
             var nonJsonConfig = config

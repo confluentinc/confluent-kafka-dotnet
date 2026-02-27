@@ -103,6 +103,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
             this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+
             if (config == null) { return; }
 
             var nonJsonConfig = config

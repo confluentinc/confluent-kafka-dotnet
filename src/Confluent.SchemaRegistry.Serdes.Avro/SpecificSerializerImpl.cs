@@ -68,6 +68,7 @@ namespace Confluent.SchemaRegistry.Serdes
             RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
             this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+
             if (config == null) { return; }
 
             if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }

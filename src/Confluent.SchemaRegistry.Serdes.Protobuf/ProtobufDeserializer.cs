@@ -71,6 +71,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.parser = new MessageParser<T>(() => new T());
 
             this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+
             if (config == null) { return; }
 
             var nonProtobufConfig = config
