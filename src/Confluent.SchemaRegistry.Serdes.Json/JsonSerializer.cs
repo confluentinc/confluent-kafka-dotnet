@@ -117,7 +117,8 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config == null) { return; }
 
             var nonJsonConfig = config
-                .Where(item => !item.Key.StartsWith("json.") && !item.Key.StartsWith("rules."));
+                .Where(item => !item.Key.StartsWith("json.") && !item.Key.StartsWith("rules.")
+                    && !item.Key.StartsWith("subject.name.strategy."));
             if (nonJsonConfig.Count() > 0)
             {
                 throw new ArgumentException($"JsonSerializer: unknown configuration parameter {nonJsonConfig.First().Key}");
@@ -130,7 +131,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.LatestCompatibilityStrict != null) { this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToAsyncDelegate(schemaRegistryClient, config); }
             if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
             if (config.Validate != null) { this.validate = config.Validate.Value; }
 
@@ -207,7 +208,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 await serdeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    subject = GetSubjectName(context.Topic, context.Component == MessageComponentType.Key, this.schemaFullname);
+                    subject = await GetSubjectName(context.Topic, context.Component == MessageComponentType.Key, this.schemaFullname)
+                        .ConfigureAwait(false);
                     latestSchema = await GetReaderSchema(subject, new Schema(schemaText, ReferenceList, SchemaType.Json))
                         .ConfigureAwait(continueOnCapturedContext: false);
                     
