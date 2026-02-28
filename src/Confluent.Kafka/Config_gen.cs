@@ -30,27 +30,28 @@ namespace Confluent.Kafka
     public enum Partitioner
     {
         /// <summary>
-        ///     Random
+        ///     Random distribution
         /// </summary>
         Random,
 
         /// <summary>
-        ///     Consistent
+        ///     CRC32 hash of key (Empty and NULL keys are mapped to single partition)
         /// </summary>
         Consistent,
 
         /// <summary>
-        ///     ConsistentRandom
+        ///     CRC32 hash of key (Empty and NULL keys are randomly partitioned)
         /// </summary>
         ConsistentRandom,
 
         /// <summary>
-        ///     Murmur2
+        ///     Java Producer compatible Murmur2 hash of key (NULL keys are mapped to single partition)
         /// </summary>
         Murmur2,
 
         /// <summary>
-        ///     Murmur2Random
+        ///     Java Producer compatible Murmur2 hash of key
+        ///     (NULL keys are randomly partitioned. This is functionally equivalent to the default partitioner in the Java Producer.)
         /// </summary>
         Murmur2Random
     }
