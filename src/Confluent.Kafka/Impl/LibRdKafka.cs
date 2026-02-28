@@ -615,7 +615,9 @@ namespace Confluent.Kafka.Impl
 #if NET462
         private static void LoadNetFrameworkDelegates(string userSpecifiedPath)
         {
-            string path = userSpecifiedPath;
+            var path = userSpecifiedPath;
+            var loadLibraryFlags = WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH;
+
             if (path == null)
             {
                 // in net45, librdkafka.dll is not in the process directory, we have to load it manually
@@ -652,9 +654,17 @@ namespace Confluent.Kafka.Impl
                 {
                     path = Path.Combine(baseDirectory, "librdkafka.dll");
                 }
+
+                if (!File.Exists(path))
+                {
+                    // Allow LoadLibrary to search for the dll using the default Windows search path as defined here:
+                    // https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order#search-order-for-unpackaged-apps
+                    path = "librdkafka.dll";
+                    loadLibraryFlags = 0;
+                }
             }
 
-            if (WindowsNative.LoadLibraryEx(path, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+            if (WindowsNative.LoadLibraryEx(path, IntPtr.Zero, loadLibraryFlags) == IntPtr.Zero)
             {
                 // catch the last win32 error by default and keep the associated default message
                 var win32Exception = new Win32Exception();
