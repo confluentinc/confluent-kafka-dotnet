@@ -274,7 +274,7 @@ You can also refer to the [Confluent Cloud example](examples/ConfluentCloud) whi
 Instructions on building and testing confluent-kafka-dotnet can be found [here](DEVELOPER.md).
 
 Copyright (c)
-2016-2019 [Confluent Inc.](https://www.confluent.io)
+2016-2023 [Confluent Inc.](https://www.confluent.io)
 2015-2016 [Andreas Heider](mailto:andreas@heider.io)
 
 KAFKA is a registered trademark of The Apache Software Foundation and has been licensed for use
