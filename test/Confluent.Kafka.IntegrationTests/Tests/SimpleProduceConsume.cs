@@ -50,21 +50,33 @@ namespace Confluent.Kafka.IntegrationTests
 
             string testString1 = "hello world";
             string testString2 = null;
+            string testString3 = "dlrow olleh";
+            string testString4 = null;
 
             DeliveryResult<Null, string> produceResult1;
             DeliveryResult<Null, string> produceResult2;
+            DeliveryResult<Null, Memory<byte>?> produceResult3;
+            DeliveryResult<Null, Memory<byte>?> produceResult4;
             using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
             {
                 produceResult1 = ProduceMessage(singlePartitionTopic, producer, testString1);
                 produceResult2 = ProduceMessage(singlePartitionTopic, producer, testString2);
             }
 
+            using (var producer = new TestProducerBuilder<Null, Memory<byte>?>(producerConfig).Build())
+            {
+                produceResult3 = ProduceMessage(singlePartitionTopic, producer, testString3);
+                produceResult4 = ProduceMessage(singlePartitionTopic, producer, testString4);
+            }
+
             using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 ConsumeMessage(consumer, produceResult1, testString1);
                 ConsumeMessage(consumer, produceResult2, testString2);
+                ConsumeMessage(consumer, produceResult3, testString3);
+                ConsumeMessage(consumer, produceResult4, testString4);
             }
-            
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   SimpleProduceConsume");
         }
@@ -80,9 +92,35 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.Equal(r.Message.Timestamp.UnixTimestampMs, dr.Message.Timestamp.UnixTimestampMs);
         }
 
+        private static void ConsumeMessage(IConsumer<byte[], byte[]> consumer, DeliveryResult<Null, Memory<byte>?> dr, string testString)
+        {
+            consumer.Assign(new List<TopicPartitionOffset> { dr.TopicPartitionOffset });
+            var r = consumer.Consume(TimeSpan.FromSeconds(10));
+            Assert.NotNull(r?.Message);
+            Assert.Equal(testString, r.Message.Value == null ? null : Encoding.UTF8.GetString(r.Message.Value));
+            Assert.Null(r.Message.Key);
+            Assert.Equal(r.Message.Timestamp.Type, dr.Message.Timestamp.Type);
+            Assert.Equal(r.Message.Timestamp.UnixTimestampMs, dr.Message.Timestamp.UnixTimestampMs);
+        }
+
         private static DeliveryResult<Null, string> ProduceMessage(string topic, IProducer<Null, string> producer, string testString)
         {
             var result = producer.ProduceAsync(topic, new Message<Null, string> { Value = testString }).Result;
+            Assert.NotNull(result?.Message);
+            Assert.Equal(topic, result.Topic);
+            Assert.NotEqual<long>(result.Offset, Offset.Unset);
+            Assert.Equal(TimestampType.CreateTime, result.Message.Timestamp.Type);
+            Assert.True(Math.Abs((DateTime.UtcNow - result.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+            Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            return result;
+        }
+
+        private static DeliveryResult<Null, Memory<byte>?> ProduceMessage(string topic, IProducer<Null, Memory<byte>?> producer, string testString)
+        {
+            var result = producer.ProduceAsync(topic, new Message<Null, Memory<byte>?>
+            {
+                Value = testString == null ? null : Encoding.UTF8.GetBytes(testString),
+            }).Result;
             Assert.NotNull(result?.Message);
             Assert.Equal(topic, result.Topic);
             Assert.NotEqual<long>(result.Offset, Offset.Unset);
