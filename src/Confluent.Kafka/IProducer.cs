@@ -23,10 +23,31 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka
 {
     /// <summary>
+    /// Defines a high-level Apache Kafka producer client without serialization capable of producing pre-serialized messages. 
+    /// </summary>
+    public interface IProducer : IClient
+    {
+        /// <summary>
+        /// Asynchronously send a single <b>preserialized</b> message to a Kafka topic. 
+        /// </summary>
+        /// <remarks>
+        /// Use this method to produce with minimal allocations.
+        /// </remarks>
+        /// <param name="topic">The topic to produce message to.</param>
+        /// <param name="partition">The partition to produce to or <c>Partition.Any</c> to use configured partitioner.</param>
+        /// <param name="key">Serialized message key or <c>null</c>.</param>
+        /// <param name="value">Serialized message value or <c>null</c>.</param>
+        /// <param name="headers">Message headers or <c>null</c> to produce message without headers.</param>
+        /// <param name="timestamp"></param>
+        /// <returns>Result of produce.</returns>
+        Task<ProduceResult> ProduceAsync(string topic, Partition partition, ArraySegment<byte>? key, ArraySegment<byte>? value, IReadOnlyList<IHeader> headers, Timestamp timestamp);
+    }
+
+    /// <summary>
     ///     Defines a high-level Apache Kafka producer client
     ///     that provides key and value serialization.
     /// </summary>
-    public interface IProducer<TKey, TValue> : IClient
+    public interface IProducer<TKey, TValue> : IProducer
     {
         /// <summary>
         ///     Asynchronously send a single message to a
@@ -100,7 +121,6 @@ namespace Confluent.Kafka
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken));
-
 
         /// <summary>
         ///     Asynchronously send a single message to a
