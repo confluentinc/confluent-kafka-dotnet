@@ -33,7 +33,7 @@ namespace Confluent.Kafka
         ///     The configured client handle.
         /// </summary>
         public Handle Handle { get; set; }
-        
+
         /// <summary>
         ///     The configured key serializer.
         /// </summary>
@@ -54,9 +54,14 @@ namespace Confluent.Kafka
         /// </summary>
         public IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
+        /// <summary>
+        ///     The configured async value serializer.
+        /// </summary>
+        public ISegmentSerializer<TValue> SegmentValueSerializer { get; set; }
+
 
         /// <summary>
-        ///     An underlying librdkafka client handle that the Producer will use to 
+        ///     An underlying librdkafka client handle that the Producer will use to
         ///     make broker requests. The handle must be from another Producer
         ///     instance (not Consumer or AdminClient).
         /// </summary>
@@ -98,6 +103,15 @@ namespace Confluent.Kafka
         public DependentProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
             this.AsyncValueSerializer = serializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     The segment serializer to use to serialize values.
+        /// </summary>
+        public DependentProducerBuilder<TKey, TValue> SetValueSerializer(ISegmentSerializer<TValue> serializer)
+        {
+            this.SegmentValueSerializer = serializer;
             return this;
         }
 
