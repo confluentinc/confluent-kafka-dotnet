@@ -373,6 +373,35 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Store offsets for multiple partitions.
+        ///
+        ///     The offsets will be committed (written) to the
+        ///     offset store according to `auto.commit.interval.ms`
+        ///     or manual offset-less commit(). Calling
+        ///     this method in itself does not commit offsets,
+        ///     only store them for future commit.
+        /// </summary>
+        /// <remarks>
+        ///     `enable.auto.offset.store` must be set to
+        ///     "false" when using this API.
+        /// </remarks>
+        /// <param name="offsets">
+        ///     The offsets to be stored.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if the request failed.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        void StoreOffsets(IEnumerable<TopicPartitionOffset> offsets);
+
+
+        /// <summary>
         ///     Commit all offsets for the current assignment.
         /// </summary>
         /// <exception cref="Confluent.Kafka.KafkaException">
