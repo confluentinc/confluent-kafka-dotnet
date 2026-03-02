@@ -22,7 +22,6 @@
 * Fix DeriveKey in Hkdf implementation (#2559)
 * Ensure single use of HttpRequestMessage for token fetch (#2544)
 * Fix race conditions when retrieving KEK/DEK (#2565)
-* Allowing for Confluent-Identity-Pool-Id to be optional (#2564)
 * Ensure JSON schema access is thread-safe (#2567)
 * Use lock on root schema when protecting access to subschemas (#2568)
 * Processing arrays and maps sequentially to avoid race conditions (#2569)
