@@ -796,21 +796,33 @@ namespace Confluent.Kafka
                         topicPartition.Topic,
                         enableDeliveryReportKey ? message.Key : default(TKey),
                         enableDeliveryReportValue ? message.Value : default(TValue));
+                    
+                    bool canBeCanceled = cancellationToken.CanBeCanceled;
 
-                    if (cancellationToken.CanBeCanceled)
+                    if (canBeCanceled)
                     {
                         handler.CancellationTokenRegistration
                             = cancellationToken.Register(() => handler.TrySetCanceled());
                     }
 
-                    ProduceImpl(
-                        topicPartition.Topic,
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
-                        message.Timestamp, topicPartition.Partition, headers.BackingList,
-                        handler);
+                    try
+                    {
+                        ProduceImpl(
+                            topicPartition.Topic,
+                            valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                            keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                            message.Timestamp, topicPartition.Partition, headers.BackingList,
+                            handler);
 
-                    return await handler.Task.ConfigureAwait(false);
+                        return await handler.Task.ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        if (canBeCanceled)
+                        {
+                            handler.CancellationTokenRegistration.Dispose();
+                        }
+                    }
                 }
                 else
                 {
@@ -959,8 +971,6 @@ namespace Confluent.Kafka
 
             public void HandleDeliveryReport(DeliveryReport<Null, Null> deliveryReport)
             {
-                CancellationTokenRegistration.Dispose();
-
                 if (deliveryReport == null)
                 {
                     TrySetResult(null);
