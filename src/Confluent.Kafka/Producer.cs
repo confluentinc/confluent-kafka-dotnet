@@ -796,15 +796,15 @@ namespace Confluent.Kafka
                         topicPartition.Topic,
                         enableDeliveryReportKey ? message.Key : default(TKey),
                         enableDeliveryReportValue ? message.Value : default(TValue));
+                    
+                    bool canBeCanceled = cancellationToken.CanBeCanceled;
 
-                    if (cancellationToken.CanBeCanceled)
+                    if (canBeCanceled)
                     {
                         handler.CancellationTokenRegistration
                             = cancellationToken.Register(() => handler.TrySetCanceled());
                     }
 
-                    // Ensure cancellation registration is disposed if ProduceImpl fails before a delivery report is possible.
-                    var produced = false;
                     try
                     {
                         ProduceImpl(
@@ -813,13 +813,12 @@ namespace Confluent.Kafka
                             keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
                             message.Timestamp, topicPartition.Partition, headers.BackingList,
                             handler);
-                        produced = true;
 
                         return await handler.Task.ConfigureAwait(false);
                     }
                     finally
                     {
-                        if (!produced && cancellationToken.CanBeCanceled)
+                        if (canBeCanceled)
                         {
                             handler.CancellationTokenRegistration.Dispose();
                         }
@@ -972,8 +971,6 @@ namespace Confluent.Kafka
 
             public void HandleDeliveryReport(DeliveryReport<Null, Null> deliveryReport)
             {
-                CancellationTokenRegistration.Dispose();
-
                 if (deliveryReport == null)
                 {
                     TrySetResult(null);
