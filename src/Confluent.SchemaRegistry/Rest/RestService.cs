@@ -480,6 +480,7 @@ namespace Confluent.SchemaRegistry
         {
             HttpRequestMessage request = new HttpRequestMessage(method, endPoint);
             request.Headers.Add("Accept", acceptHeader);
+            request.Headers.Add("Confluent-Accept-Unknown-Properties", "true");
             if (jsonBody.Length != 0)
             {
                 string stringContent = string.Join("\n", jsonBody.Select(x => JsonConvert.SerializeObject(x)));
@@ -489,6 +490,8 @@ namespace Confluent.SchemaRegistry
                 request.Content = content;
             }
 
+            request.Headers.Add("Confluent-Client-Version", GetClientVersionHeaderValue());
+
             if (authenticationHeaderValueProvider != null)
             {
                 if (authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider bearerProvider){
@@ -497,7 +500,11 @@ namespace Confluent.SchemaRegistry
                         await bearerProvider.InitOrRefreshAsync().ConfigureAwait(continueOnCapturedContext: false);
                     }
 
-                    request.Headers.Add("Confluent-Identity-Pool-Id", bearerProvider.GetIdentityPool());
+                     var identityPool = bearerProvider.GetIdentityPool();
+                    if (!string.IsNullOrEmpty(identityPool))
+                    {
+                        request.Headers.Add("Confluent-Identity-Pool-Id", identityPool);
+                    }
                     request.Headers.Add("target-sr-cluster", bearerProvider.GetLogicalCluster());
                 }
                 request.Headers.Authorization = authenticationHeaderValueProvider.GetAuthenticationHeader();

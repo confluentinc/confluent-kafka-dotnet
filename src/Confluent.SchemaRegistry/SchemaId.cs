@@ -87,7 +87,7 @@ public struct SchemaId
         Guid = guid != null ? System.Guid.Parse(guid) : null;
         MessageIndexes = messageIndexes;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> FromBytes(ReadOnlyMemory<byte> payload)
     {
