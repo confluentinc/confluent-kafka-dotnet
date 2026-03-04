@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2020 Confluent Inc.
+// Copyright 2016-2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -686,6 +686,7 @@ namespace Confluent.SchemaRegistry
             return schema;
         }
 
+
         /// <inheritdoc/>
         public Task<List<string>> GetAllSubjectsAsync()
             => restService.GetSubjectsAsync();
@@ -701,7 +702,6 @@ namespace Confluent.SchemaRegistry
             => await restService.TestLatestCompatibilityAsync(subject, schema)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
-
         /// <inheritdoc/>
         public async Task<bool> IsCompatibleAsync(string subject, string avroSchema)
             => await restService
@@ -714,7 +714,6 @@ namespace Confluent.SchemaRegistry
             "SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructKeySubjectName(string topic, string recordType = null)
             => keySubjectNameStrategy(new SerializationContext(MessageComponentType.Key, topic), recordType);
-
 
         /// <inheritdoc />
         [Obsolete(
@@ -754,6 +753,37 @@ namespace Confluent.SchemaRegistry
             latestVersionBySubject.Clear();
             latestWithMetadataBySubject.Clear();
         }
+
+
+        /// <inheritdoc/>
+        public async Task<List<Association>> GetAssociationsByResourceNameAsync(
+            string resourceName,
+            string resourceNamespace,
+            string resourceType,
+            List<string> associationTypes,
+            string lifecycle,
+            int offset,
+            int limit)
+            => await restService.GetAssociationsByResourceNameAsync(
+                    resourceName, resourceNamespace, resourceType, associationTypes, lifecycle, offset, limit)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task<AssociationResponse> CreateAssociationAsync(AssociationCreateOrUpdateRequest request)
+            => await restService.CreateAssociationAsync(request)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task DeleteAssociationsAsync(
+            string resourceId,
+            string resourceType,
+            List<string> associationTypes,
+            bool cascadeLifecycle)
+            => await restService.DeleteAssociationsAsync(resourceId, resourceType, associationTypes, cascadeLifecycle)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
 
         /// <summary>
         ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.

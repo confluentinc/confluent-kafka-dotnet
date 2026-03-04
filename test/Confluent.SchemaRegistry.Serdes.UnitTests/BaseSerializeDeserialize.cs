@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         protected IDictionary<KekId, RegisteredKek> kekStore = new Dictionary<KekId, RegisteredKek>();
         protected IDictionary<DekId, RegisteredDek> dekStore = new Dictionary<DekId, RegisteredDek>();
         protected IDictionary<string, int> dekLastVersions = new Dictionary<string, int>();
+        protected IDictionary<string, List<Association>> associationStore = new Dictionary<string, List<Association>>();
 
         public BaseSerializeDeserializeTests()
         {
@@ -119,6 +120,32 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                         && x.Metadata.Properties != null 
                         && metadata.Keys.All(k => x.Metadata.Properties.ContainsKey(k) && x.Metadata.Properties[k] == metadata[k])
                     );
+                }
+            );
+            schemaRegistryMock.Setup(x => x.GetAssociationsByResourceNameAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(
+                (string resourceName, string resourceNamespace, string resourceType, 
+                    List<string> associationTypes, string lifecycle, int offset, int limit) =>
+                {
+                    var key = $"{resourceNamespace}/{resourceName}";
+                    if (!associationStore.TryGetValue(key, out var associations))
+                    {
+                        return new List<Association>();
+                    }
+                    var result = associations.Where(a => 
+                        (resourceType == null || a.ResourceType == resourceType) &&
+                        (associationTypes == null || associationTypes.Count == 0 || associationTypes.Contains(a.AssociationType))
+                    ).ToList();
+                    if (offset > 0)
+                    {
+                        result = result.Skip(offset).ToList();
+                    }
+                    if (limit >= 0)
+                    {
+                        result = result.Take(limit).ToList();
+                    }
+                    return result;
                 }
             );
             schemaRegistryClient = schemaRegistryMock.Object;
