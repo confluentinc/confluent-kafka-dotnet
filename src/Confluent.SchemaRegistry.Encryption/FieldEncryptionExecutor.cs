@@ -83,6 +83,7 @@ namespace Confluent.SchemaRegistry.Encryption
         public void Init(RuleContext ctx)
         {
             transform = encryptionExecutor.NewTransform(ctx);
+
         }
 
         public async Task<object> Transform(RuleContext ctx, RuleContext.FieldContext fieldCtx, object fieldValue)
@@ -92,6 +93,7 @@ namespace Confluent.SchemaRegistry.Encryption
 
         public void Dispose()
         {
+            transform?.Dispose();
         }
     }
 }
