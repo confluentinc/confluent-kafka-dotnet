@@ -102,10 +102,13 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+
             if (config == null) { return; }
 
             var nonJsonConfig = config
-                .Where(item => !item.Key.StartsWith("json.") && !item.Key.StartsWith("rules."));
+                .Where(item => !item.Key.StartsWith("json.") && !item.Key.StartsWith("rules.")
+                    && !item.Key.StartsWith("subject.name.strategy."));
             if (nonJsonConfig.Count() > 0)
             {
                 throw new ArgumentException($"JsonDeserializer: unknown configuration parameter {nonJsonConfig.First().Key}.");
@@ -113,7 +116,6 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
-            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
             if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
             if (config.Validate != null) { this.validate = config.Validate.Value; }
         }
@@ -172,7 +174,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             bool isKey = context.Component == MessageComponentType.Key;
             string topic = context.Topic;
-            string subject = GetSubjectName(topic, isKey, null);
+            string subject = await GetSubjectName(topic, isKey, null).ConfigureAwait(false);
             RegisteredSchema latestSchema = null;
             if (subject != null)
             {
@@ -197,7 +199,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ConfigureAwait(false);
                     if (subject == null)
                     {
-                        subject = GetSubjectName(topic, isKey, writerSchema.Title);
+                        subject = await GetSubjectName(topic, isKey, writerSchema.Title).ConfigureAwait(false);
                         if (subject != null)
                         {
                             latestSchema = await GetReaderSchema(subject)

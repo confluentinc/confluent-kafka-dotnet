@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -285,6 +285,154 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(user.name, result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
+        public void ISpecificRecordAssociatedNameStrategy()
+        {
+            // Setup association for the topic
+            var associatedSubject = "my-associated-subject-value";
+            var association = new Association(
+                subject: associatedSubject,
+                guid: Guid.NewGuid().ToString(),
+                resourceName: testTopic,
+                resourceNamespace: "-",
+                resourceId: "resource-id-1",
+                resourceType: "topic",
+                associationType: "value",
+                lifecycle: "WEAK",
+                frozen: false
+            );
+            associationStore[$"-/{testTopic}"] = new List<Association> { association };
+
+            // Pre-register the schema under the associated subject
+            var schemaStr = User._SCHEMA.ToString();
+            var schema = new RegisteredSchema(associatedSubject, 1, 1, schemaStr, SchemaType.Avro, null);
+            store[schemaStr] = 1;
+            subjectStore[associatedSubject] = new List<RegisteredSchema> { schema };
+
+            var serializerConfig = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true,
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var serializer = new AvroSerializer<User>(schemaRegistryClient, serializerConfig);
+            var deserializerConfig = new AvroDeserializerConfig
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, deserializerConfig);
+
+            var user = new User
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(user.name, result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
+        public void ISpecificRecordAssociatedNameStrategyWithFallback()
+        {
+            // No association is set up, so it should fall back to TopicNameStrategy
+            var schemaStr = User._SCHEMA.ToString();
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+
+            var serializerConfig = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true,
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var serializer = new AvroSerializer<User>(schemaRegistryClient, serializerConfig);
+            var deserializerConfig = new AvroDeserializerConfig
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, deserializerConfig);
+
+            var user = new User
+            {
+                favorite_color = "green",
+                favorite_number = 42,
+                name = "fallback"
+            };
+
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(user.name, result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
+        public void ISpecificRecordAssociatedNameStrategyWithKafkaClusterId()
+        {
+            // Setup association for the topic with a specific kafka cluster ID as namespace
+            var kafkaClusterId = "lkc-12345";
+            var associatedSubject = "cluster-specific-subject-value";
+            var association = new Association(
+                subject: associatedSubject,
+                guid: Guid.NewGuid().ToString(),
+                resourceName: testTopic,
+                resourceNamespace: kafkaClusterId,
+                resourceId: "resource-id-2",
+                resourceType: "topic",
+                associationType: "value",
+                lifecycle: "WEAK",
+                frozen: false
+            );
+            associationStore[$"{kafkaClusterId}/{testTopic}"] = new List<Association> { association };
+
+            // Pre-register the schema under the associated subject
+            var schemaStr = User._SCHEMA.ToString();
+            var schema = new RegisteredSchema(associatedSubject, 1, 1, schemaStr, SchemaType.Avro, null);
+            store[schemaStr] = 1;
+            subjectStore[associatedSubject] = new List<RegisteredSchema> { schema };
+
+            // Create config with kafka.cluster.id
+            var configDict = new Dictionary<string, string>
+            {
+                { AssociatedNameStrategy.KafkaClusterIdConfig, kafkaClusterId }
+            };
+            var serializerConfig = new AvroSerializerConfig(configDict)
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true,
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var serializer = new AvroSerializer<User>(schemaRegistryClient, serializerConfig);
+            
+            var deserializerConfig = new AvroDeserializerConfig(configDict)
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient, deserializerConfig);
+
+            var user = new User
+            {
+                favorite_color = "purple",
+                favorite_number = 777,
+                name = "cluster-user"
+            };
+
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);

@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry
         protected bool useLatestVersion = false;
         protected bool latestCompatibilityStrict = false;
         protected IDictionary<string, string> useLatestWithMetadata = null;
-        protected SubjectNameStrategyDelegate subjectNameStrategy = null;
+        protected AsyncSubjectNameStrategyDelegate subjectNameStrategy = null;
 
         protected SemaphoreSlim serdeMutex = new SemaphoreSlim(1);
         
@@ -65,29 +65,22 @@ namespace Confluent.SchemaRegistry
             }
         }
 
-        protected string GetSubjectName(string topic, bool isKey, string recordType)
+        protected async Task<string> GetSubjectName(string topic, bool isKey, string recordType)
         {
-            try
-            {
-                string subject = this.subjectNameStrategy != null
-                    // use the subject name strategy specified in the serializer config if available.
-                    ? this.subjectNameStrategy(
-                        new SerializationContext(
-                            isKey ? MessageComponentType.Key : MessageComponentType.Value,
-                            topic),
-                        recordType)
-                    // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                    : schemaRegistryClient == null
-                        ? null
-                        : isKey
-                            ? schemaRegistryClient.ConstructKeySubjectName(topic, recordType)
-                            : schemaRegistryClient.ConstructValueSubjectName(topic, recordType);
-                return subject;
-            }
-            catch (Exception e)
-            {
-                return null;
-            }
+            string subject = this.subjectNameStrategy != null
+                // use the subject name strategy specified in the serializer config if available.
+                ? await this.subjectNameStrategy(
+                    new SerializationContext(
+                        isKey ? MessageComponentType.Key : MessageComponentType.Value,
+                        topic),
+                    recordType).ConfigureAwait(false)
+                // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
+                : schemaRegistryClient == null
+                    ? null
+                    : isKey
+                        ? schemaRegistryClient.ConstructKeySubjectName(topic, recordType)
+                        : schemaRegistryClient.ConstructValueSubjectName(topic, recordType);
+            return subject;
         }
 
         protected async Task<(Schema, TParsedSchema)> GetWriterSchema(string subject, SchemaId writerId, string format = null)
