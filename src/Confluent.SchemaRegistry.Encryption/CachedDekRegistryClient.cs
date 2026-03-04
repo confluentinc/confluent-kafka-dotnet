@@ -410,7 +410,7 @@ namespace Confluent.SchemaRegistry.Encryption
             => GetDekVersionAsync(kekName, subject, -1, algorithm, ignoreDeletedDeks);
 
         /// <inheritdoc/>
-               public async Task<RegisteredDek> CreateDekAsync(string kekName, Dek dek)
+        public async Task<RegisteredDek> CreateDekAsync(string kekName, Dek dek)
         {
             try
             {

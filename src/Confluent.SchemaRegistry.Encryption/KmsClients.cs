@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
-using Miscreant;
+using Confluent.SchemaRegistry.Encryption.Vendored.Miscreant;
 
 namespace Confluent.SchemaRegistry.Encryption
 {

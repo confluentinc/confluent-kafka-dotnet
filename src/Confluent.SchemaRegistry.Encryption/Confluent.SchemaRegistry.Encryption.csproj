@@ -51,6 +51,6 @@
     <ItemGroup>
         <None Include="Vendored\Miscreant\LICENSE.txt" Pack="true" PackagePath="Vendored\Miscreant\" />
         <None Include="Vendored\HkdfStandard\LICENSE" Pack="true" PackagePath="Vendored\HkdfStandard\" />
-    </ItemGroup>  
+    </ItemGroup>
 
 </Project>

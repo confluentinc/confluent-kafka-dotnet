@@ -1,5 +1,5 @@
 ﻿using System;
-using HkdfStandard;
+using Confluent.SchemaRegistry.Encryption.Vendored.HkdfStandard;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
