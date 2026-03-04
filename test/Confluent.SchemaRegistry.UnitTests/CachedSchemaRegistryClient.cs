@@ -145,14 +145,14 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void BearerAuthWithStaticTokenWithoutIdentityPool()
         {
-            // IdentityPoolId is optional to support union of pools/SDS v3
-            var config = new SchemaRegistryConfig 
-            { 
+            // IdentityPoolId defaults to empty string when not set
+            var config = new SchemaRegistryConfig
+            {
                 Url = "irrelevanthost:8081",
                 BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
                 BearerAuthToken = "test-token",
                 BearerAuthLogicalCluster = "test-cluster"
-                // Note: BearerAuthIdentityPoolId is intentionally not set
+                // Note: BearerAuthIdentityPoolId is intentionally not set, defaults to ""
             };
             var client = new CachedSchemaRegistryClient(config);
             Assert.Null(client.AuthHeaderProvider);
@@ -161,8 +161,9 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void BearerAuthWithOAuthBearerWithoutIdentityPool()
         {
-            var config = new SchemaRegistryConfig 
-            { 
+            // IdentityPoolId defaults to empty string when not set
+            var config = new SchemaRegistryConfig
+            {
                 Url = "irrelevanthost:8081",
                 BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearer,
                 BearerAuthClientId = "test-client",

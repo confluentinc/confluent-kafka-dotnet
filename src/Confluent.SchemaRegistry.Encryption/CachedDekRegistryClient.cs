@@ -246,9 +246,9 @@ namespace Confluent.SchemaRegistry.Encryption
             }
 
             var sslCaLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
-            var sslCaCertificate = string.IsNullOrEmpty(sslCaLocation) ? null : new X509Certificate2(sslCaLocation);
+            var sslCaCertificates = CachedSchemaRegistryClient.LoadCaCertificates(sslCaLocation);
             this.restService = new DekRestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider,
-                    SetSslConfig(config), sslVerify, sslCaCertificate, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, maxConnectionsPerServer);
+                    SetSslConfig(config), sslVerify, sslCaCertificates, proxy, maxRetries, retriesWaitMs, retriesMaxWaitMs, maxConnectionsPerServer);
         }
 
         /// <summary>
