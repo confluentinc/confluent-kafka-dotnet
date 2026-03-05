@@ -45,9 +45,16 @@ namespace Confluent.SchemaRegistry
         StaticToken,
 
         /// <summary>
-        ///     Credentials are specified via the `schema.registry.oauthbearer.auth.credentials.source` config property.
+        ///     Credentials are specified via the `schema.registry.bearer.auth.client.id` and
+        ///     `schema.registry.bearer.auth.client.secret` config properties.
         /// </summary>
         OAuthBearer,
+
+        /// <summary>
+        ///     Metadata based authentication using Azure Instance Metadata Service (IMDS).
+        ///     Only the token endpoint URL and/or query parameters need to be specified.
+        /// </summary>
+        OAuthBearerAzureIMDS,
 
         /// <summary>
         ///     User provides a custom implementation of IAuthenticationHeaderValueProvider.
