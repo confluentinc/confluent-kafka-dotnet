@@ -79,7 +79,7 @@ public struct SchemaId
         Guid = guid != null ? System.Guid.Parse(guid) : null;
         MessageIndexes = null;
     }
-    
+
     public SchemaId(SchemaType schemaType, int id, string guid, IReadOnlyList<int> messageIndexes)
     {
         SchemaType = schemaType;
