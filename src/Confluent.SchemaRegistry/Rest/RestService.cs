@@ -700,6 +700,7 @@ namespace Confluent.SchemaRegistry
             string clientSecret = null;
             string scope = null;
             string tokenEndpointUrl = null;
+            string branch = null;
 
             if (bearerAuthSource == "STATIC_TOKEN" || bearerAuthSource == "OAUTHBEARER")
             {
