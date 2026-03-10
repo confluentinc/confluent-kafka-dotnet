@@ -40,6 +40,7 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum period of time the call may block.
         /// </param>
+        [Obsolete("Superseded by ListConsumerGroupsAsync and DescribeConsumerGroupsAsync. This method will be removed in a future release.")]
         List<GroupInfo> ListGroups(TimeSpan timeout);
 
 
@@ -64,6 +65,7 @@ namespace Confluent.Kafka
         ///     specified group or null if this group does
         ///     not exist.
         /// </returns>
+        [Obsolete("Superseded by ListConsumerGroupsAsync and DescribeConsumerGroupsAsync. This method will be removed in a future release.")]
         GroupInfo ListGroup(string group, TimeSpan timeout);
 
 
