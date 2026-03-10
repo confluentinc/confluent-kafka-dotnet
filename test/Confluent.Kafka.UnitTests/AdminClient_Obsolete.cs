@@ -22,22 +22,35 @@ namespace Confluent.Kafka.UnitTests
 {
     public class AdminClientObsoleteTests
     {
+        private const string ExpectedObsoleteMessage =
+            "Superseded by ListConsumerGroupsAsync and DescribeConsumerGroupsAsync. This method will be removed in a future release.";
+
         [Fact]
         public void ListGroups_HasObsoleteAttribute()
         {
-            var method = typeof(IAdminClient).GetMethod("ListGroups");
+            var method = typeof(IAdminClient).GetMethod(
+                "ListGroups",
+                new[] { typeof(TimeSpan) });
             Assert.NotNull(method);
             var attrs = method.GetCustomAttributes(typeof(ObsoleteAttribute), false);
-            Assert.Single(attrs);
+            var attr = Assert.Single(attrs);
+            var obsoleteAttr = Assert.IsType<ObsoleteAttribute>(attr);
+            Assert.Equal(ExpectedObsoleteMessage, obsoleteAttr.Message);
+            Assert.False(obsoleteAttr.IsError);
         }
 
         [Fact]
         public void ListGroup_HasObsoleteAttribute()
         {
-            var method = typeof(IAdminClient).GetMethod("ListGroup");
+            var method = typeof(IAdminClient).GetMethod(
+                "ListGroup",
+                new[] { typeof(string), typeof(TimeSpan) });
             Assert.NotNull(method);
             var attrs = method.GetCustomAttributes(typeof(ObsoleteAttribute), false);
-            Assert.Single(attrs);
+            var attr = Assert.Single(attrs);
+            var obsoleteAttr = Assert.IsType<ObsoleteAttribute>(attr);
+            Assert.Equal(ExpectedObsoleteMessage, obsoleteAttr.Message);
+            Assert.False(obsoleteAttr.IsError);
         }
     }
 }

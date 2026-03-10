@@ -30,7 +30,7 @@ namespace Confluent.Kafka
     {
         /// <summary>
         ///     DEPRECATED.
-        ///     Superseded by ListConsumerGroups and DescribeConsumerGroups.
+        ///     Superseded by ListConsumerGroupsAsync and DescribeConsumerGroupsAsync.
         ///     Get information pertaining to all groups in
         ///     the Kafka cluster (blocking)
         ///
@@ -46,7 +46,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     DEPRECATED.
-        ///     Superseded by ListConsumerGroups and DescribeConsumerGroups.
+        ///     Superseded by ListConsumerGroupsAsync and DescribeConsumerGroupsAsync.
         ///     Get information pertaining to a particular
         ///     group in the Kafka cluster (blocking).
         ///
