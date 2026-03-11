@@ -136,6 +136,18 @@ namespace Confluent.SchemaRegistry.UnitTests
             client = new CachedSchemaRegistryClient(config);
             Assert.Null(client.AuthHeaderProvider);
 
+            // Specify token URL override only, no query parameters
+            config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
+                BearerAuthTokenEndpointUrl = "https://test.com/token?resource=foo&client_id=bar&api-version=2018-02-01",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+
             // Throws an `ArgumentException` when both `BearerAuthTokenEndpointUrl`
             // and `BearerAuthTokenEndpointQuery` are missing
             config = new SchemaRegistryConfig

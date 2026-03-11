@@ -64,12 +64,11 @@ namespace Confluent.SchemaRegistry
 
         private async Task GenerateToken()
         {
-            var request = CreateTokenRequest();
-
             for (int i = 0; i < maxRetries + 1; i++)
             {
                 try
                 {
+                    var request = CreateTokenRequest();
                     token = await FetchToken(request);
                     return;
                 }
