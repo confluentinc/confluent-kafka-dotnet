@@ -1,0 +1,76 @@
+// Copyright 2025 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Refer to LICENSE for more information.
+
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Net.Http;
+
+
+namespace Confluent.SchemaRegistry
+{
+    class AzureIMDSBearerAuthenticationHeaderValueProviderBuilder : AbstractAuthenticationHeaderValueProviderBuilder
+    {
+        private string tokenEndpointUrl = "http://169.254.169.254/metadata/identity/oauth2/token";
+ 
+        internal AzureIMDSBearerAuthenticationHeaderValueProviderBuilder(
+            IAuthenticationHeaderValueProvider authenticationHeaderValueProvider,
+            IEnumerable<KeyValuePair<string, string>> config) : base(authenticationHeaderValueProvider, config)
+        {
+        }
+
+        protected override void Validate()
+        {
+            base.Validate();
+
+            bool tokenEndpointUrlOverride = false;
+            var tokenEndpointUrl = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointUrl).Value;
+
+            if (tokenEndpointUrl != null)
+            {
+                this.tokenEndpointUrl = tokenEndpointUrl;
+                tokenEndpointUrlOverride = true;
+            }
+
+            var tokenQuery = config.FirstOrDefault(prop =>
+                prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointQuery).Value;
+
+            if (tokenQuery != null)
+            {
+                var requestWithQuery = new UriBuilder(new Uri(this.tokenEndpointUrl));
+                requestWithQuery.Query = tokenQuery;
+                requestWithQuery.Fragment = "";
+                this.tokenEndpointUrl = requestWithQuery.Uri.ToString();
+            }
+            else if (!tokenEndpointUrlOverride)
+            {
+                throw new ArgumentException($"Missing required configuration property: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBearerAuthTokenEndpointQuery}");
+            }
+        }
+
+        public override IAuthenticationBearerHeaderValueProvider Build(
+            int maxRetries, int retriesWaitMs, int retriesMaxWaitMs)
+        { 
+            Validate();
+            return new AzureIMDSBearerAuthenticationHeaderValueProvider(
+                new HttpClient(),
+                tokenEndpointUrl,
+                logicalCluster, identityPoolId,
+                maxRetries, retriesWaitMs, retriesMaxWaitMs);
+        }
+    }
+}
