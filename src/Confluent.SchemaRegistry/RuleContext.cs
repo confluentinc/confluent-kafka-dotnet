@@ -25,6 +25,8 @@ namespace Confluent.SchemaRegistry
     /// </summary>
     public class RuleContext
     {
+        public string EnabledEnv { get; set; }
+
         public Schema Source { get; set; }
 
         public Schema Target { get; set; }
@@ -50,9 +52,10 @@ namespace Confluent.SchemaRegistry
 
         private Stack<FieldContext> fieldContexts = new Stack<FieldContext>();
 
-        public RuleContext(Schema source, Schema target, string subject, string topic, Headers headers, bool isKey,
+        public RuleContext(string enabledEnv, Schema source, Schema target, string subject, string topic, Headers headers, bool isKey,
             RuleMode ruleMode, Rule rule, int index, IList<Rule> rules, FieldTransformer fieldTransformer)
         {
+            EnabledEnv = enabledEnv;
             Source = source;
             Target = target;
             Subject = subject;
