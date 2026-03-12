@@ -565,5 +565,133 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.True(true); // if constructor does not throw exception we're ok
         }
 
+        [Fact]
+        public void AssociatedNameStrategy()
+        {
+            // Setup association for the topic
+            var associatedSubject = "my-associated-proto-subject-value";
+            var association = new Association(
+                subject: associatedSubject,
+                guid: Guid.NewGuid().ToString(),
+                resourceName: testTopic,
+                resourceNamespace: "-",
+                resourceId: "resource-id-1",
+                resourceType: "topic",
+                associationType: "value",
+                lifecycle: "WEAK",
+                frozen: false
+            );
+            associationStore[$"-/{testTopic}"] = new List<Association> { association };
+
+            var serializerConfig = new ProtobufSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var serializer = new ProtobufSerializer<Person>(schemaRegistryClient, serializerConfig);
+            var deserializerConfig = new ProtobufDeserializerConfig
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var deserializer = new ProtobufDeserializer<Person>(schemaRegistryClient, deserializerConfig);
+
+            var person = new Person
+            {
+                FavoriteColor = "blue",
+                FavoriteNumber = 100,
+                Name = "awesome",
+                OneofString = "oneof"
+            };
+
+            var bytes = serializer.SerializeAsync(person, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(person.Name, result.Name);
+            Assert.Equal(person.FavoriteColor, result.FavoriteColor);
+            Assert.Equal(person.FavoriteNumber, result.FavoriteNumber);
+        }
+
+        [Fact]
+        public void AssociatedNameStrategyWithFallback()
+        {
+            // No association is set up, so it should fall back to TopicNameStrategy
+            var serializerConfig = new ProtobufSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var serializer = new ProtobufSerializer<Person>(schemaRegistryClient, serializerConfig);
+            var deserializerConfig = new ProtobufDeserializerConfig
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            var deserializer = new ProtobufDeserializer<Person>(schemaRegistryClient, deserializerConfig);
+
+            var person = new Person
+            {
+                FavoriteColor = "green",
+                FavoriteNumber = 42,
+                Name = "fallback",
+                OneofString = "oneof"
+            };
+
+            var bytes = serializer.SerializeAsync(person, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(person.Name, result.Name);
+            Assert.Equal(person.FavoriteColor, result.FavoriteColor);
+            Assert.Equal(person.FavoriteNumber, result.FavoriteNumber);
+        }
+
+        [Fact]
+        public void AssociatedNameStrategyWithKafkaClusterId()
+        {
+            // Setup association for the topic with a specific kafka cluster ID as namespace
+            var kafkaClusterId = "lkc-12345";
+            var associatedSubject = "cluster-specific-proto-subject-value";
+            var association = new Association(
+                subject: associatedSubject,
+                guid: Guid.NewGuid().ToString(),
+                resourceName: testTopic,
+                resourceNamespace: kafkaClusterId,
+                resourceId: "resource-id-2",
+                resourceType: "topic",
+                associationType: "value",
+                lifecycle: "WEAK",
+                frozen: false
+            );
+            associationStore[$"{kafkaClusterId}/{testTopic}"] = new List<Association> { association };
+
+            var serializerConfig = new ProtobufSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            serializerConfig.Set(Confluent.SchemaRegistry.AssociatedNameStrategy.KafkaClusterIdConfig, kafkaClusterId);
+            var serializer = new ProtobufSerializer<Person>(schemaRegistryClient, serializerConfig);
+
+            var deserializerConfig = new ProtobufDeserializerConfig
+            {
+                SubjectNameStrategy = SubjectNameStrategy.Associated
+            };
+            deserializerConfig.Set(Confluent.SchemaRegistry.AssociatedNameStrategy.KafkaClusterIdConfig, kafkaClusterId);
+            var deserializer = new ProtobufDeserializer<Person>(schemaRegistryClient, deserializerConfig);
+
+            var person = new Person
+            {
+                FavoriteColor = "purple",
+                FavoriteNumber = 777,
+                Name = "cluster-user",
+                OneofString = "oneof"
+            };
+
+            var bytes = serializer.SerializeAsync(person, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(person.Name, result.Name);
+            Assert.Equal(person.FavoriteColor, result.FavoriteColor);
+            Assert.Equal(person.FavoriteNumber, result.FavoriteNumber);
+        }
+
     }
 }

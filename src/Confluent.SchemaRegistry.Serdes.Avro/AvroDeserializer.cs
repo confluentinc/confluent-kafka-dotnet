@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2019 Confluent Inc.
+// Copyright 2016-2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -73,7 +73,8 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config == null) { return; }
 
             var nonAvroConfig = config
-                .Where(item => !item.Key.StartsWith("avro.") && !item.Key.StartsWith("rules."));
+                .Where(item => !item.Key.StartsWith("avro.") && !item.Key.StartsWith("rules.")
+                    && !item.Key.StartsWith("subject.name.strategy."));
             if (nonAvroConfig.Count() > 0)
             {
                 throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {nonAvroConfig.First().Key}.");

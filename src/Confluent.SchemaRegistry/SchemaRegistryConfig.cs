@@ -509,7 +509,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Key subject name strategy.
         ///
-        ///     default: SubjectNameStrategy.Topic
+        ///     default: SubjectNameStrategy.Associated
         /// </summary>
         [Obsolete(
             "Subject name strategies should now be configured using the serializer's configuration. In the future, this configuration property will be removed from SchemaRegistryConfig")]
@@ -549,7 +549,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Value subject name strategy.
         ///
-        ///     default: SubjectNameStrategy.Topic
+        ///     default: SubjectNameStrategy.Associated
         /// </summary>
         [Obsolete(
             "Subject name strategies should now be configured using the serializer's configuration. In the future, this configuration property will be removed from SchemaRegistryConfig")]

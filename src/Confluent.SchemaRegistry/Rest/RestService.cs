@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2018 Confluent Inc.
+// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -454,6 +454,18 @@ namespace Confluent.SchemaRegistry
             }
         }
 
+        /// <remarks>
+        ///     Used for end points that return no content (void response)
+        /// </remarks>
+        protected async Task RequestVoidAsync(string endPoint, HttpMethod method, params object[] jsonBody)
+        {
+            using (await ExecuteOnOneInstanceAsync(() => CreateRequest(endPoint, method, jsonBody))
+                       .ConfigureAwait(continueOnCapturedContext: false))
+            {
+                // Response is intentionally ignored for void endpoints
+            }
+        }
+
         private async Task<HttpRequestMessage> CreateRequest(string endPoint, HttpMethod method, params object[] jsonBody)
         {
             HttpRequestMessage request = new HttpRequestMessage(method, endPoint);
@@ -499,7 +511,7 @@ namespace Confluent.SchemaRegistry
 
         public async Task<Schema> GetSchemaBySubjectAndIdAsync(string subject, int id, string format)
             => SanitizeSchema(
-                (await RequestAsync<Schema>($"schemas/ids/{id}?subject={(subject ?? "")}{(format != null ? "&format=" + format : "")}",
+                (await RequestAsync<Schema>($"schemas/ids/{id}?subject={(subject != null ? Uri.EscapeDataString(subject) : "")}{(format != null ? "&format=" + format : "")}",
                         HttpMethod.Get)
                     .ConfigureAwait(continueOnCapturedContext: false)));
 
@@ -594,6 +606,92 @@ namespace Confluent.SchemaRegistry
 
 
         #endregion Config
+
+        #region Associations
+
+        public async Task<List<Association>> GetAssociationsByResourceNameAsync(
+            string resourceName,
+            string resourceNamespace,
+            string resourceType,
+            List<string> associationTypes,
+            string lifecycle,
+            int offset,
+            int limit)
+        {
+            var queryParams = new List<string>();
+            
+            if (resourceType != null)
+            {
+                queryParams.Add($"resourceType={Uri.EscapeDataString(resourceType)}");
+            }
+            
+            if (associationTypes != null)
+            {
+                foreach (var associationType in associationTypes)
+                {
+                    queryParams.Add($"associationType={Uri.EscapeDataString(associationType)}");
+                }
+            }
+            
+            if (lifecycle != null)
+            {
+                queryParams.Add($"lifecycle={Uri.EscapeDataString(lifecycle)}");
+            }
+            
+            if (offset > 0)
+            {
+                queryParams.Add($"offset={offset}");
+            }
+            
+            if (limit >= 0)
+            {
+                queryParams.Add($"limit={limit}");
+            }
+            
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+            var endpoint = $"associations/resources/{Uri.EscapeDataString(resourceNamespace)}/{Uri.EscapeDataString(resourceName)}{queryString}";
+            
+            return await RequestListOfAsync<Association>(endpoint, HttpMethod.Get)
+                .ConfigureAwait(continueOnCapturedContext: false);
+        }
+
+        public async Task<AssociationResponse> CreateAssociationAsync(AssociationCreateOrUpdateRequest request)
+        {
+            return await RequestAsync<AssociationResponse>("associations", HttpMethod.Post, request)
+                .ConfigureAwait(continueOnCapturedContext: false);
+        }
+
+        public async Task DeleteAssociationsAsync(
+            string resourceId,
+            string resourceType,
+            List<string> associationTypes,
+            bool cascadeLifecycle)
+        {
+            var queryParams = new List<string>();
+            
+            if (resourceType != null)
+            {
+                queryParams.Add($"resourceType={Uri.EscapeDataString(resourceType)}");
+            }
+            
+            if (associationTypes != null)
+            {
+                foreach (var associationType in associationTypes)
+                {
+                    queryParams.Add($"associationType={Uri.EscapeDataString(associationType)}");
+                }
+            }
+            
+            queryParams.Add($"cascadeLifecycle={cascadeLifecycle.ToString().ToLower()}");
+            
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+            var endpoint = $"associations/resources/{Uri.EscapeDataString(resourceId)}{queryString}";
+            
+            await RequestVoidAsync(endpoint, HttpMethod.Delete)
+                .ConfigureAwait(continueOnCapturedContext: false);
+        }
+
+        #endregion Associations
 
         public void Dispose()
         {
