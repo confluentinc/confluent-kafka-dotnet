@@ -30,6 +30,8 @@ namespace Confluent.SchemaRegistry
 
         [DataMember(Name = "encodingRules")] public IList<Rule> EncodingRules { get; set; }
 
+        [DataMember(Name = "enableAt")] public string EnableAt { get; set; }
+
         /// <summary>
         ///     Empty constructor for serialization
         /// </summary>
@@ -48,6 +50,14 @@ namespace Confluent.SchemaRegistry
             MigrationRules = migrationRules;
             DomainRules = domainRules;
             EncodingRules = encodingRules;
+        }
+
+        public RuleSet(IList<Rule> migrationRules, IList<Rule> domainRules, IList<Rule> encodingRules, string enableAt)
+        {
+            MigrationRules = migrationRules;
+            DomainRules = domainRules;
+            EncodingRules = encodingRules;
+            EnableAt = enableAt;
         }
 
         public IList<Rule> GetRules(RulePhase phase)
@@ -93,7 +103,8 @@ namespace Confluent.SchemaRegistry
             if (ReferenceEquals(this, other)) return true;
             return Equals(MigrationRules, other.MigrationRules) &&
                    Equals(DomainRules, other.DomainRules) &&
-                   Equals(EncodingRules, other.EncodingRules);
+                   Equals(EncodingRules, other.EncodingRules) &&
+                   EnableAt == other.EnableAt;
         }
 
         public override bool Equals(object obj)
@@ -111,6 +122,7 @@ namespace Confluent.SchemaRegistry
                 var hashCode = Utils.IEnumerableHashCode(MigrationRules);
                 hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(DomainRules);
                 hashCode = (hashCode * 397) ^ Utils.IEnumerableHashCode(EncodingRules);
+                hashCode = (hashCode * 397) ^ (EnableAt != null ? EnableAt.GetHashCode() : 0);
                 return hashCode;
             }
         }

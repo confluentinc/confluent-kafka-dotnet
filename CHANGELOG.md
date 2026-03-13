@@ -1,3 +1,11 @@
+# 2.xx.x
+
+## Enhancements
+
+* Add AssociatedNameStrategy (#2577)
+* Add enableAt to RuleSet (#2593)
+
+
 # 2.13.2
 
 ## Enhancements
