@@ -45,9 +45,9 @@ namespace Confluent.SchemaRegistry
     ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool, bool)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetLatestSchemaAsync(string)" />
     ///
     ///     The following method calls do NOT cache results:
-    ///      - <see cref="CachedSchemaRegistryClient.GetLatestSchemaAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetAllSubjectsAsync" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSubjectVersionsAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, Schema)" />
