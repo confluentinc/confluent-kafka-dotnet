@@ -106,8 +106,8 @@ namespace Confluent.SchemaRegistry.Rules
                     return obj;
                 }
 
-                IDictionary<string, Decl> decls = ToDecls(args);
-                RuleWithArgs ruleWithArgs = new RuleWithArgs(rule, type, decls, ctx.Target.SchemaString);
+                IDictionary<string, Google.Api.Expr.V1Alpha1.Type> declTypes = ToDeclTypes(args);
+                RuleWithArgs ruleWithArgs = new RuleWithArgs(rule, type, declTypes, ctx.Target.SchemaString);
                 Script script;
                 await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
@@ -166,18 +166,23 @@ namespace Confluent.SchemaRegistry.Rules
 
             ScriptHost.ScriptBuilder scriptBuilder = scriptHost
                 .BuildScript(ruleWithArgs.Rule)
-                .WithDeclarations(new List<Decl>(ruleWithArgs.Decls.Values))
+                .WithDeclarations(ToDecls(ruleWithArgs.DeclTypes))
                 .WithTypes(type);
 
             scriptBuilder = scriptBuilder.WithLibraries(new StringsLib(), new BuiltinLibrary());
             return scriptBuilder.Build();
         }
 
-        private static IDictionary<String, Decl> ToDecls(IDictionary<String, Object> args)
+        private static IDictionary<string, Google.Api.Expr.V1Alpha1.Type> ToDeclTypes(IDictionary<string, object> args)
         {
-            return args
-                .Select(e => Decls.NewVar(e.Key, FindType(e.Value)))
-                .ToDictionary(e => e.Name, e => e);
+            return args.ToDictionary(e => e.Key, e => FindType(e.Value));
+        }
+
+        private static List<Decl> ToDecls(IDictionary<string, Google.Api.Expr.V1Alpha1.Type> declTypes)
+        {
+            return declTypes
+                .Select(e => Decls.NewVar(e.Key, e.Value))
+                .ToList();
         }
 
         private static Google.Api.Expr.V1Alpha1.Type FindType(Object arg)
@@ -325,6 +330,6 @@ namespace Confluent.SchemaRegistry.Rules
             Protobuf
         }
 
-        public record RuleWithArgs(string Rule, ScriptType ScriptType, IDictionary<string, Decl> Decls, string Schema);
+        public record RuleWithArgs(string Rule, ScriptType ScriptType, IDictionary<string, Google.Api.Expr.V1Alpha1.Type> DeclTypes, string Schema);
     }
 }
