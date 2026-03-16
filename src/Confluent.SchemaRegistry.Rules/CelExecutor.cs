@@ -324,14 +324,14 @@ namespace Confluent.SchemaRegistry.Rules
         {
         }
 
-        public enum ScriptType
+        private enum ScriptType
         {
             Avro,
             Json,
             Protobuf
         }
 
-        public class RuleWithArgs : IEquatable<RuleWithArgs>
+        private class RuleWithArgs : IEquatable<RuleWithArgs>
         {
             public string Rule { get; }
             public ScriptType ScriptType { get; }
