@@ -2,6 +2,7 @@
 using Avro;
 using Avro.Generic;
 using Avro.Specific;
+using Confluent.Shared.CollectionUtils;
 using Cel.Checker;
 using Cel.Common.Types.Avro;
 using Cel.Common.Types.Json;
@@ -330,6 +331,73 @@ namespace Confluent.SchemaRegistry.Rules
             Protobuf
         }
 
-        public record RuleWithArgs(string Rule, ScriptType ScriptType, IDictionary<string, Google.Api.Expr.V1Alpha1.Type> DeclTypes, string Schema);
+        public class RuleWithArgs : IEquatable<RuleWithArgs>
+        {
+            public string Rule { get; }
+            public ScriptType ScriptType { get; }
+            public IDictionary<string, Google.Api.Expr.V1Alpha1.Type> DeclTypes { get; }
+            public string Schema { get; }
+
+            public RuleWithArgs(string rule, ScriptType scriptType,
+                IDictionary<string, Google.Api.Expr.V1Alpha1.Type> declTypes, string schema)
+            {
+                Rule = rule;
+                ScriptType = scriptType;
+                DeclTypes = declTypes;
+                Schema = schema;
+            }
+
+            /// <inheritdoc />
+            public bool Equals(RuleWithArgs other)
+            {
+                return RuleWithArgsEqualityComparer.Instance.Equals(this, other);
+            }
+
+            /// <inheritdoc />
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as RuleWithArgs);
+            }
+
+            /// <inheritdoc />
+            public override int GetHashCode()
+            {
+                return RuleWithArgsEqualityComparer.Instance.GetHashCode(this);
+            }
+
+            private class RuleWithArgsEqualityComparer : IEqualityComparer<RuleWithArgs>
+            {
+                private readonly DictionaryEqualityComparer<string, Google.Api.Expr.V1Alpha1.Type> declTypesEqualityComparer = new();
+
+                private RuleWithArgsEqualityComparer()
+                {
+                }
+
+                public static RuleWithArgsEqualityComparer Instance { get; } = new();
+
+                public bool Equals(RuleWithArgs x, RuleWithArgs y)
+                {
+                    if (ReferenceEquals(x, y)) return true;
+                    if (x is null) return false;
+                    if (y is null) return false;
+                    if (x.GetType() != y.GetType()) return false;
+                    if (x.Rule != y.Rule) return false;
+                    if (x.ScriptType != y.ScriptType) return false;
+                    if (!declTypesEqualityComparer.Equals(x.DeclTypes, y.DeclTypes)) return false;
+                    if (x.Schema != y.Schema) return false;
+                    return true;
+                }
+
+                public int GetHashCode(RuleWithArgs obj)
+                {
+                    var hashCode = new HashCode();
+                    hashCode.Add(obj.Rule);
+                    hashCode.Add((int) obj.ScriptType);
+                    hashCode.Add(obj.DeclTypes, declTypesEqualityComparer);
+                    hashCode.Add(obj.Schema);
+                    return hashCode.ToHashCode();
+                }
+            }
+        }
     }
 }
