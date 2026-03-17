@@ -4,10 +4,11 @@
 
 * Add AssociatedNameStrategy (#2577)
 * Add enableAt to RuleSet (#2593)
+* Add config to validate before domain rules for JSON Schema (#2596)
 
 ## Fixes
 
-* Ensure dispose methods clean up properly #2595
+* Ensure dispose methods clean up properly (#2595)
 
 
 # 2.13.2

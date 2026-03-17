@@ -65,6 +65,14 @@ namespace Confluent.SchemaRegistry.Serdes
             ///     default: true
             /// </summary>
             public const string Validate = "json.deserializer.validate";
+
+            /// <summary>
+            ///     Specifies whether to validate the JSON message against the schema
+            ///     before running domain rules instead of after.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string ValidateBeforeDomainRules = "json.deserializer.validate.before.domain.rules";
         }
         
         
@@ -168,7 +176,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
 
         /// <summary>
-        ///     Specifies whether or not the JSON serializer should attempt to
+        ///     Specifies whether or not the JSON deserializer should attempt to
         ///     validate the payload against the schema.
         ///
         ///     default: true
@@ -177,6 +185,19 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             get { return GetBool(PropertyNames.Validate); }
             set { SetObject(PropertyNames.Validate, value); }
+        }
+
+
+        /// <summary>
+        ///     Specifies whether to validate the JSON message against the schema
+        ///     before running domain rules instead of after.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool? ValidateBeforeDomainRules
+        {
+            get { return GetBool(PropertyNames.ValidateBeforeDomainRules); }
+            set { SetObject(PropertyNames.ValidateBeforeDomainRules, value); }
         }
     }
 }
