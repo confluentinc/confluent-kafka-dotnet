@@ -1,3 +1,10 @@
+# 2.xx.x
+
+## Fixes
+
+* Ensure dispose methods clean up properly #2595
+
+
 # 2.13.2
 
 ## Enhancements
