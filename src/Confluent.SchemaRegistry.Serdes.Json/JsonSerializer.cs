@@ -75,6 +75,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private string schemaFullname;
 
         private bool validate = true;
+        private bool validateBeforeDomainRules = false;
 
         private JsonSerializerSettings jsonSchemaGeneratorSettingsSerializerSettings {
             get =>
@@ -135,6 +136,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SchemaIdStrategy != null) { this.schemaIdEncoder = config.SchemaIdStrategy.Value.ToEncoder(); }
             if (config.Validate != null) { this.validate = config.Validate.Value; }
+            if (config.ValidateBeforeDomainRules != null) { this.validateBeforeDomainRules = config.ValidateBeforeDomainRules.Value; }
 
             if (this.useLatestVersion && this.autoRegisterSchema)
             {
@@ -242,6 +244,31 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (latestSchema != null)
                 {
                     parsedSchema = await GetParsedSchema(latestSchema).ConfigureAwait(false);
+                }
+                else
+                {
+                    parsedSchema = schema;
+                }
+
+                if (validate && validateBeforeDomainRules)
+                {
+                    var preValidationString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
+                    ICollection<ValidationError> preValidationResult;
+                    lock (parsedSchema)
+                    {
+                        preValidationResult = validator.Validate(preValidationString, parsedSchema);
+                    }
+                    if (preValidationResult.Count > 0)
+                    {
+                        var flattenedErrors = FlattenPropertyValidationErrors(preValidationResult);
+                        throw new InvalidDataException("Schema validation failed for properties: [" +
+                                                       string.Join(", ", flattenedErrors.Select(r => r.Path)) +
+                                                       "]");
+                    }
+                }
+
+                if (latestSchema != null)
+                {
                     FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                     {
                         return await JsonUtils.Transform(ctx, parsedSchema, parsedSchema, "$", message, transform).ConfigureAwait(false);
@@ -252,14 +279,10 @@ namespace Confluent.SchemaRegistry.Serdes
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
-                else
-                {
-                    parsedSchema = schema;
-                }
 
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
-                
-                if (validate)
+
+                if (validate && !validateBeforeDomainRules)
                 {
                     ICollection<ValidationError> validationResult;
                     lock (parsedSchema)
