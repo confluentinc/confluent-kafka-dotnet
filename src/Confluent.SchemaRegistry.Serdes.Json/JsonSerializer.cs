@@ -244,22 +244,31 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (latestSchema != null)
                 {
                     parsedSchema = await GetParsedSchema(latestSchema).ConfigureAwait(false);
-                    if (validate && validateBeforeDomainRules)
+                }
+                else
+                {
+                    parsedSchema = schema;
+                }
+
+                if (validate && validateBeforeDomainRules)
+                {
+                    var preValidationString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
+                    ICollection<ValidationError> preValidationResult;
+                    lock (parsedSchema)
                     {
-                        var preValidationString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
-                        ICollection<ValidationError> preValidationResult;
-                        lock (parsedSchema)
-                        {
-                            preValidationResult = validator.Validate(preValidationString, parsedSchema);
-                        }
-                        if (preValidationResult.Count > 0)
-                        {
-                            var flattenedErrors = FlattenPropertyValidationErrors(preValidationResult);
-                            throw new InvalidDataException("Schema validation failed for properties: [" +
-                                                           string.Join(", ", flattenedErrors.Select(r => r.Path)) +
-                                                           "]");
-                        }
+                        preValidationResult = validator.Validate(preValidationString, parsedSchema);
                     }
+                    if (preValidationResult.Count > 0)
+                    {
+                        var flattenedErrors = FlattenPropertyValidationErrors(preValidationResult);
+                        throw new InvalidDataException("Schema validation failed for properties: [" +
+                                                       string.Join(", ", flattenedErrors.Select(r => r.Path)) +
+                                                       "]");
+                    }
+                }
+
+                if (latestSchema != null)
+                {
                     FieldTransformer fieldTransformer = async (ctx, transform, message) =>
                     {
                         return await JsonUtils.Transform(ctx, parsedSchema, parsedSchema, "$", message, transform).ConfigureAwait(false);
@@ -269,10 +278,6 @@ namespace Confluent.SchemaRegistry.Serdes
                             null, latestSchema, value, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
-                }
-                else
-                {
-                    parsedSchema = schema;
                 }
 
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
