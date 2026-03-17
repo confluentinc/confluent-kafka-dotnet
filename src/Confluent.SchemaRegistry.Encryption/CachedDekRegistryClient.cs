@@ -451,6 +451,7 @@ namespace Confluent.SchemaRegistry.Encryption
             if (disposing)
             {
                 restService.Dispose();
+                cacheMutex.Dispose();
             }
         }
     }
