@@ -251,8 +251,9 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
                         if (validationResult.Count > 0)
                         {
+                            var flattenedErrors = JsonUtils.FlattenPropertyValidationErrors(validationResult);
                             throw new InvalidDataException("Schema validation failed for properties: [" +
-                                                           string.Join(", ", validationResult.Select(r => r.Path)) + "]");
+                                                           string.Join(", ", flattenedErrors.Select(r => r.Path)) + "]");
                         }
                     }
 
@@ -271,8 +272,9 @@ namespace Confluent.SchemaRegistry.Serdes
 
                         if (validationResult.Count > 0)
                         {
+                            var flattenedErrors = JsonUtils.FlattenPropertyValidationErrors(validationResult);
                             throw new InvalidDataException("Schema validation failed for properties: [" +
-                                                           string.Join(", ", validationResult.Select(r => r.Path)) + "]");
+                                                           string.Join(", ", flattenedErrors.Select(r => r.Path)) + "]");
                         }
                     }
 
@@ -303,8 +305,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                     if (validationResult.Count > 0)
                     {
+                        var flattenedErrors = JsonUtils.FlattenPropertyValidationErrors(validationResult);
                         throw new InvalidDataException("Schema validation failed for properties: [" +
-                                                       string.Join(", ", validationResult.Select(r => r.Path)) + "]");
+                                                       string.Join(", ", flattenedErrors.Select(r => r.Path)) + "]");
                     }
                 }
 
