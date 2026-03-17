@@ -1,5 +1,10 @@
 # 2.xx.x
 
+## Enhancements
+
+* Add AssociatedNameStrategy (#2577)
+* Add enableAt to RuleSet (#2593)
+
 ## Fixes
 
 * Ensure dispose methods clean up properly #2595
