@@ -66,6 +66,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private JsonSchema schema;
 
         private bool validate = true;
+        private bool validateBeforeDomainRules = false;
 
         private JsonSerializerSettings jsonSchemaGeneratorSettingsSerializerSettings {
             get =>
@@ -118,6 +119,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
             if (config.SchemaIdStrategy != null) { this.schemaIdDecoder = config.SchemaIdStrategy.Value.ToDeserializer(); }
             if (config.Validate != null) { this.validate = config.Validate.Value; }
+            if (config.ValidateBeforeDomainRules != null) { this.validateBeforeDomainRules = config.ValidateBeforeDomainRules.Value; }
         }
 
         /// <summary>
@@ -235,12 +237,12 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     var serializedString = GetString(payload);
                     JToken json = Newtonsoft.Json.JsonConvert.DeserializeObject<JToken>(serializedString, jsonSchemaGeneratorSettingsSerializerSettings);
-                    
+
                     json = await ExecuteMigrations(migrations, isKey, subject, topic, context.Headers, json)
                         .ContinueWith(t => (JToken)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
-                    if (readerSchema != null && validate)
+                    if (readerSchema != null && validate && validateBeforeDomainRules)
                     {
                         ICollection<ValidationError> validationResult;
                         lock (readerSchema)
@@ -259,7 +261,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 else
                 {
                     var serializedString = GetString(payload);
-                    if (readerSchema != null && validate)
+                    if (readerSchema != null && validate && validateBeforeDomainRules)
                     {
                         ICollection<ValidationError> validationResult;
                         lock (readerSchema)
@@ -289,6 +291,21 @@ namespace Confluent.SchemaRegistry.Serdes
                             null, readerSchemaJson, value, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
+                }
+
+                if (readerSchema != null && validate && !validateBeforeDomainRules)
+                {
+                    var postValidationString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
+                    ICollection<ValidationError> validationResult;
+                    lock (readerSchema)
+                    {
+                        validationResult = validator.Validate(postValidationString, readerSchema);
+                    }
+                    if (validationResult.Count > 0)
+                    {
+                        throw new InvalidDataException("Schema validation failed for properties: [" +
+                                                       string.Join(", ", validationResult.Select(r => r.Path)) + "]");
+                    }
                 }
 
                 return value;
