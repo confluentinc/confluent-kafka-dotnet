@@ -807,6 +807,8 @@ namespace Confluent.SchemaRegistry
             if (disposing)
             {
                 restService.Dispose();
+                latestVersionBySubject.Dispose();
+                latestWithMetadataBySubject.Dispose();
             }
         }
     }

@@ -707,6 +707,7 @@ namespace Confluent.SchemaRegistry
                 {
                     client.Dispose();
                 }
+                (this.authenticationHeaderValueProvider as IDisposable)?.Dispose();
             }
         }
 
