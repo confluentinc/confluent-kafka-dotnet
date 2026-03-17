@@ -382,18 +382,22 @@ namespace Confluent.SchemaRegistry
                 return message;
             }
 
+            string enabledEnv;
             IList<Rule> rules;
             if (ruleMode == RuleMode.Upgrade)
             {
+                enabledEnv = target.RuleSet?.EnableAt;
                 rules = target.RuleSet?.MigrationRules;
             }
             else if (ruleMode == RuleMode.Downgrade)
             {
+                enabledEnv = source.RuleSet?.EnableAt;
                 // Execute downgrade rules in reverse order for symmetry
                 rules = source.RuleSet?.MigrationRules.Reverse().ToList();
             }
             else
             {
+                enabledEnv = target.RuleSet?.EnableAt;
                 rules = rulePhase == RulePhase.Encoding
                     ? target.RuleSet?.EncodingRules
                     : target.RuleSet?.DomainRules;
@@ -412,7 +416,9 @@ namespace Confluent.SchemaRegistry
             for (int i = 0; i < rules.Count; i++)
             {
                 Rule rule = rules[i];
-                if (IsDisabled(rule))
+                RuleContext ctx = new RuleContext(enabledEnv, source, target,
+                    subject, topic, headers, isKey, ruleMode, rule, i, rules, fieldTransformer);
+                if (IsDisabled(ctx, rule))
                 {
                     continue;
                 }
@@ -435,8 +441,6 @@ namespace Confluent.SchemaRegistry
                     continue;
                 }
 
-                RuleContext ctx = new RuleContext(source, target,
-                    subject, topic, headers, isKey, ruleMode, rule, i, rules, fieldTransformer);
                 IRuleExecutor ruleExecutor = GetRuleExecutor(ruleRegistry, rule.Type.ToUpper());
                 if (ruleExecutor != null)
                 {
@@ -508,7 +512,7 @@ namespace Confluent.SchemaRegistry
             return rule.OnFailure;
         }
 
-        private bool IsDisabled(Rule rule)
+        private bool IsDisabled(RuleContext ctx, Rule rule)
         {
             if (ruleRegistry.TryGetOverride(rule.Type, out RuleOverride ruleOverride))
             {
@@ -518,6 +522,12 @@ namespace Confluent.SchemaRegistry
                 }
             }
 
+            string enabledEnv = ctx.EnabledEnv ?? "ALL";
+            if (enabledEnv != "ALL" && enabledEnv != "CLIENT")
+            {
+                return true;
+            }
+            
             return rule.Disabled;
         }
 
