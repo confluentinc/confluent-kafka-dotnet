@@ -1631,7 +1631,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 ValidateBeforeDomainRules = true
             };
             var serializer = new JsonSerializer<Customer>(schemaRegistryClient, config);
-            var deserializer = new JsonDeserializer<Customer>(schemaRegistryClient);
+            var deserializerConfig = new JsonDeserializerConfig
+            {
+                ValidateBeforeDomainRules = true
+            };
+            var deserializer = new JsonDeserializer<Customer>(schemaRegistryClient, deserializerConfig);
 
             var user = new Customer
             {
@@ -1642,6 +1646,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
             Assert.NotNull(bytes);
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.Equal(user.Name, result.Name);
+            Assert.Equal(user.FavoriteColor, result.FavoriteColor);
+            Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
         }
 
         [Fact]
