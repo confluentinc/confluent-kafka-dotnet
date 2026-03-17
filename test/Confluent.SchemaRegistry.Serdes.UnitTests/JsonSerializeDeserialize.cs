@@ -1603,6 +1603,98 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             Assert.Equal(v.Value, result.Value);
         }
+
+        [Fact]
+        public async Task ValidateBeforeDomainRulesWithValidData()
+        {
+            var schemaStr = @"{
+              ""type"": ""object"",
+              ""properties"": {
+                ""favorite_color"": {
+                  ""type"": ""string""
+                },
+                ""favorite_number"": {
+                  ""type"": ""number""
+                },
+                ""name"": {
+                  ""type"": ""string""
+                }
+              }
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true,
+                ValidateBeforeDomainRules = true
+            };
+            var serializer = new JsonSerializer<Customer>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<Customer>(schemaRegistryClient);
+
+            var user = new Customer
+            {
+                FavoriteColor = "blue",
+                FavoriteNumber = 100,
+                Name = "awesome"
+            };
+
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.NotNull(bytes);
+        }
+
+        [Fact]
+        public async Task ValidateBeforeDomainRulesWithInvalidData()
+        {
+            // Schema expects favorite_number to be a string, but Customer has it as int
+            var schemaStr = @"{
+              ""type"": ""object"",
+              ""properties"": {
+                ""favorite_color"": {
+                  ""type"": ""string""
+                },
+                ""favorite_number"": {
+                  ""type"": ""string""
+                },
+                ""name"": {
+                  ""type"": ""string""
+                }
+              }
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true,
+                ValidateBeforeDomainRules = true
+            };
+            var serializer = new JsonSerializer<Customer>(schemaRegistryClient, config);
+
+            var user = new Customer
+            {
+                FavoriteColor = "blue",
+                FavoriteNumber = 100,
+                Name = "awesome"
+            };
+
+            try
+            {
+                await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+                Assert.True(false, "Serialization did not throw an expected exception");
+            }
+            catch (InvalidDataException ex)
+            {
+                Assert.Equal("Schema validation failed for properties: [#/favorite_number]", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Assert.True(false,
+                    $"Serialization threw exception of type {ex.GetType().FullName} instead of the expected {typeof(InvalidDataException).FullName}");
+            }
+        }
     }
 
     class Customer
