@@ -343,5 +343,36 @@ namespace Confluent.SchemaRegistry.Serdes
                 SetValue(message, value);
             }
         }
+
+        internal static ICollection<ValidationError> FlattenPropertyValidationErrors(
+            IEnumerable<ValidationError> validationResult,
+            ICollection<ValidationError>? flattenedErrors = null,
+            int depth = 0)
+        {
+            flattenedErrors ??= new List<ValidationError>();
+            const int maxDepth = 32;
+
+            if (validationResult is null) return flattenedErrors;
+
+            foreach (var error in validationResult)
+            {
+                if (error is null) continue;
+
+                if (error is ChildSchemaValidationError child && depth < maxDepth)
+                {
+                    foreach (var nested in child.Errors?.Values ?? Enumerable.Empty<ICollection<ValidationError>>())
+                    {
+                        if (nested is null || nested.Count == 0) continue;
+                        FlattenPropertyValidationErrors(nested, flattenedErrors, depth + 1);
+                    }
+                }
+                else
+                {
+                    flattenedErrors.Add(error);
+                }
+            }
+
+            return flattenedErrors;
+        }
     }
 }
