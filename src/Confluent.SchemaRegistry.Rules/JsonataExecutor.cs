@@ -52,6 +52,8 @@ namespace Confluent.SchemaRegistry.Rules
 
         public void Dispose()
         {
+            cacheMutex.Dispose();
+            cache.Clear();
         }
     }
 }
