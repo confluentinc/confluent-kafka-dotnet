@@ -128,6 +128,7 @@ namespace Confluent.SchemaRegistry
 
         public void Dispose()
         {
+            this.httpClient?.Dispose();
             this.token = null;
         }
     }
