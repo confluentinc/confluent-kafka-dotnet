@@ -28,7 +28,7 @@ namespace Confluent.SchemaRegistry
         [JsonProperty("access_token")]
         public string AccessToken { get; set; }
         [JsonProperty("expires_in")]
-        public string ExpiresIn { get; set; }
+        public int ExpiresIn { get; set; }
         [JsonIgnore]
         public double ExpiryTime { get; set; }
     }
@@ -80,7 +80,7 @@ namespace Confluent.SchemaRegistry
             response.EnsureSuccessStatusCode();
             var tokenResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             tokenObject = JObject.Parse(tokenResponse).ToObject<AzureIMDSBearerToken>(JsonSerializer.Create());
-            tokenObject.ExpiryTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (int)(int.Parse(tokenObject.ExpiresIn) * tokenExpiryThreshold);
+            tokenObject.ExpiryTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (int)(tokenObject.ExpiresIn * tokenExpiryThreshold);
             return tokenObject.AccessToken;
         }
 

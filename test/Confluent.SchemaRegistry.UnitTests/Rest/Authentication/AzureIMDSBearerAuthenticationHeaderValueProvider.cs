@@ -21,7 +21,7 @@ namespace Confluent.SchemaRegistry.UnitTests.Rest.Authentication
         {
             var fakeJson = $@"{{
                 ""access_token"": ""test-imds-token"",
-                ""expires_in"": ""{expiry}""
+                ""expires_in"": {expiry}
             }}";
 
             var fakeResponse = new HttpResponseMessage(HttpStatusCode.OK)
