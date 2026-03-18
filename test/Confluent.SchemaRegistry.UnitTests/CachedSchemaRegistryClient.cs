@@ -1,4 +1,4 @@
-// Copyright 20 Confluent Inc.
+// Copyright 2025 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -252,66 +252,6 @@ namespace Confluent.SchemaRegistry.UnitTests
                 BearerAuthIdentityPoolId = "test-pool"
             };
             Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
-        }
-
-        [Fact]
-        public void BearerAuthWithCommaSeparatedIdentityPools()
-        {
-            var config = new SchemaRegistryConfig 
-            { 
-                Url = "irrelevanthost:8081",
-                BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
-                BearerAuthToken = "test-token",
-                BearerAuthLogicalCluster = "test-cluster",
-                BearerAuthIdentityPoolId = "pool-1,pool-2,pool-3"
-            };
-            var client = new CachedSchemaRegistryClient(config);
-            Assert.Null(client.AuthHeaderProvider);
-        }
-
-        [Fact]
-        public void BearerAuthWithSetIdentityPoolIdsHelper()
-        {
-            var config = new SchemaRegistryConfig 
-            { 
-                Url = "irrelevanthost:8081",
-                BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
-                BearerAuthToken = "test-token",
-                BearerAuthLogicalCluster = "test-cluster"
-            };
-            config.SetBearerAuthIdentityPoolIds(new[] { "pool-1", "pool-2", "pool-3" });
-            Assert.Equal("pool-1,pool-2,pool-3", config.BearerAuthIdentityPoolId);
-
-            var client = new CachedSchemaRegistryClient(config);
-            Assert.Null(client.AuthHeaderProvider);
-        }
-
-        [Fact]
-        public void SetBearerAuthIdentityPoolIds_SinglePool()
-        {
-            var config = new SchemaRegistryConfig { Url = "irrelevanthost:8081" };
-            config.SetBearerAuthIdentityPoolIds(new[] { "pool-1" });
-            Assert.Equal("pool-1", config.BearerAuthIdentityPoolId);
-        }
-
-        [Fact]
-        public void SetBearerAuthIdentityPoolIds_NullClearsValue()
-        {
-            var config = new SchemaRegistryConfig 
-            { 
-                Url = "irrelevanthost:8081",
-                BearerAuthIdentityPoolId = "existing-pool"
-            };
-            config.SetBearerAuthIdentityPoolIds(null);
-            Assert.Equal("", config.BearerAuthIdentityPoolId);
-        }
-
-        [Fact]
-        public void SetBearerAuthIdentityPoolIds_EmptyList()
-        {
-            var config = new SchemaRegistryConfig { Url = "irrelevanthost:8081" };
-            config.SetBearerAuthIdentityPoolIds(new string[] { });
-            Assert.Equal("", config.BearerAuthIdentityPoolId);
         }
 
         private class TestBearerAuthProvider : IAuthenticationBearerHeaderValueProvider

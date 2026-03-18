@@ -493,17 +493,14 @@ namespace Confluent.SchemaRegistry
 
             if (authenticationHeaderValueProvider != null)
             {
-                if (authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider bearerProvider){
+                if (authenticationHeaderValueProvider is IAuthenticationBearerHeaderValueProvider bearerProvider)
+                {
                     if (bearerProvider.NeedsInitOrRefresh())
                     {
                         await bearerProvider.InitOrRefreshAsync().ConfigureAwait(continueOnCapturedContext: false);
                     }
 
-                     var identityPool = bearerProvider.GetIdentityPool();
-                    if (!string.IsNullOrEmpty(identityPool))
-                    {
-                        request.Headers.Add("Confluent-Identity-Pool-Id", identityPool);
-                    }
+                    request.Headers.Add("Confluent-Identity-Pool-Id", bearerProvider.GetIdentityPool());
                     request.Headers.Add("target-sr-cluster", bearerProvider.GetLogicalCluster());
                 }
                 request.Headers.Authorization = authenticationHeaderValueProvider.GetAuthenticationHeader();

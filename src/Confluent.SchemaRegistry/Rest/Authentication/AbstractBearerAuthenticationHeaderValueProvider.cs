@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Confluent.SchemaRegistry
@@ -15,7 +16,8 @@ namespace Confluent.SchemaRegistry
         private readonly int maxRetries;
         private readonly int retriesWaitMs;
         private readonly int retriesMaxWaitMs;
-        private string token;
+        private volatile string token;
+        private readonly SemaphoreSlim tokenRefreshLock = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AbstractBearerAuthenticationHeaderValueProvider"/> class.
@@ -42,7 +44,18 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public async Task InitOrRefreshAsync()
         {
-            await GenerateToken().ConfigureAwait(false);
+            await tokenRefreshLock.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                if (NeedsInitOrRefresh())
+                {
+                    await GenerateToken().ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                tokenRefreshLock.Release();
+            }
         }
 
         /// <inheritdoc/>
@@ -76,7 +89,7 @@ namespace Confluent.SchemaRegistry
                 {
                     if (i == maxRetries)
                     {
-                        throw new Exception("Failed to fetch token from server: " + e.Message);
+                        throw new Exception($"Failed to fetch token from server: {e.GetType().FullName} - {e.Message}", e);
                     }
                     await Task.Delay(RetryUtility.CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i))
                         .ConfigureAwait(false);
@@ -113,6 +126,7 @@ namespace Confluent.SchemaRegistry
         public void Dispose()
         {
             DisposeSecrets();
+            GC.SuppressFinalize(this);
         }
     }
 }

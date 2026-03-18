@@ -77,7 +77,7 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         protected override async Task<string> FetchToken(HttpRequestMessage request)
         {
-            var response = await httpClient.SendAsync(request).ConfigureAwait(continueOnCapturedContext: false);
+            using var response = await httpClient.SendAsync(request).ConfigureAwait(continueOnCapturedContext: false);
             response.EnsureSuccessStatusCode();
             var tokenResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             tokenObject = JObject.Parse(tokenResponse).ToObject<BearerToken>(JsonSerializer.Create());

@@ -21,7 +21,7 @@ namespace Confluent.SchemaRegistry.UnitTests.Rest.Authentication
         {
             var fakeJson = $@"{{
                 ""access_token"": ""test-imds-token"",
-                ""expires_in"": {expiry}
+                ""expires_in"": ""{expiry}""
             }}";
 
             var fakeResponse = new HttpResponseMessage(HttpStatusCode.OK)
@@ -125,13 +125,13 @@ namespace Confluent.SchemaRegistry.UnitTests.Rest.Authentication
         }
 
         [Fact]
-        public void RetriesExhaustedThrowsException()
+        public async Task RetriesExhaustedThrowsException()
         {
             var httpClient = SetupFailingHttpClient();
             var provider = new AzureIMDSBearerAuthenticationHeaderValueProvider(
                 httpClient, tokenEndpoint, logicalCluster, identityPool,
                 maxRetries: 0, retriesWaitMs: 10, retriesMaxWaitMs: 10);
-            var ex = Assert.ThrowsAsync<Exception>(() => provider.InitOrRefreshAsync()).Result;
+            var ex = await Assert.ThrowsAsync<Exception>(() => provider.InitOrRefreshAsync());
             Assert.Contains("Failed to fetch token from server", ex.Message);
         }
     }
