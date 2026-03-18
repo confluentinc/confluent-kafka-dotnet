@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -102,6 +103,54 @@ namespace Confluent.SchemaRegistry.UnitTests.Rest.Authentication
                 httpClient, clientId, clientSecret, scope, tokenEndpoint, logicalCluster, identityPool, maxRetries, retriesWaitMs, retriesMaxWaitMs);
             Assert.Equal(logicalCluster, provider.GetLogicalCluster());
             Assert.Equal(identityPool, provider.GetIdentityPool());
+        }
+
+    }
+
+    public class SlowTokenProvider : AbstractBearerAuthenticationHeaderValueProvider
+    {
+        private int fetchCount;
+        private volatile bool hasToken;
+        private readonly int delayMs;
+
+        public int FetchCount => fetchCount;
+
+        public SlowTokenProvider(int delayMs, string logicalCluster, string identityPool)
+            : base(logicalCluster, identityPool, maxRetries: 0, retriesWaitMs: 10, retriesMaxWaitMs: 10)
+        {
+            this.delayMs = delayMs;
+        }
+
+        public override bool NeedsInitOrRefresh() => !hasToken;
+
+        protected override async Task<string> FetchToken(HttpRequestMessage request)
+        {
+            Interlocked.Increment(ref fetchCount);
+            await Task.Delay(delayMs);
+            hasToken = true;
+            return "test-token";
+        }
+
+        protected override HttpRequestMessage CreateTokenRequest()
+        {
+            return new HttpRequestMessage(HttpMethod.Get, "http://localhost/token");
+        }
+    }
+
+    public class ConcurrentTokenRefreshTests
+    {
+        [Fact]
+        public async Task ConcurrentInitOrRefresh_OnlyFetchesTokenOnce()
+        {
+            var provider = new SlowTokenProvider(
+                delayMs: 100, logicalCluster: "lsrc-1234", identityPool: "pool-abcd");
+
+            var tasks = Enumerable.Range(0, 10)
+                .Select(_ => provider.InitOrRefreshAsync());
+            await Task.WhenAll(tasks);
+
+            Assert.Equal(1, provider.FetchCount);
+            Assert.False(provider.NeedsInitOrRefresh());
         }
     }
 }
