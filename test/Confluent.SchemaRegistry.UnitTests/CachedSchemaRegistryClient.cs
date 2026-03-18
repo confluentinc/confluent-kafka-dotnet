@@ -1,4 +1,4 @@
-// Copyright 20 Confluent Inc.
+// Copyright 2025 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,6 +94,90 @@ namespace Confluent.SchemaRegistry.UnitTests
             };
             var client = new CachedSchemaRegistryClient(config);
             Assert.Null(client.AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void BearerAuthWithOAuthBearerAzureIMDS()
+        {
+            // Override token url and specify query parameters
+            var config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
+                BearerAuthTokenEndpointUrl = "https://test.com/token",
+                BearerAuthTokenEndpointQuery = "resource=&client_id=&api-version=",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            var client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+
+            // Specify query parameters only, token url defaults to IMDS endpoint
+            config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
+                BearerAuthTokenEndpointQuery = "resource=&client_id=&api-version=",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+
+            // Specify query parameters together with a different token url
+            config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
+                BearerAuthTokenEndpointQuery = "https://test.com/token?resource=&client_id=&api-version=",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+
+            // Specify token URL override only, no query parameters
+            config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
+                BearerAuthTokenEndpointUrl = "https://test.com/token?resource=foo&client_id=bar&api-version=2018-02-01",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.AuthHeaderProvider);
+
+            // Throws an `ArgumentException` when both `BearerAuthTokenEndpointUrl`
+            // and `BearerAuthTokenEndpointQuery` are missing
+            config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
+
+            // Throws an `ArgumentException` when `BearerAuthLogicalCluster` is missing
+            config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
+                BearerAuthTokenEndpointQuery = "https://test.com/token?resource=&client_id=&api-version=",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
+
+            // Throws an `ArgumentException` when `BearerAuthIdentityPoolId` is missing
+            config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
+                BearerAuthTokenEndpointQuery = "https://test.com/token?resource=&client_id=&api-version=",
+                BearerAuthLogicalCluster = "test-cluster",
+            };
+            Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
         }
 
         [Fact]
