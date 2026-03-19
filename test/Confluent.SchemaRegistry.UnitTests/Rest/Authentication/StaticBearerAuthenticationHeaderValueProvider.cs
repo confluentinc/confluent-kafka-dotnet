@@ -32,5 +32,6 @@ namespace Confluent.SchemaRegistry.UnitTests.Rest.Authentication
             Assert.Equal(logicalCluster, provider.GetLogicalCluster());
             Assert.Equal(identityPool, provider.GetIdentityPool());
         }
+
     }
 }
