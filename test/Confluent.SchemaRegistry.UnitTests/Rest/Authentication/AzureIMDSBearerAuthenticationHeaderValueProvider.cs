@@ -134,6 +134,68 @@ namespace Confluent.SchemaRegistry.UnitTests.Rest.Authentication
             var ex = await Assert.ThrowsAsync<Exception>(() => provider.InitOrRefreshAsync());
             Assert.Contains("Failed to fetch token from server", ex.Message);
         }
+
+        [Theory]
+        [InlineData(
+            "http://169.254.169.254/metadata/identity/oauth2/token?resource=api%3A%2F%2Ftest&client_id=abc&api-version=2018-02-01",
+            "http://169.254.169.254/metadata/identity/oauth2/token?resource=api%3A%2F%2Ftest&client_id=abc&api-version=2018-02-01")]
+        [InlineData(
+            "https://custom.endpoint.com/token?resource=foo&client_id=bar",
+            "https://custom.endpoint.com/token?resource=foo&client_id=bar")]
+        public async Task RequestUsesCorrectTokenEndpointUrl(string tokenEndpointUrl, string expectedUrl)
+        {
+            Uri capturedUri = null;
+
+            var fakeJson = @"{""access_token"": ""token"", ""expires_in"": 3600}";
+            var handler = new CapturingHttpMessageHandler(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(fakeJson, Encoding.UTF8, "application/json")
+                },
+                request =>
+                {
+                    capturedUri = request.RequestUri;
+                });
+
+            var httpClient = new HttpClient(handler);
+            var provider = new AzureIMDSBearerAuthenticationHeaderValueProvider(
+                httpClient, tokenEndpointUrl, logicalCluster, identityPool, maxRetries, retriesWaitMs, retriesMaxWaitMs);
+
+            await provider.InitOrRefreshAsync();
+
+            Assert.Equal(expectedUrl, capturedUri.ToString());
+        }
+
+        [Fact]
+        public void TokenEndpointUrlBuiltWithQueryParameters()
+        {
+            var baseUrl = "http://169.254.169.254/metadata/identity/oauth2/token";
+            var query = "resource=api%3A%2F%2Ftest&client_id=abc&api-version=2018-02-01";
+
+            var builder = new UriBuilder(new Uri(baseUrl));
+            builder.Query = query;
+            builder.Fragment = "";
+            var result = builder.Uri.ToString();
+
+            Assert.Equal(
+                "http://169.254.169.254/metadata/identity/oauth2/token?resource=api%3A%2F%2Ftest&client_id=abc&api-version=2018-02-01",
+                result);
+        }
+
+        [Fact]
+        public void TokenEndpointUrlOverrideWithQueryParameters()
+        {
+            var customUrl = "https://custom.endpoint.com/token";
+            var query = "resource=foo&client_id=bar";
+
+            var builder = new UriBuilder(new Uri(customUrl));
+            builder.Query = query;
+            builder.Fragment = "";
+            var result = builder.Uri.ToString();
+
+            Assert.Equal("https://custom.endpoint.com/token?resource=foo&client_id=bar", result);
+        }
+
     }
 
     public class CapturingHttpMessageHandler : HttpMessageHandler
