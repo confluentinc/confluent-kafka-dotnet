@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 
 
 namespace Confluent.SchemaRegistry
@@ -47,7 +48,7 @@ namespace Confluent.SchemaRegistry
         }
 
         public override IAuthenticationBearerHeaderValueProvider Build(
-            int maxRetries, int retriesWaitMs, int retriesMaxWaitMs)
+            int maxRetries, int retriesWaitMs, int retriesMaxWaitMs, IWebProxy proxy = null)
         {
             Validate();
             return new StaticBearerAuthenticationHeaderValueProvider(

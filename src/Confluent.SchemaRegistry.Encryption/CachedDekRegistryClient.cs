@@ -192,7 +192,7 @@ namespace Confluent.SchemaRegistry.Encryption
             }
 
             authenticationHeaderValueProvider = DekRestService.AuthenticationHeaderValueProvider(
-                config, authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs);
+                config, authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs, proxy);
 
 
             var propertyNames = new HashSet<string>

@@ -15,11 +15,13 @@
 // Refer to LICENSE for more information.
 
 
+using System.Net;
+
 namespace Confluent.SchemaRegistry
 {
     interface IAuthenticationBearerHeaderValueProviderBuilder
     {
         IAuthenticationBearerHeaderValueProvider Build(
-            int maxRetries, int retriesWaitMs, int retriesMaxWaitMs);
+            int maxRetries, int retriesWaitMs, int retriesMaxWaitMs, IWebProxy proxy = null);
     }
 }
