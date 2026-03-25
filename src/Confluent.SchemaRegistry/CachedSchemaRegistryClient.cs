@@ -324,7 +324,7 @@ namespace Confluent.SchemaRegistry
             }
 
             authenticationHeaderValueProvider = RestService.AuthenticationHeaderValueProvider(
-                config, authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs);
+                config, authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs, proxy);
 
             var propertyNames = new HashSet<string>
             {
