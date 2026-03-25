@@ -123,10 +123,11 @@ namespace Confluent.SchemaRegistry.Encryption
             AuthenticationHeaderValueProvider(
                 IEnumerable<KeyValuePair<string, string>> config,
                 IAuthenticationHeaderValueProvider authenticationHeaderValueProvider,
-                int maxRetries, int retriesWaitMs, int retriesMaxWaitMs)
+                int maxRetries, int retriesWaitMs, int retriesMaxWaitMs,
+                IWebProxy proxy = null)
         {
             return RestService.AuthenticationHeaderValueProvider(config,
-                authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs);
+                authenticationHeaderValueProvider, maxRetries, retriesWaitMs, retriesMaxWaitMs, proxy);
         }
     }
 }

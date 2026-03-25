@@ -735,7 +735,8 @@ namespace Confluent.SchemaRegistry
         protected internal static IAuthenticationHeaderValueProvider AuthenticationHeaderValueProvider(
             IEnumerable<KeyValuePair<string, string>> config,
             IAuthenticationHeaderValueProvider authenticationHeaderValueProvider,
-            int maxRetries, int retriesWaitMs, int retriesMaxWaitMs)
+            int maxRetries, int retriesWaitMs, int retriesMaxWaitMs,
+            IWebProxy proxy = null)
         {
             var basicAuthSource = config.FirstOrDefault(prop =>
                     prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource)
@@ -825,7 +826,7 @@ namespace Confluent.SchemaRegistry
                     bearerAuthenticationHeaderValueProviderBuilders[bearerAuthSource];
                 authenticationHeaderValueProvider = bearerAuthenticationHeaderValueProviderBuilder(
                     authenticationHeaderValueProvider, config)
-                    .Build(maxRetries, retriesWaitMs, retriesMaxWaitMs);
+                    .Build(maxRetries, retriesWaitMs, retriesMaxWaitMs, proxy);
             }
 
             return authenticationHeaderValueProvider;
