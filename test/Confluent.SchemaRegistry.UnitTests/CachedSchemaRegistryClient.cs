@@ -328,6 +328,37 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.Null(client.Proxy);
         }
 
+        [Fact]
+        public void StaticTokenWithProxyConstructsSuccessfully()
+        {
+            var proxy = new WebProxy("http://proxy.example.com:8080");
+            var config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
+                BearerAuthToken = "test-token",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            var client = new CachedSchemaRegistryClient(config, null, proxy);
+            Assert.Same(proxy, client.Proxy);
+        }
+
+        [Fact]
+        public void CustomAuthWithProxyConstructsSuccessfully()
+        {
+            var proxy = new WebProxy("http://proxy.example.com:8080");
+            var config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.Custom
+            };
+            var customProvider = new TestBearerAuthProvider();
+            var client = new CachedSchemaRegistryClient(config, customProvider, proxy);
+            Assert.Same(proxy, client.Proxy);
+            Assert.Same(customProvider, client.AuthHeaderProvider);
+        }
+
         /// <summary>
         /// Uses reflection to traverse the internal object graph and extract the IWebProxy
         /// from the HttpClientHandler used by the bearer token provider's HttpClient.
