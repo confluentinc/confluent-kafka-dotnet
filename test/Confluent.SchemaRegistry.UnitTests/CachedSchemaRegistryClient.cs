@@ -367,20 +367,27 @@ namespace Confluent.SchemaRegistry.UnitTests
         /// </summary>
         private static IWebProxy GetTokenHttpClientProxy(CachedSchemaRegistryClient client)
         {
-            var restService = GetPrivateField(client, "restService");
-            var authProvider = GetPrivateField(restService, "authenticationHeaderValueProvider");
-            var httpClient = GetPrivateField(authProvider, "httpClient");
-            // HttpClient inherits from HttpMessageInvoker which stores the handler in _handler
-            var handler = GetPrivateField(httpClient, "_handler", typeof(HttpMessageInvoker));
-            var httpClientHandler = handler as HttpClientHandler;
-            return httpClientHandler?.Proxy;
+            var restService = GetPrivateField(client, "restService",
+                "CachedSchemaRegistryClient.restService not found — field may have been renamed");
+            var authProvider = GetPrivateField(restService, "authenticationHeaderValueProvider",
+                "RestService.authenticationHeaderValueProvider not found — field may have been renamed");
+            var httpClient = GetPrivateField(authProvider, "httpClient",
+                $"{authProvider.GetType().Name}.httpClient not found — field may have been renamed");
+            var handler = GetPrivateField(httpClient, "_handler",
+                "HttpMessageInvoker._handler not found — internal .NET runtime field may have changed",
+                typeof(HttpMessageInvoker));
+            Assert.IsType<HttpClientHandler>(handler);
+            return ((HttpClientHandler)handler).Proxy;
         }
 
-        private static object GetPrivateField(object obj, string fieldName, Type declaringType = null)
+        private static object GetPrivateField(object obj, string fieldName, string errorMessage, Type declaringType = null)
         {
             var type = declaringType ?? obj.GetType();
             var field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(obj);
+            Assert.True(field != null, errorMessage);
+            var value = field.GetValue(obj);
+            Assert.True(value != null, $"{errorMessage} (field exists but value is null)");
+            return value;
         }
 
         [Fact]
