@@ -17,6 +17,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 
 
@@ -59,11 +60,16 @@ namespace Confluent.SchemaRegistry
         }
 
         public override IAuthenticationBearerHeaderValueProvider Build(
-            int maxRetries, int retriesWaitMs, int retriesMaxWaitMs)
-        { 
+            int maxRetries, int retriesWaitMs, int retriesMaxWaitMs, IWebProxy proxy = null)
+        {
             Validate();
+            var handler = new HttpClientHandler();
+            if (proxy != null)
+            {
+                handler.Proxy = proxy;
+            }
             return new BearerAuthenticationHeaderValueProvider(
-                new HttpClient(),
+                new HttpClient(handler),
                 clientId, clientSecret, scope,
                 tokenEndpointUrl,
                 logicalCluster, identityPoolId,
