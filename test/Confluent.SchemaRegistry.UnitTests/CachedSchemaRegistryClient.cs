@@ -15,9 +15,14 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using System.Net.Http.Headers;
 
 namespace Confluent.SchemaRegistry.UnitTests
 {
@@ -262,6 +267,127 @@ namespace Confluent.SchemaRegistry.UnitTests
             public string GetIdentityPool() => "test-pool";
             public bool NeedsInitOrRefresh() => false;
             public Task InitOrRefreshAsync() => Task.CompletedTask;
+        }
+
+        [Fact]
+        public void OAuthBearerProxyIsPassedToTokenHttpClient()
+        {
+            var proxy = new WebProxy("http://proxy.example.com:8080");
+            var config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearer,
+                BearerAuthClientId = "test-client",
+                BearerAuthClientSecret = "test-secret",
+                BearerAuthScope = "test-scope",
+                BearerAuthTokenEndpointUrl = "https://test.com/token",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            var client = new CachedSchemaRegistryClient(config, null, proxy);
+            Assert.Same(proxy, client.Proxy);
+
+            var tokenHttpClientProxy = GetTokenHttpClientProxy(client);
+            Assert.Same(proxy, tokenHttpClientProxy);
+        }
+
+        [Fact]
+        public void AzureIMDSProxyIsPassedToTokenHttpClient()
+        {
+            var proxy = new WebProxy("http://proxy.example.com:8080");
+            var config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearerAzureIMDS,
+                BearerAuthTokenEndpointUrl = "https://test.com/token",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            var client = new CachedSchemaRegistryClient(config, null, proxy);
+            Assert.Same(proxy, client.Proxy);
+
+            var tokenHttpClientProxy = GetTokenHttpClientProxy(client);
+            Assert.Same(proxy, tokenHttpClientProxy);
+        }
+
+        [Fact]
+        public void OAuthBearerNoProxyDoesNotSetProxy()
+        {
+            var config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.OAuthBearer,
+                BearerAuthClientId = "test-client",
+                BearerAuthClientSecret = "test-secret",
+                BearerAuthScope = "test-scope",
+                BearerAuthTokenEndpointUrl = "https://test.com/token",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            var client = new CachedSchemaRegistryClient(config);
+            Assert.Null(client.Proxy);
+        }
+
+        [Fact]
+        public void StaticTokenWithProxyConstructsSuccessfully()
+        {
+            var proxy = new WebProxy("http://proxy.example.com:8080");
+            var config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.StaticToken,
+                BearerAuthToken = "test-token",
+                BearerAuthLogicalCluster = "test-cluster",
+                BearerAuthIdentityPoolId = "test-pool"
+            };
+            var client = new CachedSchemaRegistryClient(config, null, proxy);
+            Assert.Same(proxy, client.Proxy);
+        }
+
+        [Fact]
+        public void CustomAuthWithProxyConstructsSuccessfully()
+        {
+            var proxy = new WebProxy("http://proxy.example.com:8080");
+            var config = new SchemaRegistryConfig
+            {
+                Url = "irrelevanthost:8081",
+                BearerAuthCredentialsSource = BearerAuthCredentialsSource.Custom
+            };
+            var customProvider = new TestBearerAuthProvider();
+            var client = new CachedSchemaRegistryClient(config, customProvider, proxy);
+            Assert.Same(proxy, client.Proxy);
+            Assert.Same(customProvider, client.AuthHeaderProvider);
+        }
+
+        /// <summary>
+        /// Uses reflection to traverse the internal object graph and extract the IWebProxy
+        /// from the HttpClientHandler used by the bearer token provider's HttpClient.
+        /// Path: CachedSchemaRegistryClient.restService -> RestService.authenticationHeaderValueProvider
+        ///   -> BearerAuthenticationHeaderValueProvider.httpClient -> HttpMessageInvoker._handler -> HttpClientHandler.Proxy
+        /// </summary>
+        private static IWebProxy GetTokenHttpClientProxy(CachedSchemaRegistryClient client)
+        {
+            var restService = GetPrivateField(client, "restService",
+                "CachedSchemaRegistryClient.restService not found — field may have been renamed");
+            var authProvider = GetPrivateField(restService, "authenticationHeaderValueProvider",
+                "RestService.authenticationHeaderValueProvider not found — field may have been renamed");
+            var httpClient = GetPrivateField(authProvider, "httpClient",
+                $"{authProvider.GetType().Name}.httpClient not found — field may have been renamed");
+            var handler = GetPrivateField(httpClient, "_handler",
+                "HttpMessageInvoker._handler not found — internal .NET runtime field may have changed",
+                typeof(HttpMessageInvoker));
+            Assert.IsType<HttpClientHandler>(handler);
+            return ((HttpClientHandler)handler).Proxy;
+        }
+
+        private static object GetPrivateField(object obj, string fieldName, string errorMessage, Type declaringType = null)
+        {
+            var type = declaringType ?? obj.GetType();
+            var field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.True(field != null, errorMessage);
+            var value = field.GetValue(obj);
+            Assert.True(value != null, $"{errorMessage} (field exists but value is null)");
+            return value;
         }
 
         [Fact]
