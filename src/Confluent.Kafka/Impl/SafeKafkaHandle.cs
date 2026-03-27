@@ -445,6 +445,54 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        internal unsafe ErrorCode Produce(
+            string topic,
+            ReadOnlySpan<byte> val,
+            ReadOnlySpan<byte> key,
+            int partition,
+            long timestamp,
+            IReadOnlyList<IHeader> headers,
+            IntPtr opaque)
+        {
+            IntPtr headersPtr = marshalHeaders(headers);
+
+            try
+            {
+                fixed (byte* pVal = val)
+                fixed (byte* pKey = key)
+                {
+                    var errorCode = Librdkafka.produceva(
+                        handle,
+                        topic,
+                        partition,
+                        (IntPtr)MsgFlags.MSG_F_COPY,
+                        (IntPtr)pVal, (UIntPtr)val.Length,
+                        (IntPtr)pKey, (UIntPtr)key.Length,
+                        timestamp,
+                        headersPtr,
+                        opaque);
+
+                    if (errorCode != ErrorCode.NoError)
+                    {
+                        if (headersPtr != IntPtr.Zero)
+                        {
+                            Librdkafka.headers_destroy(headersPtr);
+                        }
+                    }
+
+                    return errorCode;
+                }
+            }
+            catch
+            {
+                if (headersPtr != IntPtr.Zero)
+                {
+                    Librdkafka.headers_destroy(headersPtr);
+                }
+                throw;
+            }
+        }
+
         private static int[] MarshalCopy(IntPtr source, int length)
         {
             int[] res = new int[length];

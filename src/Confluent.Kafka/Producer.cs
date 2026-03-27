@@ -339,6 +339,61 @@ namespace Confluent.Kafka
             }
         }
 
+        private void ProduceImpl(
+            string topic,
+            ReadOnlySpan<byte> val,
+            ReadOnlySpan<byte> key,
+            Timestamp timestamp,
+            Partition partition,
+            IReadOnlyList<IHeader> headers,
+            IDeliveryHandler deliveryHandler)
+        {
+            if (timestamp.Type != TimestampType.CreateTime)
+            {
+                if (timestamp != Timestamp.Default)
+                {
+                    throw new ArgumentException("Timestamp must be either Timestamp.Default, or Timestamp.CreateTime.");
+                }
+            }
+
+            ErrorCode err;
+            if (this.enableDeliveryReports && deliveryHandler != null)
+            {
+                var gch = GCHandle.Alloc(deliveryHandler);
+                var ptr = GCHandle.ToIntPtr(gch);
+
+                err = KafkaHandle.Produce(
+                    topic,
+                    val,
+                    key,
+                    partition.Value,
+                    timestamp.UnixTimestampMs,
+                    headers,
+                    ptr);
+
+                if (err != ErrorCode.NoError)
+                {
+                    gch.Free();
+                }
+            }
+            else
+            {
+                err = KafkaHandle.Produce(
+                    topic,
+                    val,
+                    key,
+                    partition.Value,
+                    timestamp.UnixTimestampMs,
+                    headers,
+                    IntPtr.Zero);
+            }
+
+            if (err != ErrorCode.NoError)
+            {
+                throw new KafkaException(KafkaHandle.CreatePossiblyFatalError(err, null));
+            }
+        }
+
 
         /// <inheritdoc/>
         public int Poll(TimeSpan timeout)
@@ -1041,6 +1096,79 @@ namespace Confluent.Kafka
                 {
                     Handler(dr);
                 }
+            }
+        }
+
+        private class RawDeliveryHandlerShim : IDeliveryHandler
+        {
+            public RawDeliveryHandlerShim(string topic, Action<DeliveryReport<Null, Null>> handler)
+            {
+                Topic = topic;
+                Handler = handler;
+            }
+
+            public string Topic;
+
+            public Action<DeliveryReport<Null, Null>> Handler;
+
+            public void HandleDeliveryReport(DeliveryReport<Null, Null> deliveryReport)
+            {
+                if (deliveryReport == null)
+                {
+                    return;
+                }
+
+                deliveryReport.Topic = Topic;
+
+                if (Handler != null)
+                {
+                    Handler(deliveryReport);
+                }
+            }
+        }
+
+        internal void Produce(
+            string topic,
+            ReadOnlySpan<byte> key,
+            ReadOnlySpan<byte> value,
+            Action<DeliveryReport<Null, Null>> deliveryHandler = null)
+            => Produce(
+                new TopicPartition(topic, Partition.Any),
+                key, value, Timestamp.Default, null, deliveryHandler);
+
+        internal void Produce(
+            TopicPartition topicPartition,
+            ReadOnlySpan<byte> key,
+            ReadOnlySpan<byte> value,
+            Timestamp timestamp,
+            Headers headers,
+            Action<DeliveryReport<Null, Null>> deliveryHandler = null)
+        {
+            if (deliveryHandler != null && !enableDeliveryReports)
+            {
+                throw new InvalidOperationException("A delivery handler was specified, but delivery reports are disabled.");
+            }
+
+            try
+            {
+                ProduceImpl(
+                    topicPartition.Topic,
+                    value,
+                    key,
+                    timestamp, topicPartition.Partition,
+                    headers?.BackingList,
+                    deliveryHandler == null
+                        ? null
+                        : new RawDeliveryHandlerShim(topicPartition.Topic, deliveryHandler));
+            }
+            catch (KafkaException ex)
+            {
+                throw new ProduceException<Null, Null>(
+                    ex.Error,
+                    new DeliveryReport<Null, Null>
+                    {
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
+                    });
             }
         }
 
