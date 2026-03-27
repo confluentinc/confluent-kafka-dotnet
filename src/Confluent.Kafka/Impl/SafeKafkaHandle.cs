@@ -461,13 +461,16 @@ namespace Confluent.Kafka.Impl
                 fixed (byte* pVal = val)
                 fixed (byte* pKey = key)
                 {
+                    IntPtr valPtr = val.Length == 0 ? IntPtr.Zero : (IntPtr)pVal;
+                    IntPtr keyPtr = key.Length == 0 ? IntPtr.Zero : (IntPtr)pKey;
+
                     var errorCode = Librdkafka.produceva(
                         handle,
                         topic,
                         partition,
                         (IntPtr)MsgFlags.MSG_F_COPY,
-                        (IntPtr)pVal, (UIntPtr)val.Length,
-                        (IntPtr)pKey, (UIntPtr)key.Length,
+                        valPtr, (UIntPtr)val.Length,
+                        keyPtr, (UIntPtr)key.Length,
                         timestamp,
                         headersPtr,
                         opaque);
