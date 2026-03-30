@@ -2,7 +2,7 @@
 
 ## Enhancements
 
-* References librdkafka.redist 2.14.0. Refer to the [librdkafka v2.14.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.14.0-RC1) for more information.
+* References librdkafka.redist 2.14.0-RC1. Refer to the [librdkafka v2.14.0-RC1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.14.0-RC1) for more information.
 * Add AssociatedNameStrategy (#2577)
 * Add enableAt to RuleSet (#2593)
 * Add config to validate before domain rules for JSON Schema (#2596)
