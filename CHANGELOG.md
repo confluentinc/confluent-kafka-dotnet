@@ -5,6 +5,7 @@
 * Add AssociatedNameStrategy (#2577)
 * Add enableAt to RuleSet (#2593)
 * Add config to validate before domain rules for JSON Schema (#2596)
+* Cache FieldAccessor to address CSFLE perf with JSON (#2601)
 
 ## Fixes
 
