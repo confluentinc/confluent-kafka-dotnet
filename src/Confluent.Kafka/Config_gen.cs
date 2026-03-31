@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.13.2 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.14.0-RC1 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -1203,6 +1203,16 @@ namespace Confluent.Kafka
         /// ]]>
         /// </summary>
         public string SaslOauthbearerTokenEndpointUrl { get { return Get("sasl.oauthbearer.token.endpoint.url"); } set { this.SetObject("sasl.oauthbearer.token.endpoint.url", value); } }
+
+        /// <summary>
+        /// <![CDATA[
+        ///     JWT claim name to use as the subject (principal) when validating OIDC access tokens. Must be present in the JWT payload with a non-empty value. Should match the broker's `sasl.oauthbearer.sub.claim.name` configuration for consistent authentication. Only used when `sasl.oauthbearer.method` is set to "oidc".
+        ///
+        ///     default: sub
+        ///     importance: low
+        /// ]]>
+        /// </summary>
+        public string SaslOauthbearerSubClaimName { get { return Get("sasl.oauthbearer.sub.claim.name"); } set { this.SetObject("sasl.oauthbearer.sub.claim.name", value); } }
 
         /// <summary>
         /// <![CDATA[
