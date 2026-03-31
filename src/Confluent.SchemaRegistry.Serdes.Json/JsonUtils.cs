@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -152,7 +153,9 @@ namespace Confluent.SchemaRegistry.Serdes
                         FieldAccessor fieldAccessor;
                         try
                         {
-                            fieldAccessor = new FieldAccessor(message.GetType(), it.Key);
+                            fieldAccessor = FieldAccessorCache.GetOrAdd(
+                                (message.GetType(), it.Key),
+                                key => new FieldAccessor(key.Item1, key.Item2));
                         }
                         catch (ArgumentException)
                         {
@@ -270,6 +273,8 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             return new HashSet<string>();
         }
+
+        private static readonly ConcurrentDictionary<(Type, string), FieldAccessor> FieldAccessorCache = new();
 
         class FieldAccessor
         {
