@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.14.0-RC1 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.14.0 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
