@@ -65,6 +65,28 @@ namespace Confluent.Kafka
         /// </param>
         public void Add(Header header)
         {
+            if (header == null)
+            {
+                throw new ArgumentNullException(nameof(header));
+            }
+
+            headers.Add(header);
+        }
+
+        /// <summary>
+        ///     Append a new header to the collection.
+        /// </summary>
+        /// <param name="header">
+        ///     The header to add to the collection.
+        ///     Any implementation of <see cref="IHeader"/> is accepted.
+        /// </param>
+        public void Add(IHeader header)
+        {
+            if (header == null)
+            {
+                throw new ArgumentNullException(nameof(header));
+            }
+
             headers.Add(header);
         }
 

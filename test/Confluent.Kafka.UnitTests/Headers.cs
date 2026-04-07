@@ -46,6 +46,32 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
+        public void AddIHeader()
+        {
+            var hdrs = new Headers();
+            IHeader iheader = new Header("ccc", new byte[] { 4, 5, 6 });
+            hdrs.Add(iheader);
+
+            Assert.Single(hdrs);
+            Assert.Equal("ccc", hdrs[0].Key);
+            Assert.Equal(new byte[] { 4, 5, 6 }, hdrs[0].GetValueBytes());
+        }
+
+        [Fact]
+        public void AddHeader_Null()
+        {
+            var hdrs = new Headers();
+            Assert.Throws<ArgumentNullException>(() => hdrs.Add((Header)null));
+        }
+
+        [Fact]
+        public void AddIHeader_Null()
+        {
+            var hdrs = new Headers();
+            Assert.Throws<ArgumentNullException>(() => hdrs.Add((IHeader)null));
+        }
+
+        [Fact]
         public void GetLast()
         {
             var hdrs = new Headers();
