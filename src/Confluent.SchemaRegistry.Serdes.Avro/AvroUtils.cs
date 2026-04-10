@@ -80,7 +80,7 @@ namespace Confluent.SchemaRegistry.Serdes
             return namedSchemas;
         }
 
-        public static async Task<object> Transform(RuleContext ctx, Avro.Schema schema, object message,
+        public static async Task<object> Transform(RuleContext ctx, RuleContext.FieldContext fieldContext, Avro.Schema schema, object message,
             IFieldTransform fieldTransform)
         {
             if (schema == null || message == null)
@@ -88,7 +88,6 @@ namespace Confluent.SchemaRegistry.Serdes
                 return message;
             }
 
-            RuleContext.FieldContext fieldContext = ctx.CurrentField();
             if (fieldContext != null)
             {
                 fieldContext.Type = GetType(schema);
@@ -101,16 +100,16 @@ namespace Confluent.SchemaRegistry.Serdes
                     writer = GetResolver(schema, message);
                     UnionSchema us = (UnionSchema)schema;
                     int unionIndex = writer.Resolve(us, message);
-                    return await Transform(ctx, us[unionIndex], message, fieldTransform).ConfigureAwait(false);
+                    return await Transform(ctx, fieldContext, us[unionIndex], message, fieldTransform).ConfigureAwait(false);
                 case Avro.Schema.Type.Array:
                     ArraySchema a = (ArraySchema)schema;
                     var arrayTransformer = (int index, object elem) =>
-                        Transform(ctx, a.ItemSchema, elem, fieldTransform);
+                        Transform(ctx, fieldContext, a.ItemSchema, elem, fieldTransform);
                     return await Utils.TransformEnumerableAsync(message, arrayTransformer).ConfigureAwait(false);
                 case Avro.Schema.Type.Map:
                     MapSchema ms = (MapSchema)schema;
                     var mapTransformer = (object key, object value) =>
-                        Transform(ctx, ms.ValueSchema, value, fieldTransform);
+                        Transform(ctx, fieldContext, ms.ValueSchema, value, fieldTransform);
                     return await Utils.TransformDictionaryAsync(message, mapTransformer).ConfigureAwait(false);
                 case Avro.Schema.Type.Record:
                     RecordSchema rs = (RecordSchema)schema;
@@ -133,13 +132,14 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
 
                         string fullName = rs.Fullname + "." + f.Name;
-                        using (ctx.EnterField(message, fullName, f.Name, GetType(originalField.Schema), GetInlineTags(originalField)))
                         {
+                            var newFieldContext = ctx.EnterField(message, fullName, f.Name,
+                                GetType(originalField.Schema), GetInlineTags(originalField));
                             if (message is ISpecificRecord)
                             {
                                 ISpecificRecord specificRecord = (ISpecificRecord)message;
                                 object value = specificRecord.Get(f.Pos);
-                                object newValue = await Transform(ctx, originalField.Schema, value, fieldTransform).ConfigureAwait(false);
+                                object newValue = await Transform(ctx, newFieldContext, originalField.Schema, value, fieldTransform).ConfigureAwait(false);
                                 if (ctx.Rule.Kind == RuleKind.Condition)
                                 {
                                     if (newValue is bool b && !b)
@@ -156,7 +156,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             {
                                 GenericRecord genericRecord = (GenericRecord)message;
                                 object value = genericRecord.GetValue(f.Pos);
-                                object newValue = await Transform(ctx, originalField.Schema, value, fieldTransform).ConfigureAwait(false);
+                                object newValue = await Transform(ctx, newFieldContext, originalField.Schema, value, fieldTransform).ConfigureAwait(false);
                                 if (ctx.Rule.Kind == RuleKind.Condition)
                                 {
                                     if (newValue is bool b && !b)

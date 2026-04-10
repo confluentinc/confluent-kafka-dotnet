@@ -50,7 +50,6 @@ namespace Confluent.SchemaRegistry
         public FieldTransformer FieldTransformer { get; set; }
         public IDictionary<object, object> CustomData { get; } = new Dictionary<object, object>();
 
-        private Stack<FieldContext> fieldContexts = new Stack<FieldContext>();
 
         public RuleContext(string enabledEnv, Schema source, Schema target, string subject, string topic, Headers headers, bool isKey,
             RuleMode ruleMode, Rule rule, int index, IList<Rule> rules, FieldTransformer fieldTransformer)
@@ -100,22 +99,16 @@ namespace Confluent.SchemaRegistry
         }
 
 
-        public FieldContext CurrentField()
-        {
-            return fieldContexts.Count != 0 ? fieldContexts.Peek() : null;
-        }
-
         public FieldContext EnterField(object containingMessage,
             string fullName, string name, Type type, ISet<string> tags)
         {
             ISet<string> allTags = new HashSet<string>(tags);
             allTags.UnionWith(GetTags(fullName));
-            return new FieldContext(this, containingMessage, fullName, name, type, allTags);
+            return new FieldContext(containingMessage, fullName, name, type, allTags);
         }
 
-        public class FieldContext : IDisposable
+        public class FieldContext
         {
-            public RuleContext RuleContext { get; set; }
 
             public object ContainingMessage { get; set; }
 
@@ -127,27 +120,20 @@ namespace Confluent.SchemaRegistry
 
             public ISet<string> Tags { get; set; }
 
-            public FieldContext(RuleContext ruleContext, object containingMessage, string fullName, string name,
+            public FieldContext(object containingMessage, string fullName, string name,
                 Type type, ISet<string> tags)
             {
-                RuleContext = ruleContext;
                 ContainingMessage = containingMessage;
                 FullName = fullName;
                 Name = name;
                 Type = type;
                 Tags = tags;
-                RuleContext.fieldContexts.Push(this);
             }
 
             public bool IsPrimitive()
             {
                 return Type == Type.String || Type == Type.Bytes || Type == Type.Int || Type == Type.Long ||
                        Type == Type.Float || Type == Type.Double || Type == Type.Boolean || Type == Type.Null;
-            }
-
-            public void Dispose()
-            {
-                RuleContext.fieldContexts.Pop();
             }
         }
 

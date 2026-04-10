@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace Confluent.SchemaRegistry
 {
-    public delegate Task<object> FieldTransformer(RuleContext ctx, IFieldTransform fieldTransform, object message);
+    public delegate Task<object> FieldTransformer(RuleContext ctx, RuleContext.FieldContext fieldContext, IFieldTransform fieldTransform, object message);
 
     public interface IFieldTransform : IDisposable
     {

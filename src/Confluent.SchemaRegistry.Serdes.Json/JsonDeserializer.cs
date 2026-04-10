@@ -284,9 +284,9 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 if (readerSchema != null)
                 {
-                    FieldTransformer fieldTransformer = async (ctx, transform, message) =>
+                    FieldTransformer fieldTransformer = async (ctx, fieldContext, transform, message) =>
                     {
-                        return await JsonUtils.Transform(ctx, readerSchema, readerSchema, "$", message, transform).ConfigureAwait(false);
+                        return await JsonUtils.Transform(ctx, fieldContext, readerSchema, readerSchema, "$", message, transform).ConfigureAwait(false);
                     };
                     value = await ExecuteRules(context.Component == MessageComponentType.Key,
                             subject, context.Topic, context.Headers, RuleMode.Read,

@@ -161,9 +161,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                 }
 
-                FieldTransformer fieldTransformer = async (ctx, transform, message) => 
+                FieldTransformer fieldTransformer = async (ctx, fieldContext, transform, message) => 
                 {
-                    return await AvroUtils.Transform(ctx, readerSchema, message, transform).ConfigureAwait(false);
+                    return await AvroUtils.Transform(ctx, fieldContext, readerSchema, message, transform).ConfigureAwait(false);
                 };
                 data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read,
                         null, readerSchemaJson, data, fieldTransformer)

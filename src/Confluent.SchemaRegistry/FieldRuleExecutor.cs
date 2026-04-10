@@ -32,7 +32,7 @@ namespace Confluent.SchemaRegistry
         {
             using (IFieldTransform transform = NewTransform(ctx))
             {
-                return await ctx.FieldTransformer.Invoke(ctx, transform, message)
+                return await ctx.FieldTransformer.Invoke(ctx, null, transform, message)
                     .ConfigureAwait(continueOnCapturedContext: false);
             }
         }

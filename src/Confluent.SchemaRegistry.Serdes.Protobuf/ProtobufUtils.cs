@@ -86,7 +86,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
-        internal static async Task<object> Transform(RuleContext ctx, object desc, object message,
+        internal static async Task<object> Transform(RuleContext ctx, RuleContext.FieldContext fieldContext, object desc, object message,
             IFieldTransform fieldTransform)
         {
             if (desc == null || message == null)
@@ -94,7 +94,6 @@ namespace Confluent.SchemaRegistry.Serdes
                 return message;
             }
 
-            RuleContext.FieldContext fieldContext = ctx.CurrentField();
 
             if (typeof(IList).IsAssignableFrom(message.GetType())
                 || (message.GetType().IsGenericType
@@ -102,7 +101,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         || message.GetType().GetGenericTypeDefinition() == typeof(IList<>))))
             {
                 var transformer = (int index, object elem) =>
-                    Transform(ctx, desc, elem, fieldTransform);
+                    Transform(ctx, fieldContext, desc, elem, fieldTransform);
                 return await Utils.TransformEnumerableAsync(message, transformer).ConfigureAwait(false);
             }
             else if (typeof(IDictionary).IsAssignableFrom(message.GetType())
@@ -125,8 +124,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 foreach (FieldDescriptor fd in copy.Descriptor.Fields.InDeclarationOrder())
                 {
                     FieldDescriptorProto schemaFd = FindFieldByName(messageType, fd.Name);
-                    using (ctx.EnterField(copy, fd.FullName, fd.Name, GetType(fd), GetInlineTags(schemaFd)))
                     {
+                        var newFieldContext = ctx.EnterField(copy, fd.FullName, fd.Name, GetType(fd),
+                            GetInlineTags(schemaFd));
                         if (fd.ContainingOneof != null && !fd.Accessor.HasValue(copy)) {
                             // Skip oneof fields that are not set
                             continue;
@@ -139,7 +139,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             d = schemaFd.GetMessageType();
                         }
 
-                        object newValue = await Transform(ctx, d, value, fieldTransform).ConfigureAwait(false);
+                        object newValue = await Transform(ctx, newFieldContext, d, value, fieldTransform).ConfigureAwait(false);
                         if (ctx.Rule.Kind == RuleKind.Condition)
                         {
                             if (newValue is bool b && !b)
