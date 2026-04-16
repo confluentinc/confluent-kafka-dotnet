@@ -22,7 +22,7 @@ using System;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents an error that occured during message consumption.
+    ///     Represents an error that occurred during message consumption.
     /// </summary>
     public class ConsumeException : KafkaException
     {
@@ -31,10 +31,10 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="consumerRecord">
         ///     An object that provides information know about the consumer 
-        ///     record for which the error occured.
+        ///     record for which the error occurred.
         /// </param>
         /// <param name="error">
-        ///     The error that occured.
+        ///     The error that occurred.
         /// </param>
         /// <param name="innerException">
         ///     The exception instance that caused this exception.
@@ -50,10 +50,10 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="consumerRecord">
         ///     An object that provides information know about the consumer 
-        ///     record for which the error occured.
+        ///     record for which the error occurred.
         /// </param>
         /// <param name="error">
-        ///     The error that occured.
+        ///     The error that occurred.
         /// </param>
         public ConsumeException(ConsumeResult<byte[], byte[]> consumerRecord, Error error)
             : base(error)
@@ -63,7 +63,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     An object that provides information known about the consumer
-        ///     record for which the error occured.
+        ///     record for which the error occurred.
         /// </summary>
         public ConsumeResult<byte[], byte[]> ConsumerRecord { get; private set; }
     }
