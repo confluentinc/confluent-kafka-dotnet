@@ -122,7 +122,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             message = await Transform(ctx, rootSchema, subschema, path, message, fieldTransform, null).ConfigureAwait(false);
                             if (oneOf)
                             {
-                                return message;
+                                break;
                             }
                         }
                     }
