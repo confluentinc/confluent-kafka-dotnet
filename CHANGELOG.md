@@ -1,3 +1,10 @@
+# 2.x.0
+
+## Fixes
+
+* Handle anyOf/allOf in JSON transforms #2611
+
+
 # 2.14.0
 
 ## Enhancements
