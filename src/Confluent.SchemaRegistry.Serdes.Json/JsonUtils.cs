@@ -128,11 +128,18 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                 }
 
-                // Also visit sibling properties at this level (NJsonSchema keeps them
+                // Also visit sibling properties/items at this level (NJsonSchema keeps them
                 // on the same schema object alongside allOf/anyOf/oneOf).
                 if (schema.Properties.Count > 0)
                 {
                     message = await TransformProperties(ctx, rootSchema, schema, path, message, fieldTransform).ConfigureAwait(false);
+                }
+                if (schema.Item != null && message is IList)
+                {
+                    JsonSchema itemSchema = schema.Item;
+                    var transformer = (int index, object elem) =>
+                        Transform(ctx, rootSchema, itemSchema, path + '[' + index + ']', elem, fieldTransform, null);
+                    message = await Utils.TransformEnumerableAsync(message, transformer).ConfigureAwait(false);
                 }
 
                 return message;
