@@ -1062,6 +1062,206 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public void CELFieldTransformNestedAnyOf()
+        {
+            var schemaStr = @"{
+                ""$schema"": ""http://json-schema.org/draft-07/schema#"",
+                ""type"": ""object"",
+                ""properties"": {
+                    ""pins"": {
+                        ""type"": ""object"",
+                        ""anyOf"": [
+                            {
+                                ""properties"": {
+                                    ""pin"": {
+                                        ""confluent:tags"": [ ""PII"" ],
+                                        ""type"": [ ""string"", ""null"" ]
+                                    }
+                                }
+                            },
+                            {
+                                ""properties"": {
+                                    ""npin"": {
+                                        ""confluent:tags"": [ ""PII"" ],
+                                        ""type"": [ ""string"", ""null"" ]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", new HashSet<string>
+                        {
+                            "PII"
+                        }, null,
+                        "value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new JsonSerializer<PinsHolder>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<PinsHolder>(schemaRegistryClient);
+
+            var holder = new PinsHolder
+            {
+                Pins = new Pins
+                {
+                    Pin = "P123456789",
+                    Npin = "NP00012345678"
+                }
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(holder, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("P123456789-suffix", result.Pins.Pin);
+            Assert.Equal("NP00012345678-suffix", result.Pins.Npin);
+        }
+
+        [Fact]
+        public void CELFieldTransformSiblingAnyOf()
+        {
+            var schemaStr = @"{
+                ""$schema"": ""http://json-schema.org/draft-07/schema#"",
+                ""type"": ""object"",
+                ""properties"": {
+                    ""pins"": {
+                        ""type"": ""object"",
+                        ""anyOf"": [
+                            { ""required"": [ ""pin"" ] },
+                            { ""required"": [ ""npin"" ] }
+                        ],
+                        ""properties"": {
+                            ""pin"": {
+                                ""confluent:tags"": [ ""PII"" ],
+                                ""type"": [ ""string"", ""null"" ]
+                            },
+                            ""npin"": {
+                                ""confluent:tags"": [ ""PII"" ],
+                                ""type"": [ ""string"", ""null"" ]
+                            }
+                        }
+                    }
+                }
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", new HashSet<string>
+                        {
+                            "PII"
+                        }, null,
+                        "value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new JsonSerializer<PinsHolder>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<PinsHolder>(schemaRegistryClient);
+
+            var holder = new PinsHolder
+            {
+                Pins = new Pins
+                {
+                    Pin = "P123456789",
+                    Npin = "NP00012345678"
+                }
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(holder, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("P123456789-suffix", result.Pins.Pin);
+            Assert.Equal("NP00012345678-suffix", result.Pins.Npin);
+        }
+
+        [Fact]
+        public void CELFieldTransformAllOf()
+        {
+            var schemaStr = @"{
+                ""$schema"": ""http://json-schema.org/draft-07/schema#"",
+                ""type"": ""object"",
+                ""properties"": {
+                    ""pins"": {
+                        ""type"": ""object"",
+                        ""allOf"": [
+                            {
+                                ""properties"": {
+                                    ""pin"": {
+                                        ""confluent:tags"": [ ""PII"" ],
+                                        ""type"": [ ""string"", ""null"" ]
+                                    }
+                                }
+                            },
+                            {
+                                ""properties"": {
+                                    ""npin"": {
+                                        ""confluent:tags"": [ ""PII"" ],
+                                        ""type"": [ ""string"", ""null"" ]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", new HashSet<string>
+                        {
+                            "PII"
+                        }, null,
+                        "value + '-suffix'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new JsonSerializer<PinsHolder>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<PinsHolder>(schemaRegistryClient);
+
+            var holder = new PinsHolder
+            {
+                Pins = new Pins
+                {
+                    Pin = "P123456789",
+                    Npin = "NP00012345678"
+                }
+            };
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(holder, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            Assert.Equal("P123456789-suffix", result.Pins.Pin);
+            Assert.Equal("NP00012345678-suffix", result.Pins.Npin);
+        }
+
+        [Fact]
         public void CELFieldCondition()
         {
             var schemaStr = @"{
@@ -1751,6 +1951,20 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
     {
         public int DoorNumber { get; set; }
         public string DoorPin { get; set; }
+    }
+
+    class PinsHolder
+    {
+        [JsonProperty("pins")]
+        public Pins Pins { get; set; }
+    }
+
+    class Pins
+    {
+        [JsonProperty("pin")]
+        public string Pin { get; set; }
+        [JsonProperty("npin")]
+        public string Npin { get; set; }
     }
 
     class Message
