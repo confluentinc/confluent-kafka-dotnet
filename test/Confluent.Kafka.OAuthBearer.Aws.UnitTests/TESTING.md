@@ -7,10 +7,12 @@ One test in [AwsStsTokenProviderRealTests.cs](AwsStsTokenProviderRealTests.cs) i
 ## Running it
 
 ```bash
+# Run from the repo root.
 RUN_AWS_STS_REAL=1 \
   AWS_REGION=eu-north-1 \
   AUDIENCE=https://api.example.com \
   dotnet test test/Confluent.Kafka.OAuthBearer.Aws.UnitTests/Confluent.Kafka.OAuthBearer.Aws.UnitTests.csproj \
+  -c Release \
   --filter "FullyQualifiedName~AwsStsTokenProviderRealTests"
 ```
 
