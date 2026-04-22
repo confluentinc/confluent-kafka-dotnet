@@ -95,34 +95,51 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
             {
-                JToken jsonObject = JToken.FromObject(message);
-                ICollection<JsonSchema> subschemas;
                 if (schema.AllOf.Count > 0)
                 {
-                    subschemas = schema.AllOf;
-                }
-                else if (schema.AnyOf.Count > 0)
-                {
-                    subschemas = schema.AnyOf;
+                    foreach (JsonSchema subschema in schema.AllOf)
+                    {
+                        message = await Transform(ctx, rootSchema, subschema, path, message, fieldTransform, null).ConfigureAwait(false);
+                    }
                 }
                 else
                 {
-                    subschemas = schema.OneOf;
+                    ICollection<JsonSchema> subschemas = schema.AnyOf.Count > 0 ? schema.AnyOf : schema.OneOf;
+                    bool oneOf = schema.OneOf.Count > 0;
+                    JToken jsonObject = JToken.FromObject(message);
+                    foreach (JsonSchema subschema in subschemas)
+                    {
+                        bool isValid;
+                        lock (rootSchema)
+                        {
+                            var validator = new JsonSchemaValidator();
+                            var errors = validator.Validate(jsonObject, subschema);
+                            isValid = errors.Count == 0;
+                        }
+                        if (isValid)
+                        {
+                            // New subschema, no type override needed
+                            message = await Transform(ctx, rootSchema, subschema, path, message, fieldTransform, null).ConfigureAwait(false);
+                            if (oneOf)
+                            {
+                                return message;
+                            }
+                        }
+                    }
                 }
-                foreach (JsonSchema subschema in subschemas)
+
+                // Also visit sibling properties/items at this level (NJsonSchema keeps them
+                // on the same schema object alongside allOf/anyOf/oneOf).
+                if (schema.Properties.Count > 0)
                 {
-                    bool isValid;
-                    lock (rootSchema)
-                    {
-                        var validator = new JsonSchemaValidator();
-                        var errors = validator.Validate(jsonObject, subschema);
-                        isValid = errors.Count == 0;
-                    }
-                    if (isValid)
-                    {
-                        // New subschema, no type override needed
-                        return await Transform(ctx, rootSchema, subschema, path, message, fieldTransform, null).ConfigureAwait(false);
-                    }
+                    message = await TransformProperties(ctx, rootSchema, schema, path, message, fieldTransform).ConfigureAwait(false);
+                }
+                if (schema.Item != null && message is IList)
+                {
+                    JsonSchema itemSchema = schema.Item;
+                    var transformer = (int index, object elem) =>
+                        Transform(ctx, rootSchema, itemSchema, path + '[' + index + ']', elem, fieldTransform, null);
+                    message = await Utils.TransformEnumerableAsync(message, transformer).ConfigureAwait(false);
                 }
 
                 return message;
@@ -145,40 +162,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             else if (effectiveType.HasFlag(JsonObjectType.Object) || schema.Properties.Count > 0)
             {
-                foreach (var it in schema.Properties)
-                {
-                    string fullName = path + '.' + it.Key;
-                    using (ctx.EnterField(message, fullName, it.Key, GetType(rootSchema, it.Value), GetInlineTags(it.Value)))
-                    {
-                        FieldAccessor fieldAccessor;
-                        try
-                        {
-                            fieldAccessor = FieldAccessorCache.GetOrAdd(
-                                (message.GetType(), it.Key),
-                                key => new FieldAccessor(key.Item1, key.Item2));
-                        }
-                        catch (ArgumentException)
-                        {
-                            continue;
-                        }
-                        object value = fieldAccessor.GetFieldValue(message);
-                        // New field schema, no type override needed
-                        object newValue = await Transform(ctx, rootSchema, it.Value, fullName, value, fieldTransform, null).ConfigureAwait(false);
-                        if (ctx.Rule.Kind == RuleKind.Condition)
-                        {
-                            if (newValue is bool b && !b)
-                            {
-                                throw new RuleConditionException(ctx.Rule);
-                            }
-                        }
-                        else
-                        {
-                            fieldAccessor.SetFieldValue(message, newValue);
-                        }
-                    }
-                }
-
-                return message;
+                return await TransformProperties(ctx, rootSchema, schema, path, message, fieldTransform).ConfigureAwait(false);
             }
             else if (schema.HasReference)
             {
@@ -214,6 +198,44 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 return message;
             }
+        }
+
+        private static async Task<object> TransformProperties(RuleContext ctx, JsonSchema rootSchema, JsonSchema schema,
+            string path, object message, IFieldTransform fieldTransform)
+        {
+            foreach (var it in schema.Properties)
+            {
+                string fullName = path + '.' + it.Key;
+                using (ctx.EnterField(message, fullName, it.Key, GetType(rootSchema, it.Value), GetInlineTags(it.Value)))
+                {
+                    FieldAccessor fieldAccessor;
+                    try
+                    {
+                        fieldAccessor = FieldAccessorCache.GetOrAdd(
+                            (message.GetType(), it.Key),
+                            key => new FieldAccessor(key.Item1, key.Item2));
+                    }
+                    catch (ArgumentException)
+                    {
+                        continue;
+                    }
+                    object value = fieldAccessor.GetFieldValue(message);
+                    // New field schema, no type override needed
+                    object newValue = await Transform(ctx, rootSchema, it.Value, fullName, value, fieldTransform, null).ConfigureAwait(false);
+                    if (ctx.Rule.Kind == RuleKind.Condition)
+                    {
+                        if (newValue is bool b && !b)
+                        {
+                            throw new RuleConditionException(ctx.Rule);
+                        }
+                    }
+                    else
+                    {
+                        fieldAccessor.SetFieldValue(message, newValue);
+                    }
+                }
+            }
+            return message;
         }
 
         private static bool HasMultipleFlags<T>(T flags) where T : Enum
