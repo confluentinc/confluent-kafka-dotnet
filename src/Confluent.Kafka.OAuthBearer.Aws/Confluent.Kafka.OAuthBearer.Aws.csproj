@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+        <Authors>Confluent Inc.</Authors>
+        <Description>Optional AWS STS GetWebIdentityToken OAUTHBEARER token provider for Confluent.Kafka. Installing this package gives users on AWS (EC2, EKS, ECS/Fargate, Lambda) a one-line way to authenticate to OIDC-gated Kafka endpoints using their AWS identity. Does not affect Confluent.Kafka's dependency graph for users who do not install it.</Description>
+        <Copyright>Copyright 2026 Confluent Inc.</Copyright>
+        <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageIcon>confluent-logo.png</PackageIcon>
+        <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+        <PackageTags>Kafka;Confluent;OAUTHBEARER;OAuth;AWS;STS;IAM</PackageTags>
+        <PackageId>Confluent.Kafka.OAuthBearer.Aws</PackageId>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Title>Confluent.Kafka.OAuthBearer.Aws</Title>
+        <AssemblyName>Confluent.Kafka.OAuthBearer.Aws</AssemblyName>
+        <TargetFrameworks>$(TargetFrameworks);netstandard2.1;net462</TargetFrameworks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>Confluent.Kafka.OAuthBearer.Aws.snk</AssemblyOriginatorKeyFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Confluent.Kafka\Confluent.Kafka.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- v3.7.504 is the first NuGet release that actually contains
+             sts:GetWebIdentityToken. Note: git commit 138d312 (2025-11-19) on
+             branch aws-sdk-net-v3.7 added the API to source and declared
+             _sdk-versions.json Version=3.7.503.2, but AWS's release pipeline
+             bumped the patch before publishing — packages 3.7.503 / .1 / .2
+             on NuGet predate the feature. See IMPLEMENTATION_PLAN_AWS_OAUTHBEARER.md
+             §"Locked decisions" for the bisect evidence. -->
+        <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.504" />
+    </ItemGroup>
+
+    <!-- System.Text.Json is built into net6.0+; for older targets it needs an explicit
+         reference. Used by JwtSubjectExtractor only. -->
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' or '$(TargetFramework)' == 'net462' ">
+        <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- InternalsVisibleTo with PublicKey is declared in AssemblyInfo.cs
+             (same pattern as src/Confluent.SchemaRegistry.Serdes.Protobuf/AssemblyInfo.cs). -->
+        <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
+        <None Include="README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+</Project>

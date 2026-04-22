@@ -51,11 +51,11 @@ Both v3 and v4 major-version lines shipped the API **on the same day (2025-11-19
 | SDK line | First version with GetWebIdentityToken | Commit | `AWSSDK.Core` floor |
 |---|---|---|---|
 | **v4** (branch `main`) | `AWSSDK.SecurityToken 4.0.4.1` | [4b10094](https://github.com/aws/aws-sdk-net/commit/4b10094) (2025-11-19) | `4.0.3.1` |
-| **v3.7** (branch `aws-sdk-net-v3.7`) | `AWSSDK.SecurityToken 3.7.503.2` | [138d312](https://github.com/aws/aws-sdk-net/commit/138d312) (2025-11-19) | `3.7.500.45` |
+| **v3.7** (branch `aws-sdk-net-v3.7`) | `AWSSDK.SecurityToken 3.7.504` | [138d312](https://github.com/aws/aws-sdk-net/commit/138d312) (2025-11-19) | `3.7.500.45` |
 
 Versions confirmed by reading `generator/ServiceModels/_sdk-versions.json` at each commit. File `sdk/src/Services/SecurityToken/Generated/Model/GetWebIdentityTokenRequest.cs` is present at both refs. Latest-as-of-today: v4.0.6 (2026-04-17), v3.7.504.47 (2026-03-26).
 
-**Target for this package: `AWSSDK.SecurityToken >= 3.7.503.2`** on the v3 line — same major version as [src/Confluent.SchemaRegistry.Encryption.Aws/Confluent.SchemaRegistry.Encryption.Aws.csproj](src/Confluent.SchemaRegistry.Encryption.Aws/Confluent.SchemaRegistry.Encryption.Aws.csproj#L31), supports `net462` (which `Confluent.Kafka` still targets), widely deployed. v4 considered and deferred (§11 open item 1).
+**Target for this package: `AWSSDK.SecurityToken >= 3.7.504`** on the v3 line — same major version as [src/Confluent.SchemaRegistry.Encryption.Aws/Confluent.SchemaRegistry.Encryption.Aws.csproj](src/Confluent.SchemaRegistry.Encryption.Aws/Confluent.SchemaRegistry.Encryption.Aws.csproj#L31), supports `net462` (which `Confluent.Kafka` still targets), widely deployed. v4 considered and deferred (§11 open item 1).
 
 ### 4b. Method signature and request/response shape
 
@@ -80,6 +80,43 @@ public class GetWebIdentityTokenResponse {
 ```
 
 Sync `GetWebIdentityToken` is BCL-only (net462); NetStandard / .NET Core / .NET 8 only have the async form. We will use `GetWebIdentityTokenAsync` exclusively so the code compiles on every target.
+
+### 4d. Dep-graph invariant proof (2026-04-22, M1 exit gate)
+
+With the scaffold package landed ([src/Confluent.Kafka.OAuthBearer.Aws/](src/Confluent.Kafka.OAuthBearer.Aws/)) but no real implementation yet, ran two throwaway `net8.0` console projects — one referencing only `Confluent.Kafka`, one also referencing the new package — and measured.
+
+**Scenario A — opt-out (references `Confluent.Kafka` only):**
+
+```
+$ dotnet list package --include-transitive | grep -i AWSSDK
+(no output)
+$ ls bin/Release/net8.0/ | grep -c '^AWSSDK'
+0
+$ du -sh publish/             # dotnet publish -c Release -r osx-arm64 --self-contained true
+95M   publish/                # 99,217,815 bytes
+```
+
+**Scenario B — opt-in (references `Confluent.Kafka.OAuthBearer.Aws`):**
+
+```
+$ dotnet list package --include-transitive | grep -i AWSSDK
+   > AWSSDK.Core               3.7.500.45
+   > AWSSDK.SecurityToken      3.7.504
+$ ls bin/Release/net8.0/ | grep -c '^AWSSDK'
+2
+$ du -sh publish/
+98M   publish/                # 101,956,181 bytes
+```
+
+| Metric | Opt-out | Opt-in | Delta |
+|---|---|---|---|
+| Published size | 95 MB | 98 MB | +2.6 MB |
+| AWSSDK DLLs in `publish/` | **0** | 2 | +2 |
+| AWSSDK entries in `dotnet list package` | **0** | 2 | +2 |
+
+The invariant holds: a consumer that doesn't reference the new package sees zero AWS assemblies in its dependency graph or its build output. The 2.6 MB / 2 DLL delta is the concrete, user-visible cost of opting in — and the concrete cost avoided by users who don't.
+
+Sizes are modest relative to Go's equivalent measurement (−9.7 MB / −45%) because .NET self-contained publish already bundles ~85 MB of runtime, making the AWS SDK a small relative share. In absolute terms the AWS SDK adds ~2.6 MB (two DLLs: `AWSSDK.Core` + `AWSSDK.SecurityToken`) — identical to what a user would see from any NuGet that depends on these assemblies.
 
 ### 4c. Builders expose the hooks we need
 
@@ -162,8 +199,8 @@ The `test/*.UnitTests$` naming is required — [Makefile](Makefile#L11) auto-dis
   </ItemGroup>
 
   <ItemGroup>
-    <!-- v3.7 line; v3.7.503.2 is the first release with GetWebIdentityToken. -->
-    <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.503.2" />
+    <!-- v3.7 line; v3.7.504 is the first release with GetWebIdentityToken. -->
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.504" />
   </ItemGroup>
 
   <ItemGroup>
@@ -433,7 +470,7 @@ CI wiring: `make test` in [Makefile](Makefile#L11) auto-discovers any `test/*Uni
 
 - AWS IAM Outbound Identity Federation announcement (2025-11-19).
 - AWS SDK for .NET v4 API docs: `SecurityTokenServiceClient.GetWebIdentityToken` ([link](https://docs.aws.amazon.com/sdkfornet/v4/apidocs/items/SecurityToken/MSecurityTokenServiceGetWebIdentityTokenGetWebIdentityTokenRequest.html)).
-- aws-sdk-net commits [4b10094](https://github.com/aws/aws-sdk-net/commit/4b10094) (v4, 4.0.4.1) and [138d312](https://github.com/aws/aws-sdk-net/commit/138d312) (v3.7, 3.7.503.2).
+- aws-sdk-net commits [4b10094](https://github.com/aws/aws-sdk-net/commit/4b10094) (v4, 4.0.4.1) and [138d312](https://github.com/aws/aws-sdk-net/commit/138d312) (v3.7, 3.7.504).
 - Go-side design: `DESIGN_AWS_OAUTHBEARER.md` in `confluent-kafka-go` — complementary, API-aligned.
 - librdkafka-native design: `DESIGN_AWS_OAUTHBEARER_V1.md` in `librdkafka` — identical wire protocol, shared probe results on EC2 `eu-north-1`.
 - Existing optional-package template: [src/Confluent.SchemaRegistry.Encryption.Aws/](src/Confluent.SchemaRegistry.Encryption.Aws/).

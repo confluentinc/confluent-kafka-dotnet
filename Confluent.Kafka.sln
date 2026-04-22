@@ -104,11 +104,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{B544BD
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{D5322057-682D-49F2-A2FB-68FA69187B28}"
-				ProjectSection(SolutionItems) = preProject
-								README.md = README.md
-								Directory.Build.props = Directory.Build.props
-								.editorconfig = .editorconfig
-				EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+		Directory.Build.props = Directory.Build.props
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BA928213-B366-4290-A4AA-E0FA094333FE}"
 	ProjectSection(SolutionItems) = preProject
@@ -124,6 +124,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{A4
 	ProjectSection(SolutionItems) = preProject
 		examples\Directory.Build.props = examples\Directory.Build.props
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.OAuthBearer.Aws", "src\Confluent.Kafka.OAuthBearer.Aws\Confluent.Kafka.OAuthBearer.Aws.csproj", "{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.OAuthBearer.Aws.UnitTests", "test\Confluent.Kafka.OAuthBearer.Aws.UnitTests\Confluent.Kafka.OAuthBearer.Aws.UnitTests.csproj", "{B2152027-45F3-4853-999A-0C2E0BB1635E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OAuthBearerAws", "examples\OAuthBearerAws\OAuthBearerAws.csproj", "{A371FA20-3879-4B21-BF1C-70493A7A8DE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -666,6 +672,42 @@ Global
 		{C880F178-7705-4814-A048-CBFFE5D16512}.Release|x64.Build.0 = Release|Any CPU
 		{C880F178-7705-4814-A048-CBFFE5D16512}.Release|x86.ActiveCfg = Release|Any CPU
 		{C880F178-7705-4814-A048-CBFFE5D16512}.Release|x86.Build.0 = Release|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Debug|x64.Build.0 = Debug|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Debug|x86.Build.0 = Debug|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Release|x64.ActiveCfg = Release|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Release|x64.Build.0 = Release|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Release|x86.ActiveCfg = Release|Any CPU
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2}.Release|x86.Build.0 = Release|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Debug|x64.Build.0 = Debug|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Debug|x86.Build.0 = Debug|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Release|x64.ActiveCfg = Release|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Release|x64.Build.0 = Release|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Release|x86.ActiveCfg = Release|Any CPU
+		{B2152027-45F3-4853-999A-0C2E0BB1635E}.Release|x86.Build.0 = Release|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Debug|x64.Build.0 = Debug|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Debug|x86.Build.0 = Debug|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Release|x64.ActiveCfg = Release|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Release|x64.Build.0 = Release|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Release|x86.ActiveCfg = Release|Any CPU
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{09C3255B-1972-4EB8-91D0-FB9F5CD82BCB} = {1EFCD839-0726-4BCE-B745-1E829991B1BC}
@@ -716,5 +758,8 @@ Global
 		{85ABD85A-53A2-4222-BE99-CE51F639F623} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
 		{493C1E83-B424-488D-B6D6-713D07EF4152} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
 		{E72DAB16-FAF7-4365-8151-9450007C93A0} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
+		{BD83E431-9F73-4F8D-AEDF-2A3C9AE263C2} = {1EFCD839-0726-4BCE-B745-1E829991B1BC}
+		{B2152027-45F3-4853-999A-0C2E0BB1635E} = {90058283-1F8F-465D-89E4-D4374A27E612}
+		{A371FA20-3879-4B21-BF1C-70493A7A8DE7} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
 	EndGlobalSection
 EndGlobal
