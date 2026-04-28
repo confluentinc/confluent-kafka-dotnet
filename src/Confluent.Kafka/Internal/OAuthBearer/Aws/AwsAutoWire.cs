@@ -30,10 +30,10 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     ///     pipeline before native handoff. <see cref="IsMarker"/> is the predicate
     ///     used by both the strip filter and the future autowire dispatch.
     /// </remarks>
-    internal static class AwsAutoWire
+    public static class AwsAutoWire
     {
-        internal const string MarkerKey = "sasl.oauthbearer.metadata.authentication.type";
-        internal const string MarkerValue = "aws_iam";
+        public const string MarkerKey = "sasl.oauthbearer.metadata.authentication.type";
+        public const string MarkerValue = "aws_iam";
 
         /// <summary>
         ///     Returns <c>true</c> when the supplied config entry is the AWS IAM
