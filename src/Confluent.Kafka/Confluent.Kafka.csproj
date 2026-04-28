@@ -32,6 +32,9 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'net462'">
     <PackageReference Include="System.Memory" Version="4.6.3" />
     <PackageReference Include="System.Buffers" Version="4.6.1" />
+    <!-- System.Text.Json is built into net6.0+; older targets need an explicit
+         reference. Used by Internal/OAuthBearer/Aws/JwtSubjectExtractor only. -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
   <ItemGroup>

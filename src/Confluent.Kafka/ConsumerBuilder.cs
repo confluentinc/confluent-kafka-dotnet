@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Confluent.Kafka.Internal.OAuthBearer.Aws;
 
 
 namespace Confluent.Kafka
@@ -104,9 +105,7 @@ namespace Confluent.Kafka
                 offsetsCommittedHandler = this.OffsetsCommittedHandler == null
                     ? default(Action<CommittedOffsets>)
                     : offsets => this.OffsetsCommittedHandler(consumer, offsets),
-                oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
-                    ? default(Action<string>)
-                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(consumer, oAuthBearerConfig),
+                oAuthBearerTokenRefreshHandler = ResolveOAuthBearerHandler(consumer),
                 partitionsAssignedHandler = this.PartitionsAssignedHandler == null
                     ? default(Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>>)
                     : partitions => this.PartitionsAssignedHandler(consumer, partitions),
@@ -118,6 +117,24 @@ namespace Confluent.Kafka
                     : partitions => this.PartitionsLostHandler(consumer, partitions),
                 revokedOrLostHandlerIsFunc = this.RevokedOrLostHandlerIsFunc
             };
+        }
+
+        /// <summary>
+        ///     Selects the OAUTHBEARER refresh handler with the precedence:
+        ///     explicit handler &gt; marker-triggered AWS autowire &gt; none.
+        /// </summary>
+        private Action<string> ResolveOAuthBearerHandler(IConsumer<TKey, TValue> consumer)
+        {
+            if (this.OAuthBearerTokenRefreshHandler != null)
+            {
+                return oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(consumer, oAuthBearerConfig);
+            }
+            var auto = AwsAutoWire.TryCreateHandler(this.Config);
+            if (auto != null)
+            {
+                return oAuthBearerConfig => auto(consumer, oAuthBearerConfig);
+            }
+            return null;
         }
 
         /// <summary>

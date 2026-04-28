@@ -24,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
+using Confluent.Kafka.Internal.OAuthBearer.Aws;
 
 
 namespace Confluent.Kafka
@@ -664,7 +665,9 @@ namespace Confluent.Kafka
             }
 
             var modifiedConfig = Library.NameAndVersionConfig
-                .Concat(config.Where(prop => prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields))
+                .Concat(config.Where(prop =>
+                    prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields &&
+                    !AwsAutoWire.IsMarker(prop)))
                 .ToList();
 
             var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;
