@@ -49,7 +49,9 @@ namespace Confluent.Kafka.IntegrationTests
     {
         private const string EnvGate = "RUN_AWS_STS_REAL";
         private const string TestRegion = "eu-north-1";
-        private const string TestAudience = "https://confluent.cloud/oidc";
+        // Must match the sts:IdentityTokenAudience condition on the test role
+        // (ktrue-iam-sts-test-role) — same value the librdkafka probe uses.
+        private const string TestAudience = "https://api.example.com";
         private const string ExpectedRoleSubstring = "ktrue-iam-sts-test-role";
 
         [SkippableFact]
