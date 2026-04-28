@@ -61,12 +61,25 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
             SaslExtensions = saslExtensions;
         }
 
+        /// <summary>AWS region targeted by the STS call (e.g. <c>us-east-1</c>).</summary>
         public string Region { get; }
+
+        /// <summary>OIDC audience claim the relying party expects.</summary>
         public string Audience { get; }
+
+        /// <summary>Signing algorithm (<c>ES384</c> or <c>RS256</c>); defaults to <c>ES384</c>.</summary>
         public string SigningAlgorithm { get; }
+
+        /// <summary>Requested token lifetime; defaults to 300 seconds, bounded 60–3600.</summary>
         public TimeSpan Duration { get; }
+
+        /// <summary>Optional STS endpoint URL (FIPS, VPC, etc.). <c>null</c> when unset.</summary>
         public string StsEndpointOverride { get; }
+
+        /// <summary>Optional override for the OAUTHBEARER principal name. <c>null</c> means extract JWT <c>sub</c>.</summary>
         public string PrincipalNameOverride { get; }
+
+        /// <summary>SASL extensions to send to the broker (RFC 7628 §3.1). <c>null</c> when none parsed.</summary>
         public IDictionary<string, string> SaslExtensions { get; }
 
         /// <summary>

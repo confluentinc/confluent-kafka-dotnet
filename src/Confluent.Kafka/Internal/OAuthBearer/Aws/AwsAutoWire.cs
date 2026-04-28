@@ -32,7 +32,10 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     /// </remarks>
     public static class AwsAutoWire
     {
+        /// <summary>Config key that activates the AWS reflection autowire path.</summary>
         public const string MarkerKey = "sasl.oauthbearer.metadata.authentication.type";
+
+        /// <summary>On-wire marker value selecting AWS IAM authentication.</summary>
         public const string MarkerValue = "aws_iam";
 
         /// <summary>
