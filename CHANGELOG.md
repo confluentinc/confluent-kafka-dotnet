@@ -1,5 +1,9 @@
 # 2.x.0
 
+## Enhancements
+
+* Add AWS IAM OAUTHBEARER autowire — set `SaslOauthbearerMetadataAuthenticationType.AwsIam` plus `sasl.oauthbearer.config` and reference `AWSSDK.SecurityToken` to mint OAUTHBEARER tokens via AWS STS `GetWebIdentityToken` with no code changes. AWS SDK is reflection-loaded at `Build()` time; `Confluent.Kafka` has no compile-time AWS dependency.
+
 ## Fixes
 
 * Handle anyOf/allOf in JSON transforms #2611

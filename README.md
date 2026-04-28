@@ -269,6 +269,51 @@ For a step-by-step guide on using the .NET client with Confluent Cloud see [Gett
 You can also refer to the [Confluent Cloud example](examples/ConfluentCloud) which demonstrates how to configure the .NET client for use with
 [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
 
+### AWS OAUTHBEARER autowire
+
+If your application runs on AWS (EC2 / EKS / ECS / Lambda) and needs OAUTHBEARER auth to an OIDC-aware broker — typically Confluent Cloud — `Confluent.Kafka` can autowire AWS STS `GetWebIdentityToken` directly. No code changes, no extension methods: two `<PackageReference>`s and two config keys.
+
+Add a reference to the AWS STS SDK alongside `Confluent.Kafka`:
+
+```xml
+<PackageReference Include="Confluent.Kafka" Version="..." />
+<PackageReference Include="AWSSDK.SecurityToken" Version="3.7.504" />
+```
+
+Set the marker key and supply STS arguments via `sasl.oauthbearer.config`:
+
+```csharp
+var cfg = new ConsumerConfig
+{
+    BootstrapServers = "pkc-xxxx.aws.confluent.cloud:9092",
+    SecurityProtocol = SecurityProtocol.SaslSsl,
+    SaslMechanism    = SaslMechanism.OAuthBearer,
+    GroupId          = "my-group",
+    SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
+    SaslOauthbearerConfig =
+        "region=us-east-1 audience=https://confluent.cloud/oidc " +
+        "duration_seconds=3600 extension_logicalCluster=lkc-abc",
+};
+
+using var consumer = new ConsumerBuilder<string, string>(cfg).Build();
+```
+
+`sasl.oauthbearer.config` is a whitespace-separated list of `key=value` pairs:
+
+| Key | Required | Description |
+|---|---|---|
+| `region` | yes | AWS region for the STS endpoint. |
+| `audience` | yes | OIDC audience claim the relying party expects. |
+| `duration_seconds` | no | Token lifetime, 60–3600. Default 300. |
+| `signing_algorithm` | no | `ES384` (default) or `RS256`. |
+| `sts_endpoint` | no | STS endpoint override (FIPS / VPC). |
+| `principal_name` | no | Override the OAUTHBEARER principal name (defaults to the JWT `sub` claim, i.e. the role ARN). |
+| `extension_<name>` | no | SASL extension forwarded to the broker (RFC 7628 §3.1). Confluent Cloud requires `extension_logicalCluster` for cluster routing. |
+
+The AWS SDK is loaded via reflection at `Build()` time — `Confluent.Kafka` itself has no compile-time dependency on `AWSSDK.SecurityToken`. If you set the marker but forget the package reference, `Build()` throws an `InvalidOperationException` with the install command. Calling `SetOAuthBearerTokenRefreshHandler` always wins over the autowire path, so you can opt out of autowire on a per-builder basis.
+
+Credentials are resolved via the AWS SDK's default chain (env vars → assume-role-with-web-identity → ECS / Pod Identity → IMDSv2 → profile). Run `aws iam enable-outbound-web-identity-federation` once on your account before first use.
+
 ### Developer Notes
 
 Instructions on building and testing confluent-kafka-dotnet can be found [here](DEVELOPER.md).
