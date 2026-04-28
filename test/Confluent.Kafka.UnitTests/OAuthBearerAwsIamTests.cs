@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Linq;
 using Xunit;
 
@@ -103,6 +104,163 @@ namespace Confluent.Kafka.UnitTests
             builder.SetOAuthBearerTokenRefreshHandler((c, _) => c.OAuthBearerSetTokenFailure("test no-op"));
 
             using (builder.Build())
+            {
+            }
+        }
+
+        // ---- R4 dispatch precedence ----
+
+        [Fact]
+        public void AwsIam_ExplicitHandlerSet_BypassesAutowireParse_Producer()
+        {
+            // Marker present + sasl.oauthbearer.config that the autowire parser
+            // would reject (unknown_key). Explicit handler should win and the
+            // autowire path should never be entered, so Build() succeeds.
+            var cfg = new ProducerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
+                SaslOauthbearerConfig = "totally_unknown_key=value",
+            };
+
+            var builder = new ProducerBuilder<byte[], byte[]>(cfg);
+            builder.SetOAuthBearerTokenRefreshHandler((p, _) => p.OAuthBearerSetTokenFailure("explicit"));
+
+            using (builder.Build())
+            {
+            }
+        }
+
+        [Fact]
+        public void AwsIam_ExplicitHandlerSet_BypassesAutowireParse_Consumer()
+        {
+            var cfg = new ConsumerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                GroupId = "test-group",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
+                SaslOauthbearerConfig = "totally_unknown_key=value",
+            };
+
+            var builder = new ConsumerBuilder<byte[], byte[]>(cfg);
+            builder.SetOAuthBearerTokenRefreshHandler((c, _) => c.OAuthBearerSetTokenFailure("explicit"));
+
+            using (builder.Build())
+            {
+            }
+        }
+
+        [Fact]
+        public void AwsIam_NoExplicitHandler_AutowireRuns_BadSaslConfig_ProducerThrows()
+        {
+            // Marker present + invalid sasl.oauthbearer.config + no explicit
+            // handler → autowire engages, parser fails, Build() throws.
+            var cfg = new ProducerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
+                SaslOauthbearerConfig = "totally_unknown_key=value",
+            };
+
+            var ex = Assert.Throws<ArgumentException>(
+                () => new ProducerBuilder<byte[], byte[]>(cfg).Build());
+            Assert.Contains("totally_unknown_key", ex.Message);
+        }
+
+        [Fact]
+        public void AwsIam_NoExplicitHandler_AutowireRuns_BadSaslConfig_ConsumerThrows()
+        {
+            var cfg = new ConsumerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                GroupId = "test-group",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
+                SaslOauthbearerConfig = "totally_unknown_key=value",
+            };
+
+            var ex = Assert.Throws<ArgumentException>(
+                () => new ConsumerBuilder<byte[], byte[]>(cfg).Build());
+            Assert.Contains("totally_unknown_key", ex.Message);
+        }
+
+        [Fact]
+        public void AwsIam_NoExplicitHandler_AutowireRuns_MissingSaslConfig_ProducerThrows()
+        {
+            // Marker present + no sasl.oauthbearer.config + no explicit handler
+            // → autowire surfaces the missing-config error.
+            var cfg = new ProducerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
+            };
+
+            var ex = Assert.Throws<ArgumentException>(
+                () => new ProducerBuilder<byte[], byte[]>(cfg).Build());
+            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+        }
+
+        [Fact]
+        public void AwsIam_NoExplicitHandler_ValidSaslConfig_ProducerBuildSucceeds()
+        {
+            // The full happy path from R4's perspective: marker + valid config
+            // → autowire wires a handler and Build() returns a working producer.
+            var cfg = new ProducerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
+                SaslOauthbearerConfig = "region=us-east-1 audience=https://confluent.cloud/oidc",
+            };
+
+            using (new ProducerBuilder<byte[], byte[]>(cfg).Build())
+            {
+            }
+        }
+
+        [Fact]
+        public void AwsIam_NoExplicitHandler_ValidSaslConfig_ConsumerBuildSucceeds()
+        {
+            var cfg = new ConsumerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                GroupId = "test-group",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
+                SaslOauthbearerConfig = "region=us-east-1 audience=https://confluent.cloud/oidc",
+            };
+
+            using (new ConsumerBuilder<byte[], byte[]>(cfg).Build())
+            {
+            }
+        }
+
+        [Fact]
+        public void AwsIam_NoExplicitHandler_ValidSaslConfig_AdminClientBuildSucceeds()
+        {
+            // Verifies AdminClient delegates correctly: the inner Producer<Null,Null>
+            // sees the marker and runs autowire.
+            var cfg = new AdminClientConfig
+            {
+                BootstrapServers = "localhost:9092",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
+                SaslOauthbearerConfig = "region=us-east-1 audience=https://confluent.cloud/oidc",
+            };
+
+            using (new AdminClientBuilder(cfg).Build())
             {
             }
         }
