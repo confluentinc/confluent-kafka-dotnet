@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+        <Authors>Confluent Inc.</Authors>
+        <Description>AWS STS based OAUTHBEARER token provider for Confluent.Kafka.</Description>
+        <Copyright>Copyright 2026 Confluent Inc.</Copyright>
+        <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageIcon>confluent-logo.png</PackageIcon>
+        <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+        <PackageTags>Kafka;Confluent;OAUTHBEARER;OAuth;AWS;STS;IAM</PackageTags>
+        <PackageId>Confluent.Kafka.OAuthBearer.Aws</PackageId>
+        <Title>Confluent.Kafka.OAuthBearer.Aws</Title>
+        <AssemblyName>Confluent.Kafka.OAuthBearer.Aws</AssemblyName>
+        <TargetFrameworks>$(TargetFrameworks);netstandard2.1;net462</TargetFrameworks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>Confluent.Kafka.OAuthBearer.Aws.snk</AssemblyOriginatorKeyFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Confluent.Kafka\Confluent.Kafka.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.504" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+</Project>
