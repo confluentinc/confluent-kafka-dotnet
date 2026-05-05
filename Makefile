@@ -11,7 +11,7 @@ TEST_DIRS=$(shell find ./test -name '*.csproj' -exec dirname {} \;)
 UNIT_TEST_DIRS=$(shell find . -type d -regex '.*UnitTests$$' -exec basename {} \;)
 
 # We want to run tests by default with latest version of .NET
-DEFAULT_TEST_FRAMEWORK?=net8.0
+DEFAULT_TEST_FRAMEWORK?=net10.0
 
 all:
 	@echo "Usage:   make <dotnet-command>"
