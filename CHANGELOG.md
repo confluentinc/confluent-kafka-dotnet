@@ -1,5 +1,9 @@
 # 2.x.0
 
+## Enhancements
+
+* Added support for .NET 10 (LTS) and dropped support for .NET 6 (end of support since November 2024). The library now multi-targets `net8.0` and `net10.0` alongside `netstandard2.0` and `net462`. Builds on the approach proposed in #2545 by @ffernandolima, adapted for the centralized `Directory.Build.props` structure on current master.
+
 ## Fixes
 
 * Handle anyOf/allOf in JSON transforms (#2611)
