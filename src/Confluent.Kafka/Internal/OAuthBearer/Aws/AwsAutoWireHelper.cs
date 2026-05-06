@@ -22,7 +22,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     ///     dispatch the AWS IAM autowire path. Centralised so the three builder
     ///     classes hold identical dispatch logic.
     /// </summary>
-    public static class OAuthBearerAutoWireSupport
+    public static class AwsAutoWireHelper
     {
         private const string SaslOauthbearerMethodKey = "sasl.oauthbearer.method";
         private const string SaslOauthbearerMethodOidcValue = "oidc";

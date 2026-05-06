@@ -64,12 +64,12 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.False(AwsIamMarker.IsMarker(prop));
         }
 
-        // ---- OAuthBearerAutoWireSupport.SnapshotConfig ----
+        // ---- AwsAutoWireHelper.SnapshotConfig ----
 
         [Fact]
         public void SnapshotConfig_NullEnumerable_ReturnsEmpty()
         {
-            var snap = OAuthBearerAutoWireSupport.SnapshotConfig(null);
+            var snap = AwsAutoWireHelper.SnapshotConfig(null);
             Assert.Empty(snap);
         }
 
@@ -81,12 +81,12 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 new KeyValuePair<string, string>("k", "v1"),
                 new KeyValuePair<string, string>("k", "v2"),
             };
-            var snap = OAuthBearerAutoWireSupport.SnapshotConfig(entries);
+            var snap = AwsAutoWireHelper.SnapshotConfig(entries);
             Assert.Single(snap);
             Assert.Equal("v2", snap["k"]);
         }
 
-        // ---- OAuthBearerAutoWireSupport.HasAwsIamMarker ----
+        // ---- AwsAutoWireHelper.HasAwsIamMarker ----
 
         [Fact]
         public void HasAwsIamMarker_Present_ReturnsTrue()
@@ -95,14 +95,14 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             {
                 ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
             };
-            Assert.True(OAuthBearerAutoWireSupport.HasAwsIamMarker(snap));
+            Assert.True(AwsAutoWireHelper.HasAwsIamMarker(snap));
         }
 
         [Fact]
         public void HasAwsIamMarker_Absent_ReturnsFalse()
         {
             var snap = new Dictionary<string, string> { ["bootstrap.servers"] = "x:9092" };
-            Assert.False(OAuthBearerAutoWireSupport.HasAwsIamMarker(snap));
+            Assert.False(AwsAutoWireHelper.HasAwsIamMarker(snap));
         }
 
         [Fact]
@@ -112,10 +112,10 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             {
                 ["sasl.oauthbearer.metadata.authentication.type"] = "azure_imds",
             };
-            Assert.False(OAuthBearerAutoWireSupport.HasAwsIamMarker(snap));
+            Assert.False(AwsAutoWireHelper.HasAwsIamMarker(snap));
         }
 
-        // ---- OAuthBearerAutoWireSupport.RejectIfMethodIsOidc ----
+        // ---- AwsAutoWireHelper.RejectIfMethodIsOidc ----
 
         [Fact]
         public void RejectIfMethodIsOidc_MethodOidc_Throws()
@@ -125,7 +125,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 ["sasl.oauthbearer.method"] = "oidc",
             };
             var ex = Assert.Throws<InvalidOperationException>(
-                () => OAuthBearerAutoWireSupport.RejectIfMethodIsOidc(snap));
+                () => AwsAutoWireHelper.RejectIfMethodIsOidc(snap));
             Assert.Contains("sasl.oauthbearer.method", ex.Message);
             Assert.Contains("aws_iam", ex.Message);
         }
@@ -138,14 +138,14 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 ["sasl.oauthbearer.method"] = "OIDC",
             };
             Assert.Throws<InvalidOperationException>(
-                () => OAuthBearerAutoWireSupport.RejectIfMethodIsOidc(snap));
+                () => AwsAutoWireHelper.RejectIfMethodIsOidc(snap));
         }
 
         [Fact]
         public void RejectIfMethodIsOidc_MethodMissing_Allowed()
         {
             var snap = new Dictionary<string, string>();
-            OAuthBearerAutoWireSupport.RejectIfMethodIsOidc(snap); // does not throw
+            AwsAutoWireHelper.RejectIfMethodIsOidc(snap); // does not throw
         }
 
         [Fact]
@@ -155,7 +155,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             {
                 ["sasl.oauthbearer.method"] = "default",
             };
-            OAuthBearerAutoWireSupport.RejectIfMethodIsOidc(snap); // does not throw
+            AwsAutoWireHelper.RejectIfMethodIsOidc(snap); // does not throw
         }
 
         // ---- AwsAutoWireDispatcher.LoadHandler ----
