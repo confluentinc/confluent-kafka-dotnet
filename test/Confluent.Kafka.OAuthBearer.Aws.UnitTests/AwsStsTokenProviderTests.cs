@@ -104,6 +104,32 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.Equal("ES384", fake.LastRequest.SigningAlgorithm);
         }
 
+        [Fact]
+        public async Task GetTokenAsync_TagsPassthrough()
+        {
+            var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
+            var cfg = AwsOAuthBearerConfig.Parse(
+                "region=us-east-1 audience=https://a tag_team=platform tag_environment=prod");
+            var provider = new AwsStsTokenProvider(cfg, fake);
+            await provider.GetTokenAsync();
+
+            Assert.Equal(2, fake.LastRequest.Tags.Count);
+            Assert.Contains(fake.LastRequest.Tags, t => t.Key == "team" && t.Value == "platform");
+            Assert.Contains(fake.LastRequest.Tags, t => t.Key == "environment" && t.Value == "prod");
+        }
+
+        [Fact]
+        public async Task GetTokenAsync_NoTags_RequestTagsRemainsUnset()
+        {
+            var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var provider = new AwsStsTokenProvider(cfg, fake);
+            await provider.GetTokenAsync();
+
+            // SDK leaves Tags null when not set; we should not have allocated an empty list.
+            Assert.True(fake.LastRequest.Tags == null || fake.LastRequest.Tags.Count == 0);
+        }
+
         // ---- Response mapping ----
 
         [Fact]

@@ -111,6 +111,15 @@ namespace Confluent.Kafka.OAuthBearer.Aws
                 DurationSeconds = (int)_cfg.Duration.TotalSeconds,
             };
 
+            if (_cfg.Tags != null)
+            {
+                request.Tags = new List<Tag>();
+                foreach (var kv in _cfg.Tags)
+                {
+                    request.Tags.Add(new Tag { Key = kv.Key, Value = kv.Value });
+                }
+            }
+
             var response = await _sts.GetWebIdentityTokenAsync(request, ct)
                 .ConfigureAwait(false);
 
