@@ -20,7 +20,7 @@ using Amazon;
 using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
 
-namespace Confluent.Kafka.OAuthBearer.Aws
+namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
     /// <summary>
     ///     Fetches OAUTHBEARER tokens via AWS STS <c>GetWebIdentityToken</c>.

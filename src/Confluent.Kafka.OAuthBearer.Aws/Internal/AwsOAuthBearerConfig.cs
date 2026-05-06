@@ -15,7 +15,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Confluent.Kafka.OAuthBearer.Aws
+namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
     /// <summary>
     ///     Internal typed view of the <c>sasl.oauthbearer.config</c> string used

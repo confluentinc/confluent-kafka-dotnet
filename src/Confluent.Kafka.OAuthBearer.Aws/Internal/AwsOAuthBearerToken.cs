@@ -14,7 +14,7 @@
 
 using System.Collections.Generic;
 
-namespace Confluent.Kafka.OAuthBearer.Aws
+namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
     /// <summary>
     ///     A minted OAUTHBEARER token ready to be handed to

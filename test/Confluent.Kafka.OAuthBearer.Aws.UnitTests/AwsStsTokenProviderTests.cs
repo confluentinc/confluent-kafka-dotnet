@@ -18,6 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
+using Confluent.Kafka.OAuthBearer.Aws.Internal;
 using Xunit;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests

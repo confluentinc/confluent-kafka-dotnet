@@ -17,7 +17,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Confluent.Kafka.OAuthBearer.Aws
+namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
     /// <summary>
     ///     Extracts the <c>sub</c> claim from unverified JWT.

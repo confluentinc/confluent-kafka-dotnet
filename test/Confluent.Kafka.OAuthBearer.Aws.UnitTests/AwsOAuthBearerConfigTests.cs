@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using Confluent.Kafka.OAuthBearer.Aws.Internal;
 using Xunit;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests

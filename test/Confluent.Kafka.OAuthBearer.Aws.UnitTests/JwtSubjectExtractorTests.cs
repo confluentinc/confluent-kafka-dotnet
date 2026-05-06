@@ -14,6 +14,7 @@
 
 using System;
 using System.Text;
+using Confluent.Kafka.OAuthBearer.Aws.Internal;
 using Xunit;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests

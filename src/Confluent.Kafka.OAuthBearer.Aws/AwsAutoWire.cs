@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka.OAuthBearer.Aws.Internal;
 
 namespace Confluent.Kafka.OAuthBearer.Aws
 {

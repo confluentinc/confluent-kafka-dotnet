@@ -15,7 +15,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Confluent.Kafka.OAuthBearer.Aws
+namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
     /// <summary>
     ///     Glue between <see cref="AwsStsTokenProvider"/> and Confluent.Kafka's
