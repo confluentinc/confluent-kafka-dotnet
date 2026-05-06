@@ -592,7 +592,8 @@ namespace Confluent.Kafka
                     .Where(prop =>
                         prop.Key != ConfigPropertyNames.Producer.EnableBackgroundPoll &&
                         prop.Key != ConfigPropertyNames.Producer.EnableDeliveryReports &&
-                        prop.Key != ConfigPropertyNames.Producer.DeliveryReportFields))
+                        prop.Key != ConfigPropertyNames.Producer.DeliveryReportFields &&
+                        !Internal.OAuthBearer.Aws.AwsIamMarker.IsMarker(prop))) // TODO(post-dev_oauthbearer_awsiam): drop this clause
                 .ToList();
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
