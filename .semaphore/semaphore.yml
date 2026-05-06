@@ -66,6 +66,7 @@ blocks:
             - dotnet test -f net8.0 -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
             - dotnet test -f net8.0 -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj
             - dotnet test -f net8.0 -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj
+            - dotnet test -f net8.0 -c ${CONFIGURATION} --no-build test/Confluent.Kafka.OAuthBearer.Aws.UnitTests/Confluent.Kafka.OAuthBearer.Aws.UnitTests.csproj
   - name: 'Windows Artifacts on untagged commits'
     run:
       when: "tag !~ '.*'"
