@@ -128,12 +128,54 @@ namespace Confluent.Kafka
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(producer, stats),
-                oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
-                    ? default(Action<string>)
-                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
+                oAuthBearerTokenRefreshHandler = ResolveOAuthBearerHandler(producer),
                 partitioners = this.Partitioners,
                 defaultPartitioner = this.DefaultPartitioner,
             };
+        }
+
+        /// <summary>
+        ///     Selects the OAUTHBEARER refresh handler with the precedence:
+        ///     explicit handler &gt; AWS IAM marker autowire &gt; none.
+        /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///         If the explicit handler is set via
+        ///         <see cref="SetOAuthBearerTokenRefreshHandler"/>, it wins and the
+        ///         marker is silently ignored. Otherwise, if the AWS IAM marker
+        ///         (<c>sasl.oauthbearer.metadata.authentication.type=aws_iam</c>) is
+        ///         present in the config, the optional
+        ///         <c>Confluent.Kafka.OAuthBearer.Aws</c> package is loaded via
+        ///         <see cref="Internal.OAuthBearer.Aws.AwsAutoWireDispatcher"/> and
+        ///         its <c>AwsAutoWire.CreateHandler</c> entry-point produces the
+        ///         handler. Otherwise no handler is configured and librdkafka's
+        ///         default unsecured-JWT path applies.
+        ///     </para>
+        ///     <para>
+        ///         The AWS IAM marker is incompatible with
+        ///         <c>sasl.oauthbearer.method=oidc</c> — that combination would
+        ///         engage librdkafka's OIDC subsystem and bypass our refresh
+        ///         handler. Detected and rejected at <c>Build()</c> with a friendly
+        ///         <see cref="InvalidOperationException"/>.
+        ///     </para>
+        /// </remarks>
+        private Action<string> ResolveOAuthBearerHandler(IProducer<TKey, TValue> producer)
+        {
+            if (this.OAuthBearerTokenRefreshHandler != null)
+            {
+                return oAuthBearerConfig =>
+                    this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig);
+            }
+
+            var snapshot = Internal.OAuthBearer.Aws.AwsAutoWireHelper.SnapshotConfig(this.Config);
+            if (!Internal.OAuthBearer.Aws.AwsAutoWireHelper.HasAwsIamMarker(snapshot))
+            {
+                return null;
+            }
+
+            Internal.OAuthBearer.Aws.AwsAutoWireHelper.RejectIfMethodIsOidc(snapshot);
+            var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);
+            return oAuthBearerConfig => handler(producer, oAuthBearerConfig);
         }
 
         /// <summary>
