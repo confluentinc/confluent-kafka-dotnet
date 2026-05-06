@@ -33,6 +33,14 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///     activation marker. Used by Producer/Consumer/AdminClient config
         ///     processing to strip the entry before passing to librdkafka.
         /// </summary>
+        /// <remarks>
+        ///     TODO(post-dev_oauthbearer_awsiam): Once <c>librdkafka.redist</c> is bumped
+        ///     to a version that recognises the <c>aws_iam</c> enum value (see
+        ///     librdkafka PR adding the no-op handler), this method and its callers
+        ///     in <c>Producer.cs</c> / <c>Consumer.cs</c> become unnecessary and can
+        ///     be deleted. The <see cref="Key"/> and <see cref="Value"/> constants
+        ///     stay — they're still used by the dispatcher and friendly-error paths.
+        /// </remarks>
         public static bool IsMarker(KeyValuePair<string, string> prop)
             => prop.Key == Key
                && string.Equals(prop.Value, Value, StringComparison.OrdinalIgnoreCase);
