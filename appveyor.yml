@@ -28,6 +28,9 @@ build_script:
   - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c %CONFIGURATION%)
   - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
 
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka.OAuthBearer.Aws/Confluent.Kafka.OAuthBearer.Aws.csproj -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka.OAuthBearer.Aws/Confluent.Kafka.OAuthBearer.Aws.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+
   - docfx doc/docfx.json
 
 after_build:
@@ -44,6 +47,7 @@ artifacts:
   - path: ./src/Confluent.SchemaRegistry.Serdes.Protobuf/bin*/Release/*.nupkg
   - path: ./src/Confluent.SchemaRegistry.Serdes.Json/bin*/Release/*.nupkg
   - path: ./src/Confluent.SchemaRegistry/bin*/Release/*.nupkg
+  - path: ./src/Confluent.Kafka.OAuthBearer.Aws/bin*/Release/*.nupkg
   - path: ./docs*.zip
     name: docs
 
