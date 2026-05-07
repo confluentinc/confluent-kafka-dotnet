@@ -664,7 +664,9 @@ namespace Confluent.Kafka
             }
 
             var modifiedConfig = Library.NameAndVersionConfig
-                .Concat(config.Where(prop => prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields))
+                .Concat(config.Where(prop =>
+                    prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields &&
+                    !Internal.OAuthBearer.Aws.AwsIamMarker.IsMarker(prop))) // TODO(post-dev_oauthbearer_awsiam): drop this clause
                 .ToList();
 
             var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;
