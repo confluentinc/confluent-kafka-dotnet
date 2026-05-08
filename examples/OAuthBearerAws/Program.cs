@@ -51,9 +51,9 @@ namespace Confluent.Kafka.Examples.OAuthBearerAws
             var topicName = Guid.NewGuid().ToString();
             var groupId   = Guid.NewGuid().ToString();
 
-            // The two AWS-autowire activation keys, plus extensions embedded inside
-            // SaslOauthbearerConfig. Do NOT set SaslOauthbearerMethod=Oidc — the AWS
-            // path uses the default method.
+            // The two AWS-autowire activation keys; SASL extensions go in the typed
+            // SaslOauthbearerExtensions property (not embedded in SaslOauthbearerConfig).
+            // Do NOT set SaslOauthbearerMethod=Oidc — the AWS path uses the default method.
             var commonConfig = new ClientConfig
             {
                 BootstrapServers = bootstrapServers,
@@ -62,9 +62,10 @@ namespace Confluent.Kafka.Examples.OAuthBearerAws
                 SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
                 SaslOauthbearerConfig =
                     $"region={awsRegion} " +
-                    $"audience={oidcAudience} " +
-                    $"extension_logicalCluster={kafkaLogicalCluster} " +
-                    $"extension_identityPoolId={identityPoolId}",
+                    $"audience={oidcAudience}",
+                SaslOauthbearerExtensions =
+                    $"logicalCluster={kafkaLogicalCluster}," +
+                    $"identityPoolId={identityPoolId}",
             };
 
             var consumerConfig = new ConsumerConfig(commonConfig)

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using Confluent.Kafka.OAuthBearer.Aws.Internal;
 using Xunit;
 
@@ -182,36 +183,38 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.Equal("my-principal", cfg.PrincipalNameOverride);
         }
 
-        // ---- extension_<name> ----
+        // ---- saslExtensions argument (typed property pass-through) ----
 
         [Fact]
-        public void Parse_SingleExtension_CollectedIntoSaslExtensions()
+        public void Parse_ExtensionPrefixInConfig_NowRejectedAsUnknownKey()
         {
-            var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a extension_logicalCluster=lkc-abc");
-            Assert.NotNull(cfg.SaslExtensions);
-            Assert.Equal("lkc-abc", cfg.SaslExtensions["logicalCluster"]);
-        }
-
-        [Fact]
-        public void Parse_MultipleExtensions_AllCollected()
-        {
-            var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a " +
-                "extension_logicalCluster=lkc-abc " +
-                "extension_identityPoolId=pool-xyz");
-            Assert.Equal(2, cfg.SaslExtensions.Count);
-            Assert.Equal("lkc-abc", cfg.SaslExtensions["logicalCluster"]);
-            Assert.Equal("pool-xyz", cfg.SaslExtensions["identityPoolId"]);
-        }
-
-        [Fact]
-        public void Parse_EmptyExtensionName_Throws()
-        {
+            // sasl extensions moved to the typed sasl.oauthbearer.extensions property;
+            // the legacy extension_<name>= form must no longer be accepted.
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(
-                    "region=us-east-1 audience=https://a extension_=value"));
-            Assert.Contains("extension_", ex.Message);
+                    "region=us-east-1 audience=https://a extension_logicalCluster=lkc-abc"));
+            Assert.Contains("extension_logicalCluster", ex.Message);
+        }
+
+        [Fact]
+        public void Parse_SaslExtensionsArg_StoredOnConfig()
+        {
+            var ext = new System.Collections.Generic.Dictionary<string, string>
+            {
+                { "logicalCluster", "lkc-abc" },
+                { "identityPoolId", "pool-xyz" },
+            };
+            var cfg = AwsOAuthBearerConfig.Parse(
+                "region=us-east-1 audience=https://a", ext);
+            Assert.Same(ext, cfg.SaslExtensions);
+        }
+
+        [Fact]
+        public void Parse_SaslExtensionsArg_NullKeepsSaslExtensionsNull()
+        {
+            var cfg = AwsOAuthBearerConfig.Parse(
+                "region=us-east-1 audience=https://a", null);
+            Assert.Null(cfg.SaslExtensions);
         }
 
         // ---- tag_<name> ----
@@ -261,17 +264,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var cfg = AwsOAuthBearerConfig.Parse(
                 "region=us-east-1 audience=https://a tag_team=infra tag_team=platform");
-            Assert.Equal("platform", cfg.Tags["team"]);
-        }
-
-        [Fact]
-        public void Parse_TagsAndExtensionsCoexist()
-        {
-            var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a " +
-                "extension_logicalCluster=lkc-abc " +
-                "tag_team=platform");
-            Assert.Equal("lkc-abc", cfg.SaslExtensions["logicalCluster"]);
             Assert.Equal("platform", cfg.Tags["team"]);
         }
 
@@ -371,6 +363,10 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_AllFieldsTogether_AllPopulatedCorrectly()
         {
+            var saslExtensions = new System.Collections.Generic.Dictionary<string, string>
+            {
+                { "logicalCluster", "lkc-abc" },
+            };
             var cfg = AwsOAuthBearerConfig.Parse(
                 "region=us-east-1 " +
                 "audience=https://confluent.cloud/oidc " +
@@ -378,8 +374,8 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 "signing_algorithm=RS256 " +
                 "sts_endpoint=https://sts.us-east-1.amazonaws.com " +
                 "principal_name=test-principal " +
-                "extension_logicalCluster=lkc-abc " +
-                "tag_team=platform");
+                "tag_team=platform",
+                saslExtensions);
 
             Assert.Equal("us-east-1", cfg.Region);
             Assert.Equal("https://confluent.cloud/oidc", cfg.Audience);

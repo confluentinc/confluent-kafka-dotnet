@@ -27,7 +27,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         internal static readonly TimeSpan DefaultDuration = TimeSpan.FromSeconds(300);
         internal static readonly TimeSpan MinDuration = TimeSpan.FromSeconds(60);
         internal static readonly TimeSpan MaxDuration = TimeSpan.FromSeconds(3600);
-        private const string ExtensionKeyPrefix = "extension_";
         private const string TagKeyPrefix = "tag_";
         private const int MaxTags = 50;
 
@@ -88,7 +87,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///       signing_algorithm=ES384|RS256       (default: ES384)
         ///       sts_endpoint=&lt;url&gt;             (optional, FIPS / VPC)
         ///       principal_name=&lt;value&gt;         (optional, override JWT 'sub')
-        ///       extension_&lt;name&gt;=&lt;value&gt;  (zero or more SASL extensions)
         ///       tag_&lt;name&gt;=&lt;value&gt;        (zero or more JWT custom claims, max 50)
         ///     </code>
         /// </remarks>
@@ -97,7 +95,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///     A required key is missing, an unknown key appears, or a value is
         ///     malformed / out of range.
         /// </exception>
-        internal static AwsOAuthBearerConfig Parse(string raw)
+        internal static AwsOAuthBearerConfig Parse(string raw, IDictionary<string, string> saslExtensions = null)
         {
             if (raw == null) throw new ArgumentNullException(nameof(raw));
 
@@ -107,7 +105,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             string stsEndpoint = null;
             string principalName = null;
             int? durationSeconds = null;
-            Dictionary<string, string> extensions = null;
             Dictionary<string, string> tags = null;
 
             foreach (var token in raw.Split(new[] { ' ', '\t', '\r', '\n' },
@@ -153,21 +150,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
                         principalName = value;
                         break;
                     default:
-                        if (key.StartsWith(ExtensionKeyPrefix, StringComparison.Ordinal))
-                        {
-                            var name = key.Substring(ExtensionKeyPrefix.Length);
-                            if (name.Length == 0)
-                            {
-                                throw new ArgumentException(
-                                    $"sasl.oauthbearer.config extension key '{key}' has empty name.");
-                            }
-                            if (extensions == null)
-                            {
-                                extensions = new Dictionary<string, string>();
-                            }
-                            extensions[name] = value;
-                        }
-                        else if (key.StartsWith(TagKeyPrefix, StringComparison.Ordinal))
+                        if (key.StartsWith(TagKeyPrefix, StringComparison.Ordinal))
                         {
                             var name = key.Substring(TagKeyPrefix.Length);
                             if (name.Length == 0)
@@ -227,7 +210,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
                 duration: TimeSpan.FromSeconds(durationSeconds ?? (int)DefaultDuration.TotalSeconds),
                 stsEndpointOverride: stsEndpoint,
                 principalNameOverride: principalName,
-                saslExtensions: extensions,
+                saslExtensions: saslExtensions,
                 tags: tags);
         }
 

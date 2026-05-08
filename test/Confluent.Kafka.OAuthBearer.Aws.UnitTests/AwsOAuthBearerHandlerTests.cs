@@ -70,7 +70,8 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                     {
                         WebIdentityToken = CannedJwt, Expiration = CannedExpiry,
                     }),
-                "region=us-east-1 audience=https://a extension_logicalCluster=lkc-1");
+                "region=us-east-1 audience=https://a",
+                new Dictionary<string, string> { { "logicalCluster", "lkc-1" } });
             var sink = new RecordingSink();
 
             AwsOAuthBearerHandler.Invoke(provider, sink);
@@ -213,12 +214,14 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 
         private static AwsStsTokenProvider NewProvider(
             Func<GetWebIdentityTokenRequest, CancellationToken,
-                 Task<GetWebIdentityTokenResponse>> responder,
-            string configString = "region=us-east-1 audience=https://a")
+                Task<GetWebIdentityTokenResponse>> responder,
+            string configString = "region=us-east-1 audience=https://a",
+            IDictionary<string, string> saslExtensions = null)
         {
-            var cfg = AwsOAuthBearerConfig.Parse(configString);
+            var cfg = AwsOAuthBearerConfig.Parse(configString, saslExtensions);
             return new AwsStsTokenProvider(cfg, new FakeStsClient(responder));
         }
+
 
         private static string MakeJwt(string payloadJson)
         {

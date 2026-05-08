@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -201,9 +202,14 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public async Task GetTokenAsync_SaslExtensions_Passthrough()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
+            var saslExtensions = new Dictionary<string, string>
+            {
+                { "logicalCluster", "lkc-123" },
+                { "identityPoolId", "pool-x" },
+            };
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a " +
-                "extension_logicalCluster=lkc-123 extension_identityPoolId=pool-x");
+                "region=us-east-1 audience=https://a",
+                saslExtensions);
             var provider = new AwsStsTokenProvider(cfg, fake);
             var tok = await provider.GetTokenAsync();
             Assert.NotNull(tok.Extensions);

@@ -21,7 +21,8 @@ Users who don't reference this package see zero AWS dependencies in their depend
 ### Minimum configuration
 
 Two required keys in `SaslOauthbearerConfig`: `region` and `audience`. Defaults
-apply for everything else (300s lifetime, ES384 signing, no extensions, no tags).
+apply for everything else (300s lifetime, ES384 signing, no tags). SASL extensions,
+when needed, are set on the typed `SaslOauthbearerExtensions` property (see below).
 
 ```csharp
 using Confluent.Kafka;
@@ -65,10 +66,11 @@ var cfg = new ConsumerConfig
         "signing_algorithm=ES384 " +
         "sts_endpoint=https://sts-fips.us-east-1.amazonaws.com " +
         "principal_name=my-explicit-principal " +
-        "extension_logicalCluster=lkc-abc " +
-        "extension_identityPoolId=pool-xyz " +
         "tag_team=platform " +
         "tag_environment=prod",
+    SaslOauthbearerExtensions =
+        "logicalCluster=lkc-abc," +
+        "identityPoolId=pool-xyz",
 };
 
 using var consumer = new ConsumerBuilder<string, string>(cfg).Build();
@@ -94,8 +96,20 @@ consumer.Subscribe("my-topic");
 | `signing_algorithm` | `ES384` | JWT signing algorithm. Either `ES384` or `RS256`. |
 | `sts_endpoint` | _(SDK default)_ | Override STS endpoint URL. Use for FIPS (`sts-fips.us-east-1.amazonaws.com`) or VPC endpoints. |
 | `principal_name` | _(JWT `sub` claim)_ | Override the OAUTHBEARER principal. Defaults to extracting `sub` from the minted JWT (the role ARN). |
-| `extension_<NAME>` | _(none)_ | RFC 7628 §3.1 SASL extensions forwarded to the broker. Repeatable. |
 | `tag_<NAME>` | _(none)_ | Custom tag claims added to the minted JWT (max 50). Repeatable. |
+
+### SASL extensions
+
+RFC 7628 §3.1 SASL extensions are forwarded verbatim to the broker (separately from
+the JWT). Configure them through the typed `SaslOauthbearerExtensions` property —
+not inside `SaslOauthbearerConfig` — as a comma-separated list of `key=value` pairs:
+
+```csharp
+SaslOauthbearerExtensions = "logicalCluster=lkc-abc,identityPoolId=pool-xyz",
+```
+
+This matches the cross-language convention used by the Python, Go, and JavaScript
+bindings (e.g. for the existing AzureIMDS flow).
 
 ## Prerequisites
 

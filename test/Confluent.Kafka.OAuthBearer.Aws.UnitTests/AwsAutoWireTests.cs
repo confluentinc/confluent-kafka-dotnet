@@ -118,18 +118,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 "duration_seconds=900 signing_algorithm=RS256 " +
                 "sts_endpoint=https://sts.us-east-1.amazonaws.com " +
                 "principal_name=my-principal " +
-                "extension_logicalCluster=lkc-abc extension_identityPoolId=pool-x" +
                 "tag_team=platform tag_environment=prod");
-            var handler = AwsAutoWire.CreateHandler(config);
-            Assert.NotNull(handler);
-        }
-
-        [Fact]
-        public void CreateHandler_ExtensionsParsed_HandlerReady()
-        {
-            // Verify extension_<NAME> entries don't trip parsing (no throw).
-            var config = NewConfig(
-                "region=us-east-1 audience=https://a extension_traceId=abc-123");
             var handler = AwsAutoWire.CreateHandler(config);
             Assert.NotNull(handler);
         }
@@ -151,6 +140,113 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             // Verify principal_name doesn't trip parsing (no throw).
             var config = NewConfig(
                 "region=us-east-1 audience=https://a principal_name=explicit-principal");
+            var handler = AwsAutoWire.CreateHandler(config);
+            Assert.NotNull(handler);
+        }
+
+        // ---- Typed sasl.oauthbearer.extensions parsing ----
+
+        [Fact]
+        public void CreateHandler_TypedExtensions_SingleEntry_HandlerReady()
+        {
+            var config = NewConfig(
+                "region=us-east-1 audience=https://a",
+                "logicalCluster=lkc-abc");
+            var handler = AwsAutoWire.CreateHandler(config);
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public void CreateHandler_TypedExtensions_MultipleEntries_HandlerReady()
+        {
+            var config = NewConfig(
+                "region=us-east-1 audience=https://a",
+                "logicalCluster=lkc-abc,identityPoolId=pool-x");
+            var handler = AwsAutoWire.CreateHandler(config);
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public void CreateHandler_TypedExtensions_WhitespaceAroundCommas_HandlerReady()
+        {
+            // Each comma-delimited entry is trimmed before parsing.
+            var config = NewConfig(
+                "region=us-east-1 audience=https://a",
+                " logicalCluster=lkc-abc ,  identityPoolId=pool-x ");
+            var handler = AwsAutoWire.CreateHandler(config);
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public void CreateHandler_TypedExtensions_EmptyEntries_Tolerated()
+        {
+            // Stray commas (leading, trailing, doubled) collapse to no-ops, not errors.
+            var config = NewConfig(
+                "region=us-east-1 audience=https://a",
+                "logicalCluster=lkc-abc,,identityPoolId=pool-x,");
+            var handler = AwsAutoWire.CreateHandler(config);
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public void CreateHandler_TypedExtensions_EmptyValue_Accepted()
+        {
+            // RFC 7628 SASL extensions allow empty values; mirror that.
+            var config = NewConfig(
+                "region=us-east-1 audience=https://a",
+                "logicalCluster=");
+            var handler = AwsAutoWire.CreateHandler(config);
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public void CreateHandler_TypedExtensions_MissingEquals_Throws()
+        {
+            var config = NewConfig(
+                "region=us-east-1 audience=https://a",
+                "noEqualsHere");
+            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(config));
+            Assert.Contains("sasl.oauthbearer.extensions", ex.Message);
+        }
+
+        [Fact]
+        public void CreateHandler_TypedExtensions_EmptyKey_Throws()
+        {
+            var config = NewConfig(
+                "region=us-east-1 audience=https://a",
+                "=value");
+            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(config));
+            Assert.Contains("sasl.oauthbearer.extensions", ex.Message);
+        }
+
+        [Fact]
+        public void CreateHandler_TypedExtensions_DuplicateKey_LastWins()
+        {
+            // Locks in the result[name] = value overwrite semantics so we don't
+            // accidentally regress to throwing on duplicates.
+            var config = NewConfig(
+                "region=us-east-1 audience=https://a",
+                "k=a,k=b");
+            var handler = AwsAutoWire.CreateHandler(config);
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public void CreateHandler_TypedExtensions_EmptyString_TreatedAsAbsent()
+        {
+            // Empty value short-circuits via string.IsNullOrEmpty — no throw, no dict.
+            var config = NewConfig(
+                "region=us-east-1 audience=https://a",
+                "");
+            var handler = AwsAutoWire.CreateHandler(config);
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public void CreateHandler_TypedExtensions_AbsentKey_HandlerReady()
+        {
+            // No sasl.oauthbearer.extensions in the dict at all — clean default.
+            var config = NewConfig("region=us-east-1 audience=https://a");
             var handler = AwsAutoWire.CreateHandler(config);
             Assert.NotNull(handler);
         }
@@ -184,15 +280,26 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         // ---- Helper ----
 
         /// <summary>
-        ///     Builds a minimal config dict with only the
-        ///     <c>sasl.oauthbearer.config</c> entry that <see cref="AwsAutoWire.CreateHandler"/>
-        ///     reads. The marker key is not required here because core's
-        ///     dispatcher (which checks the marker) is upstream of this entry-point.
+        ///     Builds a minimal config dict with the
+        ///     <c>sasl.oauthbearer.config</c> entry (and optionally a
+        ///     <c>sasl.oauthbearer.extensions</c> entry) that
+        ///     <see cref="AwsAutoWire.CreateHandler"/> reads. The marker key is not
+        ///     required here because core's dispatcher (which checks the marker) is
+        ///     upstream of this entry-point.
         /// </summary>
-        private static IReadOnlyDictionary<string, string> NewConfig(string saslOauthbearerConfig)
-            => new Dictionary<string, string>
+        private static IReadOnlyDictionary<string, string> NewConfig(
+            string saslOauthbearerConfig,
+            string saslOauthbearerExtensions = null)
+        {
+            var dict = new Dictionary<string, string>
             {
                 ["sasl.oauthbearer.config"] = saslOauthbearerConfig,
             };
+            if (saslOauthbearerExtensions != null)
+            {
+                dict["sasl.oauthbearer.extensions"] = saslOauthbearerExtensions;
+            }
+            return dict;
+        }
     }
 }
