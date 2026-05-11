@@ -34,6 +34,7 @@ var cfg = new ConsumerConfig
     SaslMechanism    = SaslMechanism.OAuthBearer,
     GroupId          = "my-group",
 
+    SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
     SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
     SaslOauthbearerConfig = "region=us-east-1 audience=https://confluent.cloud/oidc",
 };
@@ -58,6 +59,7 @@ var cfg = new ConsumerConfig
     SaslMechanism    = SaslMechanism.OAuthBearer,
     GroupId          = "my-group",
 
+    SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
     SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
     SaslOauthbearerConfig =
         "region=us-east-1 " +
@@ -123,17 +125,24 @@ OAUTHBEARER error event with the original AWS exception message.
 
 ## Common pitfalls
 
-### Don't set `SaslOauthbearerMethod=Oidc`
+### `SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc` is required
 
-The AWS path is incompatible with `sasl.oauthbearer.method=oidc`. Setting both engages
-librdkafka's OIDC subsystem and bypasses the AWS handler. The package detects the conflict
-and throws `InvalidOperationException` at `Build()`.
+The AWS IAM autowire runs as a high-level-client refresh callback **inside**
+librdkafka's OIDC subsystem — parallel to how Azure IMDS works. Without
+`method=oidc`, the configuration is rejected at `Build()` with
+`InvalidOperationException`.
+
+Always set:
 
 ```csharp
-SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,   // ← do NOT combine with AwsIam
+SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
+SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
 ```
 
-Leave `SaslOauthbearerMethod` unset (default).
+If you forget `method=oidc`, the error message points at the missing setting.
+If you set `method=oidc` without the AWS optional package referenced,
+librdkafka's defensive stub fires at first refresh with
+`"aws_iam authentication is handled by the high-level client..."`.
 
 ### Don't leave `SaslOauthbearerConfig` populated when removing the marker
 

@@ -115,47 +115,62 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.False(AwsAutoWireHelper.HasAwsIamMarker(snap));
         }
 
-        // ---- AwsAutoWireHelper.RejectIfMethodIsOidc ----
+        // ---- AwsAutoWireHelper.RequireMethodIsOidc ----
 
         [Fact]
-        public void RejectIfMethodIsOidc_MethodOidc_Throws()
+        public void RequireMethodIsOidc_MethodOidc_Allowed()
         {
             var snap = new Dictionary<string, string>
             {
                 ["sasl.oauthbearer.method"] = "oidc",
             };
-            var ex = Assert.Throws<InvalidOperationException>(
-                () => AwsAutoWireHelper.RejectIfMethodIsOidc(snap));
-            Assert.Contains("sasl.oauthbearer.method", ex.Message);
-            Assert.Contains("aws_iam", ex.Message);
+            AwsAutoWireHelper.RequireMethodIsOidc(snap); // does not throw
         }
 
         [Fact]
-        public void RejectIfMethodIsOidc_MethodOidcCaseInsensitive_Throws()
+        public void RequireMethodIsOidc_MethodOidcCaseInsensitive_Allowed()
         {
             var snap = new Dictionary<string, string>
             {
                 ["sasl.oauthbearer.method"] = "OIDC",
             };
-            Assert.Throws<InvalidOperationException>(
-                () => AwsAutoWireHelper.RejectIfMethodIsOidc(snap));
+            AwsAutoWireHelper.RequireMethodIsOidc(snap); // does not throw
         }
 
         [Fact]
-        public void RejectIfMethodIsOidc_MethodMissing_Allowed()
+        public void RequireMethodIsOidc_MethodMissing_Throws()
         {
             var snap = new Dictionary<string, string>();
-            AwsAutoWireHelper.RejectIfMethodIsOidc(snap); // does not throw
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => AwsAutoWireHelper.RequireMethodIsOidc(snap));
+            Assert.Contains("sasl.oauthbearer.method", ex.Message);
+            Assert.Contains("aws_iam", ex.Message);
+            Assert.Contains("oidc", ex.Message);
         }
 
         [Fact]
-        public void RejectIfMethodIsOidc_MethodDefault_Allowed()
+        public void RequireMethodIsOidc_MethodDefault_Throws()
         {
             var snap = new Dictionary<string, string>
             {
                 ["sasl.oauthbearer.method"] = "default",
             };
-            AwsAutoWireHelper.RejectIfMethodIsOidc(snap); // does not throw
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => AwsAutoWireHelper.RequireMethodIsOidc(snap));
+            Assert.Contains("sasl.oauthbearer.method", ex.Message);
+            Assert.Contains("'default'", ex.Message);
+        }
+
+        [Fact]
+        public void RequireMethodIsOidc_MethodUnknownValue_Throws()
+        {
+            var snap = new Dictionary<string, string>
+            {
+                ["sasl.oauthbearer.method"] = "garbage",
+            };
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => AwsAutoWireHelper.RequireMethodIsOidc(snap));
+            Assert.Contains("'garbage'", ex.Message);
         }
 
         // ---- AwsAutoWireDispatcher.LoadHandler ----

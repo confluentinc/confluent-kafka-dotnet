@@ -138,7 +138,7 @@ namespace Confluent.Kafka
                 return null;
             }
 
-            Internal.OAuthBearer.Aws.AwsAutoWireHelper.RejectIfMethodIsOidc(snapshot);
+            Internal.OAuthBearer.Aws.AwsAutoWireHelper.RequireMethodIsOidc(snapshot);
             var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);
             return oAuthBearerConfig => handler(consumer, oAuthBearerConfig);
         }

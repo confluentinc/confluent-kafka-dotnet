@@ -21,10 +21,14 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
     public class AwsAutoWireBuilderTests
     {
         [Fact]
-        public void ProducerBuilder_Build_MarkerWithoutPkg_Throws()
+        public void ProducerBuilder_Build_MarkerAndMethodOidc_HitsMissingPkgPath()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
             var config = NewConfig();
+            config.SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc;
+            // With method=oidc set, the RequireMethodIsOidc guard passes; Build()
+            // then attempts to load the optional pkg, which this project doesn't
+            // reference, so we land on the missing-pkg error.
             var ex = Assert.Throws<InvalidOperationException>(
                 () => new ProducerBuilder<string, string>(config).Build());
             Assert.Contains("Confluent.Kafka.OAuthBearer.Aws", ex.Message);
@@ -32,29 +36,19 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         }
 
         [Fact]
-        public void ConsumerBuilder_Build_MarkerWithoutPkg_Throws()
+        public void ProducerBuilder_Build_MarkerWithoutMethodOidc_Throws()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
-            var consumerConfig = new ConsumerConfig(NewConfig()) { GroupId = "test-group" };
-            var ex = Assert.Throws<InvalidOperationException>(
-                () => new ConsumerBuilder<string, string>(consumerConfig).Build());
-            Assert.Contains("Confluent.Kafka.OAuthBearer.Aws", ex.Message);
-        }
-
-        [Fact]
-        public void ProducerBuilder_Build_MarkerAndMethodOidc_Throws()
-        {
-            AwsAutoWireDispatcher.ResetCacheForTests();
-            var config = NewConfig();
-            config.SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc;
+            var config = NewConfig();   // marker set, but no SaslOauthbearerMethod
             var ex = Assert.Throws<InvalidOperationException>(
                 () => new ProducerBuilder<string, string>(config).Build());
             Assert.Contains("sasl.oauthbearer.method", ex.Message);
             Assert.Contains("aws_iam", ex.Message);
+            Assert.Contains("oidc", ex.Message);
         }
 
         [Fact]
-        public void ConsumerBuilder_Build_MarkerAndMethodOidc_Throws()
+        public void ConsumerBuilder_Build_MarkerAndMethodOidc_HitsMissingPkgPath()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
             var config = NewConfig();
@@ -62,28 +56,40 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             var consumerConfig = new ConsumerConfig(config) { GroupId = "test-group" };
             var ex = Assert.Throws<InvalidOperationException>(
                 () => new ConsumerBuilder<string, string>(consumerConfig).Build());
-            Assert.Contains("sasl.oauthbearer.method", ex.Message);
-        }
-
-        [Fact]
-        public void AdminClientBuilder_Build_MarkerWithoutPkg_Throws()
-        {
-            AwsAutoWireDispatcher.ResetCacheForTests();
-            var config = NewConfig();
-            var ex = Assert.Throws<InvalidOperationException>(
-                () => new AdminClientBuilder(config).Build());
             Assert.Contains("Confluent.Kafka.OAuthBearer.Aws", ex.Message);
         }
 
         [Fact]
-        public void AdminClientBuilder_Build_MarkerAndMethodOidc_Throws()
+        public void ConsumerBuilder_Build_MarkerWithoutMethodOidc_Throws()
+        {
+            AwsAutoWireDispatcher.ResetCacheForTests();
+            var consumerConfig = new ConsumerConfig(NewConfig()) { GroupId = "test-group" };
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => new ConsumerBuilder<string, string>(consumerConfig).Build());
+            Assert.Contains("sasl.oauthbearer.method", ex.Message);
+            Assert.Contains("aws_iam", ex.Message);
+        }
+
+        [Fact]
+        public void AdminClientBuilder_Build_MarkerAndMethodOidc_HitsMissingPkgPath()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
             var config = NewConfig();
             config.SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc;
             var ex = Assert.Throws<InvalidOperationException>(
                 () => new AdminClientBuilder(config).Build());
+            Assert.Contains("Confluent.Kafka.OAuthBearer.Aws", ex.Message);
+        }
+
+        [Fact]
+        public void AdminClientBuilder_Build_MarkerWithoutMethodOidc_Throws()
+        {
+            AwsAutoWireDispatcher.ResetCacheForTests();
+            var config = NewConfig();
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => new AdminClientBuilder(config).Build());
             Assert.Contains("sasl.oauthbearer.method", ex.Message);
+            Assert.Contains("aws_iam", ex.Message);
         }
 
         [Fact]

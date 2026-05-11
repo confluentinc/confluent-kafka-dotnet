@@ -53,22 +53,29 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
                && string.Equals(value, AwsIamMarker.Value, StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
-        ///     Throws <see cref="InvalidOperationException"/> if the snapshot
-        ///     also has <c>sasl.oauthbearer.method=oidc</c>.
+        ///     Throws <see cref="InvalidOperationException"/> unless the snapshot
+        ///     has <c>sasl.oauthbearer.method=oidc</c>. The AWS IAM autowire path
+        ///     runs as a high-level-client refresh callback inside librdkafka's
+        ///     OIDC subsystem (parallel to Azure IMDS); without
+        ///     <c>method=oidc</c> the configuration is rejected by design.
         /// </summary>
-        public static void RejectIfMethodIsOidc(IReadOnlyDictionary<string, string> snapshot)
+        public static void RequireMethodIsOidc(IReadOnlyDictionary<string, string> snapshot)
         {
-            if (snapshot.TryGetValue(SaslOauthbearerMethodKey, out var method)
-                && string.Equals(method, SaslOauthbearerMethodOidcValue, StringComparison.OrdinalIgnoreCase))
+            var hasMethod = snapshot.TryGetValue(SaslOauthbearerMethodKey, out var method);
+            if (hasMethod && string.Equals(method, SaslOauthbearerMethodOidcValue, StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException(
-                    $"'{AwsIamMarker.Key}={AwsIamMarker.Value}' requires " +
-                    $"'{SaslOauthbearerMethodKey}=default'. Remove " +
-                    $"'{SaslOauthbearerMethodKey}' from the config (or leave it unset) " +
-                    "to use the AWS autowire path; " +
-                    $"'{SaslOauthbearerMethodKey}=oidc' engages librdkafka's OIDC " +
-                    "subsystem which is incompatible.");
+                return;
             }
+
+            var actual = hasMethod ? $"'{method}'" : "<unset>";
+            throw new InvalidOperationException(
+                $"'{AwsIamMarker.Key}={AwsIamMarker.Value}' requires " +
+                $"'{SaslOauthbearerMethodKey}=oidc' " +
+                "(set SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc). " +
+                $"Current value: {actual}. " +
+                "The AWS IAM path runs as a high-level-client refresh callback " +
+                "inside librdkafka's OIDC subsystem; without method=oidc the " +
+                "configuration is rejected by design.");
         }
     }
 }

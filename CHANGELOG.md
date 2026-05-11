@@ -4,7 +4,8 @@
 
 * New optional package `Confluent.Kafka.OAuthBearer.Aws` provides AWS IAM-based
   OAUTHBEARER authentication via AWS STS `GetWebIdentityToken`. Activate by
-  setting `SaslOauthbearerMetadataAuthenticationType.AwsIam` and supplying
+  setting `SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc`,
+  `SaslOauthbearerMetadataAuthenticationType.AwsIam`, and supplying
   `region` and `audience` in `SaslOauthbearerConfig`. See the package's README
   for details.
 

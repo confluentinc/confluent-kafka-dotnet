@@ -51,14 +51,16 @@ namespace Confluent.Kafka.Examples.OAuthBearerAws
             var topicName = Guid.NewGuid().ToString();
             var groupId   = Guid.NewGuid().ToString();
 
-            // The two AWS-autowire activation keys; SASL extensions go in the typed
+            // The AWS-autowire activation keys: method=oidc (engages the OAUTHBEARER
+            // OIDC path) plus the AwsIam marker (selects the high-level-client refresh
+            // callback inside that path). SASL extensions go in the typed
             // SaslOauthbearerExtensions property (not embedded in SaslOauthbearerConfig).
-            // Do NOT set SaslOauthbearerMethod=Oidc — the AWS path uses the default method.
             var commonConfig = new ClientConfig
             {
                 BootstrapServers = bootstrapServers,
                 SecurityProtocol = SecurityProtocol.SaslSsl,
                 SaslMechanism    = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
                 SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
                 SaslOauthbearerConfig =
                     $"region={awsRegion} " +

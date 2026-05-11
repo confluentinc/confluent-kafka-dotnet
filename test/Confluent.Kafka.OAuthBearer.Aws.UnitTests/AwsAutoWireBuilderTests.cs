@@ -56,6 +56,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             BootstrapServers = "localhost:9092",
             SecurityProtocol = SecurityProtocol.SaslSsl,
             SaslMechanism    = SaslMechanism.OAuthBearer,
+            SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
             SaslOauthbearerMetadataAuthenticationType =
                 SaslOauthbearerMetadataAuthenticationType.AwsIam,
             SaslOauthbearerConfig = "region=us-east-1 audience=https://a",

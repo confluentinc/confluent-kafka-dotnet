@@ -152,10 +152,11 @@ namespace Confluent.Kafka
         ///         default unsecured-JWT path applies.
         ///     </para>
         ///     <para>
-        ///         The AWS IAM marker is incompatible with
-        ///         <c>sasl.oauthbearer.method=oidc</c> — that combination would
-        ///         engage librdkafka's OIDC subsystem and bypass our refresh
-        ///         handler. Detected and rejected at <c>Build()</c> with a friendly
+        ///         The AWS IAM marker requires
+        ///         <c>sasl.oauthbearer.method=oidc</c>. The autowire path runs as
+        ///         a high-level-client refresh callback inside librdkafka's OIDC
+        ///         subsystem (parallel to Azure IMDS); any other value (or no
+        ///         value) is rejected at <c>Build()</c> with a friendly
         ///         <see cref="InvalidOperationException"/>.
         ///     </para>
         /// </remarks>
@@ -173,7 +174,7 @@ namespace Confluent.Kafka
                 return null;
             }
 
-            Internal.OAuthBearer.Aws.AwsAutoWireHelper.RejectIfMethodIsOidc(snapshot);
+            Internal.OAuthBearer.Aws.AwsAutoWireHelper.RequireMethodIsOidc(snapshot);
             var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);
             return oAuthBearerConfig => handler(producer, oAuthBearerConfig);
         }
