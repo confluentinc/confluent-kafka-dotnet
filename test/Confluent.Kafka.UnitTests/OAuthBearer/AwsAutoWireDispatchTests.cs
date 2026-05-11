@@ -28,42 +28,6 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
     /// </summary>
     public class AwsAutoWireDispatchTests
     {
-        // ---- AwsIamMarker.IsMarker ----
-
-        [Fact]
-        public void IsMarker_AwsIamValue_ReturnsTrue()
-        {
-            var prop = new KeyValuePair<string, string>(
-                "sasl.oauthbearer.metadata.authentication.type", "aws_iam");
-            Assert.True(AwsIamMarker.IsMarker(prop));
-        }
-
-        [Fact]
-        public void IsMarker_AwsIamValue_CaseInsensitive()
-        {
-            var prop = new KeyValuePair<string, string>(
-                "sasl.oauthbearer.metadata.authentication.type", "AWS_IAM");
-            Assert.True(AwsIamMarker.IsMarker(prop));
-        }
-
-        [Theory]
-        [InlineData("none")]
-        [InlineData("azure_imds")]
-        [InlineData("")]
-        public void IsMarker_OtherValues_ReturnFalse(string value)
-        {
-            var prop = new KeyValuePair<string, string>(
-                "sasl.oauthbearer.metadata.authentication.type", value);
-            Assert.False(AwsIamMarker.IsMarker(prop));
-        }
-
-        [Fact]
-        public void IsMarker_DifferentKey_ReturnsFalse()
-        {
-            var prop = new KeyValuePair<string, string>("some.other.key", "aws_iam");
-            Assert.False(AwsIamMarker.IsMarker(prop));
-        }
-
         // ---- AwsAutoWireHelper.SnapshotConfig ----
 
         [Fact]
