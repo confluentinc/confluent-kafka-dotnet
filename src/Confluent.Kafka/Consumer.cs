@@ -664,7 +664,8 @@ namespace Confluent.Kafka
             }
 
             var modifiedConfig = Library.NameAndVersionConfig
-                .Concat(config.Where(prop => prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields))
+                .Concat(config.Where(prop =>
+                    prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields))
                 .ToList();
 
             var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;
