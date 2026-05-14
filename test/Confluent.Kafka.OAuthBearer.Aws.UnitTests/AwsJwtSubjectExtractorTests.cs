@@ -74,6 +74,19 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.Equal("x", AwsJwtSubjectExtractor.ExtractSub(jwt));
         }
 
+        // Explicit per-branch coverage of the % 4 padding switch in
+        // DecodeBase64UrlSegment. Pre-existing tests cover cases 0 and 3
+        // by name; case 2 is hit only incidentally by happy-path tests.
+        [Theory]
+        [InlineData("{\"sub\":\"a\"}",   "a")]    // 11 bytes → trimmed 15 → %4 = 3 (case 3: one '=' added)
+        [InlineData("{\"sub\":\"ab\"}",  "ab")]   // 12 bytes → trimmed 16 → %4 = 0 (case 0: no padding)
+        [InlineData("{\"sub\":\"abc\"}", "abc")]  // 13 bytes → trimmed 18 → %4 = 2 (case 2: two '==' added)
+        public void ExtractSub_PaddingBranchesAllHit_DecodesCorrectly(string payloadJson, string expectedSub)
+        {
+            var jwt = MakeJwt(payloadJson);
+            Assert.Equal(expectedSub, AwsJwtSubjectExtractor.ExtractSub(jwt));
+        }
+
         [Fact]
         public void ExtractSub_Null_Throws()
         {
