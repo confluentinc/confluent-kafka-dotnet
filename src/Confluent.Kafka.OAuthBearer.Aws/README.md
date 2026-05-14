@@ -95,10 +95,21 @@ consumer.Subscribe("my-topic");
 | Key | Default | Description |
 |---|---|---|
 | `duration_seconds` | `300` | Requested token lifetime, 60–3600 seconds. |
-| `signing_algorithm` | `ES384` | JWT signing algorithm. Either `ES384` or `RS256`. |
+| `signing_algorithm` | `ES384` | JWT signing algorithm. Either `ES384` or `RS256`. AWS STS requires this field — we default for ergonomics. See [Algorithm choice](#algorithm-choice) below. |
 | `sts_endpoint` | _(SDK default)_ | Override STS endpoint URL. Use for FIPS (`sts-fips.us-east-1.amazonaws.com`) or VPC endpoints. |
 | `principal_name` | _(JWT `sub` claim)_ | Override the OAUTHBEARER principal. Defaults to extracting `sub` from the minted JWT (the role ARN). |
 | `tag_<NAME>` | _(none)_ | Custom tag claims added to the minted JWT (max 50). Repeatable. |
+
+### Algorithm choice
+
+`signing_algorithm` controls the JWT's signature type at the AWS STS layer.
+We default to **ES384** because elliptic-curve signatures produce smaller tokens
+(~96 bytes vs RSA's ~256 bytes) with equivalent security. Pick `RS256` only if
+your broker's JWKS endpoint specifically requires RSA keys (rare in modern setups).
+
+`SigningAlgorithm` is a required field on the underlying AWS STS API — omitting
+it from `SaslOauthbearerConfig` doesn't omit it from the wire, it just selects
+our default.
 
 ### SASL extensions
 

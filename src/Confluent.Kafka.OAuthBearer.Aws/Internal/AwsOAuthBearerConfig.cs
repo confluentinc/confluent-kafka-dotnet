@@ -56,7 +56,11 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         /// <summary>OIDC audience claim the relying party expects.</summary>
         public string Audience { get; }
 
-        /// <summary>Signing algorithm (<c>ES384</c> or <c>RS256</c>); defaults to <c>ES384</c>.</summary>
+        /// <summary>
+        ///     Signing algorithm (<c>ES384</c> or <c>RS256</c>); defaults to <c>ES384</c>.
+        ///     AWS STS requires this field on every request — the default is applied when
+        ///     the user omits <c>signing_algorithm</c> from <c>sasl.oauthbearer.config</c>.
+        /// </summary>
         public string SigningAlgorithm { get; }
 
         /// <summary>Requested token lifetime; defaults to 300 seconds, bounded 60–3600.</summary>
