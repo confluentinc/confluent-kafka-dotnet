@@ -19,14 +19,14 @@ using Xunit;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
-    public class JwtSubjectExtractorTests
+    public class AwsJwtSubjectExtractorTests
     {
         [Fact]
         public void ExtractSub_RoleArn_Returned()
         {
             var jwt = MakeJwt("{\"sub\":\"arn:aws:iam::123456789012:role/MyRole\",\"iat\":1}");
             Assert.Equal("arn:aws:iam::123456789012:role/MyRole",
-                JwtSubjectExtractor.ExtractSub(jwt));
+                AwsJwtSubjectExtractor.ExtractSub(jwt));
         }
 
         [Fact]
@@ -35,7 +35,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var jwt = MakeJwt(
                 "{\"sub\":\"arn:aws:sts::123456789012:assumed-role/MyRole/session-name\"}");
             Assert.Equal("arn:aws:sts::123456789012:assumed-role/MyRole/session-name",
-                JwtSubjectExtractor.ExtractSub(jwt));
+                AwsJwtSubjectExtractor.ExtractSub(jwt));
         }
 
         [Fact]
@@ -44,14 +44,14 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var jwt = MakeJwt(
                 "{\"iss\":\"https://x\",\"sub\":\"arn:aws:iam::1:role/R\"," +
                 "\"aud\":\"a\",\"exp\":1,\"iat\":0,\"jti\":\"j\"}");
-            Assert.Equal("arn:aws:iam::1:role/R", JwtSubjectExtractor.ExtractSub(jwt));
+            Assert.Equal("arn:aws:iam::1:role/R", AwsJwtSubjectExtractor.ExtractSub(jwt));
         }
 
         [Fact]
         public void ExtractSub_UnpaddedBase64Url_Works()
         {
             var unpadded = MakeJwt("{\"sub\":\"a\"}");
-            Assert.Equal("a", JwtSubjectExtractor.ExtractSub(unpadded));
+            Assert.Equal("a", AwsJwtSubjectExtractor.ExtractSub(unpadded));
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes("{\"sub\":\"abc\"}"))
                 .Replace('+', '-').Replace('/', '_'); // base64url but keep '='
             var jwt = $"{header}.{payload}.";
-            Assert.Equal("abc", JwtSubjectExtractor.ExtractSub(jwt));
+            Assert.Equal("abc", AwsJwtSubjectExtractor.ExtractSub(jwt));
         }
 
         [Fact]
@@ -71,20 +71,20 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var normal = Convert.ToBase64String(bytes);
             var urlSafe = normal.Replace('+', '-').Replace('/', '_').TrimEnd('=');
             var jwt = "aGVhZGVy." + urlSafe + ".c2ln";
-            Assert.Equal("x", JwtSubjectExtractor.ExtractSub(jwt));
+            Assert.Equal("x", AwsJwtSubjectExtractor.ExtractSub(jwt));
         }
 
         [Fact]
         public void ExtractSub_Null_Throws()
         {
-            var ex = Assert.Throws<FormatException>(() => JwtSubjectExtractor.ExtractSub(null));
+            var ex = Assert.Throws<FormatException>(() => AwsJwtSubjectExtractor.ExtractSub(null));
             Assert.Contains("null", ex.Message);
         }
 
         [Fact]
         public void ExtractSub_Empty_Throws()
         {
-            var ex = Assert.Throws<FormatException>(() => JwtSubjectExtractor.ExtractSub(""));
+            var ex = Assert.Throws<FormatException>(() => AwsJwtSubjectExtractor.ExtractSub(""));
             Assert.Contains("empty", ex.Message);
         }
 
@@ -92,7 +92,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void ExtractSub_OneSegment_Throws()
         {
             var ex = Assert.Throws<FormatException>(
-                () => JwtSubjectExtractor.ExtractSub("onlyonepart"));
+                () => AwsJwtSubjectExtractor.ExtractSub("onlyonepart"));
             Assert.Contains("3", ex.Message);
         }
 
@@ -100,7 +100,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void ExtractSub_TwoSegments_Throws()
         {
             var ex = Assert.Throws<FormatException>(
-                () => JwtSubjectExtractor.ExtractSub("a.b"));
+                () => AwsJwtSubjectExtractor.ExtractSub("a.b"));
             Assert.Contains("3", ex.Message);
         }
 
@@ -108,7 +108,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void ExtractSub_FourSegments_Throws()
         {
             var ex = Assert.Throws<FormatException>(
-                () => JwtSubjectExtractor.ExtractSub("a.b.c.d"));
+                () => AwsJwtSubjectExtractor.ExtractSub("a.b.c.d"));
             Assert.Contains("3", ex.Message);
         }
 
@@ -116,7 +116,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void ExtractSub_MalformedBase64InPayload_Throws()
         {
             var ex = Assert.Throws<FormatException>(
-                () => JwtSubjectExtractor.ExtractSub("aGVhZGVy.not!base64.c2ln"));
+                () => AwsJwtSubjectExtractor.ExtractSub("aGVhZGVy.not!base64.c2ln"));
             Assert.Contains("base64url", ex.Message);
         }
 
@@ -125,7 +125,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var badPayload = Base64UrlEncode(Encoding.UTF8.GetBytes("not json"));
             var ex = Assert.Throws<FormatException>(
-                () => JwtSubjectExtractor.ExtractSub($"aGVhZGVy.{badPayload}.c2ln"));
+                () => AwsJwtSubjectExtractor.ExtractSub($"aGVhZGVy.{badPayload}.c2ln"));
             Assert.Contains("not valid JSON", ex.Message);
         }
 
@@ -134,7 +134,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var arrayPayload = Base64UrlEncode(Encoding.UTF8.GetBytes("[\"not\",\"an\",\"object\"]"));
             var ex = Assert.Throws<FormatException>(
-                () => JwtSubjectExtractor.ExtractSub($"aGVhZGVy.{arrayPayload}.c2ln"));
+                () => AwsJwtSubjectExtractor.ExtractSub($"aGVhZGVy.{arrayPayload}.c2ln"));
             Assert.Contains("not a JSON object", ex.Message);
         }
 
@@ -142,7 +142,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void ExtractSub_MissingSubClaim_Throws()
         {
             var jwt = MakeJwt("{\"iss\":\"https://x\",\"aud\":\"a\"}");
-            var ex = Assert.Throws<FormatException>(() => JwtSubjectExtractor.ExtractSub(jwt));
+            var ex = Assert.Throws<FormatException>(() => AwsJwtSubjectExtractor.ExtractSub(jwt));
             Assert.Contains("'sub'", ex.Message);
         }
 
@@ -150,7 +150,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void ExtractSub_SubClaimIsNumber_Throws()
         {
             var jwt = MakeJwt("{\"sub\":12345}");
-            var ex = Assert.Throws<FormatException>(() => JwtSubjectExtractor.ExtractSub(jwt));
+            var ex = Assert.Throws<FormatException>(() => AwsJwtSubjectExtractor.ExtractSub(jwt));
             Assert.Contains("'sub'", ex.Message);
         }
 
@@ -158,7 +158,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void ExtractSub_SubClaimIsNull_Throws()
         {
             var jwt = MakeJwt("{\"sub\":null}");
-            var ex = Assert.Throws<FormatException>(() => JwtSubjectExtractor.ExtractSub(jwt));
+            var ex = Assert.Throws<FormatException>(() => AwsJwtSubjectExtractor.ExtractSub(jwt));
             Assert.Contains("'sub'", ex.Message);
         }
 
@@ -166,7 +166,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void ExtractSub_SubClaimIsEmptyString_Throws()
         {
             var jwt = MakeJwt("{\"sub\":\"\"}");
-            var ex = Assert.Throws<FormatException>(() => JwtSubjectExtractor.ExtractSub(jwt));
+            var ex = Assert.Throws<FormatException>(() => AwsJwtSubjectExtractor.ExtractSub(jwt));
             Assert.Contains("empty", ex.Message);
         }
 
@@ -175,7 +175,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var oversized = new string('a', 8193);
             var ex = Assert.Throws<FormatException>(
-                () => JwtSubjectExtractor.ExtractSub(oversized));
+                () => AwsJwtSubjectExtractor.ExtractSub(oversized));
             Assert.Contains("exceeds maximum", ex.Message);
         }
 
@@ -184,7 +184,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var atCeiling = new string('a', 8192);
             var ex = Assert.Throws<FormatException>(
-                () => JwtSubjectExtractor.ExtractSub(atCeiling));
+                () => AwsJwtSubjectExtractor.ExtractSub(atCeiling));
             Assert.Contains("3", ex.Message); // segment-count error, not ceiling error
         }
 
@@ -192,7 +192,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void ExtractSub_EmptyPayloadSegment_Throws()
         {
             var ex = Assert.Throws<FormatException>(
-                () => JwtSubjectExtractor.ExtractSub("header..sig"));
+                () => AwsJwtSubjectExtractor.ExtractSub("header..sig"));
             Assert.Contains("empty", ex.Message);
         }
 

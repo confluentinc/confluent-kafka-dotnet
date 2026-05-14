@@ -29,7 +29,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
     ///     to populate <c>OAuthBearerToken.PrincipalName</c>, which is an
     ///     identification hint, not a security decision.
     /// </remarks>
-    internal static class JwtSubjectExtractor
+    internal static class AwsJwtSubjectExtractor
     {
         private const int MaxTokenLengthChars = 8192;
 
