@@ -135,7 +135,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 
             Assert.Empty(sink.SetCalls);
             Assert.Single(sink.FailureCalls);
-            Assert.Contains("OutboundWebIdentityFederationDisabled", sink.FailureCalls[0]);
+            Assert.Contains("OutboundWebIdentityFederationDisabledException", sink.FailureCalls[0]);
         }
 
         [Fact]
@@ -196,6 +196,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var sink = new RecordingSink();
 
             AwsOAuthBearerHandler.Invoke(provider, sink);
+            Assert.Single(sink.SetCalls);
             Assert.Empty(sink.FailureCalls);
         }
 
@@ -207,6 +208,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var sink = new RecordingSink();
 
             AwsOAuthBearerHandler.Invoke(provider, sink);
+            Assert.Single(sink.FailureCalls);
             Assert.Empty(sink.SetCalls);
         }
 
