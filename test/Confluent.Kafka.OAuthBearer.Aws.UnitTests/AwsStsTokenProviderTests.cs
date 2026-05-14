@@ -14,13 +14,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
 using Confluent.Kafka.OAuthBearer.Aws.Internal;
 using Xunit;
+using static Confluent.Kafka.OAuthBearer.Aws.UnitTests.AwsTestHelpers;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
@@ -308,13 +308,5 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 Expiration = CannedExpiry,
             };
 
-        private static string MakeJwt(string payloadJson)
-        {
-            string b64url(byte[] bytes) =>
-                Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-            var header = b64url(Encoding.UTF8.GetBytes("{\"alg\":\"ES384\",\"typ\":\"JWT\"}"));
-            var payload = b64url(Encoding.UTF8.GetBytes(payloadJson));
-            return $"{header}.{payload}.fakesig";
-        }
     }
 }

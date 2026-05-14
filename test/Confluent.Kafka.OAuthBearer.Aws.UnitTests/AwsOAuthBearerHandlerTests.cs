@@ -14,13 +14,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
 using Confluent.Kafka.OAuthBearer.Aws.Internal;
 using Xunit;
+using static Confluent.Kafka.OAuthBearer.Aws.UnitTests.AwsTestHelpers;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
@@ -225,27 +225,5 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         }
 
 
-        private static string MakeJwt(string payloadJson)
-        {
-            string b64url(byte[] b) =>
-                Convert.ToBase64String(b).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-            var h = b64url(Encoding.UTF8.GetBytes("{\"alg\":\"ES384\"}"));
-            var p = b64url(Encoding.UTF8.GetBytes(payloadJson));
-            return $"{h}.{p}.sig";
-        }
-
-        private sealed class RecordingSink : ITokenSink
-        {
-            public readonly List<(string TokenValue, long LifetimeMs, string PrincipalName,
-                                  IDictionary<string, string> Extensions)> SetCalls
-                = new List<(string, long, string, IDictionary<string, string>)>();
-            public readonly List<string> FailureCalls = new List<string>();
-
-            public void SetToken(string tokenValue, long lifetimeMs, string principalName,
-                IDictionary<string, string> extensions)
-                => SetCalls.Add((tokenValue, lifetimeMs, principalName, extensions));
-
-            public void SetTokenFailure(string error) => FailureCalls.Add(error);
-        }
     }
 }

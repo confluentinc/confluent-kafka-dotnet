@@ -16,6 +16,7 @@ using System;
 using System.Text;
 using Confluent.Kafka.OAuthBearer.Aws.Internal;
 using Xunit;
+using static Confluent.Kafka.OAuthBearer.Aws.UnitTests.AwsTestHelpers;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
@@ -234,16 +235,5 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.Contains("segment", ex.Message);
         }
 
-        // ---- Helpers ----
-
-        private static string MakeJwt(string payloadJson)
-        {
-            var header = Base64UrlEncode(Encoding.UTF8.GetBytes("{\"alg\":\"none\",\"typ\":\"JWT\"}"));
-            var payload = Base64UrlEncode(Encoding.UTF8.GetBytes(payloadJson));
-            return $"{header}.{payload}.";
-        }
-
-        private static string Base64UrlEncode(byte[] bytes)
-            => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
     }
 }

@@ -75,17 +75,5 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 $"lifetimeMs={call.LifetimeMs} (now={nowMs}, ttl={call.LifetimeMs - nowMs}ms)");
         }
 
-        // Local copy — RecordingSink lives privately in AwsOAuthBearerHandlerTests.
-        // Duplicating ~10 lines is cheaper than promoting it to a shared helper for one extra use.
-        private sealed class RecordingSink : ITokenSink
-        {
-            public readonly List<(string TokenValue, long LifetimeMs, string PrincipalName, IDictionary<string,string> Extensions)>
-                SetCalls = new();
-            public readonly List<string> FailureCalls = new();
-
-            public void SetToken(string tv, long ms, string p, IDictionary<string,string> ext)
-                => SetCalls.Add((tv, ms, p, ext));
-            public void SetTokenFailure(string error) => FailureCalls.Add(error);
-        }
     }
 }
