@@ -121,6 +121,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var ex = Assert.Throws<FormatException>(() => AwsJwtSubjectExtractor.ExtractSub(""));
             Assert.Contains("empty", ex.Message);
+            Assert.Contains("JWT is empty", ex.Message);
         }
 
         [Fact]
@@ -203,6 +204,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var jwt = MakeJwt("{\"sub\":\"\"}");
             var ex = Assert.Throws<FormatException>(() => AwsJwtSubjectExtractor.ExtractSub(jwt));
             Assert.Contains("empty", ex.Message);
+            Assert.Contains("'sub'", ex.Message);
         }
 
         [Fact]
@@ -229,6 +231,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var ex = Assert.Throws<FormatException>(
                 () => AwsJwtSubjectExtractor.ExtractSub("header..sig"));
             Assert.Contains("empty", ex.Message);
+            Assert.Contains("segment", ex.Message);
         }
 
         // ---- Helpers ----
