@@ -13,40 +13,51 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
+using System.Text;
 using Confluent.Kafka.OAuthBearer.Aws.Internal;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
     /// <summary>
-    ///     Live AWS STS round-trip test. Skipped unless RUN_AWS_STS_REAL=1.
-    ///     Run on an EC2 instance (or Lambda) with a role granting
-    ///     sts:GetWebIdentityToken for the configured audience. Outbound web
-    ///     identity federation must be enabled on the AWS account.
+    ///     End-to-end integration tests against the live AWS STS service.
+    ///     Skipped unless <c>RUN_AWS_STS_REAL=1</c>. Run on an EC2 instance
+    ///     (or Lambda) with a role granting <c>sts:GetWebIdentityToken</c>
+    ///     for the configured audience. Outbound web identity federation
+    ///     must be enabled on the AWS account.
     /// </summary>
-    public class AwsAutoWireRealStsTests
+    /// <remarks>
+    ///     Three env vars control the test:
+    ///     <list type="bullet">
+    ///       <item><c>AWS_STS_TEST_REGION</c> (default <c>us-east-1</c>)</item>
+    ///       <item><c>AWS_STS_TEST_AUDIENCE</c> (default <c>https://api.example.com</c>)</item>
+    ///       <item><c>AWS_STS_TEST_SIGNING_ALGORITHM</c> (default <c>ES384</c>; also accepts <c>RS256</c>)</item>
+    ///     </list>
+    /// </remarks>
+    public class AwsRealStsIntegrationTests
     {
         [SkippableFact]
-        public void Path_A_RealSts_MintsValidJwtAndPrincipal()
+        public void RoundTrip_ProducesValidJwtWithExpectedClaims()
         {
             Skip.IfNot(
                 Environment.GetEnvironmentVariable("RUN_AWS_STS_REAL") == "1",
                 "Set RUN_AWS_STS_REAL=1 to enable. Requires EC2/Lambda with the right IAM role.");
 
-            // Configurable for whatever role/region/audience the test environment uses.
-            var region   = Environment.GetEnvironmentVariable("AWS_STS_TEST_REGION")   ?? "us-east-1";
-            var audience = Environment.GetEnvironmentVariable("AWS_STS_TEST_AUDIENCE") ?? "https://api.example.com";
+            // Configurable for whatever role/region/audience/algorithm the test environment uses.
+            var region    = Environment.GetEnvironmentVariable("AWS_STS_TEST_REGION")            ?? "us-east-1";
+            var audience  = Environment.GetEnvironmentVariable("AWS_STS_TEST_AUDIENCE")          ?? "https://api.example.com";
+            var algorithm = Environment.GetEnvironmentVariable("AWS_STS_TEST_SIGNING_ALGORITHM") ?? "ES384";
 
             // duration_seconds=300 explicit — matches the role's permission-policy cap
             // (NumericLessThanEquals on sts:DurationSeconds).
             var cfg = AwsOAuthBearerConfig.Parse(
-                $"region={region} audience={audience} duration_seconds=300");
+                $"region={region} audience={audience} duration_seconds=300 signing_algorithm={algorithm}");
 
             using var provider = new AwsStsTokenProvider(cfg);
             var sink = new RecordingSink();
 
-            // Sync-bridge invocation — exactly what Path A does at refresh time.
+            // Exercise the full handler chain (sync-bridge → STS round-trip → JWT parse → handoff).
             AwsOAuthBearerHandler.Invoke(provider, sink);
 
             // 1. No failure routed to sink.
@@ -68,12 +79,24 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             Assert.InRange(call.LifetimeMs, nowMs, nowMs + (10 * 60 * 1000));
 
+            // 6. JWT header carries the algorithm we requested. Proves the SDK
+            //    round-trip preserved the choice end-to-end.
+            var parts = call.TokenValue.Split('.');
+            var headerJson = JObject.Parse(
+                Encoding.UTF8.GetString(AwsTestHelpers.Base64UrlDecode(parts[0])));
+            Assert.Equal(algorithm, headerJson["alg"].Value<string>());
+
+            // 7. JWT payload 'aud' matches what we asked AWS for. Defensive —
+            //    catches any audience-shaping surprises (AWS shouldn't munge).
+            var payloadJson = JObject.Parse(
+                Encoding.UTF8.GetString(AwsTestHelpers.Base64UrlDecode(parts[1])));
+            Assert.Equal(audience, payloadJson["aud"].Value<string>());
+
             // Diagnostic output — captured when running with --logger "console;verbosity=detailed"
             Console.WriteLine(
-                $"[H6] JWT length={call.TokenValue.Length}, " +
+                $"JWT length={call.TokenValue.Length}, alg={algorithm}, " +
                 $"principal={call.PrincipalName}, " +
                 $"lifetimeMs={call.LifetimeMs} (now={nowMs}, ttl={call.LifetimeMs - nowMs}ms)");
         }
-
     }
 }

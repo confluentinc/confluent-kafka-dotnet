@@ -47,6 +47,28 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         /// </summary>
         public static string Base64UrlEncode(byte[] bytes)
             => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+        /// <summary>
+        ///     Base64url-decodes a string into bytes (inverse of
+        ///     <see cref="Base64UrlEncode"/>). Restores '=' padding,
+        ///     swaps '-' → '+' and '_' → '/', then defers to
+        ///     <see cref="Convert.FromBase64String"/>.
+        /// </summary>
+        public static byte[] Base64UrlDecode(string segment)
+        {
+            if (string.IsNullOrEmpty(segment))
+                return Array.Empty<byte>();
+            var s = segment.Replace('-', '+').Replace('_', '/');
+            switch (s.Length % 4)
+            {
+                case 0: break;
+                case 2: s += "=="; break;
+                case 3: s += "="; break;
+                default: throw new FormatException(
+                    "Invalid base64url segment length: " + segment.Length);
+            }
+            return Convert.FromBase64String(s);
+        }
     }
 
     /// <summary>
