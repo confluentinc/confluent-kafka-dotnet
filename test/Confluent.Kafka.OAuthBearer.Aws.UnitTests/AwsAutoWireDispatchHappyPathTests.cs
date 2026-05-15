@@ -35,6 +35,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var snap = new Dictionary<string, string>
             {
                 ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
+                ["sasl.oauthbearer.method"] = "oidc",
                 ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
             };
             var handler = AwsAutoWireDispatcher.LoadHandler(snap);
@@ -52,6 +53,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var snap = new Dictionary<string, string>
             {
                 ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
+                ["sasl.oauthbearer.method"] = "oidc",
                 ["sasl.oauthbearer.config"] = "audience=https://a",   // missing region
             };
 
