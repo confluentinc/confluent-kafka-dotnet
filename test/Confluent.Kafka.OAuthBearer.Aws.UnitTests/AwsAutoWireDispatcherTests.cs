@@ -20,13 +20,14 @@ using Xunit;
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
     /// <summary>
-    ///     Cross-tests <see cref="AwsAutoWireDispatcher"/> (core) against
-    ///     <see cref="AwsAutoWire"/> (optional pkg). Lives in the optional-pkg
-    ///     test project because it requires both assemblies to be loaded —
-    ///     <c>Confluent.Kafka.UnitTests</c> deliberately doesn't reference the
-    ///     optional package, so it can't exercise the dispatcher's happy path.
+    ///     Happy-path tests for <see cref="AwsAutoWireDispatcher"/> — exercises
+    ///     the cross-package reflection bridge against the actual
+    ///     <see cref="AwsAutoWire"/> entry-point in the optional pkg. Lives
+    ///     here because both assemblies must be loaded; missing-pkg failure
+    ///     tests live in the sibling <c>AwsAutoWireDispatcherTests</c> at
+    ///     <c>test/Confluent.Kafka.UnitTests/OAuthBearer/</c>.
     /// </summary>
-    public class AwsAutoWireDispatchHappyPathTests
+    public class AwsAutoWireDispatcherTests
     {
         [Fact]
         public void LoadHandler_OptionalPackagePresent_ReturnsHandler()

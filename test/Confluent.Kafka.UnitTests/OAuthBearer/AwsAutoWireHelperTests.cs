@@ -20,13 +20,12 @@ using Xunit;
 namespace Confluent.Kafka.UnitTests.OAuthBearer
 {
     /// <summary>
-    ///     Tests the core-side dispatch helpers. The Confluent.Kafka.UnitTests
-    ///     project deliberately does <b>not</b> reference
-    ///     <c>Confluent.Kafka.OAuthBearer.Aws</c> — exercising the "pkg missing"
-    ///     failure mode requires the optional package to be absent from the
-    ///     test bin/.
+    ///     Unit tests for <see cref="AwsAutoWireHelper"/> — the snapshot,
+    ///     marker-check, and OIDC-enforcement helpers used by the
+    ///     Producer/Consumer/AdminClient builders to dispatch the
+    ///     AWS IAM autowire path.
     /// </summary>
-    public class AwsAutoWireDispatchTests
+    public class AwsAutoWireHelperTests
     {
         // ---- AwsAutoWireHelper.SnapshotConfig ----
 
@@ -137,37 +136,5 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.Contains("'garbage'", ex.Message);
         }
 
-        // ---- AwsAutoWireDispatcher.LoadHandler ----
-
-        [Fact]
-        public void LoadHandler_NullConfig_Throws()
-        {
-            // Reset the dispatcher's MethodInfo cache to ensure a fresh resolve attempt.
-            AwsAutoWireDispatcher.ResetCacheForTests();
-            Assert.Throws<ArgumentNullException>(() => AwsAutoWireDispatcher.LoadHandler(null));
-        }
-
-        [Fact]
-        public void LoadHandler_OptionalPackageMissing_ThrowsFriendlyInvalidOperation()
-        {
-            // The Confluent.Kafka.UnitTests project does not reference
-            // Confluent.Kafka.OAuthBearer.Aws — its assembly is therefore not
-            // resolvable. The dispatcher should translate the underlying
-            // FileNotFoundException into a friendly InvalidOperationException
-            // pointing the user at the missing PackageReference.
-            AwsAutoWireDispatcher.ResetCacheForTests();
-            var snap = new Dictionary<string, string>
-            {
-                ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
-                ["sasl.oauthbearer.method"] = "oidc",
-                ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
-            };
-            var ex = Assert.Throws<InvalidOperationException>(
-                () => AwsAutoWireDispatcher.LoadHandler(snap));
-            Assert.Contains("Confluent.Kafka.OAuthBearer.Aws", ex.Message);
-            Assert.Contains("PackageReference", ex.Message);
-            // Inner exception preserved for diagnostics.
-            Assert.NotNull(ex.InnerException);
-        }
     }
 }
