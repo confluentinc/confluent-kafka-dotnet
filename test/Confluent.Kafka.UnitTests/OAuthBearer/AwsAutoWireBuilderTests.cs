@@ -57,6 +57,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             var ex = Assert.Throws<InvalidOperationException>(
                 () => new ConsumerBuilder<string, string>(consumerConfig).Build());
             Assert.Contains("Confluent.Kafka.OAuthBearer.Aws", ex.Message);
+            Assert.Contains("PackageReference", ex.Message);
         }
 
         [Fact]
@@ -68,6 +69,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 () => new ConsumerBuilder<string, string>(consumerConfig).Build());
             Assert.Contains("sasl.oauthbearer.method", ex.Message);
             Assert.Contains("aws_iam", ex.Message);
+            Assert.Contains("oidc", ex.Message);
         }
 
         [Fact]
@@ -79,6 +81,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             var ex = Assert.Throws<InvalidOperationException>(
                 () => new AdminClientBuilder(config).Build());
             Assert.Contains("Confluent.Kafka.OAuthBearer.Aws", ex.Message);
+            Assert.Contains("PackageReference", ex.Message);
         }
 
         [Fact]
@@ -90,6 +93,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 () => new AdminClientBuilder(config).Build());
             Assert.Contains("sasl.oauthbearer.method", ex.Message);
             Assert.Contains("aws_iam", ex.Message);
+            Assert.Contains("oidc", ex.Message);
         }
 
         [Fact]
