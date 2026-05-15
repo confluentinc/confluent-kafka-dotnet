@@ -58,11 +58,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws
         internal const string MarkerValue = "aws_iam";
 
         /// <summary>
-        ///    Config key prefix for passing SASL extensions from core to the handler.
-        /// </summary>
-        internal const string SaslOauthbearerExtensionsKey = "sasl.oauthbearer.extensions";
-
-        /// <summary>
         ///     Builds an OAUTHBEARER refresh handler from the user's Kafka client
         ///     config dictionary. Called by Confluent.Kafka core via
         ///     <c>Assembly.Load</c> + reflected <c>MethodInfo</c>.
@@ -104,47 +99,10 @@ namespace Confluent.Kafka.OAuthBearer.Aws
                     "sasl.oauthbearer.config (e.g. \"region=us-east-1 audience=https://...\").");
             }
 
-            var saslExtensions = ParseSaslOauthbearerExtensions(kafkaConfig);
+            var saslExtensions = AwsSaslExtensionsParser.Parse(kafkaConfig);
             var parsed = AwsOAuthBearerConfig.Parse(raw, saslExtensions);
             var provider = new AwsStsTokenProvider(parsed);
             return AwsOAuthBearerHandler.Create(provider);
-        }
-
-        /// <summary>
-        ///     Parses the typed <c>sasl.oauthbearer.extensions</c> property (comma-separated
-        ///     key=value pairs) into a dictionary. Returns <c>null</c> when unset or empty so
-        ///     downstream code can short-circuit.
-        /// </summary>
-        /// <exception cref="ArgumentException">
-        ///     Malformed entry — missing <c>=</c>, empty key, or duplicate key.
-        /// </exception>
-        private static IDictionary<string, string> ParseSaslOauthbearerExtensions(
-            IReadOnlyDictionary<string, string> kafkaConfig)
-        {
-            if (!kafkaConfig.TryGetValue(SaslOauthbearerExtensionsKey, out var raw)
-                || string.IsNullOrEmpty(raw))
-            {
-                return null;
-            }
-
-            var result = new Dictionary<string, string>();
-            foreach (var token in raw.Split(','))
-            {
-                var trimmed = token.Trim();
-                if (trimmed.Length == 0) continue;
-
-                var idx = trimmed.IndexOf('=');
-                if (idx <= 0)
-                {
-                    throw new ArgumentException(
-                        $"Malformed '{SaslOauthbearerExtensionsKey}' entry '{trimmed}' " +
-                        "(expected comma-separated key=value pairs).");
-                }
-                var name = trimmed.Substring(0, idx);
-                var value = trimmed.Substring(idx + 1);
-                result[name] = value;
-            }
-            return result.Count == 0 ? null : result;
         }
     }
 }
