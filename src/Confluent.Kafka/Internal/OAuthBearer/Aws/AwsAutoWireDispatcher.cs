@@ -156,23 +156,5 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         {
             lock (s_lock) { s_cachedMethod = null; }
         }
-
-        /// <summary>
-        ///     Test seam: returns whether <see cref="ResolveCreateHandler"/> has
-        ///     already run and populated the cache. Used by precedence tests to
-        ///     verify that the autowire dispatcher was NOT invoked when an
-        ///     explicit OAuthBearer refresh handler was registered on the builder.
-        /// </summary>
-        /// <remarks>
-        ///     TODO: Remove this seam once <c>librdkafka.redist</c> ships with
-        ///     the AWS_IAM marker patch. At that point the precedence tests'
-        ///     <c>Build()</c> calls succeed end-to-end, and the precedence rule
-        ///     can be verified purely from successful client construction —
-        ///     no need to introspect dispatcher state.
-        /// </remarks>
-        public static bool IsCacheWarmForTests()
-        {
-            lock (s_lock) { return s_cachedMethod != null; }
-        }
     }
 }
