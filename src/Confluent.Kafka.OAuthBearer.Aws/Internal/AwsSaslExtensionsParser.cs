@@ -38,22 +38,18 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         public const string ConfigKey = "sasl.oauthbearer.extensions";
 
         /// <summary>
-        ///     Parses the typed <c>sasl.oauthbearer.extensions</c> entry from
-        ///     <paramref name="kafkaConfig"/>. Returns <c>null</c> when the
-        ///     key is absent or empty so downstream code can short-circuit.
+        ///     Parses the <c>sasl.oauthbearer.extensions</c> raw string into a
+        ///     dictionary suitable for the OAUTHBEARER refresh handoff. Returns
+        ///     <c>null</c> when <paramref name="raw"/> is null or empty so
+        ///     downstream code can short-circuit.
         /// </summary>
         /// <exception cref="ArgumentException">
         ///     Malformed entry — missing <c>=</c>, or empty key (e.g.
         ///     <c>=value</c>).
         /// </exception>
-        public static IDictionary<string, string> Parse(
-            IReadOnlyDictionary<string, string> kafkaConfig)
+        public static IDictionary<string, string> Parse(string raw)
         {
-            if (!kafkaConfig.TryGetValue(ConfigKey, out var raw)
-                || string.IsNullOrEmpty(raw))
-            {
-                return null;
-            }
+            if (string.IsNullOrEmpty(raw)) return null;
 
             var result = new Dictionary<string, string>();
             foreach (var kv in KvStringParser.Parse(

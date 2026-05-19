@@ -96,6 +96,65 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.Contains("oidc", ex.Message);
         }
 
+        [Fact]
+        public void ProducerBuilder_Build_MarkerAndMethodOidcButNoConfig_Throws()
+        {
+            AwsAutoWireDispatcher.ResetCacheForTests();
+            var config = new ProducerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism    = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
+                SaslOauthbearerMetadataAuthenticationType =
+                    SaslOauthbearerMetadataAuthenticationType.AwsIam,
+                // No SaslOauthbearerConfig — RequireSaslOauthbearerConfig gate trips.
+            };
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => new ProducerBuilder<string, string>(config).Build());
+            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("missing or empty", ex.Message);
+        }
+
+        [Fact]
+        public void ConsumerBuilder_Build_MarkerAndMethodOidcButNoConfig_Throws()
+        {
+            AwsAutoWireDispatcher.ResetCacheForTests();
+            var baseCfg = new ProducerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism    = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
+                SaslOauthbearerMetadataAuthenticationType =
+                    SaslOauthbearerMetadataAuthenticationType.AwsIam,
+            };
+            var consumerConfig = new ConsumerConfig(baseCfg) { GroupId = "test-group" };
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => new ConsumerBuilder<string, string>(consumerConfig).Build());
+            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("missing or empty", ex.Message);
+        }
+
+        [Fact]
+        public void AdminClientBuilder_Build_MarkerAndMethodOidcButNoConfig_Throws()
+        {
+            AwsAutoWireDispatcher.ResetCacheForTests();
+            var config = new ProducerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism    = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
+                SaslOauthbearerMetadataAuthenticationType =
+                    SaslOauthbearerMetadataAuthenticationType.AwsIam,
+            };
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => new AdminClientBuilder(config).Build());
+            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("missing or empty", ex.Message);
+        }
+
         // TODO: Remove the Skip on the three *_ExplicitHandlerWithMarker_PrecedenceRuleHonored
         // tests below once librdkafka.redist ships with the AWS_IAM marker patch. Stock
         // librdkafka rejects 'aws_iam' as a value of

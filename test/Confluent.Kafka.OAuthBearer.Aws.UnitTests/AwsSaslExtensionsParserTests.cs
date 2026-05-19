@@ -26,18 +26,18 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
     /// </summary>
     public class AwsSaslExtensionsParserTests
     {
-        // ---- Absent / empty input → null ----
+        // ---- Null / empty input → null ----
 
         [Fact]
-        public void Parse_AbsentKey_ReturnsNull()
+        public void Parse_NullRaw_ReturnsNull()
         {
-            Assert.Null(AwsSaslExtensionsParser.Parse(Wrap()));
+            Assert.Null(AwsSaslExtensionsParser.Parse(null));
         }
 
         [Fact]
         public void Parse_EmptyString_ReturnsNull()
         {
-            Assert.Null(AwsSaslExtensionsParser.Parse(Wrap("")));
+            Assert.Null(AwsSaslExtensionsParser.Parse(""));
         }
 
         // ---- Happy paths ----
@@ -45,7 +45,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_SingleEntry_ReturnsOneItem()
         {
-            var result = AwsSaslExtensionsParser.Parse(Wrap("logicalCluster=lkc-abc"));
+            var result = AwsSaslExtensionsParser.Parse("logicalCluster=lkc-abc");
             Assert.NotNull(result);
             Assert.Single(result);
             Assert.Equal("lkc-abc", result["logicalCluster"]);
@@ -55,7 +55,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_MultipleEntries_ReturnsAll()
         {
             var result = AwsSaslExtensionsParser.Parse(
-                Wrap("logicalCluster=lkc-abc,identityPoolId=pool-x"));
+                "logicalCluster=lkc-abc,identityPoolId=pool-x");
             Assert.Equal(2, result.Count);
             Assert.Equal("lkc-abc", result["logicalCluster"]);
             Assert.Equal("pool-x", result["identityPoolId"]);
@@ -66,7 +66,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             // Each comma-delimited entry is trimmed before parsing.
             var result = AwsSaslExtensionsParser.Parse(
-                Wrap(" logicalCluster=lkc-abc ,  identityPoolId=pool-x "));
+                " logicalCluster=lkc-abc ,  identityPoolId=pool-x ");
             Assert.Equal(2, result.Count);
             Assert.Equal("lkc-abc", result["logicalCluster"]);
             Assert.Equal("pool-x", result["identityPoolId"]);
@@ -80,7 +80,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             // that tolerance so the same config works whether the user is on
             // this autowire or the built-in librdkafka native OIDC paths.
             var result = AwsSaslExtensionsParser.Parse(
-                Wrap("logicalCluster=lkc-abc, identityPoolId=pool-xyz"));
+                "logicalCluster=lkc-abc, identityPoolId=pool-xyz");
             Assert.Equal(2, result.Count);
             Assert.Equal("lkc-abc", result["logicalCluster"]);
             Assert.Equal("pool-xyz", result["identityPoolId"]);  // leading space after ',' stripped
@@ -91,7 +91,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             // Stray commas (leading, trailing, doubled) collapse to no-ops, not errors.
             var result = AwsSaslExtensionsParser.Parse(
-                Wrap("logicalCluster=lkc-abc,,identityPoolId=pool-x,"));
+                "logicalCluster=lkc-abc,,identityPoolId=pool-x,");
             Assert.Equal(2, result.Count);
             Assert.Equal("lkc-abc", result["logicalCluster"]);
             Assert.Equal("pool-x", result["identityPoolId"]);
@@ -101,7 +101,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_EmptyValue_Accepted()
         {
             // RFC 7628 SASL extensions allow empty values; mirror that.
-            var result = AwsSaslExtensionsParser.Parse(Wrap("logicalCluster="));
+            var result = AwsSaslExtensionsParser.Parse("logicalCluster=");
             Assert.NotNull(result);
             Assert.Single(result);
             Assert.Equal("", result["logicalCluster"]);
@@ -112,7 +112,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             // Locks in the result[name] = value overwrite semantics so we don't
             // accidentally regress to throwing on duplicates.
-            var result = AwsSaslExtensionsParser.Parse(Wrap("k=a,k=b"));
+            var result = AwsSaslExtensionsParser.Parse("k=a,k=b");
             Assert.Single(result);
             Assert.Equal("b", result["k"]);
         }
@@ -123,7 +123,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_MissingEquals_Throws()
         {
             var ex = Assert.Throws<ArgumentException>(
-                () => AwsSaslExtensionsParser.Parse(Wrap("noEqualsHere")));
+                () => AwsSaslExtensionsParser.Parse("noEqualsHere"));
             Assert.Contains("sasl.oauthbearer.extensions", ex.Message);
             Assert.Contains("Malformed", ex.Message);
         }
@@ -132,26 +132,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_EmptyKey_Throws()
         {
             var ex = Assert.Throws<ArgumentException>(
-                () => AwsSaslExtensionsParser.Parse(Wrap("=value")));
+                () => AwsSaslExtensionsParser.Parse("=value"));
             Assert.Contains("sasl.oauthbearer.extensions", ex.Message);
             Assert.Contains("Malformed", ex.Message);
-        }
-
-        // ---- Helper ----
-
-        /// <summary>
-        ///     Builds a minimal config dict with the
-        ///     <c>sasl.oauthbearer.extensions</c> entry. Omitting
-        ///     <paramref name="extensions"/> simulates the key being absent.
-        /// </summary>
-        private static IReadOnlyDictionary<string, string> Wrap(string extensions = null)
-        {
-            var dict = new Dictionary<string, string>();
-            if (extensions != null)
-            {
-                dict[AwsSaslExtensionsParser.ConfigKey] = extensions;
-            }
-            return dict;
         }
     }
 }

@@ -26,6 +26,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     {
         private const string SaslOauthbearerMethodKey = "sasl.oauthbearer.method";
         private const string SaslOauthbearerMethodOidcValue = "oidc";
+        private const string SaslOauthbearerConfigKey = "sasl.oauthbearer.config";
 
         /// <summary>
         ///     Snapshots an enumerable config into a dictionary, applying
@@ -76,6 +77,29 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
                 "The AWS IAM path runs as a high-level-client refresh callback " +
                 "inside librdkafka's OIDC subsystem; without method=oidc the " +
                 "configuration is rejected by design.");
+        }
+
+        /// <summary>
+        ///     Throws <see cref="InvalidOperationException"/> unless the snapshot
+        ///     contains a non-empty <c>sasl.oauthbearer.config</c>. The AWS IAM
+        ///     autowire path needs this config to carry the STS region, OIDC
+        ///     audience, and any other parsed knobs. Sibling validation to
+        ///     <see cref="RequireMethodIsOidc"/> — both gates are called by the
+        ///     builders before dispatching into the optional package.
+        /// </summary>
+        public static void RequireSaslOauthbearerConfig(IReadOnlyDictionary<string, string> snapshot)
+        {
+            if (snapshot.TryGetValue(SaslOauthbearerConfigKey, out var raw)
+                && !string.IsNullOrEmpty(raw))
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"'{AwsIamMarker.Key}={AwsIamMarker.Value}' is set but " +
+                $"'{SaslOauthbearerConfigKey}' is missing or empty. The AWS IAM " +
+                "autowire path requires region and audience to be supplied via " +
+                "sasl.oauthbearer.config (e.g. \"region=us-east-1 audience=https://...\").");
         }
     }
 }

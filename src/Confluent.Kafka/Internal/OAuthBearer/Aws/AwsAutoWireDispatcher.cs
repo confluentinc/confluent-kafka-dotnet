@@ -29,7 +29,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     ///         When a builder sees the AWS IAM activation marker
     ///         (<see cref="AwsIamMarker"/>), it calls <see cref="LoadHandler"/> to
     ///         resolve the optional package's
-    ///         <c>AwsAutoWire.CreateHandler(IReadOnlyDictionary&lt;string,string&gt;)</c>
+    ///         <c>AwsAutoWire.CreateHandler(string, string)</c>
     ///         entry-point and obtain an OAUTHBEARER refresh handler.
     ///     </para>
     ///     <para>
@@ -40,11 +40,18 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     ///     <para>
     ///         The reflection target — assembly name <c>Confluent.Kafka.OAuthBearer.Aws</c>,
     ///         type name <c>Confluent.Kafka.OAuthBearer.Aws.AwsAutoWire</c>, method
-    ///         name <c>CreateHandler</c>, parameter
-    ///         <c>IReadOnlyDictionary&lt;string,string&gt;</c>, return
-    ///         <c>Action&lt;IClient,string&gt;</c> — is a frozen cross-package contract.
-    ///         The optional package's <c>AwsAutoWireTests</c> includes a
+    ///         name <c>CreateHandler</c>, parameters
+    ///         <c>(string saslOauthbearerConfig, string saslOauthbearerExtensions)</c>,
+    ///         return <c>Action&lt;IClient,string&gt;</c> — is a frozen cross-package
+    ///         contract. The optional package's <c>AwsAutoWireTests</c> includes a
     ///         signature-freeze test that fails if any of those names or shapes drift.
+    ///     </para>
+    ///     <para>
+    ///         Builder-side preconditions (marker presence, <c>method=oidc</c>,
+    ///         and <c>sasl.oauthbearer.config</c> non-empty) are enforced by
+    ///         <see cref="AwsAutoWireHelper"/> before <see cref="LoadHandler"/>
+    ///         is invoked. By the time we extract strings here, the config value
+    ///         is guaranteed non-empty.
     ///     </para>
     /// </remarks>
     public static class AwsAutoWireDispatcher
@@ -75,8 +82,9 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///     <c>AwsAutoWire.CreateHandler</c> signature (version mismatch).
         /// </exception>
         /// <exception cref="ArgumentException">
-        ///     <c>sasl.oauthbearer.config</c> is missing or fails the optional
-        ///     package's parser. Surfaced verbatim from the parser via
+        ///     The optional package's parser rejects
+        ///     <c>sasl.oauthbearer.config</c> (e.g., missing <c>region</c> or
+        ///     <c>audience</c>). Surfaced verbatim from the parser via
         ///     <see cref="ExceptionDispatchInfo"/>.
         /// </exception>
         public static Action<IClient, string> LoadHandler(
@@ -84,10 +92,18 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         {
             if (kafkaConfig == null) throw new ArgumentNullException(nameof(kafkaConfig));
 
+            // Builder-side gates (AwsAutoWireHelper.RequireMethodIsOidc +
+            // RequireSaslOauthbearerConfig) guarantee 'sasl.oauthbearer.config'
+            // is non-empty by the time we get here. 'sasl.oauthbearer.extensions'
+            // is optional — TryGetValue leaves rawExtensions null if absent.
+            kafkaConfig.TryGetValue("sasl.oauthbearer.config", out var rawConfig);
+            kafkaConfig.TryGetValue("sasl.oauthbearer.extensions", out var rawExtensions);
+
             var method = ResolveCreateHandler();
             try
             {
-                return (Action<IClient, string>)method.Invoke(null, new object[] { kafkaConfig });
+                return (Action<IClient, string>)method.Invoke(null,
+                    new object[] { rawConfig, rawExtensions });
             }
             catch (TargetInvocationException tie) when (tie.InnerException != null)
             {
@@ -133,12 +149,12 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
                     EntryPointMethodName,
                     BindingFlags.Public | BindingFlags.Static,
                     binder: null,
-                    types: new[] { typeof(IReadOnlyDictionary<string, string>) },
+                    types: new[] { typeof(string), typeof(string) },
                     modifiers: null)
                     ?? throw new InvalidOperationException(
                         $"{OptionalAssemblyName} is loaded but does not expose " +
                         $"'{EntryPointTypeName}.{EntryPointMethodName}" +
-                        "(IReadOnlyDictionary<string,string>)'. " +
+                        "(string, string)'. " +
                         "The package may be incompatible with this version of " +
                         "Confluent.Kafka — upgrade both packages to matching versions.");
 

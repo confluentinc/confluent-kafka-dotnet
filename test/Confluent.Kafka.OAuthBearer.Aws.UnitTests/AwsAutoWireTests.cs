@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using Xunit;
 
@@ -27,35 +26,26 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
     /// </summary>
     public class AwsAutoWireTests
     {
-        // ---- CreateHandler input validation ----
+        // ---- CreateHandler input validation (defensive checks for direct callers) ----
 
         [Fact]
         public void CreateHandler_NullConfig_Throws()
         {
-            Assert.Throws<ArgumentNullException>(() => AwsAutoWire.CreateHandler(null));
+            // Direct callers bypassing the dispatcher's gate get the same friendly
+            // error via the defensive check.
+            var ex = Assert.Throws<ArgumentException>(
+                () => AwsAutoWire.CreateHandler(null, null));
+            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("missing or empty", ex.Message);
         }
 
         [Fact]
-        public void CreateHandler_MissingSaslOauthbearerConfig_Throws()
+        public void CreateHandler_EmptyConfig_Throws()
         {
-            var config = new Dictionary<string, string>
-            {
-                ["sasl.mechanism"] = "OAUTHBEARER",
-                // No sasl.oauthbearer.config entry.
-            };
-            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(config));
+            var ex = Assert.Throws<ArgumentException>(
+                () => AwsAutoWire.CreateHandler("", null));
             Assert.Contains("sasl.oauthbearer.config", ex.Message);
-        }
-
-        [Fact]
-        public void CreateHandler_EmptySaslOauthbearerConfig_Throws()
-        {
-            var config = new Dictionary<string, string>
-            {
-                ["sasl.oauthbearer.config"] = "",
-            };
-            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(config));
-            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("missing or empty", ex.Message);
         }
 
         // ---- Parse delegation: errors propagate from AwsOAuthBearerConfig.Parse ----
@@ -63,40 +53,40 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_MissingRegion_Throws()
         {
-            var config = NewConfig("audience=https://a");
-            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(config));
+            var rawConfig = "audience=https://a";
+            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(rawConfig, null));
             Assert.Contains("region", ex.Message);
         }
 
         [Fact]
         public void CreateHandler_MissingAudience_Throws()
         {
-            var config = NewConfig("region=us-east-1");
-            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(config));
+            var rawConfig = "region=us-east-1";
+            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(rawConfig, null));
             Assert.Contains("audience", ex.Message);
         }
 
         [Fact]
         public void CreateHandler_InvalidSigningAlgorithm_Throws()
         {
-            var config = NewConfig("region=us-east-1 audience=https://a signing_algorithm=HS256");
-            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(config));
+            var rawConfig = "region=us-east-1 audience=https://a signing_algorithm=HS256";
+            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(rawConfig, null));
             Assert.Contains("signing_algorithm", ex.Message);
         }
 
         [Fact]
         public void CreateHandler_InvalidDuration_Throws()
         {
-            var config = NewConfig("region=us-east-1 audience=https://a duration_seconds=10");
-            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(config));
+            var rawConfig = "region=us-east-1 audience=https://a duration_seconds=10";
+            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(rawConfig, null));
             Assert.Contains("duration_seconds", ex.Message);
         }
 
         [Fact]
         public void CreateHandler_UnknownKey_Throws()
         {
-            var config = NewConfig("region=us-east-1 audience=https://a not_a_key=foo");
-            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(config));
+            var rawConfig = "region=us-east-1 audience=https://a not_a_key=foo";
+            var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(rawConfig, null));
             Assert.Contains("not_a_key", ex.Message);
         }
 
@@ -105,22 +95,26 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_MarkerOnlyMinimumConfig_ReturnsHandler()
         {
-            var config = NewConfig("region=us-east-1 audience=https://a");
-            var handler = AwsAutoWire.CreateHandler(config);
+            var handler = AwsAutoWire.CreateHandler(
+                "region=us-east-1 audience=https://a", null);
             Assert.NotNull(handler);
         }
 
         [Fact]
         public void CreateHandler_AllOptionalFields_ReturnsHandler()
         {
-            var config = NewConfig(
+            // aws_debug=none avoids the AWSConfigs.LoggingConfig.LogTo side
+            // effect — that path is exercised by AwsStsTokenProviderTests with
+            // proper save/restore. Here we only need to confirm every supported
+            // key parses cleanly through the dispatcher entry point.
+            var handler = AwsAutoWire.CreateHandler(
                 "region=us-east-1 audience=https://a " +
                 "duration_seconds=900 signing_algorithm=RS256 " +
                 "sts_endpoint=https://sts.us-east-1.amazonaws.com " +
                 "principal_name=my-principal " +
                 "aws_debug=none " +
-                "tag_team=platform tag_environment=prod");
-            var handler = AwsAutoWire.CreateHandler(config);
+                "tag_team=platform tag_environment=prod",
+                null);
             Assert.NotNull(handler);
         }
 
@@ -128,9 +122,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void CreateHandler_TagConfig_HandlerReady()
         {
             // Verify tag_<NAME>=<VALUE> entries don't trip parsing.
-            var config = NewConfig(
-                "region=us-east-1 audience=https://a tag_team=platform tag_environment=prod");
-            var handler = AwsAutoWire.CreateHandler(config);
+            var handler = AwsAutoWire.CreateHandler(
+                "region=us-east-1 audience=https://a tag_team=platform tag_environment=prod",
+                null);
             Assert.NotNull(handler);
         }
 
@@ -139,9 +133,29 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void CreateHandler_PrincipalNameOverride_HandlerReady()
         {
             // Verify principal_name doesn't trip parsing (no throw).
-            var config = NewConfig(
-                "region=us-east-1 audience=https://a principal_name=explicit-principal");
-            var handler = AwsAutoWire.CreateHandler(config);
+            var handler = AwsAutoWire.CreateHandler(
+                "region=us-east-1 audience=https://a principal_name=explicit-principal",
+                null);
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public void CreateHandler_NullExtensions_TreatsAsAbsent()
+        {
+            // SaslOauthbearerExtensions is optional — null is accepted.
+            var handler = AwsAutoWire.CreateHandler(
+                "region=us-east-1 audience=https://a",
+                saslOauthbearerExtensions: null);
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public void CreateHandler_EmptyExtensions_TreatsAsAbsent()
+        {
+            // Empty string is also accepted (same semantic as absent).
+            var handler = AwsAutoWire.CreateHandler(
+                "region=us-east-1 audience=https://a",
+                saslOauthbearerExtensions: "");
             Assert.NotNull(handler);
         }
 
@@ -150,10 +164,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_TypedExtensions_SingleEntry_HandlerReady()
         {
-            var config = NewConfig(
+            var handler = AwsAutoWire.CreateHandler(
                 "region=us-east-1 audience=https://a",
                 "logicalCluster=lkc-abc");
-            var handler = AwsAutoWire.CreateHandler(config);
             Assert.NotNull(handler);
         }
 
@@ -180,35 +193,10 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 "CreateHandler",
                 BindingFlags.Public | BindingFlags.Static,
                 binder: null,
-                types: new[] { typeof(IReadOnlyDictionary<string, string>) },
+                types: new[] { typeof(string), typeof(string) },
                 modifiers: null);
             Assert.NotNull(method);
             Assert.Equal(typeof(Action<IClient, string>), method.ReturnType);
-        }
-
-        // ---- Helper ----
-
-        /// <summary>
-        ///     Builds a minimal config dict with the
-        ///     <c>sasl.oauthbearer.config</c> entry (and optionally a
-        ///     <c>sasl.oauthbearer.extensions</c> entry) that
-        ///     <see cref="AwsAutoWire.CreateHandler"/> reads. The marker key is not
-        ///     required here because core's dispatcher (which checks the marker) is
-        ///     upstream of this entry-point.
-        /// </summary>
-        private static IReadOnlyDictionary<string, string> NewConfig(
-            string saslOauthbearerConfig,
-            string saslOauthbearerExtensions = null)
-        {
-            var dict = new Dictionary<string, string>
-            {
-                ["sasl.oauthbearer.config"] = saslOauthbearerConfig,
-            };
-            if (saslOauthbearerExtensions != null)
-            {
-                dict["sasl.oauthbearer.extensions"] = saslOauthbearerExtensions;
-            }
-            return dict;
         }
     }
 }

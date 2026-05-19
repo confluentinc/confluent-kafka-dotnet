@@ -136,5 +136,40 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.Contains("'garbage'", ex.Message);
         }
 
+        // ---- AwsAutoWireHelper.RequireSaslOauthbearerConfig ----
+
+        [Fact]
+        public void RequireSaslOauthbearerConfig_Present_DoesNotThrow()
+        {
+            var snap = new Dictionary<string, string>
+            {
+                ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
+            };
+            AwsAutoWireHelper.RequireSaslOauthbearerConfig(snap); // does not throw
+        }
+
+        [Fact]
+        public void RequireSaslOauthbearerConfig_Missing_Throws()
+        {
+            var snap = new Dictionary<string, string>();
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => AwsAutoWireHelper.RequireSaslOauthbearerConfig(snap));
+            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("missing or empty", ex.Message);
+        }
+
+        [Fact]
+        public void RequireSaslOauthbearerConfig_Empty_Throws()
+        {
+            var snap = new Dictionary<string, string>
+            {
+                ["sasl.oauthbearer.config"] = "",
+            };
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => AwsAutoWireHelper.RequireSaslOauthbearerConfig(snap));
+            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("missing or empty", ex.Message);
+        }
+
     }
 }

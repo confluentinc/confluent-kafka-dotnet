@@ -58,25 +58,29 @@ namespace Confluent.Kafka.OAuthBearer.Aws
         internal const string MarkerValue = "aws_iam";
 
         /// <summary>
-        ///     Builds an OAUTHBEARER refresh handler from the user's Kafka client
-        ///     config dictionary. Called by Confluent.Kafka core via
+        ///     Builds an OAUTHBEARER refresh handler from the two
+        ///     OAUTHBEARER config strings. Called by Confluent.Kafka core via
         ///     <c>Assembly.Load</c> + reflected <c>MethodInfo</c>.
         /// </summary>
-        /// <param name="kafkaConfig">
-        ///     The full client config snapshot (must include
-        ///     <c>sasl.oauthbearer.config</c>). Implementations must not assume
-        ///     any other key is present.
+        /// <param name="saslOauthbearerConfig">
+        ///     The <c>sasl.oauthbearer.config</c> value (whitespace-separated
+        ///     <c>key=value</c> pairs). Must be non-null and non-empty —
+        ///     callers via core's <see cref="Confluent.Kafka.Internal.OAuthBearer.Aws.AwsAutoWireHelper.RequireSaslOauthbearerConfig"/>
+        ///     gate are already guaranteed this; direct callers get the same
+        ///     friendly error via a defensive check.
+        /// </param>
+        /// <param name="saslOauthbearerExtensions">
+        ///     The <c>sasl.oauthbearer.extensions</c> value
+        ///     (comma-separated <c>key=value</c> pairs, RFC 7628 §3.1).
+        ///     May be <c>null</c> or empty when the user has no extensions.
         /// </param>
         /// <returns>
         ///     An <c>Action&lt;IClient, string&gt;</c> suitable for
         ///     <c>SetOAuthBearerTokenRefreshHandler</c>. The closure resolves a
         ///     fresh JWT via STS each time librdkafka fires the refresh event.
         /// </returns>
-        /// <exception cref="ArgumentNullException">
-        ///     <paramref name="kafkaConfig"/> is null.
-        /// </exception>
         /// <exception cref="ArgumentException">
-        ///     <c>sasl.oauthbearer.config</c> is missing or empty, or its
+        ///     <paramref name="saslOauthbearerConfig"/> is null or empty, or its
         ///     contents fail
         ///     <see cref="AwsOAuthBearerConfig.Parse(string, IDictionary{string, string})"/> validation.
         /// </exception>
@@ -85,22 +89,25 @@ namespace Confluent.Kafka.OAuthBearer.Aws
         ///     <c>RegionEndpoint.GetBySystemName</c>).
         /// </exception>
         public static Action<IClient, string> CreateHandler(
-            IReadOnlyDictionary<string, string> kafkaConfig)
+            string saslOauthbearerConfig,
+            string saslOauthbearerExtensions)
         {
-            if (kafkaConfig == null) throw new ArgumentNullException(nameof(kafkaConfig));
-
-            if (!kafkaConfig.TryGetValue(SaslOauthbearerConfigKey, out var raw)
-                || string.IsNullOrEmpty(raw))
+            // Defensive — core's AwsAutoWireHelper.RequireSaslOauthbearerConfig
+            // gate already enforces this for builder-driven callers, but direct
+            // callers (custom dispatchers, future extensions) deserve the same
+            // friendly error.
+            if (string.IsNullOrEmpty(saslOauthbearerConfig))
             {
                 throw new ArgumentException(
-                    $"Config '{MarkerKey}={MarkerValue}' is set but " +
-                    $"'{SaslOauthbearerConfigKey}' is missing or empty. The autowire path " +
-                    "requires region and audience to be supplied via " +
-                    "sasl.oauthbearer.config (e.g. \"region=us-east-1 audience=https://...\").");
+                    $"'{MarkerKey}={MarkerValue}' is set but " +
+                    $"'{SaslOauthbearerConfigKey}' is missing or empty. The AWS IAM " +
+                    "autowire path requires region and audience to be supplied via " +
+                    "sasl.oauthbearer.config (e.g. \"region=us-east-1 audience=https://...\").",
+                    nameof(saslOauthbearerConfig));
             }
 
-            var saslExtensions = AwsSaslExtensionsParser.Parse(kafkaConfig);
-            var parsed = AwsOAuthBearerConfig.Parse(raw, saslExtensions);
+            var saslExtensions = AwsSaslExtensionsParser.Parse(saslOauthbearerExtensions);
+            var parsed = AwsOAuthBearerConfig.Parse(saslOauthbearerConfig, saslExtensions);
             var provider = new AwsStsTokenProvider(parsed);
             return AwsOAuthBearerHandler.Create(provider);
         }
