@@ -2,7 +2,8 @@
 
 ## Fixes
 
-* Handle anyOf/allOf in JSON transforms #2611
+* Handle anyOf/allOf in JSON transforms (#2611)
+* Allow encrypting enum for JObject in dotnet (#2615)
 
 
 # 2.14.0

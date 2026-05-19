@@ -13,6 +13,7 @@ using Duration = Google.Protobuf.WellKnownTypes.Duration;
 using Google.Api.Expr.V1Alpha1;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Confluent.SchemaRegistry.Rules
@@ -98,10 +99,11 @@ namespace Confluent.SchemaRegistry.Rules
                 {
                     type = ScriptType.Protobuf;
                 }
-                else if (typeof(IList).IsAssignableFrom(msg.GetType()) 
-                         || (msg.GetType().IsGenericType 
-                             && (msg.GetType().GetGenericTypeDefinition() == typeof(List<>) 
-                                 || msg.GetType().GetGenericTypeDefinition() == typeof(IList<>))))
+                else if (!(msg is JObject)
+                         && (typeof(IList).IsAssignableFrom(msg.GetType())
+                             || (msg.GetType().IsGenericType
+                                 && (msg.GetType().GetGenericTypeDefinition() == typeof(List<>)
+                                     || msg.GetType().GetGenericTypeDefinition() == typeof(IList<>)))))
                 {
                     // list not supported
                     return obj;

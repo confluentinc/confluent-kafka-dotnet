@@ -54,7 +54,7 @@ namespace Confluent.SchemaRegistry.Rules
 
             public async Task<object> Transform(RuleContext ctx, RuleContext.FieldContext fieldCtx, object fieldValue)
             {
-                if (!fieldCtx.IsPrimitive()) 
+                if (!fieldCtx.IsPrimitive())
                 {
                     // CEL field transforms only apply to primitive types
                     return fieldValue;
