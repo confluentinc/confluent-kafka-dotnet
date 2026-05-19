@@ -203,6 +203,37 @@ namespace Confluent.SchemaRegistry.Serdes
         private static async Task<object> TransformProperties(RuleContext ctx, JsonSchema rootSchema, JsonSchema schema,
             string path, object message, IFieldTransform fieldTransform)
         {
+            if (message is JObject jObject)
+            {
+                foreach (var it in schema.Properties)
+                {
+                    if (!jObject.TryGetValue(it.Key, out JToken token))
+                    {
+                        continue;
+                    }
+                    string fullName = path + '.' + it.Key;
+                    using (ctx.EnterField(message, fullName, it.Key, GetType(rootSchema, it.Value), GetInlineTags(it.Value)))
+                    {
+                        object value = token is JValue jv ? jv.Value : (object)token;
+                        object newValue = await Transform(ctx, rootSchema, it.Value, fullName, value, fieldTransform, null).ConfigureAwait(false);
+                        if (ctx.Rule.Kind == RuleKind.Condition)
+                        {
+                            if (newValue is bool b && !b)
+                            {
+                                throw new RuleConditionException(ctx.Rule);
+                            }
+                        }
+                        else
+                        {
+                            jObject[it.Key] = newValue == null
+                                ? JValue.CreateNull()
+                                : (newValue as JToken ?? JToken.FromObject(newValue));
+                        }
+                    }
+                }
+                return message;
+            }
+
             foreach (var it in schema.Properties)
             {
                 string fullName = path + '.' + it.Key;
