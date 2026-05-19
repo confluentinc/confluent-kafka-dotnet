@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using Amazon;
 using Confluent.Kafka.OAuthBearer.Aws.Internal;
 using Xunit;
 
@@ -170,6 +171,65 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                     $"region=us-east-1 audience=https://a signing_algorithm={alg}"));
             Assert.Contains("signing_algorithm", ex.Message);
             Assert.Contains("must be 'ES384' or 'RS256'", ex.Message);
+        }
+
+        // ---- aws_debug ----
+
+        [Fact]
+        public void Parse_NoAwsDebug_DefaultsToNone()
+        {
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            Assert.Equal(LoggingOptions.None, cfg.AwsDebug);
+        }
+
+        [Theory]
+        [InlineData("none",              LoggingOptions.None)]
+        [InlineData("console",           LoggingOptions.Console)]
+        [InlineData("log4net",           LoggingOptions.Log4Net)]
+        [InlineData("systemdiagnostics", LoggingOptions.SystemDiagnostics)]
+        public void Parse_AwsDebugValues_Accepted(string value, LoggingOptions expected)
+        {
+            var cfg = AwsOAuthBearerConfig.Parse(
+                $"region=us-east-1 audience=https://a aws_debug={value}");
+            Assert.Equal(expected, cfg.AwsDebug);
+        }
+
+        [Theory]
+        [InlineData("Console",           LoggingOptions.Console)]
+        [InlineData("CONSOLE",           LoggingOptions.Console)]
+        [InlineData("Log4Net",           LoggingOptions.Log4Net)]
+        [InlineData("SystemDiagnostics", LoggingOptions.SystemDiagnostics)]
+        [InlineData("NONE",              LoggingOptions.None)]
+        public void Parse_AwsDebugCaseInsensitive_Accepted(string value, LoggingOptions expected)
+        {
+            var cfg = AwsOAuthBearerConfig.Parse(
+                $"region=us-east-1 audience=https://a aws_debug={value}");
+            Assert.Equal(expected, cfg.AwsDebug);
+        }
+
+        [Theory]
+        [InlineData("verbose")]
+        [InlineData("etw")]            // explicitly excluded from supported set
+        [InlineData("debug")]
+        [InlineData("true")]
+        [InlineData("foo")]
+        public void Parse_AwsDebugInvalidValue_Throws(string value)
+        {
+            var ex = Assert.Throws<ArgumentException>(
+                () => AwsOAuthBearerConfig.Parse(
+                    $"region=us-east-1 audience=https://a aws_debug={value}"));
+            Assert.Contains("aws_debug", ex.Message);
+            Assert.Contains("none, console, log4net, systemdiagnostics", ex.Message);
+        }
+
+        [Fact]
+        public void Parse_AwsDebugEmptyValue_Throws()
+        {
+            var ex = Assert.Throws<ArgumentException>(
+                () => AwsOAuthBearerConfig.Parse(
+                    "region=us-east-1 audience=https://a aws_debug="));
+            Assert.Contains("aws_debug", ex.Message);
+            Assert.Contains("must not be empty", ex.Message);
         }
 
         // ---- sts_endpoint, principal_name ----
@@ -383,6 +443,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 "signing_algorithm=RS256 " +
                 "sts_endpoint=https://sts.us-east-1.amazonaws.com " +
                 "principal_name=test-principal " +
+                "aws_debug=systemdiagnostics " +
                 "tag_team=platform",
                 saslExtensions);
 
@@ -392,6 +453,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.Equal("RS256", cfg.SigningAlgorithm);
             Assert.Equal("https://sts.us-east-1.amazonaws.com", cfg.StsEndpointOverride);
             Assert.Equal("test-principal", cfg.PrincipalNameOverride);
+            Assert.Equal(LoggingOptions.SystemDiagnostics, cfg.AwsDebug);
             Assert.Equal("lkc-abc", cfg.SaslExtensions["logicalCluster"]);
             Assert.Equal("platform", cfg.Tags["team"]);
         }

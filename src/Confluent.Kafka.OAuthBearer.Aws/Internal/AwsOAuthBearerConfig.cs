@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using Amazon;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
@@ -37,6 +38,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             TimeSpan duration,
             string stsEndpointOverride,
             string principalNameOverride,
+            LoggingOptions awsDebug,
             IDictionary<string, string> saslExtensions,
             IDictionary<string, string> tags)
         {
@@ -46,6 +48,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             Duration = duration;
             StsEndpointOverride = stsEndpointOverride;
             PrincipalNameOverride = principalNameOverride;
+            AwsDebug = awsDebug;
             SaslExtensions = saslExtensions;
             Tags = tags;
         }
@@ -72,6 +75,16 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         /// <summary>Optional override for the OAUTHBEARER principal name. <c>null</c> means extract JWT <c>sub</c>.</summary>
         public string PrincipalNameOverride { get; }
 
+        /// <summary>
+        ///     AWS SDK diagnostic log sink, parsed from the optional <c>aws_debug</c>
+        ///     key in <c>sasl.oauthbearer.config</c>. Defaults to
+        ///     <see cref="LoggingOptions.None"/> (the library never mutates the AWS
+        ///     SDK's process-wide log routing unless the user explicitly opts in).
+        ///     When non-<see cref="LoggingOptions.None"/>, <see cref="AwsAutoWire.CreateHandler"/>
+        ///     applies the value to <c>AWSConfigs.LoggingConfig.LogTo</c>.
+        /// </summary>
+        public LoggingOptions AwsDebug { get; }
+
         /// <summary>SASL extensions to send to the broker (RFC 7628). <c>null</c> when none parsed.</summary>
         public IDictionary<string, string> SaslExtensions { get; }
 
@@ -91,6 +104,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///       signing_algorithm=ES384|RS256       (default: ES384)
         ///       sts_endpoint=&lt;url&gt;             (optional, FIPS / VPC)
         ///       principal_name=&lt;value&gt;         (optional, override JWT 'sub')
+        ///       aws_debug=none|console|log4net|systemdiagnostics  (default: none — opt-in AWS SDK logging)
         ///       tag_&lt;name&gt;=&lt;value&gt;        (zero or more JWT custom claims, max 50)
         ///     </code>
         /// </remarks>
@@ -109,6 +123,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             string stsEndpoint = null;
             string principalName = null;
             int? durationSeconds = null;
+            LoggingOptions awsDebug = LoggingOptions.None;
             Dictionary<string, string> tags = null;
 
             foreach (var token in raw.Split(new[] { ' ', '\t', '\r', '\n' },
@@ -152,6 +167,10 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
                     case "principal_name":
                         AssertNotEmpty(key, value);
                         principalName = value;
+                        break;
+                    case "aws_debug":
+                        AssertNotEmpty(key, value);
+                        awsDebug = ParseAwsDebug(value);
                         break;
                     default:
                         if (key.StartsWith(TagKeyPrefix, StringComparison.Ordinal))
@@ -214,6 +233,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
                 duration: TimeSpan.FromSeconds(durationSeconds ?? (int)DefaultDuration.TotalSeconds),
                 stsEndpointOverride: stsEndpoint,
                 principalNameOverride: principalName,
+                awsDebug: awsDebug,
                 saslExtensions: saslExtensions,
                 tags: tags);
         }
@@ -224,6 +244,26 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             {
                 throw new ArgumentException(
                     $"sasl.oauthbearer.config '{key}' must not be empty.");
+            }
+        }
+
+        /// <summary>
+        ///     Maps the string form of the <c>aws_debug</c> key to its
+        ///     <see cref="LoggingOptions"/> enum value. Strict validation —
+        ///     unknown values throw <see cref="ArgumentException"/>.
+        /// </summary>
+        private static LoggingOptions ParseAwsDebug(string value)
+        {
+            switch (value.ToLowerInvariant())
+            {
+                case "none":              return LoggingOptions.None;
+                case "console":           return LoggingOptions.Console;
+                case "log4net":           return LoggingOptions.Log4Net;
+                case "systemdiagnostics": return LoggingOptions.SystemDiagnostics;
+                default:
+                    throw new ArgumentException(
+                        $"sasl.oauthbearer.config 'aws_debug' must be one of: " +
+                        $"none, console, log4net, systemdiagnostics. Got '{value}'.");
             }
         }
     }

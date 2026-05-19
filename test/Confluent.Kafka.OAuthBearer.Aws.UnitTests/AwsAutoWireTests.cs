@@ -118,6 +118,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 "duration_seconds=900 signing_algorithm=RS256 " +
                 "sts_endpoint=https://sts.us-east-1.amazonaws.com " +
                 "principal_name=my-principal " +
+                "aws_debug=none " +
                 "tag_team=platform tag_environment=prod");
             var handler = AwsAutoWire.CreateHandler(config);
             Assert.NotNull(handler);

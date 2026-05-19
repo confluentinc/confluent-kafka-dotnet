@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon;
 using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
 using Confluent.Kafka.OAuthBearer.Aws.Internal;
@@ -49,6 +50,75 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
             using var provider = new AwsStsTokenProvider(cfg);
             // Does not throw; does not call AWS (lazy credential chain).
+        }
+
+        // ---- Constructor: aws_debug side effect on AWSConfigs.LoggingConfig.LogTo ----
+        //
+        // These tests verify the opt-in / preserve contract for the process-wide
+        // AWS SDK log routing field. Each test saves the current value, runs, and
+        // restores it in a finally block — tests within this class run serially
+        // (xunit default for tests in the same class), so the global mutation is
+        // contained to the test's scope.
+
+        [Fact]
+        public void Ctor_NoAwsDebug_DoesNotMutateAwsSdkLogTo()
+        {
+            var previous = AWSConfigs.LoggingConfig.LogTo;
+            // Pre-set a non-default value so we can detect any silent clobber.
+            AWSConfigs.LoggingConfig.LogTo = LoggingOptions.Log4Net;
+            try
+            {
+                var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+                using var provider = new AwsStsTokenProvider(cfg);
+                Assert.Equal(LoggingOptions.Log4Net, AWSConfigs.LoggingConfig.LogTo);
+            }
+            finally
+            {
+                AWSConfigs.LoggingConfig.LogTo = previous;
+            }
+        }
+
+        [Fact]
+        public void Ctor_AwsDebugNone_DoesNotMutateAwsSdkLogTo()
+        {
+            // Explicit aws_debug=none should be indistinguishable from unset —
+            // i.e., the library must NOT clobber a user-set LogTo.
+            var previous = AWSConfigs.LoggingConfig.LogTo;
+            AWSConfigs.LoggingConfig.LogTo = LoggingOptions.Log4Net;
+            try
+            {
+                var cfg = AwsOAuthBearerConfig.Parse(
+                    "region=us-east-1 audience=https://a aws_debug=none");
+                using var provider = new AwsStsTokenProvider(cfg);
+                Assert.Equal(LoggingOptions.Log4Net, AWSConfigs.LoggingConfig.LogTo);
+            }
+            finally
+            {
+                AWSConfigs.LoggingConfig.LogTo = previous;
+            }
+        }
+
+        [Theory]
+        [InlineData("console",           LoggingOptions.Console)]
+        [InlineData("log4net",           LoggingOptions.Log4Net)]
+        [InlineData("systemdiagnostics", LoggingOptions.SystemDiagnostics)]
+        public void Ctor_AwsDebugExplicit_SetsAwsSdkLogTo(string value, LoggingOptions expected)
+        {
+            var previous = AWSConfigs.LoggingConfig.LogTo;
+            // Start from None so the test's expected value is unambiguously caused
+            // by our constructor, not by leftover state from another test.
+            AWSConfigs.LoggingConfig.LogTo = LoggingOptions.None;
+            try
+            {
+                var cfg = AwsOAuthBearerConfig.Parse(
+                    $"region=us-east-1 audience=https://a aws_debug={value}");
+                using var provider = new AwsStsTokenProvider(cfg);
+                Assert.Equal(expected, AWSConfigs.LoggingConfig.LogTo);
+            }
+            finally
+            {
+                AWSConfigs.LoggingConfig.LogTo = previous;
+            }
         }
 
         // ---- Request shape ----

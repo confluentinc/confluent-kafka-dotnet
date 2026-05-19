@@ -68,6 +68,7 @@ var cfg = new ConsumerConfig
         "signing_algorithm=ES384 " +
         "sts_endpoint=https://sts-fips.us-east-1.amazonaws.com " +
         "principal_name=my-explicit-principal " +
+        "aws_debug=console " +
         "tag_team=platform " +
         "tag_environment=prod",
     SaslOauthbearerExtensions =
@@ -98,6 +99,7 @@ consumer.Subscribe("my-topic");
 | `signing_algorithm` | `ES384` | JWT signing algorithm. Either `ES384` or `RS256`. AWS STS requires this field — we default for ergonomics. See [Algorithm choice](#algorithm-choice) below. |
 | `sts_endpoint` | _(SDK default)_ | Override STS endpoint URL. Use for FIPS (`sts-fips.us-east-1.amazonaws.com`) or VPC endpoints. |
 | `principal_name` | _(JWT `sub` claim)_ | Override the OAUTHBEARER principal. Defaults to extracting `sub` from the minted JWT (the role ARN). |
+| `aws_debug` | `none` | Opt in to AWS SDK diagnostic logging. One of `none`, `console`, `log4net`, `systemdiagnostics`. See [AWS SDK diagnostic logging](#aws-sdk-diagnostic-logging) below. |
 | `tag_<NAME>` | _(none)_ | Custom tag claims added to the minted JWT (max 50). Repeatable. |
 
 ### Algorithm choice
@@ -110,6 +112,37 @@ your broker's JWKS endpoint specifically requires RSA keys (rare in modern setup
 `SigningAlgorithm` is a required field on the underlying AWS STS API — omitting
 it from `SaslOauthbearerConfig` doesn't omit it from the wire, it just selects
 our default.
+
+### AWS SDK diagnostic logging
+
+`aws_debug` routes the **AWS SDK's** internal diagnostic logs (credential-chain
+resolution, IMDS calls, STS request/response error paths, etc.) to a sink of
+your choice. Off by default.
+
+| Value | Maps to | Where logs go |
+|---|---|---|
+| `none` *(default)* | `LoggingOptions.None` | Library never mutates `AWSConfigs.LoggingConfig.LogTo`. |
+| `console` | `LoggingOptions.Console` | `Console.Out`. Useful for container-runtime debugging (CloudWatch, `docker logs`). |
+| `log4net` | `LoggingOptions.Log4Net` | log4net appenders configured by your app. |
+| `systemdiagnostics` | `LoggingOptions.SystemDiagnostics` | `System.Diagnostics.Trace` listeners. |
+
+Values are case-insensitive. Unknown values fail at `Build()` time with an
+`ArgumentException`.
+
+**Side-effect note.** `AWSConfigs.LoggingConfig.LogTo` is **process-wide**.
+Setting `aws_debug` to anything other than `none` affects the AWS SDK's logging
+for every client in the process, not only the STS client this library uses. The
+library only mutates the global when you explicitly opt in — if you don't set
+`aws_debug` (or set it to `none`), any value you may have configured elsewhere
+in your application is preserved.
+
+```csharp
+// Quietest production setup — library does not touch AWS SDK logging.
+"region=us-east-1 audience=https://confluent.cloud/oidc"
+
+// Validation / debugging — verbose AWS SDK output to stdout.
+"region=us-east-1 audience=https://confluent.cloud/oidc aws_debug=console"
+```
 
 ### SASL extensions
 

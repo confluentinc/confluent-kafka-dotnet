@@ -60,6 +60,16 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             if (config == null) throw new ArgumentNullException(nameof(config));
             _cfg = config;
 
+            // Opt-in AWS SDK logging — only when user explicitly set aws_debug in
+            // sasl.oauthbearer.config. Mutates the AWS SDK's process-wide log
+            // routing (AWSConfigs.LoggingConfig.LogTo), so we leave it alone
+            // unless the user asks. Applied here (before client construction) so
+            // the AmazonSecurityTokenServiceClient picks up the setting.
+            if (config.AwsDebug != LoggingOptions.None)
+            {
+                AWSConfigs.LoggingConfig.LogTo = config.AwsDebug;
+            }
+
             var awsConfig = new AmazonSecurityTokenServiceConfig
             {
                 RegionEndpoint = RegionEndpoint.GetBySystemName(config.Region),
