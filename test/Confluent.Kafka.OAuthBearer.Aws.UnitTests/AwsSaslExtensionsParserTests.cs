@@ -73,6 +73,20 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         }
 
         [Fact]
+        public void Parse_SpaceAfterCommaOnly_MatchesLibrdkafkaTolerance()
+        {
+            // Regression: librdkafka's rd_string_split strips leading + trailing
+            // whitespace per element (rdstring.c:493-525). Our parser must match
+            // that tolerance so the same config works whether the user is on
+            // this autowire or the built-in librdkafka native OIDC paths.
+            var result = AwsSaslExtensionsParser.Parse(
+                Wrap("logicalCluster=lkc-abc, identityPoolId=pool-xyz"));
+            Assert.Equal(2, result.Count);
+            Assert.Equal("lkc-abc", result["logicalCluster"]);
+            Assert.Equal("pool-xyz", result["identityPoolId"]);  // leading space after ',' stripped
+        }
+
+        [Fact]
         public void Parse_EmptyEntries_Tolerated()
         {
             // Stray commas (leading, trailing, doubled) collapse to no-ops, not errors.

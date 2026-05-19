@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka.Internal;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
@@ -55,21 +56,13 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             }
 
             var result = new Dictionary<string, string>();
-            foreach (var token in raw.Split(','))
+            foreach (var kv in KvStringParser.Parse(
+                raw,
+                new[] { ',' },
+                contextLabel: ConfigKey))
             {
-                var trimmed = token.Trim();
-                if (trimmed.Length == 0) continue;
-
-                var idx = trimmed.IndexOf('=');
-                if (idx <= 0)
-                {
-                    throw new ArgumentException(
-                        $"Malformed '{ConfigKey}' entry '{trimmed}' " +
-                        "(expected comma-separated key=value pairs).");
-                }
-                var name = trimmed.Substring(0, idx);
-                var value = trimmed.Substring(idx + 1);
-                result[name] = value;
+                // Last-wins on duplicate keys, mirroring librdkafka.
+                result[kv.Key] = kv.Value;
             }
             return result.Count == 0 ? null : result;
         }

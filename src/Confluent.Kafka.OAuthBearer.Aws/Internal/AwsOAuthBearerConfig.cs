@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using Amazon;
+using Confluent.Kafka.Internal;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
@@ -126,17 +127,13 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             LoggingOptions awsDebug = LoggingOptions.None;
             Dictionary<string, string> tags = null;
 
-            foreach (var token in raw.Split(new[] { ' ', '\t', '\r', '\n' },
-                                            StringSplitOptions.RemoveEmptyEntries))
+            foreach (var kv in KvStringParser.Parse(
+                raw,
+                new[] { ' ', '\t', '\r', '\n' },
+                contextLabel: "sasl.oauthbearer.config"))
             {
-                var idx = token.IndexOf('=');
-                if (idx <= 0)
-                {
-                    throw new ArgumentException(
-                        $"Malformed sasl.oauthbearer.config entry '{token}' (expected key=value).");
-                }
-                var key = token.Substring(0, idx);
-                var value = token.Substring(idx + 1);
+                var key = kv.Key;
+                var value = kv.Value;
 
                 switch (key)
                 {
