@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <AssemblyName>OAuthBearerAws</AssemblyName>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- In a real consumer's csproj this would be:
+           <PackageReference Include="Confluent.Kafka" Version="2.14.0" />
+           <PackageReference Include="Confluent.Kafka.OAuthBearer.Aws" Version="2.14.0" />
+         The example uses ProjectReference for in-tree convenience. -->
+    <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
+    <ProjectReference Include="../../src/Confluent.Kafka.OAuthBearer.Aws/Confluent.Kafka.OAuthBearer.Aws.csproj" />
+  </ItemGroup>
+
+</Project>

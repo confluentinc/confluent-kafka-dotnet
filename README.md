@@ -34,6 +34,7 @@ client. Thanks Andreas!
 confluent-kafka-dotnet is distributed via NuGet. We provide the following  packages:
 
 - [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[netstandard2.0, net462, net6.0, net8.0]* - The core client library.
+- [Confluent.Kafka.OAuthBearer.Aws](https://www.nuget.org/packages/Confluent.Kafka.OAuthBearer.Aws/) *[netstandard2.1, net462, net6.0, net8.0]* - Optional AWS IAM-based OAUTHBEARER authentication for Confluent.Kafka.
 - [Confluent.SchemaRegistry.Serdes.Avro](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Avro/) *[netstandard2.0, net6.0, net8.0]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
 - [Confluent.SchemaRegistry.Serdes.Protobuf](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Protobuf/) *[netstandard2.0, net6.0, net8.0]* - Provides a serializer and deserializer for working with Protobuf serialized data with Confluent Schema Registry integration.
 - [Confluent.SchemaRegistry.Serdes.Json](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Json/) *[netstandard2.0, net6.0, net8.0]* - Provides a serializer and deserializer for working with Json serialized data with Confluent Schema Registry integration.
