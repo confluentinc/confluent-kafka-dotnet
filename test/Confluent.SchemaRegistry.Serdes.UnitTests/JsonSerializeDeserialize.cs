@@ -20,6 +20,7 @@
 using Confluent.Kafka;
 using Confluent.SchemaRegistry.Encryption;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
@@ -180,6 +181,19 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public class EnumObject
         {
             public EnumType Value { get; set; }
+        }
+
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public enum OrderStatus
+        {
+            OPEN,
+            CLOSED
+        }
+
+        public class Order
+        {
+            [JsonProperty("status")]
+            public OrderStatus Status { get; set; }
         }
 
         private ISchemaRegistryClient schemaRegistryClientJsonRef;
@@ -797,6 +811,114 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal("awesome-suffix", result.Name);
             Assert.Equal("blue-suffix", result.FavoriteColor);
             Assert.Equal(user.FavoriteNumber, result.FavoriteNumber);
+        }
+
+        [Fact]
+        public void CELFieldTransformEnum()
+        {
+            var schemaStr = @"{
+              ""type"": ""object"",
+              ""properties"": {
+                ""status"": {
+                  ""type"": ""string"",
+                  ""enum"": [""OPEN"", ""CLOSED""]
+                }
+              }
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("testCEL", RuleKind.Transform, RuleMode.Write, "CEL_FIELD", null, null,
+                        "name == 'status' && value == 'OPEN' ; 'CLOSED'", null, null, false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            var serializer = new JsonSerializer<JObject>(schemaRegistryClient, config);
+            var deserializer = new JsonDeserializer<JObject>(schemaRegistryClient);
+
+            var order = new Order
+            {
+                Status = OrderStatus.OPEN
+            };
+            var newtonsoftSerializer = Newtonsoft.Json.JsonSerializer.Create(
+                new JsonSerializerSettings { Converters = { new Newtonsoft.Json.Converters.StringEnumConverter() } });
+            var jObject = JObject.FromObject(order, newtonsoftSerializer);
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(jObject, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            var resultOrder = result.ToObject<Order>(newtonsoftSerializer);
+            Assert.Equal(OrderStatus.CLOSED, resultOrder.Status);
+        }
+
+        [Fact]
+        public void FieldEncryptionEnum()
+        {
+            var schemaStr = @"{
+              ""type"": ""object"",
+              ""properties"": {
+                ""status"": {
+                  ""type"": ""string"",
+                  ""confluent:tags"": [ ""PII"" ]
+                }
+              }
+            }";
+            var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Json, null);
+            schema.Metadata = new Metadata(new Dictionary<string, ISet<string>>
+                {
+                    ["$.status"] = new HashSet<string> { "PII" }
+                }, new Dictionary<string, string>(), new HashSet<string>()
+            );
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("encryptPII", RuleKind.Transform, RuleMode.WriteRead, "ENCRYPT", new HashSet<string>
+                    {
+                        "PII"
+                    }, new Dictionary<string, string>
+                    {
+                        ["encrypt.kek.name"] = "kek1",
+                        ["encrypt.kms.type"] = "local-kms",
+                        ["encrypt.kms.key.id"] = "mykey"
+                    })
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            };
+            config.Set("rules.secret", "mysecret");
+            RuleRegistry ruleRegistry = new RuleRegistry();
+            IRuleExecutor ruleExecutor = new FieldEncryptionExecutor(dekRegistryClient, clock);
+            ruleRegistry.RegisterExecutor(ruleExecutor);
+            var serializer = new JsonSerializer<JObject>(schemaRegistryClient, config, null, ruleRegistry);
+            var deserializer = new JsonDeserializer<JObject>(schemaRegistryClient, null, null, ruleRegistry);
+
+            var order = new Order
+            {
+                Status = OrderStatus.OPEN
+            };
+            var newtonsoftSerializer = Newtonsoft.Json.JsonSerializer.Create(
+                new JsonSerializerSettings { Converters = { new Newtonsoft.Json.Converters.StringEnumConverter() } });
+            var jObject = JObject.FromObject(order, newtonsoftSerializer);
+
+            Headers headers = new Headers();
+            var bytes = serializer.SerializeAsync(jObject, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+
+            var resultOrder = result.ToObject<Order>(newtonsoftSerializer);
+            Assert.Equal(OrderStatus.OPEN, resultOrder.Status);
         }
 
         [Fact]
