@@ -1,16 +1,25 @@
 # 2.x.0
 
+## New features
+
+* New optional package `Confluent.Kafka.OAuthBearer.Aws` provides AWS IAM-based
+  OAUTHBEARER authentication via AWS STS `GetWebIdentityToken`. Activate by
+  setting `SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc`,
+  `SaslOauthbearerMetadataAuthenticationType.AwsIam`, and supplying
+  `region` and `audience` in `SaslOauthbearerConfig`. See the package's README
+  for details.
+
 ## Fixes
 
 * Handle anyOf/allOf in JSON transforms (#2611)
 * Allow encrypting enum for JObject in dotnet (#2615)
 
 
-# 2.14.0
+# 2.14.2-aws-iam.2-dev
 
 ## Enhancements
 
-* References librdkafka.redist 2.14.0. Refer to the [librdkafka v2.14.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.14.0) for more information.
+* References librdkafka.redist 2.14.2-aws-iam.2-dev. Refer to the [librdkafka v2.14.2-aws-iam.2-dev release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.14.2-aws-iam.2-dev) for more information.
 * Add AssociatedNameStrategy (#2577)
 * Add enableAt to RuleSet (#2593)
 * Add config to validate before domain rules for JSON Schema (#2596)
