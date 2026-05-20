@@ -19,8 +19,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
 {
     /// <summary>
     ///     Shared helpers used by Producer/Consumer/AdminClient builders to
-    ///     dispatch the AWS IAM autowire path. Centralised so the three builder
-    ///     classes hold identical dispatch logic.
+    ///     dispatch the AWS IAM autowire path.
     /// </summary>
     public static class AwsAutoWireHelper
     {
@@ -30,8 +29,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
 
         /// <summary>
         ///     Snapshots an enumerable config into a dictionary, applying
-        ///     last-key-wins semantics (matches librdkafka's behaviour on
-        ///     duplicate keys in the on-wire config).
+        ///     last-key-wins semantics to match librdkafka's behavior.
         /// </summary>
         public static IReadOnlyDictionary<string, string> SnapshotConfig(
             IEnumerable<KeyValuePair<string, string>> config)
@@ -83,9 +81,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///     Throws <see cref="InvalidOperationException"/> unless the snapshot
         ///     contains a non-empty <c>sasl.oauthbearer.config</c>. The AWS IAM
         ///     autowire path needs this config to carry the STS region, OIDC
-        ///     audience, and any other parsed knobs. Sibling validation to
-        ///     <see cref="RequireMethodIsOidc"/> — both gates are called by the
-        ///     builders before dispatching into the optional package.
+        ///     audience, and any other parsed knobs.
         /// </summary>
         public static void RequireSaslOauthbearerConfig(IReadOnlyDictionary<string, string> snapshot)
         {

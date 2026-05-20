@@ -19,24 +19,11 @@ namespace Confluent.Kafka.Internal
 {
     /// <summary>
     ///     Shared utility for parsing <c>key=value</c> strings used by several
-    ///     SASL-related configs (e.g., <c>sasl.oauthbearer.config</c> and
-    ///     <c>sasl.oauthbearer.extensions</c>) and by optional plugins that
-    ///     consume those configs (e.g.,
-    ///     <c>Confluent.Kafka.OAuthBearer.Aws</c>).
+    ///     SASL-related configs.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Lives in the <see cref="Confluent.Kafka.Internal"/> namespace by
-    ///         the codebase convention: <c>public static class</c> for cross-
-    ///         assembly reach without <c>InternalsVisibleTo</c>, but namespaced
-    ///         as implementation detail. Consumers outside the Confluent.Kafka
-    ///         NuGet family should not depend on this type.
-    ///     </para>
-    ///     <para>
-    ///         The default trimming behaviour mirrors librdkafka's
-    ///         <c>rd_string_split</c> (full leading + trailing whitespace strip
-    ///         per element) so users get the same tolerant parsing across
-    ///         native and managed paths.
+    ///         The default trimming behaviour mirrors librdkafka's logic for consistency.
     ///     </para>
     /// </remarks>
     public static class KvStringParser

@@ -43,8 +43,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     ///         name <c>CreateHandler</c>, parameters
     ///         <c>(string saslOauthbearerConfig, string saslOauthbearerExtensions)</c>,
     ///         return <c>Action&lt;IClient,string&gt;</c> — is a frozen cross-package
-    ///         contract. The optional package's <c>AwsAutoWireTests</c> includes a
-    ///         signature-freeze test that fails if any of those names or shapes drift.
+    ///         contract.
     ///     </para>
     ///     <para>
     ///         Builder-side preconditions (marker presence, <c>method=oidc</c>,
@@ -92,10 +91,6 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         {
             if (kafkaConfig == null) throw new ArgumentNullException(nameof(kafkaConfig));
 
-            // Builder-side gates (AwsAutoWireHelper.RequireMethodIsOidc +
-            // RequireSaslOauthbearerConfig) guarantee 'sasl.oauthbearer.config'
-            // is non-empty by the time we get here. 'sasl.oauthbearer.extensions'
-            // is optional — TryGetValue leaves rawExtensions null if absent.
             kafkaConfig.TryGetValue("sasl.oauthbearer.config", out var rawConfig);
             kafkaConfig.TryGetValue("sasl.oauthbearer.extensions", out var rawExtensions);
 
@@ -107,9 +102,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
             }
             catch (TargetInvocationException tie) when (tie.InnerException != null)
             {
-                // Re-throw the inner exception with the original stack preserved,
-                // so callers see ArgumentException / InvalidOperationException as
-                // thrown by the optional package — not a wrapping TIE.
+                // Re-throw the inner exception with the original stack preserved.
                 ExceptionDispatchInfo.Capture(tie.InnerException).Throw();
                 throw; // unreachable
             }
