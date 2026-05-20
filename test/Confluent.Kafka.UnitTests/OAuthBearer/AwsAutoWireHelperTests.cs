@@ -171,5 +171,54 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.Contains("missing or empty", ex.Message);
         }
 
+        // ---- AwsAutoWireHelper.ShouldAutoWire ----
+
+        [Fact]
+        public void ShouldAutoWire_MarkerAbsent_ReturnsFalse()
+        {
+            var snap = new Dictionary<string, string> { ["bootstrap.servers"] = "x:9092" };
+            Assert.False(AwsAutoWireHelper.ShouldAutoWire(snap));
+        }
+
+        [Fact]
+        public void ShouldAutoWire_MarkerPresentMethodOidcAndConfig_ReturnsTrue()
+        {
+            var snap = new Dictionary<string, string>
+            {
+                ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
+                ["sasl.oauthbearer.method"] = "oidc",
+                ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
+            };
+            Assert.True(AwsAutoWireHelper.ShouldAutoWire(snap));
+        }
+
+        [Fact]
+        public void ShouldAutoWire_MarkerPresentNoMethodOidc_Throws()
+        {
+            var snap = new Dictionary<string, string>
+            {
+                ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
+                ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
+            };
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => AwsAutoWireHelper.ShouldAutoWire(snap));
+            Assert.Contains("sasl.oauthbearer.method", ex.Message);
+            Assert.Contains("oidc", ex.Message);
+        }
+
+        [Fact]
+        public void ShouldAutoWire_MarkerPresentNoConfig_Throws()
+        {
+            var snap = new Dictionary<string, string>
+            {
+                ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
+                ["sasl.oauthbearer.method"] = "oidc",
+            };
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => AwsAutoWireHelper.ShouldAutoWire(snap));
+            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("missing or empty", ex.Message);
+        }
+
     }
 }

@@ -121,8 +121,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Selects the OAUTHBEARER refresh handler with the precedence:
         ///     explicit handler &gt; AWS IAM marker autowire &gt; none.
-        ///     See <c>ProducerBuilder.ResolveOAuthBearerHandler</c> for the
-        ///     full description; this method is the consumer-typed equivalent.
+        ///     This method is the consumer-typed equivalent of ProducerBuilder's ResolveOAuthBearerHandler;
+        ///     the two share the same dispatch logic and differ only in the client type they close over.
         /// </summary>
         private Action<string> ResolveOAuthBearerHandler(IConsumer<TKey, TValue> consumer)
         {
@@ -133,15 +133,13 @@ namespace Confluent.Kafka
             }
 
             var snapshot = Internal.OAuthBearer.Aws.AwsAutoWireHelper.SnapshotConfig(this.Config);
-            if (!Internal.OAuthBearer.Aws.AwsAutoWireHelper.HasAwsIamMarker(snapshot))
+            if (Internal.OAuthBearer.Aws.AwsAutoWireHelper.ShouldAutoWire(snapshot))
             {
-                return null;
+                var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);
+                return oAuthBearerConfig => handler(consumer, oAuthBearerConfig);
             }
 
-            Internal.OAuthBearer.Aws.AwsAutoWireHelper.RequireMethodIsOidc(snapshot);
-            Internal.OAuthBearer.Aws.AwsAutoWireHelper.RequireSaslOauthbearerConfig(snapshot);
-            var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);
-            return oAuthBearerConfig => handler(consumer, oAuthBearerConfig);
+            return null;
         }
 
         /// <summary>

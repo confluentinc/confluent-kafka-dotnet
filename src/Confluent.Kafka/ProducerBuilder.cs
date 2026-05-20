@@ -137,29 +137,9 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Selects the OAUTHBEARER refresh handler with the precedence:
         ///     explicit handler &gt; AWS IAM marker autowire &gt; none.
+        ///     This method is the producer-typed equivalent of ConsumerBuilder's ResolveOAuthBearerHandler;
+        ///     the two share the same dispatch logic and differ only in the client type they close over.
         /// </summary>
-        /// <remarks>
-        ///     <para>
-        ///         If the explicit handler is set via
-        ///         <see cref="SetOAuthBearerTokenRefreshHandler"/>, it wins and the
-        ///         marker is silently ignored. Otherwise, if the AWS IAM marker
-        ///         (<c>sasl.oauthbearer.metadata.authentication.type=aws_iam</c>) is
-        ///         present in the config, the optional
-        ///         <c>Confluent.Kafka.OAuthBearer.Aws</c> package is loaded via
-        ///         <see cref="Internal.OAuthBearer.Aws.AwsAutoWireDispatcher"/> and
-        ///         its <c>AwsAutoWire.CreateHandler</c> entry-point produces the
-        ///         handler. Otherwise no handler is configured and librdkafka's
-        ///         default unsecured-JWT path applies.
-        ///     </para>
-        ///     <para>
-        ///         The AWS IAM marker requires
-        ///         <c>sasl.oauthbearer.method=oidc</c>. The autowire path runs as
-        ///         a high-level-client refresh callback inside librdkafka's OIDC
-        ///         subsystem (parallel to Azure IMDS); any other value (or no
-        ///         value) is rejected at <c>Build()</c> with a friendly
-        ///         <see cref="InvalidOperationException"/>.
-        ///     </para>
-        /// </remarks>
         private Action<string> ResolveOAuthBearerHandler(IProducer<TKey, TValue> producer)
         {
             if (this.OAuthBearerTokenRefreshHandler != null)
@@ -169,15 +149,13 @@ namespace Confluent.Kafka
             }
 
             var snapshot = Internal.OAuthBearer.Aws.AwsAutoWireHelper.SnapshotConfig(this.Config);
-            if (!Internal.OAuthBearer.Aws.AwsAutoWireHelper.HasAwsIamMarker(snapshot))
+            if (Internal.OAuthBearer.Aws.AwsAutoWireHelper.ShouldAutoWire(snapshot))
             {
-                return null;
+                var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);
+                return oAuthBearerConfig => handler(producer, oAuthBearerConfig);
             }
 
-            Internal.OAuthBearer.Aws.AwsAutoWireHelper.RequireMethodIsOidc(snapshot);
-            Internal.OAuthBearer.Aws.AwsAutoWireHelper.RequireSaslOauthbearerConfig(snapshot);
-            var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);
-            return oAuthBearerConfig => handler(producer, oAuthBearerConfig);
+            return null;
         }
 
         /// <summary>

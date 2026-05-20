@@ -97,5 +97,24 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
                 "autowire path requires region and audience to be supplied via " +
                 "sasl.oauthbearer.config (e.g. \"region=us-east-1 audience=https://...\").");
         }
+
+        /// <summary>
+        ///     Whether to enable the AWS IAM autowire path for this config snapshot.
+        /// </summary>
+        /// <returns>
+        ///     <c>true</c> if the marker is present and prerequisites are satisfied;
+        ///     <c>false</c> if the marker is absent.
+        /// </returns>
+        /// <exception cref="InvalidOperationException">
+        ///     The marker is present, but <c>sasl.oauthbearer.method</c> is not
+        ///     <c>oidc</c>, or <c>sasl.oauthbearer.config</c> is missing/empty.
+        /// </exception>
+        public static bool ShouldAutoWire(IReadOnlyDictionary<string, string> snapshot)
+        {
+            if (!HasAwsIamMarker(snapshot)) return false;
+            RequireMethodIsOidc(snapshot);
+            RequireSaslOauthbearerConfig(snapshot);
+            return true;
+        }
     }
 }
