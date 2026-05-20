@@ -39,6 +39,7 @@ namespace Confluent.Kafka
             { "usealldnsips", "use_all_dns_ips"},
             { "resolvecanonicalbootstrapserversonly", "resolve_canonical_bootstrap_servers_only"},
             { "azureimds", "azure_imds"},
+            { "awsiam", "aws_iam"},
         };
 
         /// <summary>
