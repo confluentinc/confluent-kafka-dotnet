@@ -92,10 +92,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws
             string saslOauthbearerConfig,
             string saslOauthbearerExtensions)
         {
-            // Defensive — core's AwsAutoWireHelper.RequireSaslOauthbearerConfig
-            // gate already enforces this for builder-driven callers, but direct
-            // callers (custom dispatchers, future extensions) deserve the same
-            // friendly error.
             if (string.IsNullOrEmpty(saslOauthbearerConfig))
             {
                 throw new ArgumentException(

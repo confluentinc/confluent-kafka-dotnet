@@ -24,11 +24,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
     internal static class AwsOAuthBearerHandler
     {
         /// <summary>
-        ///     Builds a handler suitable for the <c>ProducerBuilder</c> /
-        ///     <c>ConsumerBuilder</c> / <c>AdminClientBuilder</c> refresh hook.
-        ///     The returned delegate resolves a token synchronously and calls
-        ///     <c>OAuthBearerSetToken</c> / <c>OAuthBearerSetTokenFailure</c> on
-        ///     the supplied client.
+        ///     Builds the OAUTHBEARER refresh delegate. The returned closure resolves
+        ///     a token via the provider and calls <c>OAuthBearerSetToken</c> /
+        ///     <c>OAuthBearerSetTokenFailure</c> on the supplied client.
         /// </summary>
         public static Action<IClient, string> Create(AwsStsTokenProvider provider)
         {
@@ -62,10 +60,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
     }
 
     /// <summary>
-    ///     Abstraction of the <c>OAuthBearerSetToken</c> /
-    ///     <c>OAuthBearerSetTokenFailure</c> extension-method pair. Exists so
-    ///     the handler's success/failure routing can be unit-tested without a
-    ///     real librdkafka <c>Handle</c>.
+    ///     Test seam over the <c>OAuthBearerSetToken</c> / <c>OAuthBearerSetTokenFailure</c>
+    ///     extension-method pair — lets the handler's success/failure routing be
+    ///     tested without a real librdkafka <c>Handle</c>.
     /// </summary>
     internal interface ITokenSink
     {

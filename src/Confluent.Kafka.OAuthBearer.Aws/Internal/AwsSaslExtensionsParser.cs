@@ -24,16 +24,12 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
     ///     dictionary suitable for the OAUTHBEARER refresh handoff.
     /// </summary>
     /// <remarks>
-    ///     The grammar mirrors the cross-language convention used by Python,
-    ///     Go, and JavaScript Kafka bindings — keep this parser consistent
-    ///     with their behaviour if it ever evolves.
+    ///     The grammar mirrors the cross-language convention for consistency.
     /// </remarks>
     internal static class AwsSaslExtensionsParser
     {
         /// <summary>
-        ///     Config key carrying the SASL extensions list. Matches the
-        ///     <c>SaslOauthbearerExtensions</c> typed property surfaced to
-        ///     consumer code by Confluent.Kafka core.
+        ///     Config key carrying the SASL extensions list.
         /// </summary>
         public const string ConfigKey = "sasl.oauthbearer.extensions";
 

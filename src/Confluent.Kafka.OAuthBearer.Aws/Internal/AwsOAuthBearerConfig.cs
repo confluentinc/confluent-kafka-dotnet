@@ -21,7 +21,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
     /// <summary>
     ///     Internal typed view of the <c>sasl.oauthbearer.config</c> string used
-    ///     by the autowire path. Populated only by <see cref="Parse"/>.
+    ///     by the autowire path.
     /// </summary>
     internal sealed class AwsOAuthBearerConfig
     {
@@ -62,8 +62,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 
         /// <summary>
         ///     Signing algorithm (<c>ES384</c> or <c>RS256</c>); defaults to <c>ES384</c>.
-        ///     AWS STS requires this field on every request — the default is applied when
-        ///     the user omits <c>signing_algorithm</c> from <c>sasl.oauthbearer.config</c>.
         /// </summary>
         public string SigningAlgorithm { get; }
 
@@ -77,24 +75,20 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         public string PrincipalNameOverride { get; }
 
         /// <summary>
-        ///     AWS SDK diagnostic log sink, parsed from the optional <c>aws_debug</c>
-        ///     key in <c>sasl.oauthbearer.config</c>. Defaults to
-        ///     <see cref="LoggingOptions.None"/> (the library never mutates the AWS
-        ///     SDK's process-wide log routing unless the user explicitly opts in).
-        ///     When non-<see cref="LoggingOptions.None"/>, <see cref="AwsAutoWire.CreateHandler"/>
-        ///     applies the value to <c>AWSConfigs.LoggingConfig.LogTo</c>.
+        ///     AWS SDK diagnostic log sink. Defaults to <see cref="LoggingOptions.None"/> —
+        ///     opt-in via the <c>aws_debug</c> key in <c>sasl.oauthbearer.config</c>.
         /// </summary>
         public LoggingOptions AwsDebug { get; }
 
         /// <summary>SASL extensions to send to the broker (RFC 7628). <c>null</c> when none parsed.</summary>
         public IDictionary<string, string> SaslExtensions { get; }
 
-        /// <summary>Tags to attach to the STS request as custom JWT claims (AWS API <c>Tags.member.N</c>, max 50). <c>null</c> when none parsed.</summary>
+        /// <summary>Tags to attach to the STS request as custom JWT claims (max 50). <c>null</c> when none parsed.</summary>
         public IDictionary<string, string> Tags { get; }
 
         /// <summary>
-        ///     Parses the value of the <c>sasl.oauthbearer.config</c> property
-        ///     into a typed config, applying defaults and validating fields.
+        ///     Parses the <c>sasl.oauthbearer.config</c> property into a typed
+        ///     config, applying defaults and validating fields.
         /// </summary>
         /// <remarks>
         ///     Grammar (whitespace-separated <c>key=value</c> pairs, no quoting):

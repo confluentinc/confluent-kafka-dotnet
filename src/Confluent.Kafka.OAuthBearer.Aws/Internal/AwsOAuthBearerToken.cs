@@ -47,7 +47,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         /// </summary>
         public IDictionary<string, string> Extensions { get; }
 
-        /// <summary>Constructs a token record. All fields are set here and immutable afterwards.</summary>
         public AwsOAuthBearerToken(
             string tokenValue,
             long lifetimeMs,

@@ -23,23 +23,18 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
     ///     Extracts the <c>sub</c> claim from unverified JWT.
     /// </summary>
     /// <remarks>
-    ///     Signature verification is deliberately out of scope — AWS STS signs the
-    ///     token it returns from <c>GetWebIdentityToken</c>, and the relying-party
-    ///     (Kafka broker) verifies the signature. The <c>sub</c> claim is used only
-    ///     to populate <c>OAuthBearerToken.PrincipalName</c>, which is an
-    ///     identification hint, not a security decision.
+    ///     No signature verification — STS signs, broker validates.
     /// </remarks>
     internal static class AwsJwtSubjectExtractor
     {
         private const int MaxTokenLengthChars = 8192;
 
         /// <summary>
-        ///     Returns the value of the <c>sub</c> claim from the JWT's payload segment.
+        ///     Returns the <c>sub</c> claim from the JWT payload.
         /// </summary>
         /// <exception cref="FormatException">
-        ///     Thrown if the input is null/empty, exceeds the size ceiling, has a wrong
-        ///     number of segments, fails base64url decoding, is not valid JSON, or is
-        ///     missing a non-empty <c>sub</c> claim.
+        ///     JWT is null, empty, oversized, has wrong segment count, fails base64url
+        ///     decoding, isn't valid JSON, or has no <c>sub</c> claim.
         /// </exception>
         public static string ExtractSub(string jwt)
         {

@@ -24,21 +24,15 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
     /// <summary>
     ///     Fetches OAUTHBEARER tokens via AWS STS <c>GetWebIdentityToken</c>.
-    ///     Used internally by <see cref="AwsAutoWire"/>; not part of the public
-    ///     surface.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Thread-safe. The underlying <see cref="IAmazonSecurityTokenService"/>
-    ///         is safe for concurrent use per AWS SDK conventions, and all per-call
-    ///         state is stack-local.
+    ///         The underlying <see cref="IAmazonSecurityTokenService"/>
+    ///         is thread-safe.
     ///     </para>
     ///     <para>
-    ///         Credential resolution is lazy — the constructor does not call the
-    ///         AWS credential chain. The first <see cref="GetTokenAsync"/> call
-    ///         triggers resolution. This matches AWS SDK conventions across
-    ///         languages and avoids startup latency when the caller uses an
-    ///         endpoint-probing provider (IMDSv2, SSO).
+    ///         Credential resolution is lazy during construction and happens
+    ///         during the first call to <see cref="GetTokenAsync"/>.
     ///     </para>
     /// </remarks>
     internal sealed class AwsStsTokenProvider : IDisposable
@@ -48,11 +42,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         private readonly bool _ownsClient;
 
         /// <summary>
-        ///     Constructs a provider that owns a fresh
-        ///     <see cref="AmazonSecurityTokenServiceClient"/> resolved from the
-        ///     <see cref="AwsOAuthBearerConfig.Region"/> in the parsed config.
-        ///     The config is assumed already validated and defaulted by
-        ///     <see cref="AwsOAuthBearerConfig.Parse"/>.
+        ///     Owns a fresh <see cref="AmazonSecurityTokenServiceClient"/> for the
+        ///     parsed config's <see cref="AwsOAuthBearerConfig.Region"/>. The config
+        ///     must already be validated by <see cref="AwsOAuthBearerConfig.Parse"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException"><paramref name="config"/> is null.</exception>
         public AwsStsTokenProvider(AwsOAuthBearerConfig config)
@@ -60,11 +52,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             if (config == null) throw new ArgumentNullException(nameof(config));
             _cfg = config;
 
-            // Opt-in AWS SDK logging — only when user explicitly set aws_debug in
-            // sasl.oauthbearer.config. Mutates the AWS SDK's process-wide log
-            // routing (AWSConfigs.LoggingConfig.LogTo), so we leave it alone
-            // unless the user asks. Applied here (before client construction) so
-            // the AmazonSecurityTokenServiceClient picks up the setting.
             if (config.AwsDebug != LoggingOptions.None)
             {
                 AWSConfigs.LoggingConfig.LogTo = config.AwsDebug;
@@ -98,9 +85,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 
         /// <summary>
         ///     Calls STS <c>GetWebIdentityToken</c> and returns a fresh token
-        ///     record. Throws on STS / JWT-parse failures; the caller is
-        ///     responsible for turning exceptions into
-        ///     <c>OAuthBearerSetTokenFailure</c> if invoked from a refresh handler.
+        ///     record.
         /// </summary>
         /// <exception cref="AmazonSecurityTokenServiceException">
         ///     STS rejected the call (e.g. <c>AccessDenied</c>,
