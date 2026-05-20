@@ -9,10 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- In a real consumer's csproj this would be:
-           <PackageReference Include="Confluent.Kafka" Version="2.14.0" />
-           <PackageReference Include="Confluent.Kafka.OAuthBearer.Aws" Version="2.14.0" />
-         The example uses ProjectReference for in-tree convenience. -->
+    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="2.14.0" /> -->
+    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka.OAuthBearer.Aws" Version="2.14.0" /> -->
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
     <ProjectReference Include="../../src/Confluent.Kafka.OAuthBearer.Aws/Confluent.Kafka.OAuthBearer.Aws.csproj" />
   </ItemGroup>

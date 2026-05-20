@@ -21,14 +21,15 @@ using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 
 /// <summary>
-///     An example demonstrating how to produce a message to a topic, and then read
-///     it back again using a consumer. Authentication uses AWS IAM via the OAUTHBEARER
+///     An example demonstrating how to produce a message to
+///     a topic, and then read it back again using a consumer.
+///     The authentication uses AWS IAM via the OAUTHBEARER
 ///     SASL mechanism, autowired by the optional package
 ///     <c>Confluent.Kafka.OAuthBearer.Aws</c>.
 ///
 ///     Activation is config-only — no callback, no manual JWT minting, no AWS SDK
-///     code at the integration site. The optional package handles
-///     <c>sts:GetWebIdentityToken</c> under the hood.
+///     code at the integration site. The optional package acquires and refreshes the
+///     token using AWS SDK's GetWebIdentityToken API.
 /// </summary>
 namespace Confluent.Kafka.Examples.OAuthBearerAws
 {
@@ -51,10 +52,6 @@ namespace Confluent.Kafka.Examples.OAuthBearerAws
             var topicName = Guid.NewGuid().ToString();
             var groupId   = Guid.NewGuid().ToString();
 
-            // The AWS-autowire activation keys: method=oidc (engages the OAUTHBEARER
-            // OIDC path) plus the AwsIam marker (selects the high-level-client refresh
-            // callback inside that path). SASL extensions go in the typed
-            // SaslOauthbearerExtensions property (not embedded in SaslOauthbearerConfig).
             var commonConfig = new ClientConfig
             {
                 BootstrapServers = bootstrapServers,
@@ -70,8 +67,19 @@ namespace Confluent.Kafka.Examples.OAuthBearerAws
                     $"identityPoolId={identityPoolId}",
             };
 
-            var consumerConfig = new ConsumerConfig(commonConfig)
+            var consumerConfig = new ConsumerConfig
             {
+                BootstrapServers = bootstrapServers,
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism    = SaslMechanism.OAuthBearer,
+                SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
+                SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
+                SaslOauthbearerConfig =
+                    $"region={awsRegion} " +
+                    $"audience={oidcAudience}",
+                SaslOauthbearerExtensions =
+                    $"logicalCluster={kafkaLogicalCluster}," +
+                    $"identityPoolId={identityPoolId}",
                 GroupId = groupId,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 EnableAutoOffsetStore = false,
