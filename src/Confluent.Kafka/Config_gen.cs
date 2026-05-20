@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.14.0 *** - do not modify manually.
+// *** Auto-generated from librdkafka dev_oauthbearer_awsiam *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -216,7 +216,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     AzureIMDS
         /// </summary>
-        AzureIMDS
+        AzureIMDS,
+
+        /// <summary>
+        ///     AwsIam
+        /// </summary>
+        AwsIam
     }
 
     /// <summary>
@@ -1346,7 +1351,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         /// <![CDATA[
-        ///     Type of metadata-based authentication to use for OAUTHBEARER/OIDC `azure_imds` authenticates using the Azure IMDS endpoint. Sets a default value for `sasl.oauthbearer.token.endpoint.url` if missing. Configuration values specific of chosen authentication type can be passed through `sasl.oauthbearer.config`.
+        ///     Type of metadata-based authentication to use for OAUTHBEARER/OIDC `azure_imds` authenticates using the Azure IMDS endpoint. Sets a default value for `sasl.oauthbearer.token.endpoint.url` if missing. `aws_iam` indicates AWS IAM-based authentication handled by an external high-level client. librdkafka does not implement the aws_iam token flow natively as of now. Configuration values specific of chosen authentication type can be passed through `sasl.oauthbearer.config`.
         ///
         ///     default: none
         ///     importance: low

@@ -1,0 +1,115 @@
+// Copyright 2026 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Collections.Generic;
+using Confluent.Kafka.OAuthBearer.Aws.Internal;
+
+namespace Confluent.Kafka.OAuthBearer.Aws
+{
+    /// <summary>
+    ///     Reflection entry-point invoked by Confluent.Kafka core when the user
+    ///     sets <c>sasl.oauthbearer.metadata.authentication.type=aws_iam</c>.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <b>This is the only public type in the optional package.</b> Core's
+    ///         dispatcher locates this type via
+    ///         <c>Assembly.Load("Confluent.Kafka.OAuthBearer.Aws")</c> and resolves
+    ///         <see cref="CreateHandler"/> by name + signature. The signature is a
+    ///         frozen cross-package contract — bumping it requires a major
+    ///         version increment of this package.
+    ///     </para>
+    ///     <para>
+    ///         The marker key/value check is performed in core; <see cref="CreateHandler"/>
+    ///         is invoked only when the caller has already decided to autowire the
+    ///         AWS path. <see cref="CreateHandler"/> therefore unconditionally
+    ///         attempts to build a handler and throws on any input it can't parse.
+    ///     </para>
+    /// </remarks>
+    public static class AwsAutoWire
+    {
+        /// <summary>
+        ///     Config key whose value <see cref="CreateHandler"/> parses for AWS
+        ///     STS parameters.
+        /// </summary>
+        internal const string SaslOauthbearerConfigKey = "sasl.oauthbearer.config";
+
+        /// <summary>
+        ///     Config key that activates the AWS autowire path. Inspected by
+        ///     core's dispatcher to decide whether to call this entry-point.
+        /// </summary>
+        internal const string MarkerKey = "sasl.oauthbearer.metadata.authentication.type";
+
+        /// <summary>
+        ///     On-wire marker value that selects AWS IAM authentication.
+        /// </summary>
+        internal const string MarkerValue = "aws_iam";
+
+        /// <summary>
+        ///     Builds an OAUTHBEARER refresh handler from the two
+        ///     OAUTHBEARER config strings. Called by Confluent.Kafka core via
+        ///     <c>Assembly.Load</c> + reflected <c>MethodInfo</c>.
+        /// </summary>
+        /// <param name="saslOauthbearerConfig">
+        ///     The <c>sasl.oauthbearer.config</c> value (whitespace-separated
+        ///     <c>key=value</c> pairs). Must be non-null and non-empty —
+        ///     callers via core's <see cref="Confluent.Kafka.Internal.OAuthBearer.Aws.AwsAutoWireHelper.RequireSaslOauthbearerConfig"/>
+        ///     gate are already guaranteed this; direct callers get the same
+        ///     friendly error via a defensive check.
+        /// </param>
+        /// <param name="saslOauthbearerExtensions">
+        ///     The <c>sasl.oauthbearer.extensions</c> value
+        ///     (comma-separated <c>key=value</c> pairs, RFC 7628 §3.1).
+        ///     May be <c>null</c> or empty when the user has no extensions.
+        /// </param>
+        /// <returns>
+        ///     An <c>Action&lt;IClient, string&gt;</c> suitable for
+        ///     <c>SetOAuthBearerTokenRefreshHandler</c>. The closure resolves a
+        ///     fresh JWT via STS each time librdkafka fires the refresh event.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        ///     <paramref name="saslOauthbearerConfig"/> is null or empty, or its
+        ///     contents fail
+        ///     <see cref="AwsOAuthBearerConfig.Parse(string, IDictionary{string, string})"/> validation.
+        /// </exception>
+        /// <exception cref="System.InvalidOperationException">
+        ///     Eager AWS SDK initialisation failure (e.g. unknown region in
+        ///     <c>RegionEndpoint.GetBySystemName</c>).
+        /// </exception>
+        public static Action<IClient, string> CreateHandler(
+            string saslOauthbearerConfig,
+            string saslOauthbearerExtensions)
+        {
+            // Defensive — core's AwsAutoWireHelper.RequireSaslOauthbearerConfig
+            // gate already enforces this for builder-driven callers, but direct
+            // callers (custom dispatchers, future extensions) deserve the same
+            // friendly error.
+            if (string.IsNullOrEmpty(saslOauthbearerConfig))
+            {
+                throw new ArgumentException(
+                    $"'{MarkerKey}={MarkerValue}' is set but " +
+                    $"'{SaslOauthbearerConfigKey}' is missing or empty. The AWS IAM " +
+                    "autowire path requires region and audience to be supplied via " +
+                    "sasl.oauthbearer.config (e.g. \"region=us-east-1 audience=https://...\").",
+                    nameof(saslOauthbearerConfig));
+            }
+
+            var saslExtensions = AwsSaslExtensionsParser.Parse(saslOauthbearerExtensions);
+            var parsed = AwsOAuthBearerConfig.Parse(saslOauthbearerConfig, saslExtensions);
+            var provider = new AwsStsTokenProvider(parsed);
+            return AwsOAuthBearerHandler.Create(provider);
+        }
+    }
+}
