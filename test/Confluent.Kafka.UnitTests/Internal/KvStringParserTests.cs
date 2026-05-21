@@ -92,7 +92,7 @@ namespace Confluent.Kafka.UnitTests.Internal
         [Fact]
         public void Parse_TrimTokensDefaultTrue_StripsLeadingAndTrailing()
         {
-            // Matches librdkafka rd_string_split (rdstring.c:493-525) —
+            // Matches librdkafka rd_string_split (rdstring.c) —
             // strips both leading and trailing whitespace per element.
             var pairs = KvStringParser.Parse(
                 " a=1 , b=2 ",

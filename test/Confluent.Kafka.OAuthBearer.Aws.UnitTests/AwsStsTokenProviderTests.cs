@@ -27,8 +27,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
     public class AwsStsTokenProviderTests
     {
-        // A JWT whose payload decodes to {"sub":"arn:aws:iam::123:role/R"}.
-        // Third segment is dummy — the extractor doesn't verify the signature.
         private const string RoleArn = "arn:aws:iam::123:role/R";
         private static readonly string CannedJwt = MakeJwt($"{{\"sub\":\"{RoleArn}\"}}");
 
@@ -36,7 +34,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         private static readonly DateTime CannedExpiry =
             new DateTime(2099, 4, 21, 6, 6, 47, 641, DateTimeKind.Utc);
 
-        // ---- Constructor: null check ----
+        // ---- Constructor: checks ----
 
         [Fact]
         public void Ctor_NullConfig_Throws()
@@ -52,13 +50,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             // Does not throw; does not call AWS (lazy credential chain).
         }
 
-        // ---- Constructor: aws_debug side effect on AWSConfigs.LoggingConfig.LogTo ----
-        //
-        // These tests verify the opt-in / preserve contract for the process-wide
-        // AWS SDK log routing field. Each test saves the current value, runs, and
-        // restores it in a finally block — tests within this class run serially
-        // (xunit default for tests in the same class), so the global mutation is
-        // contained to the test's scope.
+        // ---- Constructor: aws_debug ----
 
         [Fact]
         public void Ctor_NoAwsDebug_DoesNotMutateAwsSdkLogTo()
@@ -81,8 +73,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Ctor_AwsDebugNone_DoesNotMutateAwsSdkLogTo()
         {
-            // Explicit aws_debug=none should be indistinguishable from unset —
-            // i.e., the library must NOT clobber a user-set LogTo.
+            // Explicit aws_debug=none should be indistinguishable from unset
             var previous = AWSConfigs.LoggingConfig.LogTo;
             AWSConfigs.LoggingConfig.LogTo = LoggingOptions.Log4Net;
             try
@@ -105,8 +96,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Ctor_AwsDebugExplicit_SetsAwsSdkLogTo(string value, LoggingOptions expected)
         {
             var previous = AWSConfigs.LoggingConfig.LogTo;
-            // Start from None so the test's expected value is unambiguously caused
-            // by our constructor, not by leftover state from another test.
             AWSConfigs.LoggingConfig.LogTo = LoggingOptions.None;
             try
             {
@@ -191,21 +180,21 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         }
 
         [Fact]
-        public async Task GetTokenAsync_NoTags_RequestTagsRemainsUnset()
+        public async Task GetTokenAsync_NoTags_RequestTagsRemainsEmpty()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await provider.GetTokenAsync();
 
-            // SDK leaves Tags null when not set; we should not have allocated an empty list.
-            Assert.True(fake.LastRequest.Tags == null || fake.LastRequest.Tags.Count == 0);
+            // AWS SDK pre-initializes Tags to an empty AlwaysSendList<Tag>; verify we didn't add any entries.
+            Assert.Empty(fake.LastRequest.Tags);
         }
 
         // ---- Response mapping ----
 
         [Fact]
-        public async Task GetTokenAsync_HappyPath_ReturnsMappedFields()
+        public async Task GetTokenAsync_ReturnsMappedFields()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
@@ -240,9 +229,10 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         }
 
         [Fact]
-        public async Task GetTokenAsync_NullExpiration_Throws()
+        public async Task GetTokenAsync_DefaultExpiration_Throws()
         {
-            // SDK leaves Expiration unset → defaults to default(DateTime).
+            // DateTime is non-nullable;
+            // an unassigned Expiration retains default(DateTime) == DateTime.MinValue.
             var fake = new FakeStsClient((req, ct) => Task.FromResult(
                 new GetWebIdentityTokenResponse
                 {

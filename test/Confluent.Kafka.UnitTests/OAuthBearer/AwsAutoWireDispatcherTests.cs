@@ -37,7 +37,6 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         [Fact]
         public void LoadHandler_NullConfig_Throws()
         {
-            // Reset the dispatcher's MethodInfo cache to ensure a fresh resolve attempt.
             AwsAutoWireDispatcher.ResetCacheForTests();
             Assert.Throws<ArgumentNullException>(() => AwsAutoWireDispatcher.LoadHandler(null));
         }
@@ -45,11 +44,6 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         [Fact]
         public void LoadHandler_OptionalPackageMissing_ThrowsFriendlyInvalidOperation()
         {
-            // The Confluent.Kafka.UnitTests project does not reference
-            // Confluent.Kafka.OAuthBearer.Aws — its assembly is therefore not
-            // resolvable. The dispatcher should translate the underlying
-            // FileNotFoundException into a friendly InvalidOperationException
-            // pointing the user at the missing PackageReference.
             AwsAutoWireDispatcher.ResetCacheForTests();
             var snap = new Dictionary<string, string>
             {

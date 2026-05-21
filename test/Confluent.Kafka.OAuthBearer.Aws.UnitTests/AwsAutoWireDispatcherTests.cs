@@ -46,10 +46,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void LoadHandler_ParserError_UnwrappedFromTargetInvocationException()
         {
-            // The optional pkg's CreateHandler throws ArgumentException for missing
-            // 'region'. Reflection wraps it in TargetInvocationException, which
-            // AwsAutoWireDispatcher must unwrap via ExceptionDispatchInfo so callers
-            // see the original ArgumentException with its original stack trace.
             AwsAutoWireDispatcher.ResetCacheForTests();
             var snap = new Dictionary<string, string>
             {

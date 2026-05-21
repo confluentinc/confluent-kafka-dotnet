@@ -253,10 +253,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         // ---- saslExtensions argument (typed property pass-through) ----
 
         [Fact]
-        public void Parse_ExtensionPrefixInConfig_NowRejectedAsUnknownKey()
+        public void Parse_ExtensionPrefixInConfig_RejectedAsUnknownKey()
         {
-            // sasl extensions moved to the typed sasl.oauthbearer.extensions property;
-            // the legacy extension_<name>= form must no longer be accepted.
+            // sasl extensions are accepted via typed sasl.oauthbearer.extensions property.
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(
                     "region=us-east-1 audience=https://a extension_logicalCluster=lkc-abc"));

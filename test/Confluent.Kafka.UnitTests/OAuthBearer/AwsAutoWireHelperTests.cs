@@ -19,12 +19,6 @@ using Xunit;
 
 namespace Confluent.Kafka.UnitTests.OAuthBearer
 {
-    /// <summary>
-    ///     Unit tests for <see cref="AwsAutoWireHelper"/> — the snapshot,
-    ///     marker-check, and OIDC-enforcement helpers used by the
-    ///     Producer/Consumer/AdminClient builders to dispatch the
-    ///     AWS IAM autowire path.
-    /// </summary>
     public class AwsAutoWireHelperTests
     {
         // ---- AwsAutoWireHelper.SnapshotConfig ----
@@ -193,7 +187,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         }
 
         [Fact]
-        public void ShouldAutoWire_MarkerPresentNoMethodOidc_Throws()
+        public void ShouldAutoWire_MarkerAndConfigPresentNoMethodOidc_Throws()
         {
             var snap = new Dictionary<string, string>
             {
@@ -207,7 +201,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         }
 
         [Fact]
-        public void ShouldAutoWire_MarkerPresentNoConfig_Throws()
+        public void ShouldAutoWire_MarkerAndMethodOidcPresentNoConfig_Throws()
         {
             var snap = new Dictionary<string, string>
             {

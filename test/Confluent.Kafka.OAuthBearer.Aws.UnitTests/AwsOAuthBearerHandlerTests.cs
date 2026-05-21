@@ -40,7 +40,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         // ---- Invoke: success path ----
 
         [Fact]
-        public void Invoke_HappyPath_CallsSetTokenWithMappedFields()
+        public void Invoke_CallsSetTokenWithMappedFields()
         {
             var provider = NewProvider((req, ct) => Task.FromResult(
                 new GetWebIdentityTokenResponse
@@ -104,11 +104,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Invoke_AwsStsException_RoutedToSetTokenFailure()
         {
-            // AmazonSecurityTokenServiceException.ToString() emits
-            // "TypeName: Message" — it does NOT include ErrorCode in the
-            // rendered text, even if set. Assert on what actually appears
-            // in ex.ToString(), which is what the handler hands to
-            // OAuthBearerSetTokenFailure.
             var provider = NewProvider((req, ct) =>
                 throw new AmazonSecurityTokenServiceException(
                     "User is not authorized to perform: sts:GetWebIdentityToken")

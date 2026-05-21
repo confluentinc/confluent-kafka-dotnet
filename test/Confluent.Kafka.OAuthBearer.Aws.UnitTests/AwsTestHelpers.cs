@@ -19,12 +19,6 @@ using Confluent.Kafka.OAuthBearer.Aws.Internal;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
-    /// <summary>
-    ///     Shared test helpers for the AWS OAUTHBEARER plugin tests.
-    ///     Consolidates <c>MakeJwt</c> + <c>Base64UrlEncode</c> (previously duplicated
-    ///     across three test files) and the <c>RecordingSink</c> double (previously
-    ///     duplicated across two).
-    /// </summary>
     internal static class AwsTestHelpers
     {
         /// <summary>

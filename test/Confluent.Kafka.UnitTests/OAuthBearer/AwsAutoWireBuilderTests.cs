@@ -26,9 +26,6 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             AwsAutoWireDispatcher.ResetCacheForTests();
             var config = NewConfig();
             config.SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc;
-            // With method=oidc set, the RequireMethodIsOidc guard passes; Build()
-            // then attempts to load the optional pkg, which this project doesn't
-            // reference, so we land on the missing-pkg error.
             var ex = Assert.Throws<InvalidOperationException>(
                 () => new ProducerBuilder<string, string>(config).Build());
             Assert.Contains("Confluent.Kafka.OAuthBearer.Aws", ex.Message);
@@ -108,7 +105,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
                 SaslOauthbearerMetadataAuthenticationType =
                     SaslOauthbearerMetadataAuthenticationType.AwsIam,
-                // No SaslOauthbearerConfig — RequireSaslOauthbearerConfig gate trips.
+                // No SaslOauthbearerConfig
             };
             var ex = Assert.Throws<InvalidOperationException>(
                 () => new ProducerBuilder<string, string>(config).Build());
@@ -182,7 +179,6 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             var builder = new ConsumerBuilder<string, string>(consumerConfig)
                 .SetOAuthBearerTokenRefreshHandler((_, _) => { /* no-op */ });
 
-            // If precedence works, this Build() does NOT throw the missing-pkg error.
             using var c = builder.Build();
             Assert.NotNull(c);
         }
@@ -194,7 +190,6 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             var builder = new AdminClientBuilder(NewConfig())
                 .SetOAuthBearerTokenRefreshHandler((_, _) => { /* no-op */ });
 
-            // If precedence works, this Build() does NOT throw the missing-pkg error.
             using var a = builder.Build();
             Assert.NotNull(a);
         }

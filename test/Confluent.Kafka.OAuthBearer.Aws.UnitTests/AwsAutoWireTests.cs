@@ -18,12 +18,6 @@ using Xunit;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
-    /// <summary>
-    ///     Tests <see cref="AwsAutoWire.CreateHandler"/> validation behaviour.
-    ///     Handler-invocation behaviour (success/failure routing) is covered by
-    ///     <c>AwsOAuthBearerHandlerTests</c>; provider-level fields are covered by
-    ///     <c>AwsStsTokenProviderTests</c> and <c>AwsOAuthBearerConfigTests</c>.
-    /// </summary>
     public class AwsAutoWireTests
     {
         // ---- CreateHandler input validation (defensive checks for direct callers) ----
@@ -31,8 +25,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_NullConfig_Throws()
         {
-            // Direct callers bypassing the dispatcher's gate get the same friendly
-            // error via the defensive check.
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsAutoWire.CreateHandler(null, null));
             Assert.Contains("sasl.oauthbearer.config", ex.Message);
@@ -103,10 +95,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_AllOptionalFields_ReturnsHandler()
         {
-            // aws_debug=none avoids the AWSConfigs.LoggingConfig.LogTo side
-            // effect — that path is exercised by AwsStsTokenProviderTests with
-            // proper save/restore. Here we only need to confirm every supported
-            // key parses cleanly through the dispatcher entry point.
             var handler = AwsAutoWire.CreateHandler(
                 "region=us-east-1 audience=https://a " +
                 "duration_seconds=900 signing_algorithm=RS256 " +
@@ -121,7 +109,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_TagConfig_HandlerReady()
         {
-            // Verify tag_<NAME>=<VALUE> entries don't trip parsing.
             var handler = AwsAutoWire.CreateHandler(
                 "region=us-east-1 audience=https://a tag_team=platform tag_environment=prod",
                 null);
@@ -132,7 +119,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_PrincipalNameOverride_HandlerReady()
         {
-            // Verify principal_name doesn't trip parsing (no throw).
             var handler = AwsAutoWire.CreateHandler(
                 "region=us-east-1 audience=https://a principal_name=explicit-principal",
                 null);
@@ -142,7 +128,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_NullExtensions_TreatsAsAbsent()
         {
-            // SaslOauthbearerExtensions is optional — null is accepted.
             var handler = AwsAutoWire.CreateHandler(
                 "region=us-east-1 audience=https://a",
                 saslOauthbearerExtensions: null);
@@ -152,7 +137,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_EmptyExtensions_TreatsAsAbsent()
         {
-            // Empty string is also accepted (same semantic as absent).
             var handler = AwsAutoWire.CreateHandler(
                 "region=us-east-1 audience=https://a",
                 saslOauthbearerExtensions: "");
@@ -169,9 +153,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 "logicalCluster=lkc-abc");
             Assert.NotNull(handler);
         }
-
-        // Parser-level unit tests live in AwsSaslExtensionsParserTests.
-        // The test above is the integration smoke through CreateHandler.
 
         // ---- Frozen reflection contract ----
 

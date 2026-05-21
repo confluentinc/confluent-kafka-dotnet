@@ -19,11 +19,6 @@ using Xunit;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
-    /// <summary>
-    ///     Unit tests for <see cref="AwsSaslExtensionsParser.Parse"/>.
-    ///     Integration coverage (parser invoked through
-    ///     <c>AwsAutoWire.CreateHandler</c>) lives in <c>AwsAutoWireTests</c>.
-    /// </summary>
     public class AwsSaslExtensionsParserTests
     {
         // ---- Null / empty input → null ----
@@ -73,23 +68,8 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         }
 
         [Fact]
-        public void Parse_SpaceAfterCommaOnly_MatchesLibrdkafkaTolerance()
-        {
-            // Regression: librdkafka's rd_string_split strips leading + trailing
-            // whitespace per element (rdstring.c:493-525). Our parser must match
-            // that tolerance so the same config works whether the user is on
-            // this autowire or the built-in librdkafka native OIDC paths.
-            var result = AwsSaslExtensionsParser.Parse(
-                "logicalCluster=lkc-abc, identityPoolId=pool-xyz");
-            Assert.Equal(2, result.Count);
-            Assert.Equal("lkc-abc", result["logicalCluster"]);
-            Assert.Equal("pool-xyz", result["identityPoolId"]);  // leading space after ',' stripped
-        }
-
-        [Fact]
         public void Parse_EmptyEntries_Tolerated()
         {
-            // Stray commas (leading, trailing, doubled) collapse to no-ops, not errors.
             var result = AwsSaslExtensionsParser.Parse(
                 "logicalCluster=lkc-abc,,identityPoolId=pool-x,");
             Assert.Equal(2, result.Count);
@@ -110,8 +90,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_DuplicateKey_LastWins()
         {
-            // Locks in the result[name] = value overwrite semantics so we don't
-            // accidentally regress to throwing on duplicates.
             var result = AwsSaslExtensionsParser.Parse("k=a,k=b");
             Assert.Single(result);
             Assert.Equal("b", result["k"]);

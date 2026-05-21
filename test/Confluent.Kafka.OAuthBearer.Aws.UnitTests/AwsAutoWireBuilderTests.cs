@@ -34,7 +34,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         // These tests pass locally where a patched librdkafka.so is on the
         // probing path.
         [Fact(Skip = "Requires librdkafka.redist with the AWS_IAM marker patch; remove Skip when available.")]
-        public void ProducerBuilder_Build_MarkerWithPkgPresent_Succeeds()
+        public void ProducerBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
             using var p = new ProducerBuilder<string, string>(NewConfig()).Build();
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         }
 
         [Fact(Skip = "Requires librdkafka.redist with the AWS_IAM marker patch; remove Skip when available.")]
-        public void ConsumerBuilder_Build_MarkerWithPkgPresent_Succeeds()
+        public void ConsumerBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
             var consumerConfig = new ConsumerConfig(NewConfig()) { GroupId = "test-group" };
@@ -51,7 +51,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         }
 
         [Fact(Skip = "Requires librdkafka.redist with the AWS_IAM marker patch; remove Skip when available.")]
-        public void AdminClientBuilder_Build_MarkerWithPkgPresent_Succeeds()
+        public void AdminClientBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
             using var a = new AdminClientBuilder(NewConfig()).Build();
