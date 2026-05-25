@@ -179,7 +179,7 @@ after_pipeline:
       - name: SonarQube
         commands:
           - checkout
-          - mise use dotnet@8
+          - mise use dotnet@10
           - dotnet tool install --tool-path $PWD dotnet-coverage
           - artifact pull workflow unit-coverage.xml || true
           - artifact pull workflow classic-coverage.xml || true
