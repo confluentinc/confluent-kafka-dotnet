@@ -1,9 +1,15 @@
-# 2.x.0
+# 2.14.2
+
+## Enhancements
+
+* References librdkafka.redist 2.14.2. Refer to the [librdkafka v2.14.2 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.14.2) for more information.
+* Add IHeader overload to Headers.Add() method (#2604)
 
 ## Fixes
 
 * Handle anyOf/allOf in JSON transforms (#2611)
 * Allow encrypting enum for JObject in dotnet (#2615)
+* Fix 'occured' -> 'occurred' typo in ConsumeException XML doc comments (#2609)
 
 
 # 2.14.0
