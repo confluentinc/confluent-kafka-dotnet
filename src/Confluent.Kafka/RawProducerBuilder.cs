@@ -11,6 +11,7 @@ namespace Confluent.Kafka
     public class RawProducerBuilder : ProducerBuilder<Ignore, Ignore>
     {
         internal RawDeliveryReportHandler RawDeliveryReportHandler { get; private set; }
+        internal RawStatisticsHandler RawStatisticsHandler { get; private set; }
 
         /// <summary>
         ///     Initialize a new <see cref="RawProducerBuilder"/> with the given config.
@@ -42,6 +43,31 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Delivery report handler may not be specified more than once.");
             }
             this.RawDeliveryReportHandler = handler;
+            return this;
+        }
+        
+        
+        /// <summary>
+        ///     Set the handler to call on librdkafka statistics events, receiving the
+        ///     JSON payload as a <see cref="ReadOnlySpan{T}"/> of UTF-8 bytes to avoid
+        ///     string allocation on every stats tick.
+        /// </summary>
+        /// <remarks>
+        ///     Enable statistics via the <c>statistics.interval.ms</c> config (disabled
+        ///     by default). Mutually exclusive with the inherited
+        ///     <see cref="ConsumerBuilder{TKey, TValue}.SetStatisticsHandler"/>.
+        /// </remarks>
+        public RawProducerBuilder SetStatisticsHandler(RawStatisticsHandler statisticsHandler)
+        {
+            if (this.RawStatisticsHandler != null || this.StatisticsHandler != null)
+            {
+                throw new InvalidOperationException("Statistics handler may not be specified more than once.");
+            }
+            this.RawStatisticsHandler = statisticsHandler;
+            // Set a no-op string handler so Consumer.cs registers the native stats
+            // callback. Our RawConsumer overrides StatisticsCallback and never invokes
+            // this dummy.
+            base.SetStatisticsHandler((_, _) => { });
             return this;
         }
 

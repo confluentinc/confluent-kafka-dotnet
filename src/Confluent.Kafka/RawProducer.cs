@@ -15,10 +15,27 @@ namespace Confluent.Kafka
         private const int StackNameBufferSize = 256;
 
         private readonly RawDeliveryReportHandler rawDeliveryReportHandler;
+        private readonly RawStatisticsHandler rawStatisticsHandler;
 
         internal RawProducer(RawProducerBuilder builder) : base(builder)
         {
             this.rawDeliveryReportHandler = builder.RawDeliveryReportHandler;
+            this.rawStatisticsHandler = builder.RawStatisticsHandler;
+        }
+        
+        
+        protected override unsafe int StatisticsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
+        {
+            if (ownedKafkaHandle.IsClosed) { return 0; }
+            try
+            {
+                rawStatisticsHandler?.Invoke(new ReadOnlySpan<byte>(json.ToPointer(), (int)json_len));
+            }
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
+            return 0;
         }
 
         /// <summary>

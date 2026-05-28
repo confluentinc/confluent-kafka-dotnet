@@ -70,7 +70,7 @@ namespace Confluent.Kafka
         private bool enableDeliveryReportHeaders = true;
         private bool enableDeliveryReportPersistedStatus = true;
 
-        private SafeKafkaHandle ownedKafkaHandle;
+        internal SafeKafkaHandle ownedKafkaHandle;
         private Handle borrowedHandle;
 
         private SafeKafkaHandle KafkaHandle
@@ -118,7 +118,7 @@ namespace Confluent.Kafka
 
         // .NET Exceptions are not propagated through native code, so we need to
         // do this book keeping explicitly.
-        private Exception handlerException = null;
+        internal Exception handlerException = null;
 
 
         private Action<Error> errorHandler;
@@ -141,7 +141,7 @@ namespace Confluent.Kafka
 
         private Action<string> statisticsHandler;
         private Librdkafka.StatsDelegate statisticsCallbackDelegate;
-        private int StatisticsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
+        protected virtual int StatisticsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (ownedKafkaHandle.IsClosed) { return 0; }
