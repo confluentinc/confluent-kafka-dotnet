@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Merges upstream/master into the fork's master, preserving the 4 access-modifier
-# changes this fork makes to src/Confluent.Kafka/Consumer.cs.
+# Merges upstream/master into the fork's master, preserving the access-modifier
+# changes this fork makes to src/Confluent.Kafka/Consumer.cs and
+# src/Confluent.Kafka/Producer.cs (see the PATCHES array below).
 #
 # Behavior:
 #   - Exits 1 on merge conflict.
-#   - If any of our 4 patches is missing post-merge, tries to re-apply it by
+#   - If any of our patches is missing post-merge, tries to re-apply it by
 #     matching the original upstream pattern. If the original isn't found either,
 #     upstream restructured that area and manual review is required.
 #   - Never pushes. On success, prints the command to push.
@@ -46,6 +47,9 @@ PATCHES=(
     "src/Confluent.Kafka/Consumer.cs|^        internal int cancellationDelayMaxMs;$|^        private int cancellationDelayMaxMs;$|        internal int cancellationDelayMaxMs;"
     "src/Confluent.Kafka/Consumer.cs|^        protected virtual int StatisticsCallback\(|^        private int StatisticsCallback\(|        protected virtual int StatisticsCallback("
     "src/Confluent.Kafka/Producer.cs|^        protected virtual void DeliveryReportCallbackImpl\(|^        private void DeliveryReportCallbackImpl\(|        protected virtual void DeliveryReportCallbackImpl("
+    "src/Confluent.Kafka/Producer.cs|^        internal SafeKafkaHandle ownedKafkaHandle;$|^        private SafeKafkaHandle ownedKafkaHandle;$|        internal SafeKafkaHandle ownedKafkaHandle;"
+    "src/Confluent.Kafka/Producer.cs|^        internal Exception handlerException = null;$|^        private Exception handlerException = null;$|        internal Exception handlerException = null;"
+    "src/Confluent.Kafka/Producer.cs|^        protected virtual int StatisticsCallback\(|^        private int StatisticsCallback\(|        protected virtual int StatisticsCallback("
 )
 
 reapplied=0
