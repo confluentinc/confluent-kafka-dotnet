@@ -12,6 +12,11 @@
 * Fix 'occured' -> 'occurred' typo in ConsumeException XML doc comments (#2609)
 
 
+# 2.14.1
+
+There was no 2.14.1 release of the .NET Client.
+
+
 # 2.14.0
 
 ## Enhancements
