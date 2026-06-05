@@ -325,7 +325,7 @@ namespace Confluent.Kafka
         ///     the topic/partition/offset of a consume result.
         ///
         ///     EOF messages must not be stored as they are control messages and
-        ///     have an invalid leader epoch, it's throwing an InvalidOperationException
+        ///     have an invalid leader epoch. This method throws an `InvalidOperationException`
         ///     in that case.
         ///
         ///     The offset will be committed according to
@@ -336,8 +336,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     `enable.auto.offset.store` must be set to
         ///     "false" when using this API.
-        /// </remarks>
-        /// <remarks>
+        ///
         ///     A consumer at position N has consumed
         ///     messages with offsets up to N-1 and will
         ///     next receive the message with offset N.
@@ -426,7 +425,7 @@ namespace Confluent.Kafka
         ///     topic/partition/offset of a ConsumeResult.
         ///
         ///     EOF messages must not be committed as they are control messages and
-        ///     have an invalid leader epoch, it's throwing an InvalidOperationException
+        ///     have an invalid leader epoch. This method throws an `InvalidOperationException`
         ///     in that case.
         /// </summary>
         /// <param name="result">
