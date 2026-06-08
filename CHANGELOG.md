@@ -1,3 +1,16 @@
+# Unreleased
+
+## Upgrade considerations
+
+Ensure you're not calling `StoreOffset` with an EOF message.
+As when calling `Commit` with an EOF message, it will throw an `InvalidOperationException`.
+Previously this could cause skipping an offset (<2.1.0) or message reprocessing (>=2.1.0).
+
+## Fixes
+
+* Throw an `InvalidOperationException` when calling `StoreOffset` with an EOF consume result, to match `Commit` behavior (#2621)
+
+
 # 2.14.2
 
 ## Enhancements

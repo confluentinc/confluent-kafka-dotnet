@@ -129,6 +129,15 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Close();
             }
 
+            consumerConfig = new ConsumerConfig
+            {
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                EnablePartitionEof = true,
+                EnableAutoOffsetStore = false,
+                EnableAutoCommit = false,
+            };
+
             // eof, generic consumer case.
             using (var consumer =
                 new TestConsumerBuilder<Null, string>(consumerConfig)
@@ -145,12 +154,19 @@ namespace Confluent.Kafka.IntegrationTests
                 var cr1 = consumer.Consume();
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
+
                 var cr2 = consumer.Consume();
                 Assert.NotNull(cr2.Message);
                 Assert.False(cr2.IsPartitionEOF);
+
                 var cr3 = consumer.Consume();
                 Assert.Null(cr3.Message);
                 Assert.True(cr3.IsPartitionEOF);
+                Assert.Throws<InvalidOperationException>(() =>
+                    consumer.StoreOffset(cr3));
+                Assert.Throws<InvalidOperationException>(() =>
+                    consumer.Commit(cr3));
+
                 var cr4 = consumer.Consume(TimeSpan.FromSeconds(1));
                 Assert.Null(cr4);
 

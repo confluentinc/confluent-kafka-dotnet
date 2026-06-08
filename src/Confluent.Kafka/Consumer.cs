@@ -454,8 +454,14 @@ namespace Confluent.Kafka
 
         /// <inheritdoc/>
         public void StoreOffset(ConsumeResult<TKey, TValue> result)
-            => StoreOffset(new TopicPartitionOffset(result.TopicPartition,
-                    result.Offset + 1, result.LeaderEpoch));
+        {
+            if (result.Message == null)
+            {
+                throw new InvalidOperationException("Attempt was made to store offset corresponding to an empty consume result");
+            }
+            StoreOffset(new TopicPartitionOffset(result.TopicPartition,
+                result.Offset + 1, result.LeaderEpoch));
+        }
 
 
         /// <inheritdoc/>
