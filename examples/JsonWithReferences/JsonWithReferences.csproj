@@ -5,7 +5,7 @@
     <AssemblyName>JsonWithReferences</AssemblyName>
 
     <!-- Temporary: Direct target framework reference required due to NJsonSchema dependencies -->
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
