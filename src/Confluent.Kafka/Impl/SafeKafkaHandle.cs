@@ -2370,8 +2370,15 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            if (groups.Count() == 0) {
-                throw new ArgumentException("at least one group should be provided to DescribeConsumerGroups");
+            if (groups == null)
+            {
+                throw new ArgumentNullException(nameof(groups));
+            }
+
+            var groupArray = groups as string[] ?? groups.ToArray();
+            if (groupArray.Length == 0)
+            {
+                throw new ArgumentException("At least one group must be provided to DescribeConsumerGroups.", nameof(groups));
             }
 
             var optionsPtr = IntPtr.Zero;
@@ -2386,7 +2393,7 @@ namespace Confluent.Kafka.Impl
 
                 // Call DescribeConsumerGroups (async).
                 Librdkafka.DescribeConsumerGroups(
-                    handle, groups.ToArray(), (UIntPtr)(groups.Count()),
+                    handle, groupArray, (UIntPtr)groupArray.Length,
                     optionsPtr, resultQueuePtr);
             }
             finally
