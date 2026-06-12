@@ -1,3 +1,39 @@
+# Unreleased
+
+## Upgrade considerations
+
+Ensure you're not calling `StoreOffset` with an EOF message.
+As when calling `Commit` with an EOF message, it will throw an `InvalidOperationException`.
+Previously this could cause skipping an offset (<2.1.0) or message reprocessing (>=2.1.0).
+
+## Enhancements
+
+* Added support for .NET 10 (LTS) and dropped support for .NET 6 (end of support since November 2024). The library now multi-targets `net8.0` and `net10.0` alongside `netstandard2.0` and `net462`. Builds on the approach proposed in #2545 by @ffernandolima, adapted for the centralized `Directory.Build.props` structure on current master.
+
+## Fixes
+
+* Throw an `InvalidOperationException` when calling `StoreOffset` with an EOF consume result, to match `Commit` behavior (#2621)
+
+
+# 2.14.2
+
+## Enhancements
+
+* References librdkafka.redist 2.14.2. Refer to the [librdkafka v2.14.2 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.14.2) for more information.
+* Add IHeader overload to Headers.Add() method (#2604)
+
+## Fixes
+
+* Handle anyOf/allOf in JSON transforms (#2611)
+* Allow encrypting enum for JObject in dotnet (#2615)
+* Fix 'occured' -> 'occurred' typo in ConsumeException XML doc comments (#2609)
+
+
+# 2.14.1
+
+There was no 2.14.1 release of the .NET Client.
+
+
 # 2.14.0
 
 ## Enhancements

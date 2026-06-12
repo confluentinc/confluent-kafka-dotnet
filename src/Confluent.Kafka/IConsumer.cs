@@ -323,7 +323,11 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Store offsets for a single partition based on
         ///     the topic/partition/offset of a consume result.
-        /// 
+        ///
+        ///     EOF messages must not be stored as they are control messages and
+        ///     have an invalid leader epoch. This method throws an `InvalidOperationException`
+        ///     in that case.
+        ///
         ///     The offset will be committed according to
         ///     `auto.commit.interval.ms` (and
         ///     `enable.auto.commit`) or manual offset-less
@@ -332,6 +336,12 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     `enable.auto.offset.store` must be set to
         ///     "false" when using this API.
+        ///
+        ///     A consumer at position N has consumed
+        ///     messages with offsets up to N-1 and will
+        ///     next receive the message with offset N.
+        ///     Hence, this method stores an offset of
+        ///     <paramref name="result" />.Offset + 1.
         /// </remarks>
         /// <param name="result">
         ///     A consume result used to determine
@@ -346,6 +356,9 @@ namespace Confluent.Kafka
         /// </exception>
         /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
         ///     Thrown if result is in error.
+        /// </exception>
+        /// <exception cref="System.InvalidOperationException">
+        ///     Thrown if the <paramref name="result"/> param is an empty consume result.
         /// </exception>
         void StoreOffset(ConsumeResult<TKey, TValue> result);
 
@@ -410,6 +423,10 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Commits an offset based on the
         ///     topic/partition/offset of a ConsumeResult.
+        ///
+        ///     EOF messages must not be committed as they are control messages and
+        ///     have an invalid leader epoch. This method throws an `InvalidOperationException`
+        ///     in that case.
         /// </summary>
         /// <param name="result">
         ///     The ConsumeResult instance used
@@ -420,6 +437,9 @@ namespace Confluent.Kafka
         /// </exception>
         /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
         ///     Thrown if the result is in error.
+        /// </exception>
+        /// <exception cref="System.InvalidOperationException">
+        ///     Thrown if the <paramref name="result"/> param is an empty consume result.
         /// </exception>
         /// <remarks>
         ///     A consumer at position N has consumed
