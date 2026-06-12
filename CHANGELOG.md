@@ -1,3 +1,20 @@
+# Unreleased
+
+## Upgrade considerations
+
+Ensure you're not calling `StoreOffset` with an EOF message.
+As when calling `Commit` with an EOF message, it will throw an `InvalidOperationException`.
+Previously this could cause skipping an offset (<2.1.0) or message reprocessing (>=2.1.0).
+
+## Enhancements
+
+* Added support for .NET 10 (LTS) and dropped support for .NET 6 (end of support since November 2024). The library now multi-targets `net8.0` and `net10.0` alongside `netstandard2.0` and `net462`. Builds on the approach proposed in #2545 by @ffernandolima, adapted for the centralized `Directory.Build.props` structure on current master.
+
+## Fixes
+
+* Throw an `InvalidOperationException` when calling `StoreOffset` with an EOF consume result, to match `Commit` behavior (#2621)
+
+
 # 2.14.2
 
 ## Enhancements

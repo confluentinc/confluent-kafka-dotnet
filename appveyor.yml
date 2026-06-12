@@ -4,6 +4,8 @@ configuration:
 - Release
 
 install:
+- ps: Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
+- ps: .\dotnet-install.ps1 -Channel 10.0 -InstallDir "$env:ProgramFiles\dotnet"
 - cinst docfx -y
 
 environment:

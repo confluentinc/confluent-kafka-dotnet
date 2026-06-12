@@ -43,7 +43,7 @@ The `Confluent.SchemaRegistry.Encryption` project requires all dependencies to b
   - Changed namespace from `HkdfStandard` to `Confluent.SchemaRegistry.Encryption.Vendored.HkdfStandard`
   - **Simplified implementation**: The original library had complex conditional compilation for different .NET versions and Span<T> support. Since the Confluent.SchemaRegistry.Encryption project only uses the `Hkdf.DeriveKey()` method, a simplified implementation was created that:
     - Implements only the `DeriveKey()` method
-    - Works across all target frameworks (netstandard2.1, net462, net6.0, net8.0)
+    - Works across all supported target frameworks
     - Uses standard byte[] arrays instead of Span<T> for compatibility
     - Maintains full RFC 5869 compliance for the DeriveKey operation
 
