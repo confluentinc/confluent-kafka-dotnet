@@ -1,0 +1,120 @@
+// Copyright 2026 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Collections.Generic;
+
+namespace Confluent.Kafka.Internal.OAuthBearer.Aws
+{
+    /// <summary>
+    ///     Shared helpers used by Producer/Consumer/AdminClient builders to
+    ///     dispatch the AWS IAM autowire path.
+    /// </summary>
+    public static class AwsAutoWireHelper
+    {
+        private const string SaslOauthbearerMethodKey = "sasl.oauthbearer.method";
+        private const string SaslOauthbearerMethodOidcValue = "oidc";
+        private const string SaslOauthbearerConfigKey = "sasl.oauthbearer.config";
+
+        /// <summary>
+        ///     Snapshots an enumerable config into a dictionary, applying
+        ///     last-key-wins semantics to match librdkafka's behavior.
+        /// </summary>
+        public static IReadOnlyDictionary<string, string> SnapshotConfig(
+            IEnumerable<KeyValuePair<string, string>> config)
+        {
+            var dict = new Dictionary<string, string>();
+            if (config == null) return dict;
+            foreach (var kv in config)
+            {
+                dict[kv.Key] = kv.Value;
+            }
+            return dict;
+        }
+
+        /// <summary>
+        ///     Returns <c>true</c> when the snapshot contains the AWS IAM marker
+        ///     (<see cref="AwsIamMarker.Key"/> set to <see cref="AwsIamMarker.Value"/>).
+        /// </summary>
+        public static bool HasAwsIamMarker(IReadOnlyDictionary<string, string> snapshot)
+            => snapshot.TryGetValue(AwsIamMarker.Key, out var value)
+               && string.Equals(value, AwsIamMarker.Value, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        ///     Throws <see cref="InvalidOperationException"/> unless the snapshot
+        ///     has <c>sasl.oauthbearer.method=oidc</c>. The AWS IAM autowire path
+        ///     runs as a high-level-client refresh callback inside librdkafka's
+        ///     OIDC subsystem (parallel to Azure IMDS); without
+        ///     <c>method=oidc</c> the configuration is rejected by design.
+        /// </summary>
+        public static void RequireMethodIsOidc(IReadOnlyDictionary<string, string> snapshot)
+        {
+            var hasMethod = snapshot.TryGetValue(SaslOauthbearerMethodKey, out var method);
+            if (hasMethod && string.Equals(method, SaslOauthbearerMethodOidcValue, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var actual = hasMethod ? $"'{method}'" : "<unset>";
+            throw new InvalidOperationException(
+                $"'{AwsIamMarker.Key}={AwsIamMarker.Value}' requires " +
+                $"'{SaslOauthbearerMethodKey}=oidc' " +
+                "(set SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc). " +
+                $"Current value: {actual}. " +
+                "The AWS IAM path runs as a high-level-client refresh callback " +
+                "inside librdkafka's OIDC subsystem; without method=oidc the " +
+                "configuration is rejected by design.");
+        }
+
+        /// <summary>
+        ///     Throws <see cref="InvalidOperationException"/> unless the snapshot
+        ///     contains a non-empty <c>sasl.oauthbearer.config</c>. The AWS IAM
+        ///     autowire path needs this config to carry the STS region, OIDC
+        ///     audience, and any other parsed knobs.
+        /// </summary>
+        public static void RequireSaslOauthbearerConfig(IReadOnlyDictionary<string, string> snapshot)
+        {
+            if (snapshot.TryGetValue(SaslOauthbearerConfigKey, out var raw)
+                && !string.IsNullOrEmpty(raw))
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"'{AwsIamMarker.Key}={AwsIamMarker.Value}' is set but " +
+                $"'{SaslOauthbearerConfigKey}' is missing or empty. The AWS IAM " +
+                "autowire path requires region and audience to be supplied via " +
+                "sasl.oauthbearer.config (e.g. \"region=us-east-1 audience=https://...\").");
+        }
+
+        /// <summary>
+        ///     Whether to enable the AWS IAM autowire path for this config snapshot.
+        /// </summary>
+        /// <returns>
+        ///     <c>true</c> if the marker is present and prerequisites are satisfied;
+        ///     <c>false</c> if the marker is absent.
+        /// </returns>
+        /// <exception cref="InvalidOperationException">
+        ///     The marker is present, but <c>sasl.oauthbearer.method</c> is not
+        ///     <c>oidc</c>, or <c>sasl.oauthbearer.config</c> is missing/empty.
+        /// </exception>
+        public static bool ShouldAutoWire(IReadOnlyDictionary<string, string> snapshot)
+        {
+            if (!HasAwsIamMarker(snapshot)) return false;
+            RequireMethodIsOidc(snapshot);
+            RequireSaslOauthbearerConfig(snapshot);
+            return true;
+        }
+    }
+}
