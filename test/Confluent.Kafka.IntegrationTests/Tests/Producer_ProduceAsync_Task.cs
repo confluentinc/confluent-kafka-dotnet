@@ -98,6 +98,64 @@ namespace Confluent.Kafka.IntegrationTests
 
             Assert.Equal((Partition)1, drs2[0].Result.Partition);
 
+            // Memory<byte> case
+
+            var drs3 = new List<Task<DeliveryResult<Memory<byte>, ReadOnlyMemory<byte>>>>();
+            using (var producer = new TestProducerBuilder<Memory<byte>, ReadOnlyMemory<byte>>(producerConfig).Build())
+            {
+                drs3.Add(producer.ProduceAsync(
+                    new TopicPartition(partitionedTopic, 1),
+                    new Message<Memory<byte>, ReadOnlyMemory<byte>> { Key = Encoding.UTF8.GetBytes("test key 2"), Value = Encoding.UTF8.GetBytes("test val 2") }));
+                drs3.Add(producer.ProduceAsync(
+                    partitionedTopic,
+                    new Message<Memory<byte>, ReadOnlyMemory<byte>> { Key = Encoding.UTF8.GetBytes("test key 3"), Value = Encoding.UTF8.GetBytes("test val 3") }));
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
+            for (int i = 0; i < 2; ++i)
+            {
+                var dr = drs3[i].Result;
+                Assert.Equal(partitionedTopic, dr.Topic);
+                Assert.True(dr.Offset >= 0);
+                Assert.True(dr.Partition == 0 || dr.Partition == 1);
+                Assert.Equal($"test key {i+2}", Encoding.UTF8.GetString(dr.Message.Key.Span));
+                Assert.Equal($"test val {i+2}", Encoding.UTF8.GetString(dr.Message.Value.Span));
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+            }
+
+            Assert.Equal((Partition)1, drs3[0].Result.Partition);
+
+            // Memory<byte>? case
+
+            var drs4 = new List<Task<DeliveryResult<ReadOnlyMemory<byte>?, Memory<byte>?>>>();
+            using (var producer = new TestProducerBuilder<ReadOnlyMemory<byte>?, Memory<byte>?>(producerConfig).Build())
+            {
+                drs4.Add(producer.ProduceAsync(
+                    new TopicPartition(partitionedTopic, 1),
+                    new Message<ReadOnlyMemory<byte>?, Memory<byte>?> { Key = Encoding.UTF8.GetBytes("test key 2"), Value = Encoding.UTF8.GetBytes("test val 2") }));
+                drs4.Add(producer.ProduceAsync(
+                    partitionedTopic,
+                    new Message<ReadOnlyMemory<byte>?, Memory<byte>?> { Key = Encoding.UTF8.GetBytes("test key 3"), Value = Encoding.UTF8.GetBytes("test val 3") }));
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
+            for (int i = 0; i < 2; ++i)
+            {
+                var dr = drs4[i].Result;
+                Assert.Equal(partitionedTopic, dr.Topic);
+                Assert.True(dr.Offset >= 0);
+                Assert.True(dr.Partition == 0 || dr.Partition == 1);
+                Assert.True(dr.Message.Key.HasValue);
+                Assert.Equal($"test key {i+2}", Encoding.UTF8.GetString(dr.Message.Key.Value.Span));
+                Assert.True(dr.Message.Value.HasValue);
+                Assert.Equal($"test val {i+2}", Encoding.UTF8.GetString(dr.Message.Value.Value.Span));
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+            }
+
+            Assert.Equal((Partition)1, drs4[0].Result.Partition);
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Task");
         }
