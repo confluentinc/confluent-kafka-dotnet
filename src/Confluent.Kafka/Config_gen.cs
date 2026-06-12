@@ -216,7 +216,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     AzureIMDS
         /// </summary>
-        AzureIMDS
+        AzureIMDS,
+
+        /// <summary>
+        ///     AwsIam
+        /// </summary>
+        AwsIam
     }
 
     /// <summary>
