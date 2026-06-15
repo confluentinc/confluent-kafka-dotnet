@@ -35,7 +35,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void ProducerBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
-            using var p = new ProducerBuilder<string, string>(NewConfig()).Build();
+            using var p = new ProducerBuilder<string, string>(NewConfig())
+                .SetLogHandler((_, _) => { })
+                .Build();
             Assert.NotNull(p);
         }
 
@@ -44,7 +46,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
             var consumerConfig = new ConsumerConfig(NewConfig()) { GroupId = "test-group" };
-            using var c = new ConsumerBuilder<string, string>(consumerConfig).Build();
+            using var c = new ConsumerBuilder<string, string>(consumerConfig)
+                .SetLogHandler((_, _) => { })
+                .Build();
             Assert.NotNull(c);
         }
 
@@ -52,7 +56,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void AdminClientBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
-            using var a = new AdminClientBuilder(NewConfig()).Build();
+            using var a = new AdminClientBuilder(NewConfig())
+                .SetLogHandler((_, _) => { })
+                .Build();
             Assert.NotNull(a);
         }
 
