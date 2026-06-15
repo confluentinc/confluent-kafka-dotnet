@@ -22,6 +22,15 @@ Previously this could cause skipping an offset (<2.1.0) or message reprocessing 
 * References librdkafka.redist 2.14.2. Refer to the [librdkafka v2.14.2 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.14.2) for more information.
 * Add IHeader overload to Headers.Add() method (#2604)
 
+## New features
+
+* New optional package `Confluent.Kafka.OAuthBearer.Aws` provides AWS IAM-based
+  OAUTHBEARER authentication via AWS STS `GetWebIdentityToken`. Activate by
+  setting `SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc`,
+  `SaslOauthbearerMetadataAuthenticationType.AwsIam`, and supplying
+  `region` and `audience` in `SaslOauthbearerConfig`. See the package's README
+  for details.
+
 ## Fixes
 
 * Handle anyOf/allOf in JSON transforms (#2611)
