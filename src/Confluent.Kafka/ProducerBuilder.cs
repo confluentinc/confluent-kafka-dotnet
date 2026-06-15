@@ -118,7 +118,7 @@ namespace Confluent.Kafka
         {
             return new Producer<TKey, TValue>.Config
             {
-                config = Config,
+                config = Internal.OAuthBearer.Aws.AwsAutoWireHelper.RewriteConfigForAwsIam(Config),
                 errorHandler = this.ErrorHandler == null
                     ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
                     : error => this.ErrorHandler(producer, error),
@@ -128,12 +128,34 @@ namespace Confluent.Kafka
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(producer, stats),
-                oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
-                    ? default(Action<string>)
-                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
+                oAuthBearerTokenRefreshHandler = ResolveOAuthBearerHandler(producer),
                 partitioners = this.Partitioners,
                 defaultPartitioner = this.DefaultPartitioner,
             };
+        }
+
+        /// <summary>
+        ///     Selects the OAUTHBEARER refresh handler with the precedence:
+        ///     explicit handler &gt; AWS IAM marker autowire &gt; none.
+        ///     This method is the producer-typed equivalent of ConsumerBuilder's ResolveOAuthBearerHandler;
+        ///     the two share the same dispatch logic and differ only in the client type they close over.
+        /// </summary>
+        private Action<string> ResolveOAuthBearerHandler(IProducer<TKey, TValue> producer)
+        {
+            if (this.OAuthBearerTokenRefreshHandler != null)
+            {
+                return oAuthBearerConfig =>
+                    this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig);
+            }
+
+            var snapshot = Internal.OAuthBearer.Aws.AwsAutoWireHelper.SnapshotConfig(this.Config);
+            if (Internal.OAuthBearer.Aws.AwsAutoWireHelper.ShouldAutoWire(snapshot))
+            {
+                var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);
+                return oAuthBearerConfig => handler(producer, oAuthBearerConfig);
+            }
+
+            return null;
         }
 
         /// <summary>
