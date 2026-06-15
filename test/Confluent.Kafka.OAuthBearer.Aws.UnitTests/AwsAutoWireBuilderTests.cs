@@ -26,14 +26,12 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
     /// </summary>
     public class AwsAutoWireBuilderTests
     {
-        // TODO: Remove the Skip on the three *_MarkerWithPkgPresent_Succeeds tests
-        // below once librdkafka.redist ships with the AWS_IAM marker patch. Stock
-        // librdkafka rejects 'aws_iam' as a value of
-        // sasl.oauthbearer.metadata.authentication.type at config validation time
-        // (SafeConfigHandle.Set), which prevents Build() from completing in CI.
-        // These tests pass locally where a patched librdkafka.so is on the
-        // probing path.
-        [Fact(Skip = "Requires librdkafka.redist with the AWS_IAM marker patch; remove Skip when available.")]
+        // Full autowire happy paths (optional package present, no explicit handler):
+        // CreateHandler is reflected + the refresh callback wired, then Build()
+        // succeeds on stock librdkafka because the marker is stripped and the method
+        // rewritten to default before the native handle is created — stock librdkafka
+        // would otherwise reject 'aws_iam' at config validation time.
+        [Fact]
         public void ProducerBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
@@ -41,7 +39,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.NotNull(p);
         }
 
-        [Fact(Skip = "Requires librdkafka.redist with the AWS_IAM marker patch; remove Skip when available.")]
+        [Fact]
         public void ConsumerBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
@@ -50,7 +48,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.NotNull(c);
         }
 
-        [Fact(Skip = "Requires librdkafka.redist with the AWS_IAM marker patch; remove Skip when available.")]
+        [Fact]
         public void AdminClientBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();

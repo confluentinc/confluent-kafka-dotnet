@@ -91,7 +91,7 @@ namespace Confluent.Kafka
         {
             return new Consumer<TKey, TValue>.Config
             {
-                config = Config,
+                config = Internal.OAuthBearer.Aws.AwsAutoWireHelper.RewriteConfigForAwsIam(Config),
                 errorHandler = this.ErrorHandler == null
                     ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
                     : error => this.ErrorHandler(consumer, error),

@@ -152,13 +152,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.Contains("missing or empty", ex.Message);
         }
 
-        // TODO: Remove the Skip on the three *_ExplicitHandlerWithMarker_PrecedenceRuleHonored
-        // tests below once librdkafka.redist ships with the AWS_IAM marker patch. Stock
-        // librdkafka rejects 'aws_iam' as a value of
-        // sasl.oauthbearer.metadata.authentication.type at config validation time
-        // (SafeConfigHandle.Set), which prevents Build() from completing in CI. These
-        // tests pass locally where a patched librdkafka.so is on the probing path.
-        [Fact(Skip = "Requires librdkafka.redist with the AWS_IAM marker patch; remove Skip when available.")]
+        [Fact]
         public void ProducerBuilder_Build_ExplicitHandlerWithMarker_PrecedenceRuleHonored()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
@@ -171,7 +165,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.NotNull(p);
         }
 
-        [Fact(Skip = "Requires librdkafka.redist with the AWS_IAM marker patch; remove Skip when available.")]
+        [Fact]
         public void ConsumerBuilder_Build_ExplicitHandlerWithMarker_PrecedenceRuleHonored()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
@@ -183,7 +177,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.NotNull(c);
         }
 
-        [Fact(Skip = "Requires librdkafka.redist with the AWS_IAM marker patch; remove Skip when available.")]
+        [Fact]
         public void AdminClientBuilder_Build_ExplicitHandlerWithMarker_PrecedenceRuleHonored()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
