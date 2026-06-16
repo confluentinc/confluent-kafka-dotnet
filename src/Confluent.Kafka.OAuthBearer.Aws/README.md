@@ -184,18 +184,6 @@ SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticatio
 ```
 
 If you forget `method=oidc`, the error message points at the missing setting.
-If you set `method=oidc` without the AWS optional package referenced,
-librdkafka's defensive stub fires at first refresh with
-`"aws_iam authentication is handled by the high-level client..."`.
-
-### Don't leave `SaslOauthbearerConfig` populated when removing the marker
-
-`SaslOauthbearerConfig` uses an AWS-specific grammar (`region=...`, `audience=...`).
-If you remove the `AwsIam` marker but leave `SaslOauthbearerConfig` populated, librdkafka
-falls back to its built-in unsecured-JWT path — which expects a different grammar and
-rejects the AWS keys with `Unrecognized sasl.oauthbearer.config beginning at: region=...`.
-
-When disabling AWS authentication, clear *both* the marker and `SaslOauthbearerConfig`.
 
 ## Versioning
 
@@ -208,4 +196,3 @@ Targets `AWSSDK.SecurityToken >= 3.7.504`. Pulled in transitively when you refer
 ## Further reading
 
 - [AWS STS GetWebIdentityToken API reference](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetWebIdentityToken.html)
-- [RFC 7628 — SASL OAUTHBEARER](https://www.rfc-editor.org/rfc/rfc7628)
