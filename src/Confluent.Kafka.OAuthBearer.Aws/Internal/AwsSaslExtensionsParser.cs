@@ -20,7 +20,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 {
     /// <summary>
     ///     Parses the typed <c>sasl.oauthbearer.extensions</c> config key
-    ///     (comma-separated <c>key=value</c> pairs, RFC 7628 §3.1) into a
+    ///     (comma-separated <c>key=value</c> pairs) into a
     ///     dictionary suitable for the OAUTHBEARER refresh handoff.
     /// </summary>
     /// <remarks>

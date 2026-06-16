@@ -36,7 +36,7 @@ namespace Confluent.Kafka.Examples.OAuthBearerAws
     public class Program
     {
         // Edit these placeholders for your environment before running.
-        private const string awsRegion           = "your-aws-region";        // e.g. us-east-1
+        private const string awsRegion           = "your-aws-region";        // e.g. eu-north-1
         private const string oidcAudience        = "your-oidc-audience";     // e.g. https://confluent.cloud/oidc
         private const string kafkaLogicalCluster = "your-logical-cluster";   // e.g. lkc-abc
         private const string identityPoolId      = "your-identity-pool-id";  // e.g. pool-xyz
