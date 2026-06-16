@@ -71,7 +71,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws
         /// </param>
         /// <param name="saslOauthbearerExtensions">
         ///     The <c>sasl.oauthbearer.extensions</c> value
-        ///     (comma-separated <c>key=value</c> pairs, RFC 7628 §3.1).
+        ///     (comma-separated <c>key=value</c> pairs).
         ///     May be <c>null</c> or empty when the user has no extensions.
         /// </param>
         /// <returns>

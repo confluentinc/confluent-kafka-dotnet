@@ -58,7 +58,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///     uniformly across all clients with <c>method=oidc</c> (the user's
         ///     intent: managed, OIDC-family auth); the binding then rewrites it to
         ///     <c>method=default</c> internally — see
-        ///     <see cref="RewriteConfigForAwsIam"/> — before the librdkafka handle
+        ///     <see cref="RewriteConfigIfAwsIamEnabled"/> — before the librdkafka handle
         ///     is created. <c>method=oidc</c> is therefore required as the explicit
         ///     opt-in, and any other value is rejected by design.
         /// </summary>
@@ -144,7 +144,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///         takes precedence over autowire.
         ///     </para>
         /// </remarks>
-        public static IEnumerable<KeyValuePair<string, string>> RewriteConfigForAwsIam(
+        public static IEnumerable<KeyValuePair<string, string>> RewriteConfigIfAwsIamEnabled(
             IEnumerable<KeyValuePair<string, string>> config)
         {
             if (config == null) return config;
