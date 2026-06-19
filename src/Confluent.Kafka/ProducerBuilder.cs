@@ -136,27 +136,17 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Selects the OAUTHBEARER refresh handler with the precedence:
-        ///     explicit handler &gt; AWS IAM marker autowire &gt; none.
-        ///     This method is the producer-typed equivalent of ConsumerBuilder's ResolveOAuthBearerHandler;
-        ///     the two share the same dispatch logic and differ only in the client type they close over.
+        ///     explicit handler &gt; AWS IAM marker autowire &gt; none. Binds the
+        ///     producer-typed explicit handler, then delegates the shared dispatch
+        ///     logic to AwsAutoWireHelper.ResolveOAuthBearerHandler.
         /// </summary>
         private Action<string> ResolveOAuthBearerHandler(IProducer<TKey, TValue> producer)
-        {
-            if (this.OAuthBearerTokenRefreshHandler != null)
-            {
-                return oAuthBearerConfig =>
-                    this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig);
-            }
-
-            var snapshot = Confluent.Kafka.Config.Snapshot(this.Config);
-            if (Internal.OAuthBearer.Aws.AwsAutoWireHelper.ShouldAutoWire(snapshot))
-            {
-                var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);
-                return oAuthBearerConfig => handler(producer, oAuthBearerConfig);
-            }
-
-            return null;
-        }
+            => Internal.OAuthBearer.Aws.AwsAutoWireHelper.ResolveOAuthBearerHandler(
+                producer,
+                this.OAuthBearerTokenRefreshHandler == null
+                    ? default(Action<string>)
+                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
+                Confluent.Kafka.Config.Snapshot(this.Config));
 
         /// <summary>
         ///     A collection of librdkafka configuration parameters 

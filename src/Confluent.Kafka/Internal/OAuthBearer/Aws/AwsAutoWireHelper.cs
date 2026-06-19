@@ -69,6 +69,38 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         }
 
         /// <summary>
+        ///     Selects the OAUTHBEARER refresh handler for a builder, with the
+        ///     precedence: explicit handler &gt; AWS IAM marker autowire &gt; none.
+        ///     Shared by the Producer and Consumer builders via <see cref="IClient"/>;
+        ///     each builder binds its typed handler to a plain <c>Action&lt;string&gt;</c>
+        ///     before delegating.
+        /// </summary>
+        /// <param name="client">
+        ///     The producer/consumer the autowired handler binds to when the AWS IAM
+        ///     marker is present.
+        /// </param>
+        /// <param name="explicitHandler">
+        ///     The user's explicit refresh handler, already bound to
+        ///     <paramref name="client"/>, or <c>null</c> if none was set.
+        /// </param>
+        /// <param name="snapshot">The client config snapshot (last-key-wins).</param>
+        internal static Action<string> ResolveOAuthBearerHandler(
+            IClient client,
+            Action<string> explicitHandler,
+            IReadOnlyDictionary<string, string> snapshot)
+        {
+            if (explicitHandler != null) return explicitHandler;
+
+            if (ShouldAutoWire(snapshot))
+            {
+                var handler = AwsAutoWireDispatcher.LoadHandler(snapshot);
+                return oAuthBearerConfig => handler(client, oAuthBearerConfig);
+            }
+
+            return null;
+        }
+
+        /// <summary>
         ///     Produces the config that is actually handed to librdkafka for the
         ///     AWS IAM autowire path. When the marker is present, the marker key is
         ///     stripped and <c>sasl.oauthbearer.method</c> is normalized to

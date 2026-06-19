@@ -120,27 +120,17 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Selects the OAUTHBEARER refresh handler with the precedence:
-        ///     explicit handler &gt; AWS IAM marker autowire &gt; none.
-        ///     This method is the consumer-typed equivalent of ProducerBuilder's ResolveOAuthBearerHandler;
-        ///     the two share the same dispatch logic and differ only in the client type they close over.
+        ///     explicit handler &gt; AWS IAM marker autowire &gt; none. Binds the
+        ///     consumer-typed explicit handler, then delegates the shared dispatch
+        ///     logic to AwsAutoWireHelper.ResolveOAuthBearerHandler.
         /// </summary>
         private Action<string> ResolveOAuthBearerHandler(IConsumer<TKey, TValue> consumer)
-        {
-            if (this.OAuthBearerTokenRefreshHandler != null)
-            {
-                return oAuthBearerConfig =>
-                    this.OAuthBearerTokenRefreshHandler(consumer, oAuthBearerConfig);
-            }
-
-            var snapshot = Confluent.Kafka.Config.Snapshot(this.Config);
-            if (Internal.OAuthBearer.Aws.AwsAutoWireHelper.ShouldAutoWire(snapshot))
-            {
-                var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);
-                return oAuthBearerConfig => handler(consumer, oAuthBearerConfig);
-            }
-
-            return null;
-        }
+            => Internal.OAuthBearer.Aws.AwsAutoWireHelper.ResolveOAuthBearerHandler(
+                consumer,
+                this.OAuthBearerTokenRefreshHandler == null
+                    ? default(Action<string>)
+                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(consumer, oAuthBearerConfig),
+                Confluent.Kafka.Config.Snapshot(this.Config));
 
         /// <summary>
         ///     Initialize a new ConsumerBuilder instance.
