@@ -128,25 +128,13 @@ namespace Confluent.Kafka
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(producer, stats),
-                oAuthBearerTokenRefreshHandler = ResolveOAuthBearerHandler(producer),
+                oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
+                    ? default(Action<string>)
+                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
                 partitioners = this.Partitioners,
                 defaultPartitioner = this.DefaultPartitioner,
             };
         }
-
-        /// <summary>
-        ///     Selects the OAUTHBEARER refresh handler with the precedence:
-        ///     explicit handler &gt; AWS IAM marker autowire &gt; none. Binds the
-        ///     producer-typed explicit handler, then delegates the shared dispatch
-        ///     logic to SaslOauthbearerConfigHelper.ResolveOAuthBearerHandler.
-        /// </summary>
-        private Action<string> ResolveOAuthBearerHandler(IProducer<TKey, TValue> producer)
-            => Internal.OAuthBearer.SaslOauthbearerConfigHelper.ResolveOAuthBearerHandler(
-                producer,
-                this.OAuthBearerTokenRefreshHandler == null
-                    ? default(Action<string>)
-                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
-                Confluent.Kafka.Config.Snapshot(this.Config));
 
         /// <summary>
         ///     A collection of librdkafka configuration parameters 

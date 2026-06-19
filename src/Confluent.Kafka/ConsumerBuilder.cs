@@ -104,7 +104,9 @@ namespace Confluent.Kafka
                 offsetsCommittedHandler = this.OffsetsCommittedHandler == null
                     ? default(Action<CommittedOffsets>)
                     : offsets => this.OffsetsCommittedHandler(consumer, offsets),
-                oAuthBearerTokenRefreshHandler = ResolveOAuthBearerHandler(consumer),
+                oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
+                    ? default(Action<string>)
+                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(consumer, oAuthBearerConfig),
                 partitionsAssignedHandler = this.PartitionsAssignedHandler == null
                     ? default(Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>>)
                     : partitions => this.PartitionsAssignedHandler(consumer, partitions),
@@ -117,20 +119,6 @@ namespace Confluent.Kafka
                 revokedOrLostHandlerIsFunc = this.RevokedOrLostHandlerIsFunc
             };
         }
-
-        /// <summary>
-        ///     Selects the OAUTHBEARER refresh handler with the precedence:
-        ///     explicit handler &gt; AWS IAM marker autowire &gt; none. Binds the
-        ///     consumer-typed explicit handler, then delegates the shared dispatch
-        ///     logic to SaslOauthbearerConfigHelper.ResolveOAuthBearerHandler.
-        /// </summary>
-        private Action<string> ResolveOAuthBearerHandler(IConsumer<TKey, TValue> consumer)
-            => Internal.OAuthBearer.SaslOauthbearerConfigHelper.ResolveOAuthBearerHandler(
-                consumer,
-                this.OAuthBearerTokenRefreshHandler == null
-                    ? default(Action<string>)
-                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(consumer, oAuthBearerConfig),
-                Confluent.Kafka.Config.Snapshot(this.Config));
 
         /// <summary>
         ///     Initialize a new ConsumerBuilder instance.
