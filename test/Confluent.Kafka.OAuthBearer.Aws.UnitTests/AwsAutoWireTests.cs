@@ -27,7 +27,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsAutoWire.CreateHandler(null, null));
-            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("SaslOauthbearerConfig", ex.Message);
             Assert.Contains("missing or empty", ex.Message);
         }
 
@@ -36,7 +36,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsAutoWire.CreateHandler("", null));
-            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("SaslOauthbearerConfig", ex.Message);
             Assert.Contains("missing or empty", ex.Message);
         }
 

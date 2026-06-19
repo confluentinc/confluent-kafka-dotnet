@@ -78,9 +78,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws
             if (string.IsNullOrEmpty(saslOauthbearerConfig))
             {
                 throw new ArgumentException(
-                    "'sasl.oauthbearer.config' is missing or empty. The AWS IAM autowire " +
+                    "SaslOauthbearerConfig is missing or empty. The AWS IAM autowire " +
                     "path requires region and audience to be supplied via " +
-                    "sasl.oauthbearer.config (e.g. \"region=us-east-1 audience=https://...\").",
+                    "SaslOauthbearerConfig (e.g. \"region=us-east-1 audience=https://...\").",
                     nameof(saslOauthbearerConfig));
             }
 

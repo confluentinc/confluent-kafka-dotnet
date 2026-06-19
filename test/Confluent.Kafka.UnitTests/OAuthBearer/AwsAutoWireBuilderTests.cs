@@ -37,11 +37,9 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
             var config = NewConfig();   // marker set, but no SaslOauthbearerMethod
-            var ex = Assert.Throws<InvalidOperationException>(
+            var ex = Assert.Throws<ArgumentException>(
                 () => new ProducerBuilder<string, string>(config).Build());
-            Assert.Contains("sasl.oauthbearer.method", ex.Message);
-            Assert.Contains("aws_iam", ex.Message);
-            Assert.Contains("oidc", ex.Message);
+            Assert.Contains("SaslOauthbearerMethod.Oidc", ex.Message);
         }
 
         [Fact]
@@ -62,11 +60,9 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
             var consumerConfig = new ConsumerConfig(NewConfig()) { GroupId = "test-group" };
-            var ex = Assert.Throws<InvalidOperationException>(
+            var ex = Assert.Throws<ArgumentException>(
                 () => new ConsumerBuilder<string, string>(consumerConfig).Build());
-            Assert.Contains("sasl.oauthbearer.method", ex.Message);
-            Assert.Contains("aws_iam", ex.Message);
-            Assert.Contains("oidc", ex.Message);
+            Assert.Contains("SaslOauthbearerMethod.Oidc", ex.Message);
         }
 
         [Fact]
@@ -86,11 +82,9 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
             var config = NewConfig();
-            var ex = Assert.Throws<InvalidOperationException>(
+            var ex = Assert.Throws<ArgumentException>(
                 () => new AdminClientBuilder(config).Build());
-            Assert.Contains("sasl.oauthbearer.method", ex.Message);
-            Assert.Contains("aws_iam", ex.Message);
-            Assert.Contains("oidc", ex.Message);
+            Assert.Contains("SaslOauthbearerMethod.Oidc", ex.Message);
         }
 
         [Fact]
@@ -107,9 +101,9 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                     SaslOauthbearerMetadataAuthenticationType.AwsIam,
                 // No SaslOauthbearerConfig
             };
-            var ex = Assert.Throws<InvalidOperationException>(
+            var ex = Assert.Throws<ArgumentException>(
                 () => new ProducerBuilder<string, string>(config).Build());
-            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("SaslOauthbearerConfig", ex.Message);
             Assert.Contains("missing or empty", ex.Message);
         }
 
@@ -127,9 +121,9 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                     SaslOauthbearerMetadataAuthenticationType.AwsIam,
             };
             var consumerConfig = new ConsumerConfig(baseCfg) { GroupId = "test-group" };
-            var ex = Assert.Throws<InvalidOperationException>(
+            var ex = Assert.Throws<ArgumentException>(
                 () => new ConsumerBuilder<string, string>(consumerConfig).Build());
-            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("SaslOauthbearerConfig", ex.Message);
             Assert.Contains("missing or empty", ex.Message);
         }
 
@@ -146,9 +140,9 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 SaslOauthbearerMetadataAuthenticationType =
                     SaslOauthbearerMetadataAuthenticationType.AwsIam,
             };
-            var ex = Assert.Throws<InvalidOperationException>(
+            var ex = Assert.Throws<ArgumentException>(
                 () => new AdminClientBuilder(config).Build());
-            Assert.Contains("sasl.oauthbearer.config", ex.Message);
+            Assert.Contains("SaslOauthbearerConfig", ex.Message);
             Assert.Contains("missing or empty", ex.Message);
         }
 

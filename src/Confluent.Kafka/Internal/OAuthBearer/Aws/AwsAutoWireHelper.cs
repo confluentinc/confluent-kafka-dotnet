@@ -23,11 +23,6 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     /// </summary>
     public static class AwsAutoWireHelper
     {
-        private const string SaslOauthbearerMethodKey = "sasl.oauthbearer.method";
-        private const string SaslOauthbearerMethodOidcValue = "oidc";
-        private const string SaslOauthbearerMethodDefaultValue = "default";
-        private const string SaslOauthbearerConfigKey = "sasl.oauthbearer.config";
-
         /// <summary>
         ///     Snapshots an enumerable config into a dictionary, applying
         ///     last-key-wins semantics to match librdkafka's behavior.
@@ -53,69 +48,21 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
                && string.Equals(value, AwsIamMarker.Value, StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
-        ///     Throws <see cref="InvalidOperationException"/> unless the snapshot
-        ///     has <c>sasl.oauthbearer.method=oidc</c>. AWS IAM auth is declared
-        ///     uniformly across all clients with <c>method=oidc</c> (the user's
-        ///     intent: managed, OIDC-family auth); the binding then rewrites it to
-        ///     <c>method=default</c> internally — see
-        ///     <see cref="RewriteConfigIfAwsIamEnabled"/> — before the librdkafka handle
-        ///     is created. <c>method=oidc</c> is therefore required as the explicit
-        ///     opt-in, and any other value is rejected by design.
-        /// </summary>
-        public static void RequireMethodIsOidc(IReadOnlyDictionary<string, string> snapshot)
-        {
-            var hasMethod = snapshot.TryGetValue(SaslOauthbearerMethodKey, out var method);
-            if (hasMethod && string.Equals(method, SaslOauthbearerMethodOidcValue, StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
-
-            var actual = hasMethod ? $"'{method}'" : "<unset>";
-            throw new InvalidOperationException(
-                $"'{AwsIamMarker.Key}={AwsIamMarker.Value}' requires " +
-                $"'{SaslOauthbearerMethodKey}=oidc' " +
-                "(set SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc). " +
-                $"Current value: {actual}. " +
-                "method=oidc is mandatory for the AWS IAM authentication path.");
-        }
-
-        /// <summary>
-        ///     Throws <see cref="InvalidOperationException"/> unless the snapshot
-        ///     contains a non-empty <c>sasl.oauthbearer.config</c>. The AWS IAM
-        ///     autowire path needs this config to carry the STS region, OIDC
-        ///     audience, and any other parsed knobs.
-        /// </summary>
-        public static void RequireSaslOauthbearerConfig(IReadOnlyDictionary<string, string> snapshot)
-        {
-            if (snapshot.TryGetValue(SaslOauthbearerConfigKey, out var raw)
-                && !string.IsNullOrEmpty(raw))
-            {
-                return;
-            }
-
-            throw new InvalidOperationException(
-                $"'{AwsIamMarker.Key}={AwsIamMarker.Value}' is set but " +
-                $"'{SaslOauthbearerConfigKey}' is missing or empty. The AWS IAM " +
-                "autowire path requires region and audience to be supplied via " +
-                "sasl.oauthbearer.config (e.g. \"region=us-east-1 audience=https://...\").");
-        }
-
-        /// <summary>
         ///     Whether to enable the AWS IAM autowire path for this config snapshot.
         /// </summary>
         /// <returns>
         ///     <c>true</c> if the marker is present and prerequisites are satisfied;
         ///     <c>false</c> if the marker is absent.
         /// </returns>
-        /// <exception cref="InvalidOperationException">
+        /// <exception cref="ArgumentException">
         ///     The marker is present, but <c>sasl.oauthbearer.method</c> is not
         ///     <c>oidc</c>, or <c>sasl.oauthbearer.config</c> is missing/empty.
         /// </exception>
         public static bool ShouldAutoWire(IReadOnlyDictionary<string, string> snapshot)
         {
             if (!HasAwsIamMarker(snapshot)) return false;
-            RequireMethodIsOidc(snapshot);
-            RequireSaslOauthbearerConfig(snapshot);
+            SaslOauthbearerConfigHelper.RequireMethodIsOidc(snapshot);
+            SaslOauthbearerConfigHelper.RequireSaslOauthbearerConfig(snapshot);
             return true;
         }
 
@@ -154,13 +101,14 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
             foreach (var kv in config)
             {
                 if (string.Equals(kv.Key, AwsIamMarker.Key, StringComparison.Ordinal)) continue;
-                if (string.Equals(kv.Key, SaslOauthbearerMethodKey, StringComparison.Ordinal)) continue;
+                if (string.Equals(kv.Key, SaslOauthbearerConfigHelper.SaslOauthbearerMethodKey, StringComparison.Ordinal)) continue;
                 rewritten.Add(kv);
             }
 
             // Re-add method explicitly as default.
             rewritten.Add(new KeyValuePair<string, string>(
-                SaslOauthbearerMethodKey, SaslOauthbearerMethodDefaultValue));
+                SaslOauthbearerConfigHelper.SaslOauthbearerMethodKey,
+                SaslOauthbearerConfigHelper.SaslOauthbearerMethodDefaultValue));
             return rewritten;
         }
     }
