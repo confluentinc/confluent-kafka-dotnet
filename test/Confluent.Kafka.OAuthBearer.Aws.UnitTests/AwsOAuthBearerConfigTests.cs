@@ -77,7 +77,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Theory]
         [InlineData("signing_algorithm")]
         [InlineData("sts_endpoint")]
-        [InlineData("principal_name")]
         public void Parse_EmptyValueOnOptionalKey_Throws(string key)
         {
             var ex = Assert.Throws<ArgumentException>(
@@ -106,7 +105,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
             Assert.Null(cfg.StsEndpointOverride);
-            Assert.Null(cfg.PrincipalNameOverride);
             Assert.Null(cfg.SaslExtensions);
             Assert.Null(cfg.Tags);
         }
@@ -232,7 +230,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.Contains("must not be empty", ex.Message);
         }
 
-        // ---- sts_endpoint, principal_name ----
+        // ---- sts_endpoint ----
 
         [Fact]
         public void Parse_StsEndpoint_StoredVerbatim()
@@ -240,14 +238,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var cfg = AwsOAuthBearerConfig.Parse(
                 "region=us-east-1 audience=https://a sts_endpoint=https://sts-fips.us-east-1.amazonaws.com");
             Assert.Equal("https://sts-fips.us-east-1.amazonaws.com", cfg.StsEndpointOverride);
-        }
-
-        [Fact]
-        public void Parse_PrincipalName_StoredVerbatim()
-        {
-            var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a principal_name=my-principal");
-            Assert.Equal("my-principal", cfg.PrincipalNameOverride);
         }
 
         // ---- saslExtensions argument (typed property pass-through) ----
@@ -441,7 +431,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 "duration_seconds=1800 " +
                 "signing_algorithm=RS256 " +
                 "sts_endpoint=https://sts.us-east-1.amazonaws.com " +
-                "principal_name=test-principal " +
                 "aws_debug=systemdiagnostics " +
                 "tag_team=platform",
                 saslExtensions);
@@ -451,7 +440,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.Equal(TimeSpan.FromSeconds(1800), cfg.Duration);
             Assert.Equal("RS256", cfg.SigningAlgorithm);
             Assert.Equal("https://sts.us-east-1.amazonaws.com", cfg.StsEndpointOverride);
-            Assert.Equal("test-principal", cfg.PrincipalNameOverride);
             Assert.Equal(LoggingOptions.SystemDiagnostics, cfg.AwsDebug);
             Assert.Equal("lkc-abc", cfg.SaslExtensions["logicalCluster"]);
             Assert.Equal("platform", cfg.Tags["team"]);

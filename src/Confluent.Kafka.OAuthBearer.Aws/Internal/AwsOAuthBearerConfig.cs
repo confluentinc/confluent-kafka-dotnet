@@ -38,7 +38,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             string signingAlgorithm,
             TimeSpan duration,
             string stsEndpointOverride,
-            string principalNameOverride,
             LoggingOptions awsDebug,
             IDictionary<string, string> saslExtensions,
             IDictionary<string, string> tags)
@@ -48,7 +47,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             SigningAlgorithm = signingAlgorithm;
             Duration = duration;
             StsEndpointOverride = stsEndpointOverride;
-            PrincipalNameOverride = principalNameOverride;
             AwsDebug = awsDebug;
             SaslExtensions = saslExtensions;
             Tags = tags;
@@ -70,9 +68,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 
         /// <summary>Optional STS endpoint URL (FIPS, VPC, etc.). <c>null</c> when unset.</summary>
         public string StsEndpointOverride { get; }
-
-        /// <summary>Optional override for the OAUTHBEARER principal name. <c>null</c> means extract JWT <c>sub</c>.</summary>
-        public string PrincipalNameOverride { get; }
 
         /// <summary>
         ///     AWS SDK diagnostic log sink. Defaults to <see cref="LoggingOptions.None"/> —
@@ -98,7 +93,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///       duration_seconds=&lt;60..3600&gt;    (default: 300)
         ///       signing_algorithm=ES384|RS256       (default: ES384)
         ///       sts_endpoint=&lt;url&gt;             (optional, FIPS / VPC)
-        ///       principal_name=&lt;value&gt;         (optional, override JWT 'sub')
         ///       aws_debug=none|console|log4net|systemdiagnostics  (default: none — opt-in AWS SDK logging)
         ///       tag_&lt;name&gt;=&lt;value&gt;        (zero or more JWT custom claims, max 50)
         ///     </code>
@@ -116,7 +110,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             string audience = null;
             string signingAlgorithm = null;
             string stsEndpoint = null;
-            string principalName = null;
             int? durationSeconds = null;
             LoggingOptions awsDebug = LoggingOptions.None;
             Dictionary<string, string> tags = null;
@@ -154,10 +147,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
                     case "sts_endpoint":
                         AssertNotEmpty(key, value);
                         stsEndpoint = value;
-                        break;
-                    case "principal_name":
-                        AssertNotEmpty(key, value);
-                        principalName = value;
                         break;
                     case "aws_debug":
                         AssertNotEmpty(key, value);
@@ -223,7 +212,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
                 signingAlgorithm: signingAlgorithm ?? DefaultSigningAlgorithm,
                 duration: TimeSpan.FromSeconds(durationSeconds ?? (int)DefaultDuration.TotalSeconds),
                 stsEndpointOverride: stsEndpoint,
-                principalNameOverride: principalName,
                 awsDebug: awsDebug,
                 saslExtensions: saslExtensions,
                 tags: tags);

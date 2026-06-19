@@ -35,9 +35,8 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         public long LifetimeMs { get; }
 
         /// <summary>
-        ///     Kafka principal name. Either the JWT's <c>sub</c> claim (bare
-        ///     role ARN for AWS-minted tokens) or the user-supplied
-        ///     <c>principal_name</c> override from the parsed config.
+        ///     Kafka principal name — the JWT's <c>sub</c> claim (the bare
+        ///     role ARN for AWS-minted tokens).
         /// </summary>
         public string PrincipalName { get; }
 

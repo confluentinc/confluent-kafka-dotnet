@@ -99,7 +99,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 "region=us-east-1 audience=https://a " +
                 "duration_seconds=900 signing_algorithm=RS256 " +
                 "sts_endpoint=https://sts.us-east-1.amazonaws.com " +
-                "principal_name=my-principal " +
                 "aws_debug=none " +
                 "tag_team=platform tag_environment=prod",
                 null);
@@ -115,15 +114,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.NotNull(handler);
         }
 
-
-        [Fact]
-        public void CreateHandler_PrincipalNameOverride_HandlerReady()
-        {
-            var handler = AwsAutoWire.CreateHandler(
-                "region=us-east-1 audience=https://a principal_name=explicit-principal",
-                null);
-            Assert.NotNull(handler);
-        }
 
         [Fact]
         public void CreateHandler_NullExtensions_TreatsAsAbsent()

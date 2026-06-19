@@ -81,24 +81,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.Equal("lkc-1", sink.SetCalls[0].Extensions["logicalCluster"]);
         }
 
-        [Fact]
-        public void Invoke_PrincipalNameOverride_PropagatedToSink()
-        {
-            var provider = NewProvider(
-                (req, ct) => Task.FromResult(
-                    new GetWebIdentityTokenResponse
-                    {
-                        WebIdentityToken = CannedJwt, Expiration = CannedExpiry,
-                    }),
-                "region=us-east-1 audience=https://a principal_name=explicit-principal");
-            var sink = new RecordingSink();
-
-            AwsOAuthBearerHandler.Invoke(provider, sink);
-
-            Assert.Single(sink.SetCalls);
-            Assert.Equal("explicit-principal", sink.SetCalls[0].PrincipalName);
-        }
-
         // ---- Invoke: failure paths — every exception must land in SetTokenFailure ----
 
         [Fact]

@@ -129,8 +129,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             var expiryUtc = DateTime.SpecifyKind(response.Expiration, DateTimeKind.Utc);
             var lifetimeMs = new DateTimeOffset(expiryUtc).ToUnixTimeMilliseconds();
 
-            var principal = _cfg.PrincipalNameOverride
-                            ?? AwsJwtSubjectExtractor.ExtractSub(response.WebIdentityToken);
+            var principal = AwsJwtSubjectExtractor.ExtractSub(response.WebIdentityToken);
 
             return new AwsOAuthBearerToken(
                 response.WebIdentityToken, lifetimeMs, principal, _cfg.SaslExtensions);

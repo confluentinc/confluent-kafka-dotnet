@@ -248,17 +248,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         }
         
         [Fact]
-        public async Task GetTokenAsync_PrincipalNameOverride_WinsOverJwtSub()
-        {
-            var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
-            var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a principal_name=explicit-principal");
-            var provider = new AwsStsTokenProvider(cfg, fake);
-            var tok = await provider.GetTokenAsync();
-            Assert.Equal("explicit-principal", tok.PrincipalName);
-        }
-
-        [Fact]
         public async Task GetTokenAsync_SaslExtensions_Passthrough()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
