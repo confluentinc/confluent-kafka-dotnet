@@ -49,7 +49,7 @@ namespace Confluent.Kafka
 
 #if NET7_0_OR_GREATER
         /// <summary>
-        ///     Returns the header at <paramref name="index"/> by read-only reference.
+        ///     Returns publicthe header at <paramref name="index"/> by read-only reference.
         /// </summary>
         public readonly ref readonly KafkaHeader this[int index]
         {
@@ -71,7 +71,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Returns the header at <paramref name="index"/>.
         /// </summary>
-        public KafkaHeader this[int index] => _overflow[index];
+        public readonly KafkaHeader this[int index] => _overflow[index];
 #endif
 
         /// <summary>
@@ -121,6 +121,59 @@ namespace Confluent.Kafka
                 Add(h.Name, h.Value);
             }
         }
+
+        /// <summary>
+        ///     Sets the value of the last header named <paramref name="name"/>, or
+        ///     appends a new header if none exists. The <paramref name="value"/> memory
+        ///     is stored by reference (same lifetime contract as
+        ///     <see cref="Add(string, ReadOnlyMemory{byte})"/>).
+        /// </summary>
+        public void AddOrUpdate(string name, ReadOnlyMemory<byte> value)
+        {
+            for (int i = Count - 1; i >= 0; i--)
+            {
+#if NET7_0_OR_GREATER
+                ref var slot = ref GetSlot(i);
+                if (Ascii.Equals(slot.Name, name))
+                {
+                    slot.Value = value;
+                    return;
+                }
+#else
+                if (_overflow[i].Name.Equals(name, StringComparison.Ordinal))
+                {
+                    _overflow[i].Value = value;
+                    return;
+                }
+#endif
+            }
+            Add(name, value);
+        }
+
+        /// <summary>
+        ///     Upserts a header by name: equivalent to
+        ///     <see cref="AddOrUpdate(string, ReadOnlyMemory{byte})"/>.
+        /// </summary>
+        public ReadOnlyMemory<byte> this[string name]
+        {
+            set => AddOrUpdate(name, value);
+        }
+
+#if NET7_0_OR_GREATER
+        [UnscopedRef]
+        private ref KafkaHeader GetSlot(int index)
+        {
+#if NET8_0_OR_GREATER
+            if (index < InlineCapacity)
+            {
+                return ref _inline[index];
+            }
+            return ref _overflow[index - InlineCapacity];
+#else
+            return ref _overflow[index];
+#endif
+        }
+#endif
 
         /// <summary>
         ///     Finds the last header with the given <paramref name="name"/> and
