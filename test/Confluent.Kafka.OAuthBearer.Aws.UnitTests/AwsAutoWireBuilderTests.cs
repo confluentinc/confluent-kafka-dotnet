@@ -31,7 +31,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         // hands aws_iam + method=oidc to librdkafka. This requires a librdkafka build
         // that recognizes aws_iam (companion PR #5428); stock builds reject it at
         // config validation time.
-        [Fact]
+        [Fact(Skip = "Requires librdkafka with aws_iam support (companion PR #5428): Build() passes aws_iam to librdkafka, which stock builds reject. Un-skip + bump librdkafka.redist once it ships.")]
         public void ProducerBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
@@ -41,7 +41,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.NotNull(p);
         }
 
-        [Fact]
+        [Fact(Skip = "Requires librdkafka with aws_iam support (companion PR #5428): Build() passes aws_iam to librdkafka, which stock builds reject. Un-skip + bump librdkafka.redist once it ships.")]
         public void ConsumerBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
@@ -52,7 +52,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             Assert.NotNull(c);
         }
 
-        [Fact]
+        [Fact(Skip = "Requires librdkafka with aws_iam support (companion PR #5428): Build() passes aws_iam to librdkafka, which stock builds reject. Un-skip + bump librdkafka.redist once it ships.")]
         public void AdminClientBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
