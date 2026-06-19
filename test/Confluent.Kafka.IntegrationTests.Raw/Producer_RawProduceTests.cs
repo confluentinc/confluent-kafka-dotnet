@@ -124,6 +124,60 @@ public class Producer_RawProduceTests
     }
 
     [Fact]
+    public void Produce_WithTwoHeaderSets_Concatenated_RoundTrip()
+    {
+        var topic = $"raw-prod-hdr2-{Guid.NewGuid():N}";
+        var value = Encoding.UTF8.GetBytes("v");
+        var hval1 = Encoding.UTF8.GetBytes("one");
+        var hval2 = Encoding.UTF8.GetBytes("two");
+        var hval3 = Encoding.UTF8.GetBytes("three");
+
+        var shared = new KafkaHeaders();
+        shared.Add("h1", hval1);
+        shared.Add("h2", hval2);
+
+        var perMessage = new KafkaHeaders();
+        perMessage.Add("h3", hval3);
+
+        using (var producer = new RawProducerBuilder(new ProducerConfig
+        {
+            BootstrapServers = kafka.BootstrapServers,
+            Acks = Acks.All,
+        }).BuildRaw())
+        {
+            producer.RawProduce(topic, default, value, in shared, in perMessage);
+            producer.Flush(TimeSpan.FromSeconds(10));
+        }
+
+        using var consumer = BuildConsumer(topic);
+        using var msg = consumer.ConsumeRaw(TimeSpan.FromSeconds(30));
+
+        Assert.False(msg.IsEmpty);
+        Assert.False(msg.Headers.IsEmpty);
+
+        int index = 0;
+        foreach (var (name, val) in msg.Headers)
+        {
+            switch (index++)
+            {
+                case 0:
+                    Assert.True(name.SequenceEqual("h1"u8));
+                    Assert.True(val.SequenceEqual(hval1));
+                    break;
+                case 1:
+                    Assert.True(name.SequenceEqual("h2"u8));
+                    Assert.True(val.SequenceEqual(hval2));
+                    break;
+                case 2:
+                    Assert.True(name.SequenceEqual("h3"u8));
+                    Assert.True(val.SequenceEqual(hval3));
+                    break;
+            }
+        }
+        Assert.Equal(3, index);
+    }
+
+    [Fact]
     public void DeliveryReportHandler_Fires_OnSuccess()
     {
         var topic = $"raw-prod-dr-{Guid.NewGuid():N}";

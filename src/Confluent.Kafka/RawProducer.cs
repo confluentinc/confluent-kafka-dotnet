@@ -110,6 +110,53 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     Explicit interface implementation — orchestrates header handle
+        ///     creation, produce, and cleanup for a produce carrying both header
+        ///     collections concatenated into one native list.
+        /// </summary>
+        void IRawProducer.ProduceRawWithHeaders(
+            string topic,
+            int partition,
+            IntPtr keyPtr, int keyLen,
+            IntPtr valuePtr, int valueLen,
+            in KafkaHeaders headers1,
+            in KafkaHeaders headers2,
+            IntPtr msgFlags,
+            IntPtr opaque)
+        {
+            IRawProducer self = this;
+
+            if (headers1.Count + headers2.Count == 0)
+            {
+                var bareErr = self.ProduceRawCore(
+                    topic, partition,
+                    keyPtr, keyLen, valuePtr, valueLen,
+                    IntPtr.Zero, msgFlags, opaque);
+                ThrowIfError(bareErr);
+                return;
+            }
+
+            var headersPtr = BuildHeadersHandle(in headers1, in headers2);
+            bool ownedByProduce = false;
+            try
+            {
+                var err = self.ProduceRawCore(
+                    topic, partition,
+                    keyPtr, keyLen, valuePtr, valueLen,
+                    headersPtr, msgFlags, opaque);
+                ThrowIfError(err);
+                ownedByProduce = true;
+            }
+            finally
+            {
+                if (!ownedByProduce)
+                {
+                    Librdkafka.headers_destroy(headersPtr);
+                }
+            }
+        }
+
+        /// <summary>
         ///     Builds a native librdkafka headers handle from <paramref name="headers"/>.
         ///     Returns <see cref="IntPtr.Zero"/> if the collection is empty. On any
         ///     failure, destroys the partial handle and throws. On success, ownership
@@ -129,38 +176,7 @@ namespace Confluent.Kafka
             try
             {
                 Span<byte> nameBuffer = stackalloc byte[StackNameBufferSize];
-
-                for (int i = 0; i < headers.Count; i++)
-                {
-                    var entry = headers[i];
-                    if (entry.Name == null)
-                    {
-                        throw new ArgumentNullException(nameof(entry.Name), "Header name must not be null.");
-                    }
-
-                    int nameLen = Encoding.UTF8.GetByteCount(entry.Name);
-                    Span<byte> nameSpan = nameLen <= nameBuffer.Length
-                        ? nameBuffer.Slice(0, nameLen)
-                        : new byte[nameLen];
-
-                    ReadOnlySpan<byte> valueSpan = entry.Value.Span;
-
-                    fixed (char* nameChars = entry.Name)
-                    fixed (byte* namePtr = nameSpan)
-                    fixed (byte* valPtr = valueSpan)
-                    {
-                        Encoding.UTF8.GetBytes(nameChars, entry.Name.Length, namePtr, nameLen);
-
-                        var headerErr = Librdkafka.headers_add(
-                            ptr,
-                            (IntPtr)namePtr, (IntPtr)nameLen,
-                            (IntPtr)valPtr, (IntPtr)valueSpan.Length);
-                        if (headerErr != ErrorCode.NoError)
-                        {
-                            throw new KafkaException(new Error(headerErr, "Failed to add header."));
-                        }
-                    }
-                }
+                AddHeadersToHandle(ptr, in headers, nameBuffer);
             }
             catch
             {
@@ -169,6 +185,81 @@ namespace Confluent.Kafka
             }
 
             return ptr;
+        }
+
+        /// <summary>
+        ///     Builds a single native librdkafka headers handle holding the
+        ///     concatenation of <paramref name="first"/> and <paramref name="second"/>
+        ///     (all of <paramref name="first"/>, then all of <paramref name="second"/>).
+        ///     Returns <see cref="IntPtr.Zero"/> if both collections are empty. Same
+        ///     ownership and failure contract as <see cref="BuildHeadersHandle(in KafkaHeaders)"/>.
+        /// </summary>
+        internal static unsafe IntPtr BuildHeadersHandle(in KafkaHeaders first, in KafkaHeaders second)
+        {
+            var total = first.Count + second.Count;
+            if (total == 0) return IntPtr.Zero;
+
+            var ptr = Librdkafka.headers_new((IntPtr)total);
+            if (ptr == IntPtr.Zero)
+            {
+                throw new KafkaException(new Error(ErrorCode.Local_Fail, "Failed to allocate headers list."));
+            }
+
+            try
+            {
+                Span<byte> nameBuffer = stackalloc byte[StackNameBufferSize];
+                AddHeadersToHandle(ptr, in first, nameBuffer);
+                AddHeadersToHandle(ptr, in second, nameBuffer);
+            }
+            catch
+            {
+                Librdkafka.headers_destroy(ptr);
+                throw;
+            }
+
+            return ptr;
+        }
+
+        /// <summary>
+        ///     Appends every entry in <paramref name="headers"/> to an existing native
+        ///     headers handle. Header names are re-encoded to UTF-8 using
+        ///     <paramref name="nameBuffer"/>, falling back to a heap allocation only
+        ///     when a name exceeds the buffer. Throws on the first failure; the caller
+        ///     owns destroying <paramref name="ptr"/> on throw.
+        /// </summary>
+        private static unsafe void AddHeadersToHandle(IntPtr ptr, in KafkaHeaders headers, Span<byte> nameBuffer)
+        {
+            for (int i = 0; i < headers.Count; i++)
+            {
+                var entry = headers[i];
+                if (entry.Name == null)
+                {
+                    throw new ArgumentNullException(nameof(entry.Name), "Header name must not be null.");
+                }
+
+                int nameLen = Encoding.UTF8.GetByteCount(entry.Name);
+                Span<byte> nameSpan = nameLen <= nameBuffer.Length
+                    ? nameBuffer.Slice(0, nameLen)
+                    : new byte[nameLen];
+
+                ReadOnlySpan<byte> valueSpan = entry.Value.Span;
+
+                fixed (char* nameChars = entry.Name)
+                fixed (byte* namePtr = nameSpan)
+                fixed (byte* valPtr = valueSpan)
+                {
+                    Encoding.UTF8.GetBytes(nameChars, entry.Name.Length, namePtr, nameLen);
+
+                    var headerErr = Librdkafka.headers_add(
+                        ptr,
+                        (IntPtr)namePtr, (IntPtr)nameLen,
+                        (IntPtr)valPtr, (IntPtr)valueSpan.Length);
+                    if (headerErr != ErrorCode.NoError)
+                    {
+                        throw new KafkaException(new Error(headerErr, "Failed to add header."));
+                    }
+                }
+            }
         }
 
         /// <inheritdoc/>
@@ -207,6 +298,26 @@ namespace Confluent.Kafka
                     (IntPtr)kp, key.Length,
                     (IntPtr)vp, value.Length,
                     in headers,
+                    (IntPtr)MsgFlags.MSG_F_COPY,
+                    opaque);
+            }
+        }
+
+        /// <inheritdoc/>
+        public void RawProduce(string topic, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value, in KafkaHeaders headers1, in KafkaHeaders headers2, IntPtr opaque = default)
+            => RawProduce(topic, Partition.Any, key, value, in headers1, in headers2, opaque);
+
+        /// <inheritdoc/>
+        public unsafe void RawProduce(string topic, Partition partition, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value, in KafkaHeaders headers1, in KafkaHeaders headers2, IntPtr opaque = default)
+        {
+            fixed (byte* kp = key)
+            fixed (byte* vp = value)
+            {
+                ((IRawProducer)this).ProduceRawWithHeaders(
+                    topic, partition,
+                    (IntPtr)kp, key.Length,
+                    (IntPtr)vp, value.Length,
+                    in headers1, in headers2,
                     (IntPtr)MsgFlags.MSG_F_COPY,
                     opaque);
             }
