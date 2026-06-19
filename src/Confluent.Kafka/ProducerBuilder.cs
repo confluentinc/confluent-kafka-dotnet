@@ -118,7 +118,7 @@ namespace Confluent.Kafka
         {
             return new Producer<TKey, TValue>.Config
             {
-                config = Config,
+                config = Internal.OAuthBearer.Aws.AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(Config),
                 errorHandler = this.ErrorHandler == null
                     ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
                     : error => this.ErrorHandler(producer, error),
@@ -128,13 +128,25 @@ namespace Confluent.Kafka
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(producer, stats),
-                oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
-                    ? default(Action<string>)
-                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
+                oAuthBearerTokenRefreshHandler = ResolveOAuthBearerHandler(producer),
                 partitioners = this.Partitioners,
                 defaultPartitioner = this.DefaultPartitioner,
             };
         }
+
+        /// <summary>
+        ///     Selects the OAUTHBEARER refresh handler with the precedence:
+        ///     explicit handler &gt; AWS IAM marker autowire &gt; none. Binds the
+        ///     producer-typed explicit handler, then delegates the shared dispatch
+        ///     logic to AwsAutoWireHelper.ResolveOAuthBearerHandler.
+        /// </summary>
+        private Action<string> ResolveOAuthBearerHandler(IProducer<TKey, TValue> producer)
+            => Internal.OAuthBearer.Aws.AwsAutoWireHelper.ResolveOAuthBearerHandler(
+                producer,
+                this.OAuthBearerTokenRefreshHandler == null
+                    ? default(Action<string>)
+                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
+                Confluent.Kafka.Config.Snapshot(this.Config));
 
         /// <summary>
         ///     A collection of librdkafka configuration parameters 

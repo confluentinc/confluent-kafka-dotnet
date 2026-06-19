@@ -91,7 +91,7 @@ namespace Confluent.Kafka
         {
             return new Consumer<TKey, TValue>.Config
             {
-                config = Config,
+                config = Internal.OAuthBearer.Aws.AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(Config),
                 errorHandler = this.ErrorHandler == null
                     ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
                     : error => this.ErrorHandler(consumer, error),
@@ -104,9 +104,7 @@ namespace Confluent.Kafka
                 offsetsCommittedHandler = this.OffsetsCommittedHandler == null
                     ? default(Action<CommittedOffsets>)
                     : offsets => this.OffsetsCommittedHandler(consumer, offsets),
-                oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
-                    ? default(Action<string>)
-                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(consumer, oAuthBearerConfig),
+                oAuthBearerTokenRefreshHandler = ResolveOAuthBearerHandler(consumer),
                 partitionsAssignedHandler = this.PartitionsAssignedHandler == null
                     ? default(Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>>)
                     : partitions => this.PartitionsAssignedHandler(consumer, partitions),
@@ -119,6 +117,20 @@ namespace Confluent.Kafka
                 revokedOrLostHandlerIsFunc = this.RevokedOrLostHandlerIsFunc
             };
         }
+
+        /// <summary>
+        ///     Selects the OAUTHBEARER refresh handler with the precedence:
+        ///     explicit handler &gt; AWS IAM marker autowire &gt; none. Binds the
+        ///     consumer-typed explicit handler, then delegates the shared dispatch
+        ///     logic to AwsAutoWireHelper.ResolveOAuthBearerHandler.
+        /// </summary>
+        private Action<string> ResolveOAuthBearerHandler(IConsumer<TKey, TValue> consumer)
+            => Internal.OAuthBearer.Aws.AwsAutoWireHelper.ResolveOAuthBearerHandler(
+                consumer,
+                this.OAuthBearerTokenRefreshHandler == null
+                    ? default(Action<string>)
+                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(consumer, oAuthBearerConfig),
+                Confluent.Kafka.Config.Snapshot(this.Config));
 
         /// <summary>
         ///     Initialize a new ConsumerBuilder instance.
