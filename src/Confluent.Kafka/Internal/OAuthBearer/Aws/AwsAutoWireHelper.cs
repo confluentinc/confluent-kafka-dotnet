@@ -24,34 +24,14 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     internal static class AwsAutoWireHelper
     {
         /// <summary>
-        ///     Returns <c>true</c> when the snapshot contains the AWS IAM marker
-        ///     (<see cref="AwsIamMarker.Key"/> set to <see cref="AwsIamMarker.Value"/>).
+        ///     returns <c>true</c> when the snapshot contains the AWS IAM marker
+        ///     (<see cref="AwsIamMarker.Key"/> set to <see cref="AwsIamMarker.Value"/>),
+        ///     <c>false</c> otherwise. The caller is responsible for calling
+        ///     <see cref="Validate"/>.
         /// </summary>
-        internal static bool HasAwsIamMarker(IReadOnlyDictionary<string, string> snapshot)
+        internal static bool ShouldAutoWire(IReadOnlyDictionary<string, string> snapshot)
             => snapshot.TryGetValue(AwsIamMarker.Key, out var value)
                && string.Equals(value, AwsIamMarker.Value, StringComparison.OrdinalIgnoreCase);
-
-        /// <summary>
-        ///     Whether to enable the AWS IAM autowire path for this config snapshot.
-        /// </summary>
-        /// <returns>
-        ///     <c>true</c> if the marker is present and prerequisites are satisfied;
-        ///     <c>false</c> if the marker is absent.
-        /// </returns>
-        /// <exception cref="ArgumentException">
-        ///     The marker is present, but <c>sasl.oauthbearer.method</c> is not
-        ///     <c>oidc</c>, or <c>sasl.oauthbearer.config</c> is missing/empty.
-        /// </exception>
-        internal static bool ShouldAutoWire(IReadOnlyDictionary<string, string> snapshot)
-        {
-            if (HasAwsIamMarker(snapshot))
-            {
-                Validate(snapshot);
-                return true;
-            }
-
-            return false;
-        }
 
         /// <summary>
         ///     Validates the OAUTHBEARER prerequisites for the AWS IAM autowire path
@@ -62,7 +42,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///     <c>sasl.oauthbearer.method</c> is not <c>oidc</c>, or
         ///     <c>sasl.oauthbearer.config</c> is missing/empty.
         /// </exception>
-        private static void Validate(IReadOnlyDictionary<string, string> snapshot)
+        internal static void Validate(IReadOnlyDictionary<string, string> snapshot)
         {
             SaslOauthbearerConfigHelper.RequireMethodIsOidc(snapshot);
             SaslOauthbearerConfigHelper.RequireSaslOauthbearerConfig(snapshot);
@@ -93,7 +73,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
 
             if (ShouldAutoWire(snapshot))
             {
-                // validate
+                Validate(snapshot);
                 var handler = AwsAutoWireDispatcher.LoadHandler(snapshot);
                 return oAuthBearerConfig => handler(client, oAuthBearerConfig);
             }

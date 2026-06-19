@@ -21,36 +21,17 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
 {
     public class AwsAutoWireHelperTests
     {
-        // ---- AwsAutoWireHelper.HasAwsIamMarker ----
+        // ---- AwsAutoWireHelper.ShouldAutoWire (pure marker check) ----
 
         [Fact]
-        public void HasAwsIamMarker_Present_ReturnsTrue()
+        public void ShouldAutoWire_MarkerPresent_ReturnsTrue()
         {
             var snap = new Dictionary<string, string>
             {
                 ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
             };
-            Assert.True(AwsAutoWireHelper.HasAwsIamMarker(snap));
+            Assert.True(AwsAutoWireHelper.ShouldAutoWire(snap));
         }
-
-        [Fact]
-        public void HasAwsIamMarker_Absent_ReturnsFalse()
-        {
-            var snap = new Dictionary<string, string> { ["bootstrap.servers"] = "x:9092" };
-            Assert.False(AwsAutoWireHelper.HasAwsIamMarker(snap));
-        }
-
-        [Fact]
-        public void HasAwsIamMarker_AzureImdsValue_ReturnsFalse()
-        {
-            var snap = new Dictionary<string, string>
-            {
-                ["sasl.oauthbearer.metadata.authentication.type"] = "azure_imds",
-            };
-            Assert.False(AwsAutoWireHelper.HasAwsIamMarker(snap));
-        }
-
-        // ---- AwsAutoWireHelper.ShouldAutoWire ----
 
         [Fact]
         public void ShouldAutoWire_MarkerAbsent_ReturnsFalse()
@@ -60,40 +41,49 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         }
 
         [Fact]
-        public void ShouldAutoWire_MarkerPresentMethodOidcAndConfig_ReturnsTrue()
+        public void ShouldAutoWire_AzureImdsValue_ReturnsFalse()
         {
             var snap = new Dictionary<string, string>
             {
-                ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
+                ["sasl.oauthbearer.metadata.authentication.type"] = "azure_imds",
+            };
+            Assert.False(AwsAutoWireHelper.ShouldAutoWire(snap));
+        }
+
+        // ---- AwsAutoWireHelper.Validate (AWS precondition policy) ----
+
+        [Fact]
+        public void Validate_MethodOidcAndConfig_DoesNotThrow()
+        {
+            var snap = new Dictionary<string, string>
+            {
                 ["sasl.oauthbearer.method"] = "oidc",
                 ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
             };
-            Assert.True(AwsAutoWireHelper.ShouldAutoWire(snap));
+            AwsAutoWireHelper.Validate(snap); // does not throw
         }
 
         [Fact]
-        public void ShouldAutoWire_MarkerAndConfigPresentNoMethodOidc_Throws()
+        public void Validate_NoMethodOidc_Throws()
         {
             var snap = new Dictionary<string, string>
             {
-                ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
                 ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
             };
             var ex = Assert.Throws<ArgumentException>(
-                () => AwsAutoWireHelper.ShouldAutoWire(snap));
+                () => AwsAutoWireHelper.Validate(snap));
             Assert.Contains("SaslOauthbearerMethod.Oidc", ex.Message);
         }
 
         [Fact]
-        public void ShouldAutoWire_MarkerAndMethodOidcPresentNoConfig_Throws()
+        public void Validate_NoConfig_Throws()
         {
             var snap = new Dictionary<string, string>
             {
-                ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
                 ["sasl.oauthbearer.method"] = "oidc",
             };
             var ex = Assert.Throws<ArgumentException>(
-                () => AwsAutoWireHelper.ShouldAutoWire(snap));
+                () => AwsAutoWireHelper.Validate(snap));
             Assert.Contains("SaslOauthbearerConfig", ex.Message);
             Assert.Contains("missing or empty", ex.Message);
         }
