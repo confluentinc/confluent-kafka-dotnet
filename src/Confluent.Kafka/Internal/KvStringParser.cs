@@ -26,7 +26,7 @@ namespace Confluent.Kafka.Internal
     ///         The default trimming behaviour mirrors librdkafka's logic for consistency.
     ///     </para>
     /// </remarks>
-    public static class KvStringParser
+    internal static class KvStringParser
     {
         /// <summary>
         ///     Tokenizes <paramref name="raw"/> by any character in
