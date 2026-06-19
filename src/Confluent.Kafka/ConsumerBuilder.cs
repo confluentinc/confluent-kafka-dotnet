@@ -132,7 +132,7 @@ namespace Confluent.Kafka
                     this.OAuthBearerTokenRefreshHandler(consumer, oAuthBearerConfig);
             }
 
-            var snapshot = Internal.OAuthBearer.Aws.AwsAutoWireHelper.SnapshotConfig(this.Config);
+            var snapshot = Confluent.Kafka.Config.Snapshot(this.Config);
             if (Internal.OAuthBearer.Aws.AwsAutoWireHelper.ShouldAutoWire(snapshot))
             {
                 var handler = Internal.OAuthBearer.Aws.AwsAutoWireDispatcher.LoadHandler(snapshot);

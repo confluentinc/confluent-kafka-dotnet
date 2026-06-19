@@ -22,28 +22,6 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
 {
     public class AwsAutoWireHelperTests
     {
-        // ---- AwsAutoWireHelper.SnapshotConfig ----
-
-        [Fact]
-        public void SnapshotConfig_NullEnumerable_ReturnsEmpty()
-        {
-            var snap = AwsAutoWireHelper.SnapshotConfig(null);
-            Assert.Empty(snap);
-        }
-
-        [Fact]
-        public void SnapshotConfig_DuplicateKeys_LastWins()
-        {
-            var entries = new[]
-            {
-                new KeyValuePair<string, string>("k", "v1"),
-                new KeyValuePair<string, string>("k", "v2"),
-            };
-            var snap = AwsAutoWireHelper.SnapshotConfig(entries);
-            Assert.Single(snap);
-            Assert.Equal("v2", snap["k"]);
-        }
-
         // ---- AwsAutoWireHelper.HasAwsIamMarker ----
 
         [Fact]
@@ -150,7 +128,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 new KeyValuePair<string, string>("sasl.oauthbearer.method", "oidc"),
                 new KeyValuePair<string, string>("sasl.oauthbearer.config", "region=us-east-1 audience=https://a"),
             };
-            var snap = AwsAutoWireHelper.SnapshotConfig(AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input));
+            var snap = Config.Snapshot(AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input));
             Assert.False(snap.ContainsKey("sasl.oauthbearer.metadata.authentication.type"));
         }
 
@@ -162,7 +140,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 new KeyValuePair<string, string>("sasl.oauthbearer.metadata.authentication.type", "aws_iam"),
                 new KeyValuePair<string, string>("sasl.oauthbearer.method", "oidc"),
             };
-            var snap = AwsAutoWireHelper.SnapshotConfig(AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input));
+            var snap = Config.Snapshot(AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input));
             Assert.Equal("default", snap["sasl.oauthbearer.method"]);
         }
 
@@ -177,7 +155,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 new KeyValuePair<string, string>("sasl.oauthbearer.config", "region=us-east-1 audience=https://a"),
                 new KeyValuePair<string, string>("sasl.oauthbearer.extensions", "logicalCluster=lkc-1,identityPoolId=pool-1"),
             };
-            var snap = AwsAutoWireHelper.SnapshotConfig(AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input));
+            var snap = Config.Snapshot(AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input));
             Assert.Equal("x:9092", snap["bootstrap.servers"]);
             Assert.Equal("region=us-east-1 audience=https://a", snap["sasl.oauthbearer.config"]);
             Assert.Equal("logicalCluster=lkc-1,identityPoolId=pool-1", snap["sasl.oauthbearer.extensions"]);

@@ -21,24 +21,8 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     ///     Shared helpers used by Producer/Consumer/AdminClient builders to
     ///     dispatch the AWS IAM autowire path.
     /// </summary>
-    public static class AwsAutoWireHelper
+    internal static class AwsAutoWireHelper
     {
-        /// <summary>
-        ///     Snapshots an enumerable config into a dictionary, applying
-        ///     last-key-wins semantics to match librdkafka's behavior.
-        /// </summary>
-        public static IReadOnlyDictionary<string, string> SnapshotConfig(
-            IEnumerable<KeyValuePair<string, string>> config)
-        {
-            var dict = new Dictionary<string, string>();
-            if (config == null) return dict;
-            foreach (var kv in config)
-            {
-                dict[kv.Key] = kv.Value;
-            }
-            return dict;
-        }
-
         /// <summary>
         ///     Returns <c>true</c> when the snapshot contains the AWS IAM marker
         ///     (<see cref="AwsIamMarker.Key"/> set to <see cref="AwsIamMarker.Value"/>).
@@ -113,7 +97,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
             IEnumerable<KeyValuePair<string, string>> config)
         {
             if (config == null) return config;
-            if (!HasAwsIamMarker(SnapshotConfig(config))) return config;
+            if (!HasAwsIamMarker(Config.Snapshot(config))) return config;
 
             var rewritten = new List<KeyValuePair<string, string>>();
             foreach (var kv in config)
