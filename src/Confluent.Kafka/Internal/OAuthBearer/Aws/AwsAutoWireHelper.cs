@@ -18,8 +18,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Internal.OAuthBearer.Aws
 {
     /// <summary>
-    ///     Shared helpers used by Producer/Consumer/AdminClient builders to
-    ///     dispatch the AWS IAM autowire path.
+    ///     AWS IAM-specific helpers for the OAUTHBEARER autowire path.
     /// </summary>
     internal static class AwsAutoWireHelper
     {
@@ -46,39 +45,6 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         {
             SaslOauthbearerConfigHelper.RequireMethodIsOidc(snapshot);
             SaslOauthbearerConfigHelper.RequireSaslOauthbearerConfig(snapshot);
-        }
-
-        /// <summary>
-        ///     Selects the OAUTHBEARER refresh handler for a builder, with the
-        ///     precedence: explicit handler &gt; AWS IAM marker autowire &gt; none.
-        ///     Shared by the Producer and Consumer builders via <see cref="IClient"/>;
-        ///     each builder binds its typed handler to a plain <c>Action&lt;string&gt;</c>
-        ///     before delegating.
-        /// </summary>
-        /// <param name="client">
-        ///     The producer/consumer the autowired handler binds to when the AWS IAM
-        ///     marker is present.
-        /// </param>
-        /// <param name="explicitHandler">
-        ///     The user's explicit refresh handler, already bound to
-        ///     <paramref name="client"/>, or <c>null</c> if none was set.
-        /// </param>
-        /// <param name="snapshot">The client config snapshot (last-key-wins).</param>
-        internal static Action<string> ResolveOAuthBearerHandler(
-            IClient client,
-            Action<string> explicitHandler,
-            IReadOnlyDictionary<string, string> snapshot)
-        {
-            if (explicitHandler != null) return explicitHandler;
-
-            if (ShouldAutoWire(snapshot))
-            {
-                Validate(snapshot);
-                var handler = AwsAutoWireDispatcher.LoadHandler(snapshot);
-                return oAuthBearerConfig => handler(client, oAuthBearerConfig);
-            }
-
-            return null;
         }
     }
 }

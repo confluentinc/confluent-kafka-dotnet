@@ -138,10 +138,10 @@ namespace Confluent.Kafka
         ///     Selects the OAUTHBEARER refresh handler with the precedence:
         ///     explicit handler &gt; AWS IAM marker autowire &gt; none. Binds the
         ///     producer-typed explicit handler, then delegates the shared dispatch
-        ///     logic to AwsAutoWireHelper.ResolveOAuthBearerHandler.
+        ///     logic to SaslOauthbearerConfigHelper.ResolveOAuthBearerHandler.
         /// </summary>
         private Action<string> ResolveOAuthBearerHandler(IProducer<TKey, TValue> producer)
-            => Internal.OAuthBearer.Aws.AwsAutoWireHelper.ResolveOAuthBearerHandler(
+            => Internal.OAuthBearer.SaslOauthbearerConfigHelper.ResolveOAuthBearerHandler(
                 producer,
                 this.OAuthBearerTokenRefreshHandler == null
                     ? default(Action<string>)

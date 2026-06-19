@@ -14,14 +14,13 @@
 
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka.Internal.OAuthBearer.Aws;
 
 namespace Confluent.Kafka.Internal.OAuthBearer
 {
     /// <summary>
-    ///     Validation helpers for the generic OAUTHBEARER config keys
-    ///     (<c>sasl.oauthbearer.method</c>, <c>sasl.oauthbearer.config</c>),
-    ///     shared by the builders independently of any specific
-    ///     metadata-authentication provider.
+    ///     Common OAUTHBEARER helpers shared by the Producer/Consumer/AdminClient
+    ///     builders.
     /// </summary>
     internal static class SaslOauthbearerConfigHelper
     {
@@ -63,6 +62,39 @@ namespace Confluent.Kafka.Internal.OAuthBearer
 
             throw new ArgumentException(
                 "SaslOauthbearerConfig is missing or empty.");
+        }
+
+        /// <summary>
+        ///     Selects the OAUTHBEARER refresh handler for a builder, with the
+        ///     precedence: explicit handler &gt; AWS IAM marker autowire &gt; none.
+        ///     Shared by the Producer and Consumer builders via <see cref="IClient"/>;
+        ///     each builder binds its typed handler to a plain <c>Action&lt;string&gt;</c>
+        ///     before delegating.
+        /// </summary>
+        /// <param name="client">
+        ///     The producer/consumer the autowired handler binds to when the AWS IAM
+        ///     marker is present.
+        /// </param>
+        /// <param name="explicitHandler">
+        ///     The user's explicit refresh handler, already bound to
+        ///     <paramref name="client"/>, or <c>null</c> if none was set.
+        /// </param>
+        /// <param name="snapshot">The client config snapshot (last-key-wins).</param>
+        internal static Action<string> ResolveOAuthBearerHandler(
+            IClient client,
+            Action<string> explicitHandler,
+            IReadOnlyDictionary<string, string> snapshot)
+        {
+            if (explicitHandler != null) return explicitHandler;
+
+            if (AwsAutoWireHelper.ShouldAutoWire(snapshot))
+            {
+                AwsAutoWireHelper.Validate(snapshot);
+                var handler = AwsAutoWireDispatcher.LoadHandler(snapshot);
+                return oAuthBearerConfig => handler(client, oAuthBearerConfig);
+            }
+
+            return null;
         }
     }
 }
