@@ -93,57 +93,12 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
 
             if (ShouldAutoWire(snapshot))
             {
+                // validate
                 var handler = AwsAutoWireDispatcher.LoadHandler(snapshot);
                 return oAuthBearerConfig => handler(client, oAuthBearerConfig);
             }
 
             return null;
-        }
-
-        /// <summary>
-        ///     Produces the config that is actually handed to librdkafka for the
-        ///     AWS IAM autowire path. When the marker is present, the marker key is
-        ///     stripped and <c>sasl.oauthbearer.method</c> is normalized to
-        ///     <c>default</c>, so librdkafka runs the canonical OAUTHBEARER pattern
-        ///     (<c>method=default</c> + an app-supplied token-refresh callback) and
-        ///     never sees <c>aws_iam</c> — keeping the binding off librdkafka's
-        ///     native aws_iam path and removing any dependency on an
-        ///     AWS-IAM-aware librdkafka.
-        /// </summary>
-        /// <remarks>
-        ///     <para>
-        ///         When the marker is absent, the input enumerable is returned
-        ///         unchanged (same reference, no allocation) so non-AWS configs see
-        ///         zero behavior change.
-        ///     </para>
-        ///     <para>
-        ///         This is a pure transform over a copy: it does not mutate the
-        ///         caller's config, and it never throws. Marker / method / config
-        ///         validation stays in <see cref="ShouldAutoWire"/>. The gate here
-        ///         is marker-presence alone (not <see cref="ShouldAutoWire"/>) so the
-        ///         marker is stripped even when an explicit token-refresh handler
-        ///         takes precedence over autowire.
-        ///     </para>
-        /// </remarks>
-        internal static IEnumerable<KeyValuePair<string, string>> RewriteConfigIfAwsIamEnabled(
-            IEnumerable<KeyValuePair<string, string>> config)
-        {
-            if (config == null) return config;
-            if (!HasAwsIamMarker(Config.Snapshot(config))) return config;
-
-            var rewritten = new List<KeyValuePair<string, string>>();
-            foreach (var kv in config)
-            {
-                if (string.Equals(kv.Key, AwsIamMarker.Key, StringComparison.Ordinal)) continue;
-                if (string.Equals(kv.Key, SaslOauthbearerConfigHelper.SaslOauthbearerMethodKey, StringComparison.Ordinal)) continue;
-                rewritten.Add(kv);
-            }
-
-            // Re-add method explicitly as default.
-            rewritten.Add(new KeyValuePair<string, string>(
-                SaslOauthbearerConfigHelper.SaslOauthbearerMethodKey,
-                SaslOauthbearerConfigHelper.SaslOauthbearerMethodDefaultValue));
-            return rewritten;
         }
     }
 }

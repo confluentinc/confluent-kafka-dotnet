@@ -28,9 +28,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
     {
         // Full autowire happy paths (optional package present, no explicit handler):
         // CreateHandler is reflected + the refresh callback wired, then Build()
-        // succeeds on stock librdkafka because the marker is stripped and the method
-        // rewritten to default before the native handle is created — stock librdkafka
-        // would otherwise reject 'aws_iam' at config validation time.
+        // hands aws_iam + method=oidc to librdkafka. This requires a librdkafka build
+        // that recognizes aws_iam (companion PR #5428); stock builds reject it at
+        // config validation time.
         [Fact]
         public void ProducerBuilder_Build_MarkerAndMethodOidc_WithPkgPresent_Succeeds()
         {

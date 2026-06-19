@@ -118,7 +118,7 @@ namespace Confluent.Kafka
         {
             return new Producer<TKey, TValue>.Config
             {
-                config = Internal.OAuthBearer.Aws.AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(Config),
+                config = Config,
                 errorHandler = this.ErrorHandler == null
                     ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
                     : error => this.ErrorHandler(producer, error),

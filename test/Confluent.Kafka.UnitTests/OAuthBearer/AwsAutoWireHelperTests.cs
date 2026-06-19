@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Confluent.Kafka.Internal.OAuthBearer.Aws;
 using Xunit;
 
@@ -97,83 +96,6 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
                 () => AwsAutoWireHelper.ShouldAutoWire(snap));
             Assert.Contains("SaslOauthbearerConfig", ex.Message);
             Assert.Contains("missing or empty", ex.Message);
-        }
-
-        // ---- AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled ----
-
-        [Fact]
-        public void RewriteConfigIfAwsIamEnabled_Null_ReturnsNull()
-        {
-            Assert.Null(AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(null));
-        }
-
-        [Fact]
-        public void RewriteConfigIfAwsIamEnabled_MarkerAbsent_ReturnsInputUnchanged()
-        {
-            var input = new[]
-            {
-                new KeyValuePair<string, string>("bootstrap.servers", "x:9092"),
-                new KeyValuePair<string, string>("sasl.oauthbearer.method", "oidc"),
-            };
-            // Marker absent => same reference back, zero behavior change.
-            Assert.Same(input, AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input));
-        }
-
-        [Fact]
-        public void RewriteConfigIfAwsIamEnabled_MarkerPresent_StripsMarker()
-        {
-            var input = new[]
-            {
-                new KeyValuePair<string, string>("sasl.oauthbearer.metadata.authentication.type", "aws_iam"),
-                new KeyValuePair<string, string>("sasl.oauthbearer.method", "oidc"),
-                new KeyValuePair<string, string>("sasl.oauthbearer.config", "region=us-east-1 audience=https://a"),
-            };
-            var snap = Config.Snapshot(AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input));
-            Assert.False(snap.ContainsKey("sasl.oauthbearer.metadata.authentication.type"));
-        }
-
-        [Fact]
-        public void RewriteConfigIfAwsIamEnabled_MarkerPresent_MethodRewrittenToDefault()
-        {
-            var input = new[]
-            {
-                new KeyValuePair<string, string>("sasl.oauthbearer.metadata.authentication.type", "aws_iam"),
-                new KeyValuePair<string, string>("sasl.oauthbearer.method", "oidc"),
-            };
-            var snap = Config.Snapshot(AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input));
-            Assert.Equal("default", snap["sasl.oauthbearer.method"]);
-        }
-
-        [Fact]
-        public void RewriteConfigIfAwsIamEnabled_MarkerPresent_PreservesOtherKeys()
-        {
-            var input = new[]
-            {
-                new KeyValuePair<string, string>("bootstrap.servers", "x:9092"),
-                new KeyValuePair<string, string>("sasl.oauthbearer.metadata.authentication.type", "aws_iam"),
-                new KeyValuePair<string, string>("sasl.oauthbearer.method", "oidc"),
-                new KeyValuePair<string, string>("sasl.oauthbearer.config", "region=us-east-1 audience=https://a"),
-                new KeyValuePair<string, string>("sasl.oauthbearer.extensions", "logicalCluster=lkc-1,identityPoolId=pool-1"),
-            };
-            var snap = Config.Snapshot(AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input));
-            Assert.Equal("x:9092", snap["bootstrap.servers"]);
-            Assert.Equal("region=us-east-1 audience=https://a", snap["sasl.oauthbearer.config"]);
-            Assert.Equal("logicalCluster=lkc-1,identityPoolId=pool-1", snap["sasl.oauthbearer.extensions"]);
-        }
-
-        [Fact]
-        public void RewriteConfigIfAwsIamEnabled_MarkerPresent_DuplicateMethodKeys_CollapseToSingleDefault()
-        {
-            var input = new[]
-            {
-                new KeyValuePair<string, string>("sasl.oauthbearer.metadata.authentication.type", "aws_iam"),
-                new KeyValuePair<string, string>("sasl.oauthbearer.method", "oidc"),
-                new KeyValuePair<string, string>("sasl.oauthbearer.method", "oidc"),
-            };
-            var methodEntries = AwsAutoWireHelper.RewriteConfigIfAwsIamEnabled(input)
-                .Where(kv => kv.Key == "sasl.oauthbearer.method").ToList();
-            Assert.Single(methodEntries);
-            Assert.Equal("default", methodEntries[0].Value);
         }
 
     }
