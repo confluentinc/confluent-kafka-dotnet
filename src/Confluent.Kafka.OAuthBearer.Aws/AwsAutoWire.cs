@@ -41,23 +41,6 @@ namespace Confluent.Kafka.OAuthBearer.Aws
     public static class AwsAutoWire
     {
         /// <summary>
-        ///     Config key whose value <see cref="CreateHandler"/> parses for AWS
-        ///     STS parameters.
-        /// </summary>
-        internal const string SaslOauthbearerConfigKey = "sasl.oauthbearer.config";
-
-        /// <summary>
-        ///     Config key that activates the AWS autowire path. Inspected by
-        ///     core's dispatcher to decide whether to call this entry-point.
-        /// </summary>
-        internal const string MarkerKey = "sasl.oauthbearer.metadata.authentication.type";
-
-        /// <summary>
-        ///     On-wire marker value that selects AWS IAM authentication.
-        /// </summary>
-        internal const string MarkerValue = "aws_iam";
-
-        /// <summary>
         ///     Builds an OAUTHBEARER refresh handler from the two
         ///     OAUTHBEARER config strings. Called by Confluent.Kafka core via
         ///     <c>Assembly.Load</c> + reflected <c>MethodInfo</c>.
@@ -95,9 +78,8 @@ namespace Confluent.Kafka.OAuthBearer.Aws
             if (string.IsNullOrEmpty(saslOauthbearerConfig))
             {
                 throw new ArgumentException(
-                    $"'{MarkerKey}={MarkerValue}' is set but " +
-                    $"'{SaslOauthbearerConfigKey}' is missing or empty. The AWS IAM " +
-                    "autowire path requires region and audience to be supplied via " +
+                    "'sasl.oauthbearer.config' is missing or empty. The AWS IAM autowire " +
+                    "path requires region and audience to be supplied via " +
                     "sasl.oauthbearer.config (e.g. \"region=us-east-1 audience=https://...\").",
                     nameof(saslOauthbearerConfig));
             }

@@ -31,7 +31,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         /// <summary>
         ///     Config key carrying the SASL extensions list.
         /// </summary>
-        public const string ConfigKey = "sasl.oauthbearer.extensions";
+        private const string ConfigKey = "sasl.oauthbearer.extensions";
 
         /// <summary>
         ///     Parses the <c>sasl.oauthbearer.extensions</c> raw string into a
