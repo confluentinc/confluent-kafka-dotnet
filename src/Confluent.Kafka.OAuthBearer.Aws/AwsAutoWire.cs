@@ -48,9 +48,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws
         /// <param name="saslOauthbearerConfig">
         ///     The <c>sasl.oauthbearer.config</c> value (whitespace-separated
         ///     <c>key=value</c> pairs). Must be non-null and non-empty —
-        ///     callers via core's <see cref="Confluent.Kafka.Internal.OAuthBearer.Aws.AwsAutoWireHelper.RequireSaslOauthbearerConfig"/>
-        ///     gate are already guaranteed this; direct callers get the same
-        ///     friendly error via a defensive check.
+        ///     callers via core's config-validation gate are already guaranteed
+        ///     this; direct callers get the same friendly error via a defensive
+        ///     check.
         /// </param>
         /// <param name="saslOauthbearerExtensions">
         ///     The <c>sasl.oauthbearer.extensions</c> value

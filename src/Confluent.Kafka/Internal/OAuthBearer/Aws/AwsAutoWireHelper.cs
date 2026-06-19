@@ -43,7 +43,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///     Returns <c>true</c> when the snapshot contains the AWS IAM marker
         ///     (<see cref="AwsIamMarker.Key"/> set to <see cref="AwsIamMarker.Value"/>).
         /// </summary>
-        public static bool HasAwsIamMarker(IReadOnlyDictionary<string, string> snapshot)
+        internal static bool HasAwsIamMarker(IReadOnlyDictionary<string, string> snapshot)
             => snapshot.TryGetValue(AwsIamMarker.Key, out var value)
                && string.Equals(value, AwsIamMarker.Value, StringComparison.OrdinalIgnoreCase);
 
@@ -58,12 +58,30 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///     The marker is present, but <c>sasl.oauthbearer.method</c> is not
         ///     <c>oidc</c>, or <c>sasl.oauthbearer.config</c> is missing/empty.
         /// </exception>
-        public static bool ShouldAutoWire(IReadOnlyDictionary<string, string> snapshot)
+        internal static bool ShouldAutoWire(IReadOnlyDictionary<string, string> snapshot)
         {
-            if (!HasAwsIamMarker(snapshot)) return false;
+            if (HasAwsIamMarker(snapshot))
+            {
+                Validate(snapshot);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Validates the OAUTHBEARER prerequisites for the AWS IAM autowire path
+        ///     (<c>method=oidc</c> and a non-empty <c>sasl.oauthbearer.config</c>).
+        ///     Called only when the marker is present.
+        /// </summary>
+        /// <exception cref="ArgumentException">
+        ///     <c>sasl.oauthbearer.method</c> is not <c>oidc</c>, or
+        ///     <c>sasl.oauthbearer.config</c> is missing/empty.
+        /// </exception>
+        private static void Validate(IReadOnlyDictionary<string, string> snapshot)
+        {
             SaslOauthbearerConfigHelper.RequireMethodIsOidc(snapshot);
             SaslOauthbearerConfigHelper.RequireSaslOauthbearerConfig(snapshot);
-            return true;
         }
 
         /// <summary>
@@ -91,7 +109,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///         takes precedence over autowire.
         ///     </para>
         /// </remarks>
-        public static IEnumerable<KeyValuePair<string, string>> RewriteConfigIfAwsIamEnabled(
+        internal static IEnumerable<KeyValuePair<string, string>> RewriteConfigIfAwsIamEnabled(
             IEnumerable<KeyValuePair<string, string>> config)
         {
             if (config == null) return config;
