@@ -151,4 +151,96 @@ public class KafkaHeadersTests
 
         Assert.Equal(1, h.Count);
     }
+
+    [Fact]
+    public void AddOrUpdate_AbsentName_Appends()
+    {
+        var h = new KafkaHeaders();
+        h.Add("a", new byte[] { 1 });
+
+        h.AddOrUpdate("b", new byte[] { 2 });
+
+        Assert.Equal(2, h.Count);
+        Assert.True(h.TryGetLastBytes("b", out var bytes));
+        Assert.Equal(new byte[] { 2 }, bytes.ToArray());
+    }
+
+    [Fact]
+    public void AddOrUpdate_ExistingName_ReplacesValueInPlace()
+    {
+        var h = new KafkaHeaders();
+        h.Add("a", new byte[] { 1 });
+        h.Add("b", new byte[] { 2 });
+
+        h.AddOrUpdate("a", new byte[] { 9 });
+
+        Assert.Equal(2, h.Count);
+        Assert.True(h.TryGetLastBytes("a", out var bytes));
+        Assert.Equal(new byte[] { 9 }, bytes.ToArray());
+    }
+
+    [Fact]
+    public void AddOrUpdate_DuplicateNames_UpdatesLastMatch()
+    {
+        var h = new KafkaHeaders();
+        h.Add("dup", new byte[] { 1 });
+        h.Add("mid", new byte[] { 5 });
+        h.Add("dup", new byte[] { 2 });
+
+        h.AddOrUpdate("dup", new byte[] { 9 });
+
+        Assert.Equal(3, h.Count);
+        // First occurrence is untouched.
+        Assert.Equal("dup", h[0].Name);
+        Assert.Equal(new byte[] { 1 }, h[0].Value.ToArray());
+        // Last occurrence (what reads return) is updated.
+        Assert.Equal(new byte[] { 9 }, h[2].Value.ToArray());
+        Assert.True(h.TryGetLastBytes("dup", out var bytes));
+        Assert.Equal(new byte[] { 9 }, bytes.ToArray());
+    }
+
+    [Fact]
+    public void StringIndexerSetter_Absent_Appends()
+    {
+        var h = new KafkaHeaders();
+        h["a"] = new byte[] { 1 };
+
+        Assert.Equal(1, h.Count);
+        Assert.Equal("a", h[0].Name);
+        Assert.Equal(new byte[] { 1 }, h[0].Value.ToArray());
+    }
+
+    [Fact]
+    public void StringIndexerSetter_Existing_ReplacesValue()
+    {
+        var h = new KafkaHeaders();
+        h.Add("a", new byte[] { 1 });
+
+        h["a"] = new byte[] { 9 };
+
+        Assert.Equal(1, h.Count);
+        Assert.True(h.TryGetLastBytes("a", out var bytes));
+        Assert.Equal(new byte[] { 9 }, bytes.ToArray());
+    }
+
+    [Fact]
+    public void AddOrUpdate_AcrossInlineOverflowBoundary()
+    {
+        var h = new KafkaHeaders();
+        const int n = 20;
+        for (int i = 0; i < n; i++)
+        {
+            h.Add($"k{i}", new byte[] { (byte)i });
+        }
+
+        // k2 lives inline (< 8); k15 lives in overflow.
+        h.AddOrUpdate("k2", new byte[] { 200 });
+        h.AddOrUpdate("k15", new byte[] { 215 });
+
+        Assert.Equal(n, h.Count);
+        Assert.True(h.TryGetLastBytes("k2", out var inlineBytes));
+        Assert.Equal(new byte[] { 200 }, inlineBytes.ToArray());
+        Assert.True(h.TryGetLastBytes("k15", out var overflowBytes));
+        Assert.Equal(new byte[] { 215 }, overflowBytes.ToArray());
+    }
 }
