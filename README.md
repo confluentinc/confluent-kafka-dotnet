@@ -62,11 +62,8 @@ Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provide
 
 ### Branch builds
 
-Nuget packages corresponding to all commits to release branches are available from the following nuget package source (Note: this is not a web URL - you
-should specify it in the nuget package manager):
-[https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages
-matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the
-[AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
+Nuget packages corresponding to commits to branches are produced as CI artifacts by [Semaphore](.semaphore/semaphore.yml), with a version suffix of the
+form `ci-<job-id>`.
 
 
 ## Usage
