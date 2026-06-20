@@ -5,7 +5,7 @@ This document provides information useful to developers working on confluent-kaf
 
 ## Building
 
-Nuget packages are built automatically by appveyor corresponding to every commit to a PR or master branch as well as release tags. For further details, inspect the [appveyor.yml](appveyor.yml) file.
+Nuget packages are built automatically by Semaphore CI corresponding to every commit to a PR or master branch as well as release tags. For further details, inspect the [.semaphore/semaphore.yml](.semaphore/semaphore.yml) file.
 
 
 ## Tests
