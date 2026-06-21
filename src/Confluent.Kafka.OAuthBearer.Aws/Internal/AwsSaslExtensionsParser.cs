@@ -43,7 +43,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///     Malformed entry — missing <c>=</c>, or empty key (e.g.
         ///     <c>=value</c>).
         /// </exception>
-        public static IDictionary<string, string> Parse(string raw)
+        internal static IDictionary<string, string> Parse(string raw)
         {
             if (string.IsNullOrEmpty(raw)) return null;
 

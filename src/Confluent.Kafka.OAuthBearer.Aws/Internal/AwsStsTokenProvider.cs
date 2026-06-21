@@ -47,7 +47,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///     must already be validated by <see cref="AwsOAuthBearerConfig.Parse"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException"><paramref name="config"/> is null.</exception>
-        public AwsStsTokenProvider(AwsOAuthBearerConfig config)
+        internal AwsStsTokenProvider(AwsOAuthBearerConfig config)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
             _cfg = config;
@@ -97,7 +97,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         /// <exception cref="OperationCanceledException">
         ///     <paramref name="ct"/> was cancelled.
         /// </exception>
-        public async Task<AwsOAuthBearerToken> GetTokenAsync(CancellationToken ct = default)
+        internal async Task<AwsOAuthBearerToken> GetTokenAsync(CancellationToken ct = default)
         {
             var request = new GetWebIdentityTokenRequest
             {

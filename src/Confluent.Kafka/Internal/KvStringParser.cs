@@ -65,7 +65,7 @@ namespace Confluent.Kafka.Internal
         /// <exception cref="ArgumentException">
         ///     A token is malformed — no <c>'='</c> separator, or empty key.
         /// </exception>
-        public static IEnumerable<KeyValuePair<string, string>> Parse(
+        internal static IEnumerable<KeyValuePair<string, string>> Parse(
             string raw,
             char[] separators,
             string contextLabel = null,

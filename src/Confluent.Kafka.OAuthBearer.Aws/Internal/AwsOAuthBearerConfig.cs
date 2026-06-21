@@ -53,33 +53,33 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         }
 
         /// <summary>AWS region targeted by the STS call (e.g. <c>us-east-1</c>).</summary>
-        public string Region { get; }
+        internal string Region { get; }
 
         /// <summary>OIDC audience claim the relying party expects.</summary>
-        public string Audience { get; }
+        internal string Audience { get; }
 
         /// <summary>
         ///     Signing algorithm (<c>ES384</c> or <c>RS256</c>); defaults to <c>ES384</c>.
         /// </summary>
-        public string SigningAlgorithm { get; }
+        internal string SigningAlgorithm { get; }
 
         /// <summary>Requested token lifetime; defaults to 300 seconds, bounded 60–3600.</summary>
-        public TimeSpan Duration { get; }
+        internal TimeSpan Duration { get; }
 
         /// <summary>Optional STS endpoint URL (FIPS, VPC, etc.). <c>null</c> when unset.</summary>
-        public string StsEndpointOverride { get; }
+        internal string StsEndpointOverride { get; }
 
         /// <summary>
         ///     AWS SDK diagnostic log sink. Defaults to <see cref="LoggingOptions.None"/> —
         ///     opt-in via the <c>aws_debug</c> key in <c>sasl.oauthbearer.config</c>.
         /// </summary>
-        public LoggingOptions AwsDebug { get; }
+        internal LoggingOptions AwsDebug { get; }
 
         /// <summary>SASL extensions to send to the broker (RFC 7628). <c>null</c> when none parsed.</summary>
-        public IDictionary<string, string> SaslExtensions { get; }
+        internal IDictionary<string, string> SaslExtensions { get; }
 
         /// <summary>Tags to attach to the STS request as custom JWT claims (max 50). <c>null</c> when none parsed.</summary>
-        public IDictionary<string, string> Tags { get; }
+        internal IDictionary<string, string> Tags { get; }
 
         /// <summary>
         ///     Parses the <c>sasl.oauthbearer.config</c> property into a typed

@@ -26,27 +26,27 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///     The JWT itself — passed verbatim to the broker as the OAUTHBEARER
         ///     <c>Bearer</c> value.
         /// </summary>
-        public string TokenValue { get; }
+        internal string TokenValue { get; }
 
         /// <summary>
         ///     Expiry expressed as Unix milliseconds since epoch. librdkafka uses
         ///     this to schedule the next refresh.
         /// </summary>
-        public long LifetimeMs { get; }
+        internal long LifetimeMs { get; }
 
         /// <summary>
         ///     Kafka principal name — the JWT's <c>sub</c> claim (the bare
         ///     role ARN for AWS-minted tokens).
         /// </summary>
-        public string PrincipalName { get; }
+        internal string PrincipalName { get; }
 
         /// <summary>
         ///     Optional SASL extensions forwarded to the broker. <c>null</c> when
         ///     no extensions are configured.
         /// </summary>
-        public IDictionary<string, string> Extensions { get; }
+        internal IDictionary<string, string> Extensions { get; }
 
-        public AwsOAuthBearerToken(
+        internal AwsOAuthBearerToken(
             string tokenValue,
             long lifetimeMs,
             string principalName,

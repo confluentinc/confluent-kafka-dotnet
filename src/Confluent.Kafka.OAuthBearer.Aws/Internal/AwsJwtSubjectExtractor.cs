@@ -36,7 +36,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///     JWT is null, empty, oversized, has wrong segment count, fails base64url
         ///     decoding, isn't valid JSON, or has no <c>sub</c> claim.
         /// </exception>
-        public static string ExtractSub(string jwt)
+        internal static string ExtractSub(string jwt)
         {
             if (jwt == null)
             {

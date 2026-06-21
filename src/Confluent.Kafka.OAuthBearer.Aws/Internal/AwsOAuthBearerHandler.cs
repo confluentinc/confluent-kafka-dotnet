@@ -28,7 +28,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///     a token via the provider and calls <c>OAuthBearerSetToken</c> /
         ///     <c>OAuthBearerSetTokenFailure</c> on the supplied client.
         /// </summary>
-        public static Action<IClient, string> Create(AwsStsTokenProvider provider)
+        internal static Action<IClient, string> Create(AwsStsTokenProvider provider)
         {
             if (provider == null) throw new ArgumentNullException(nameof(provider));
             return (client, _oauthConfigString) => Invoke(provider, new ClientTokenSink(client));
@@ -80,7 +80,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
     {
         private readonly IClient _client;
 
-        public ClientTokenSink(IClient client)
+        internal ClientTokenSink(IClient client)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
         }
