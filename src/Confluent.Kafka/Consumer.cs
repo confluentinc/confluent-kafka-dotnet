@@ -658,7 +658,11 @@ namespace Confluent.Kafka
             this.partitionsRevokedHandler = baseConfig.partitionsRevokedHandler;
             this.partitionsLostHandler = baseConfig.partitionsLostHandler;
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
-            this.oAuthBearerTokenRefreshHandler = baseConfig.oAuthBearerTokenRefreshHandler;
+            this.oAuthBearerTokenRefreshHandler =
+                baseConfig.oAuthBearerTokenRefreshHandler == default(Action<string>)
+                    ? Internal.OAuthBearer.SaslOauthbearerConfigHelper.ResolveAutoWiredHandler(
+                        this, Confluent.Kafka.Config.Snapshot(baseConfig.config))
+                    : baseConfig.oAuthBearerTokenRefreshHandler;
             this.revokedOrLostHandlerIsFunc = baseConfig.revokedOrLostHandlerIsFunc;
             Librdkafka.Initialize(null);
 
