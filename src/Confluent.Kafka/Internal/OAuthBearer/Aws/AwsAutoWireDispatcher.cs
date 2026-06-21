@@ -125,7 +125,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
                 catch (FileNotFoundException ex)
                 {
                     throw new InvalidOperationException(
-                        $"Config '{AwsIamMarker.Key}={AwsIamMarker.Value}' requires the " +
+                        "The AWS IAM autowire path (SaslOauthbearerMetadataAuthenticationType.AwsIam) requires the " +
                         $"{OptionalAssemblyName} package. Add: " +
                         $"<PackageReference Include=\"{OptionalAssemblyName}\" Version=\"...\" /> " +
                         "to the project that consumes Confluent.Kafka.", ex);

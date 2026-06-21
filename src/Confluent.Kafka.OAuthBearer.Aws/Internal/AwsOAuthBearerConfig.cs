@@ -117,7 +117,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             foreach (var kv in KvStringParser.Parse(
                 raw,
                 new[] { ' ', '\t', '\r', '\n' },
-                contextLabel: "sasl.oauthbearer.config"))
+                contextLabel: "SaslOauthbearerConfig"))
             {
                 var key = kv.Key;
                 var value = kv.Value;
@@ -136,7 +136,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
                         if (!int.TryParse(value, out var d))
                         {
                             throw new ArgumentException(
-                                $"sasl.oauthbearer.config 'duration_seconds' must be an integer; got '{value}'.");
+                                $"SaslOauthbearerConfig 'duration_seconds' must be an integer; got '{value}'.");
                         }
                         durationSeconds = d;
                         break;
@@ -159,7 +159,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
                             if (name.Length == 0)
                             {
                                 throw new ArgumentException(
-                                    $"sasl.oauthbearer.config tag key '{key}' has empty name.");
+                                    $"SaslOauthbearerConfig tag key '{key}' has empty name.");
                             }
                             if (tags == null)
                             {
@@ -170,7 +170,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
                         else
                         {
                             throw new ArgumentException(
-                                $"Unknown key '{key}' in sasl.oauthbearer.config.");
+                                $"Unknown key '{key}' in SaslOauthbearerConfig.");
                         }
                         break;
                 }
@@ -178,32 +178,32 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
 
             if (string.IsNullOrEmpty(region))
             {
-                throw new ArgumentException("'region' is required in sasl.oauthbearer.config.");
+                throw new ArgumentException("'region' is required in SaslOauthbearerConfig.");
             }
             if (string.IsNullOrEmpty(audience))
             {
-                throw new ArgumentException("'audience' is required in sasl.oauthbearer.config.");
+                throw new ArgumentException("'audience' is required in SaslOauthbearerConfig.");
             }
             if (signingAlgorithm != null
                 && signingAlgorithm != "ES384"
                 && signingAlgorithm != "RS256")
             {
                 throw new ArgumentException(
-                    $"sasl.oauthbearer.config 'signing_algorithm' must be 'ES384' or 'RS256'; got '{signingAlgorithm}'.");
+                    $"SaslOauthbearerConfig 'signing_algorithm' must be 'ES384' or 'RS256'; got '{signingAlgorithm}'.");
             }
             if (durationSeconds.HasValue
                 && (durationSeconds.Value < MinDuration.TotalSeconds
                     || durationSeconds.Value > MaxDuration.TotalSeconds))
             {
                 throw new ArgumentException(
-                    $"sasl.oauthbearer.config 'duration_seconds' must be between " +
+                    $"SaslOauthbearerConfig 'duration_seconds' must be between " +
                     $"{MinDuration.TotalSeconds:F0} and {MaxDuration.TotalSeconds:F0} inclusive; got {durationSeconds.Value}.");
             }
 
             if (tags != null && tags.Count > MaxTags)
             {
                 throw new ArgumentException(
-                    $"sasl.oauthbearer.config has {tags.Count} tags; AWS allows at most {MaxTags}.");
+                    $"SaslOauthbearerConfig has {tags.Count} tags; AWS allows at most {MaxTags}.");
             }
 
             return new AwsOAuthBearerConfig(
@@ -222,7 +222,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             if (value.Length == 0)
             {
                 throw new ArgumentException(
-                    $"sasl.oauthbearer.config '{key}' must not be empty.");
+                    $"SaslOauthbearerConfig '{key}' must not be empty.");
             }
         }
 
@@ -241,7 +241,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
                 case "systemdiagnostics": return LoggingOptions.SystemDiagnostics;
                 default:
                     throw new ArgumentException(
-                        $"sasl.oauthbearer.config 'aws_debug' must be one of: " +
+                        $"SaslOauthbearerConfig 'aws_debug' must be one of: " +
                         $"none, console, log4net, systemdiagnostics. Got '{value}'.");
             }
         }
