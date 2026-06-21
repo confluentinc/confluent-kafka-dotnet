@@ -53,7 +53,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     ///         is guaranteed non-empty.
     ///     </para>
     /// </remarks>
-    public static class AwsAutoWireDispatcher
+    internal static class AwsAutoWireDispatcher
     {
         private const string OptionalAssemblyName = "Confluent.Kafka.OAuthBearer.Aws";
         private const string EntryPointTypeName = "Confluent.Kafka.OAuthBearer.Aws.AwsAutoWire";
@@ -86,7 +86,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///     <c>audience</c>). Surfaced verbatim from the parser via
         ///     <see cref="ExceptionDispatchInfo"/>.
         /// </exception>
-        public static Action<IClient, string> LoadHandler(
+        internal static Action<IClient, string> LoadHandler(
             IReadOnlyDictionary<string, string> kafkaConfig)
         {
             if (kafkaConfig == null) throw new ArgumentNullException(nameof(kafkaConfig));
@@ -161,7 +161,7 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         ///     <see cref="LoadHandler"/> calls re-resolve. Production code should
         ///     never call this — the cache is process-scoped by design.
         /// </summary>
-        public static void ResetCacheForTests()
+        internal static void ResetCacheForTests()
         {
             lock (s_lock) { s_cachedMethod = null; }
         }
