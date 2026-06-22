@@ -25,7 +25,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
     /// <remarks>
     ///     No signature verification — STS signs, broker validates.
     /// </remarks>
-    internal static class AwsJwtSubjectExtractor
+    internal static class JwtExtractor
     {
         private const int MaxTokenLengthChars = 8192;
 

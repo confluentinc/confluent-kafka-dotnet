@@ -26,7 +26,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
     /// <remarks>
     ///     The grammar mirrors the cross-language convention for consistency.
     /// </remarks>
-    internal static class AwsSaslExtensionsParser
+    internal static class SaslExtensionsParser
     {
         /// <summary>
         ///     Config key carrying the SASL extensions list.

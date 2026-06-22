@@ -84,7 +84,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws
                     nameof(saslOauthbearerConfig));
             }
 
-            var saslExtensions = AwsSaslExtensionsParser.Parse(saslOauthbearerExtensions);
+            var saslExtensions = SaslExtensionsParser.Parse(saslOauthbearerExtensions);
             var parsed = AwsOAuthBearerConfig.Parse(saslOauthbearerConfig, saslExtensions);
             var provider = new AwsStsTokenProvider(parsed);
             return AwsOAuthBearerHandler.Create(provider);

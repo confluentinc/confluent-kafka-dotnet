@@ -23,7 +23,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
     {
         /// <summary>
         ///     Builds a 3-segment JWT with the given payload JSON. Header and
-        ///     signature segments are placeholders — AwsJwtSubjectExtractor only
+        ///     signature segments are placeholders — JwtExtractor only
         ///     decodes the payload (<c>parts[1]</c>), so their content is unused
         ///     in tests.
         /// </summary>

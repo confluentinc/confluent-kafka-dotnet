@@ -19,20 +19,20 @@ using Xunit;
 
 namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
 {
-    public class AwsSaslExtensionsParserTests
+    public class SaslExtensionsParserTests
     {
         // ---- Null / empty input → null ----
 
         [Fact]
         public void Parse_NullRaw_ReturnsNull()
         {
-            Assert.Null(AwsSaslExtensionsParser.Parse(null));
+            Assert.Null(SaslExtensionsParser.Parse(null));
         }
 
         [Fact]
         public void Parse_EmptyString_ReturnsNull()
         {
-            Assert.Null(AwsSaslExtensionsParser.Parse(""));
+            Assert.Null(SaslExtensionsParser.Parse(""));
         }
 
         // ---- Happy paths ----
@@ -40,7 +40,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_SingleEntry_ReturnsOneItem()
         {
-            var result = AwsSaslExtensionsParser.Parse("logicalCluster=lkc-abc");
+            var result = SaslExtensionsParser.Parse("logicalCluster=lkc-abc");
             Assert.NotNull(result);
             Assert.Single(result);
             Assert.Equal("lkc-abc", result["logicalCluster"]);
@@ -49,7 +49,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_MultipleEntries_ReturnsAll()
         {
-            var result = AwsSaslExtensionsParser.Parse(
+            var result = SaslExtensionsParser.Parse(
                 "logicalCluster=lkc-abc,identityPoolId=pool-x");
             Assert.Equal(2, result.Count);
             Assert.Equal("lkc-abc", result["logicalCluster"]);
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_WhitespaceAroundCommas_TrimmedAndParsed()
         {
             // Each comma-delimited entry is trimmed before parsing.
-            var result = AwsSaslExtensionsParser.Parse(
+            var result = SaslExtensionsParser.Parse(
                 " logicalCluster=lkc-abc ,  identityPoolId=pool-x ");
             Assert.Equal(2, result.Count);
             Assert.Equal("lkc-abc", result["logicalCluster"]);
@@ -70,7 +70,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_EmptyEntries_Tolerated()
         {
-            var result = AwsSaslExtensionsParser.Parse(
+            var result = SaslExtensionsParser.Parse(
                 "logicalCluster=lkc-abc,,identityPoolId=pool-x,");
             Assert.Equal(2, result.Count);
             Assert.Equal("lkc-abc", result["logicalCluster"]);
@@ -81,7 +81,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_EmptyValue_Accepted()
         {
             // RFC 7628 SASL extensions allow empty values; mirror that.
-            var result = AwsSaslExtensionsParser.Parse("logicalCluster=");
+            var result = SaslExtensionsParser.Parse("logicalCluster=");
             Assert.NotNull(result);
             Assert.Single(result);
             Assert.Equal("", result["logicalCluster"]);
@@ -90,7 +90,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_DuplicateKey_LastWins()
         {
-            var result = AwsSaslExtensionsParser.Parse("k=a,k=b");
+            var result = SaslExtensionsParser.Parse("k=a,k=b");
             Assert.Single(result);
             Assert.Equal("b", result["k"]);
         }
@@ -101,7 +101,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_MissingEquals_Throws()
         {
             var ex = Assert.Throws<ArgumentException>(
-                () => AwsSaslExtensionsParser.Parse("noEqualsHere"));
+                () => SaslExtensionsParser.Parse("noEqualsHere"));
             Assert.Contains("sasl.oauthbearer.extensions", ex.Message);
             Assert.Contains("Malformed", ex.Message);
         }
@@ -110,7 +110,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_EmptyKey_Throws()
         {
             var ex = Assert.Throws<ArgumentException>(
-                () => AwsSaslExtensionsParser.Parse("=value"));
+                () => SaslExtensionsParser.Parse("=value"));
             Assert.Contains("sasl.oauthbearer.extensions", ex.Message);
             Assert.Contains("Malformed", ex.Message);
         }

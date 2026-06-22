@@ -20,7 +20,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
     ///     A minted OAUTHBEARER token ready to be handed to
     ///     <c>IClient.OAuthBearerSetToken</c>.
     /// </summary>
-    internal readonly struct AwsOAuthBearerToken
+    internal readonly struct OAuthBearerToken
     {
         /// <summary>
         ///     The JWT itself — passed verbatim to the broker as the OAUTHBEARER
@@ -46,7 +46,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         /// </summary>
         internal IDictionary<string, string> Extensions { get; }
 
-        internal AwsOAuthBearerToken(
+        internal OAuthBearerToken(
             string tokenValue,
             long lifetimeMs,
             string principalName,

@@ -92,12 +92,12 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///     <c>OutboundWebIdentityFederationDisabled</c>).
         /// </exception>
         /// <exception cref="FormatException">
-        ///     The returned JWT is malformed (thrown by <see cref="AwsJwtSubjectExtractor"/>).
+        ///     The returned JWT is malformed (thrown by <see cref="JwtExtractor"/>).
         /// </exception>
         /// <exception cref="OperationCanceledException">
         ///     <paramref name="ct"/> was cancelled.
         /// </exception>
-        internal async Task<AwsOAuthBearerToken> GetTokenAsync(CancellationToken ct = default)
+        internal async Task<OAuthBearerToken> GetTokenAsync(CancellationToken ct = default)
         {
             var request = new GetWebIdentityTokenRequest
             {
@@ -129,9 +129,9 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             var expiryUtc = DateTime.SpecifyKind(response.Expiration, DateTimeKind.Utc);
             var lifetimeMs = new DateTimeOffset(expiryUtc).ToUnixTimeMilliseconds();
 
-            var principal = AwsJwtSubjectExtractor.ExtractSub(response.WebIdentityToken);
+            var principal = JwtExtractor.ExtractSub(response.WebIdentityToken);
 
-            return new AwsOAuthBearerToken(
+            return new OAuthBearerToken(
                 response.WebIdentityToken, lifetimeMs, principal, _cfg.SaslExtensions);
         }
 
