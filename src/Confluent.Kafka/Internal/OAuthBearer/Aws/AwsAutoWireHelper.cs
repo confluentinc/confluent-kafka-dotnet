@@ -23,10 +23,9 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
     internal static class AwsAutoWireHelper
     {
         /// <summary>
-        ///     returns <c>true</c> when the snapshot contains the AWS IAM marker
+        ///     Returns <c>true</c> when the snapshot contains the AWS IAM marker
         ///     (<see cref="AwsIamMarker.Key"/> set to <see cref="AwsIamMarker.Value"/>),
-        ///     <c>false</c> otherwise. The caller is responsible for calling
-        ///     <see cref="Validate"/>.
+        ///     <c>false</c> otherwise.
         /// </summary>
         internal static bool ShouldAutoWire(IReadOnlyDictionary<string, string> snapshot)
             => snapshot.TryGetValue(AwsIamMarker.Key, out var value)
