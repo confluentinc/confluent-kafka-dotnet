@@ -189,7 +189,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             SaslMechanism    = SaslMechanism.OAuthBearer,
             SaslOauthbearerMetadataAuthenticationType =
                 SaslOauthbearerMetadataAuthenticationType.AwsIam,
-            SaslOauthbearerConfig = "region=us-east-1 audience=https://a",
+            SaslOauthbearerConfig = "region=us-east-1,audience=https://a",
         };
     }
 }

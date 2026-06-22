@@ -37,7 +37,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             {
                 ["sasl.oauthbearer.metadata.authentication.type"] = "aws_iam",
                 ["sasl.oauthbearer.method"] = "oidc",
-                ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
+                ["sasl.oauthbearer.config"] = "region=us-east-1,audience=https://a",
             };
             var handler = AwsAutoWireDispatcher.LoadHandler(snap);
             Assert.NotNull(handler);

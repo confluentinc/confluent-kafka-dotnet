@@ -58,7 +58,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             var snap = new Dictionary<string, string>
             {
                 ["sasl.oauthbearer.method"] = "oidc",
-                ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
+                ["sasl.oauthbearer.config"] = "region=us-east-1,audience=https://a",
             };
             AwsAutoWireHelper.Validate(snap); // does not throw
         }
@@ -68,7 +68,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         {
             var snap = new Dictionary<string, string>
             {
-                ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
+                ["sasl.oauthbearer.config"] = "region=us-east-1,audience=https://a",
             };
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsAutoWireHelper.Validate(snap));

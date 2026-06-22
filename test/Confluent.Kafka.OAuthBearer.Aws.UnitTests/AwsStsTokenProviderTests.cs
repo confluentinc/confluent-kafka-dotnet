@@ -45,7 +45,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Ctor_ValidParsedConfig_Succeeds()
         {
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             using var provider = new AwsStsTokenProvider(cfg);
             // Does not throw; does not call AWS (lazy credential chain).
         }
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             AWSConfigs.LoggingConfig.LogTo = LoggingOptions.Log4Net;
             try
             {
-                var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+                var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
                 using var provider = new AwsStsTokenProvider(cfg);
                 Assert.Equal(LoggingOptions.Log4Net, AWSConfigs.LoggingConfig.LogTo);
             }
@@ -79,7 +79,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             try
             {
                 var cfg = AwsOAuthBearerConfig.Parse(
-                    "region=us-east-1 audience=https://a aws_debug=none");
+                    "region=us-east-1,audience=https://a,aws_debug=none");
                 using var provider = new AwsStsTokenProvider(cfg);
                 Assert.Equal(LoggingOptions.Log4Net, AWSConfigs.LoggingConfig.LogTo);
             }
@@ -100,7 +100,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             try
             {
                 var cfg = AwsOAuthBearerConfig.Parse(
-                    $"region=us-east-1 audience=https://a aws_debug={value}");
+                    $"region=us-east-1,audience=https://a,aws_debug={value}");
                 using var provider = new AwsStsTokenProvider(cfg);
                 Assert.Equal(expected, AWSConfigs.LoggingConfig.LogTo);
             }
@@ -116,7 +116,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public async Task GetTokenAsync_AudiencePassthrough()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://my.audience");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://my.audience");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await provider.GetTokenAsync();
             Assert.Single(fake.LastRequest.Audience);
@@ -128,7 +128,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a signing_algorithm=RS256");
+                "region=us-east-1,audience=https://a,signing_algorithm=RS256");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await provider.GetTokenAsync();
             Assert.Equal("RS256", fake.LastRequest.SigningAlgorithm);
@@ -139,7 +139,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a duration_seconds=900");
+                "region=us-east-1,audience=https://a,duration_seconds=900");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await provider.GetTokenAsync();
             Assert.Equal(900, fake.LastRequest.DurationSeconds);
@@ -149,7 +149,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public async Task GetTokenAsync_DefaultDuration_Sends300Seconds()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await provider.GetTokenAsync();
             Assert.Equal(300, fake.LastRequest.DurationSeconds);
@@ -159,7 +159,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public async Task GetTokenAsync_DefaultSigningAlgorithm_SendsES384()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await provider.GetTokenAsync();
             Assert.Equal("ES384", fake.LastRequest.SigningAlgorithm);
@@ -170,7 +170,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a tag_team=platform tag_environment=prod");
+                "region=us-east-1,audience=https://a,tag_team=platform,tag_environment=prod");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await provider.GetTokenAsync();
 
@@ -183,7 +183,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public async Task GetTokenAsync_NoTags_RequestTagsRemainsEmpty()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await provider.GetTokenAsync();
 
@@ -197,7 +197,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public async Task GetTokenAsync_ReturnsMappedFields()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             var tok = await provider.GetTokenAsync();
 
@@ -219,7 +219,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                     WebIdentityToken = CannedJwt,
                     Expiration = localKindTimestamp,
                 }));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             var tok = await provider.GetTokenAsync();
 
@@ -239,7 +239,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                     WebIdentityToken = CannedJwt,
                     // Expiration deliberately not set
                 }));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
 
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -257,7 +257,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 { "identityPoolId", "pool-x" },
             };
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a",
+                "region=us-east-1,audience=https://a",
                 saslExtensions);
             var provider = new AwsStsTokenProvider(cfg, fake);
             var tok = await provider.GetTokenAsync();
@@ -271,7 +271,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public async Task GetTokenAsync_NoExtensionsConfigured_ReturnsNull()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             var tok = await provider.GetTokenAsync();
             Assert.Null(tok.Extensions);
@@ -288,7 +288,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                     WebIdentityToken = "not-a-jwt",
                     Expiration = CannedExpiry,
                 }));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await Assert.ThrowsAsync<FormatException>(() => provider.GetTokenAsync());
         }
@@ -300,7 +300,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 throw new AmazonSecurityTokenServiceException(
                     "User is not authorized to perform: sts:GetWebIdentityToken")
                 { ErrorCode = "AccessDenied" });
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             var ex = await Assert.ThrowsAsync<AmazonSecurityTokenServiceException>(
                 () => provider.GetTokenAsync());
@@ -313,7 +313,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var fake = new FakeStsClient((req, ct) =>
                 throw new OutboundWebIdentityFederationDisabledException(
                     "OutboundWebIdentityFederation is not enabled on this account."));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await Assert.ThrowsAsync<OutboundWebIdentityFederationDisabledException>(
                 () => provider.GetTokenAsync());
@@ -327,7 +327,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 ct.ThrowIfCancellationRequested();
                 return Task.FromResult(OkResponse());
             });
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             using var cts = new CancellationTokenSource();
             cts.Cancel();
@@ -341,7 +341,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Dispose_InjectedClient_NotDisposedByProvider()
         {
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             provider.Dispose();
             // Provider did not own the fake; we can still inspect its state safely.

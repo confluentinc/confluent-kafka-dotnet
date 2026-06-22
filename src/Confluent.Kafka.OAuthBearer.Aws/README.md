@@ -36,7 +36,7 @@ var cfg = new ConsumerConfig
 
     SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
     SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
-    SaslOauthbearerConfig = "region=us-east-1 audience=https://confluent.cloud/oidc",
+    SaslOauthbearerConfig = "region=us-east-1,audience=https://confluent.cloud/oidc",
 };
 
 using var consumer = new ConsumerBuilder<string, string>(cfg).Build();
@@ -45,9 +45,9 @@ consumer.Subscribe("my-topic");
 
 ### All options
 
-Every supported key in `SaslOauthbearerConfig`. The grammar is whitespace-separated
-`key=value` pairs (no quoting, no escaping); see [Configuration](#configuration) for
-each key's semantics.
+Every supported key in `SaslOauthbearerConfig`. The grammar is comma-separated
+`key=value` pairs with librdkafka's `\` escaping; see [Configuration](#configuration)
+for each key's semantics.
 
 ```csharp
 using Confluent.Kafka;
@@ -62,13 +62,13 @@ var cfg = new ConsumerConfig
     SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
     SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
     SaslOauthbearerConfig =
-        "region=us-east-1 " +
-        "audience=https://confluent.cloud/oidc " +
-        "duration_seconds=900 " +
-        "signing_algorithm=ES384 " +
-        "sts_endpoint=https://sts-fips.us-east-1.amazonaws.com " +
-        "aws_debug=console " +
-        "tag_team=platform " +
+        "region=us-east-1," +
+        "audience=https://confluent.cloud/oidc," +
+        "duration_seconds=900," +
+        "signing_algorithm=ES384," +
+        "sts_endpoint=https://sts-fips.us-east-1.amazonaws.com," +
+        "aws_debug=console," +
+        "tag_team=platform," +
         "tag_environment=prod",
     SaslOauthbearerExtensions =
         "logicalCluster=lkc-abc," +
@@ -81,7 +81,12 @@ consumer.Subscribe("my-topic");
 
 ## Configuration
 
-`SaslOauthbearerConfig` accepts a whitespace-separated list of `key=value` pairs.
+`SaslOauthbearerConfig` accepts a **comma-separated** list of `key=value` pairs,
+parsed with librdkafka's grammar (the same rules as `sasl.oauthbearer.config` for
+Azure IMDS): pairs split on `,`, key/value on the first `=`. A `\` escapes the next
+character, so a value can contain a literal comma by quoting it (`\,`); `\t`, `\n`,
+`\r` map to tab/newline/CR. Leading/trailing ASCII whitespace around each pair is
+trimmed.
 
 ### Required
 
@@ -136,10 +141,10 @@ in your application is preserved.
 
 ```csharp
 // Quietest production setup — library does not touch AWS SDK logging.
-"region=us-east-1 audience=https://confluent.cloud/oidc"
+"region=us-east-1,audience=https://confluent.cloud/oidc"
 
 // Validation / debugging — verbose AWS SDK output to stdout.
-"region=us-east-1 audience=https://confluent.cloud/oidc aws_debug=console"
+"region=us-east-1,audience=https://confluent.cloud/oidc,aws_debug=console"
 ```
 
 ### SASL extensions
@@ -151,6 +156,11 @@ not inside `SaslOauthbearerConfig` — as a comma-separated list of `key=value` 
 ```csharp
 SaslOauthbearerExtensions = "logicalCluster=lkc-abc,identityPoolId=pool-xyz",
 ```
+
+`SaslOauthbearerExtensions` is parsed with the same grammar as `SaslOauthbearerConfig`.
+If a value is itself a comma-separated list (e.g. multiple identity pools), quote the
+internal commas with `\` so they aren't read as pair separators:
+`"identityPoolId=pool-1\,pool-2"`.
 
 This matches the cross-language convention used by the Python, Go, and JavaScript
 bindings (e.g. for the existing AzureIMDS flow).

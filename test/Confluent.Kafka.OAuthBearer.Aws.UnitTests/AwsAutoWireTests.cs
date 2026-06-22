@@ -61,7 +61,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_InvalidSigningAlgorithm_Throws()
         {
-            var rawConfig = "region=us-east-1 audience=https://a signing_algorithm=HS256";
+            var rawConfig = "region=us-east-1,audience=https://a,signing_algorithm=HS256";
             var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(rawConfig, null));
             Assert.Contains("signing_algorithm", ex.Message);
         }
@@ -69,7 +69,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_InvalidDuration_Throws()
         {
-            var rawConfig = "region=us-east-1 audience=https://a duration_seconds=10";
+            var rawConfig = "region=us-east-1,audience=https://a,duration_seconds=10";
             var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(rawConfig, null));
             Assert.Contains("duration_seconds", ex.Message);
         }
@@ -77,7 +77,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void CreateHandler_UnknownKey_Throws()
         {
-            var rawConfig = "region=us-east-1 audience=https://a not_a_key=foo";
+            var rawConfig = "region=us-east-1,audience=https://a,not_a_key=foo";
             var ex = Assert.Throws<ArgumentException>(() => AwsAutoWire.CreateHandler(rawConfig, null));
             Assert.Contains("not_a_key", ex.Message);
         }
@@ -88,7 +88,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void CreateHandler_MarkerOnlyMinimumConfig_ReturnsHandler()
         {
             var handler = AwsAutoWire.CreateHandler(
-                "region=us-east-1 audience=https://a", null);
+                "region=us-east-1,audience=https://a", null);
             Assert.NotNull(handler);
         }
 
@@ -96,11 +96,11 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void CreateHandler_AllOptionalFields_ReturnsHandler()
         {
             var handler = AwsAutoWire.CreateHandler(
-                "region=us-east-1 audience=https://a " +
-                "duration_seconds=900 signing_algorithm=RS256 " +
-                "sts_endpoint=https://sts.us-east-1.amazonaws.com " +
-                "aws_debug=none " +
-                "tag_team=platform tag_environment=prod",
+                "region=us-east-1,audience=https://a," +
+                "duration_seconds=900,signing_algorithm=RS256," +
+                "sts_endpoint=https://sts.us-east-1.amazonaws.com," +
+                "aws_debug=none," +
+                "tag_team=platform,tag_environment=prod",
                 null);
             Assert.NotNull(handler);
         }
@@ -109,7 +109,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void CreateHandler_TagConfig_HandlerReady()
         {
             var handler = AwsAutoWire.CreateHandler(
-                "region=us-east-1 audience=https://a tag_team=platform tag_environment=prod",
+                "region=us-east-1,audience=https://a,tag_team=platform,tag_environment=prod",
                 null);
             Assert.NotNull(handler);
         }
@@ -119,7 +119,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void CreateHandler_NullExtensions_TreatsAsAbsent()
         {
             var handler = AwsAutoWire.CreateHandler(
-                "region=us-east-1 audience=https://a",
+                "region=us-east-1,audience=https://a",
                 saslOauthbearerExtensions: null);
             Assert.NotNull(handler);
         }
@@ -128,7 +128,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void CreateHandler_EmptyExtensions_TreatsAsAbsent()
         {
             var handler = AwsAutoWire.CreateHandler(
-                "region=us-east-1 audience=https://a",
+                "region=us-east-1,audience=https://a",
                 saslOauthbearerExtensions: "");
             Assert.NotNull(handler);
         }
@@ -139,7 +139,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void CreateHandler_TypedExtensions_SingleEntry_HandlerReady()
         {
             var handler = AwsAutoWire.CreateHandler(
-                "region=us-east-1 audience=https://a",
+                "region=us-east-1,audience=https://a",
                 "logicalCluster=lkc-abc");
             Assert.NotNull(handler);
         }

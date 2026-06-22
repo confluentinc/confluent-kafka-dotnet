@@ -27,7 +27,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_MinimalRequired_PopulatesRegionAndAudience()
         {
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             Assert.Equal("us-east-1", cfg.Region);
             Assert.Equal("https://a", cfg.Audience);
         }
@@ -69,7 +69,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_EmptyValueOnRequiredKey_Throws()
         {
             var ex = Assert.Throws<ArgumentException>(
-                () => AwsOAuthBearerConfig.Parse("region= audience=https://a"));
+                () => AwsOAuthBearerConfig.Parse("region=,audience=https://a"));
             Assert.Contains("region", ex.Message);
             Assert.Contains("must not be empty", ex.Message);
         }
@@ -80,7 +80,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_EmptyValueOnOptionalKey_Throws(string key)
         {
             var ex = Assert.Throws<ArgumentException>(
-                () => AwsOAuthBearerConfig.Parse($"region=us-east-1 audience=https://a {key}="));
+                () => AwsOAuthBearerConfig.Parse($"region=us-east-1,audience=https://a,{key}="));
             Assert.Contains(key, ex.Message);
         }
 
@@ -89,21 +89,21 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_NoSigningAlgorithm_DefaultsToES384()
         {
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             Assert.Equal("ES384", cfg.SigningAlgorithm);
         }
 
         [Fact]
         public void Parse_NoDuration_DefaultsTo300Seconds()
         {
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             Assert.Equal(TimeSpan.FromSeconds(300), cfg.Duration);
         }
 
         [Fact]
         public void Parse_OptionalFields_DefaultToNull()
         {
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             Assert.Null(cfg.StsEndpointOverride);
             Assert.Null(cfg.SaslExtensions);
             Assert.Null(cfg.Tags);
@@ -118,7 +118,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_DurationInRange_Accepted(int seconds)
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                $"region=us-east-1 audience=https://a duration_seconds={seconds}");
+                $"region=us-east-1,audience=https://a,duration_seconds={seconds}");
             Assert.Equal(TimeSpan.FromSeconds(seconds), cfg.Duration);
         }
 
@@ -131,7 +131,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(
-                    $"region=us-east-1 audience=https://a duration_seconds={seconds}"));
+                    $"region=us-east-1,audience=https://a,duration_seconds={seconds}"));
             Assert.Contains("duration_seconds", ex.Message);
             Assert.Contains("must be between", ex.Message);
         }
@@ -141,7 +141,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(
-                    "region=us-east-1 audience=https://a duration_seconds=abc"));
+                    "region=us-east-1,audience=https://a,duration_seconds=abc"));
             Assert.Contains("duration_seconds", ex.Message);
             Assert.Contains("must be an integer", ex.Message);
         }
@@ -154,7 +154,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_AllowedSigningAlgorithm_Accepted(string alg)
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                $"region=us-east-1 audience=https://a signing_algorithm={alg}");
+                $"region=us-east-1,audience=https://a,signing_algorithm={alg}");
             Assert.Equal(alg, cfg.SigningAlgorithm);
         }
 
@@ -166,7 +166,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(
-                    $"region=us-east-1 audience=https://a signing_algorithm={alg}"));
+                    $"region=us-east-1,audience=https://a,signing_algorithm={alg}"));
             Assert.Contains("signing_algorithm", ex.Message);
             Assert.Contains("must be 'ES384' or 'RS256'", ex.Message);
         }
@@ -176,7 +176,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_NoAwsDebug_DefaultsToNone()
         {
-            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1 audience=https://a");
+            var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             Assert.Equal(LoggingOptions.None, cfg.AwsDebug);
         }
 
@@ -188,7 +188,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_AwsDebugValues_Accepted(string value, LoggingOptions expected)
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                $"region=us-east-1 audience=https://a aws_debug={value}");
+                $"region=us-east-1,audience=https://a,aws_debug={value}");
             Assert.Equal(expected, cfg.AwsDebug);
         }
 
@@ -201,7 +201,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_AwsDebugCaseInsensitive_Accepted(string value, LoggingOptions expected)
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                $"region=us-east-1 audience=https://a aws_debug={value}");
+                $"region=us-east-1,audience=https://a,aws_debug={value}");
             Assert.Equal(expected, cfg.AwsDebug);
         }
 
@@ -215,7 +215,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(
-                    $"region=us-east-1 audience=https://a aws_debug={value}"));
+                    $"region=us-east-1,audience=https://a,aws_debug={value}"));
             Assert.Contains("aws_debug", ex.Message);
             Assert.Contains("none, console, log4net, systemdiagnostics", ex.Message);
         }
@@ -225,7 +225,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(
-                    "region=us-east-1 audience=https://a aws_debug="));
+                    "region=us-east-1,audience=https://a,aws_debug="));
             Assert.Contains("aws_debug", ex.Message);
             Assert.Contains("must not be empty", ex.Message);
         }
@@ -236,7 +236,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_StsEndpoint_StoredVerbatim()
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a sts_endpoint=https://sts-fips.us-east-1.amazonaws.com");
+                "region=us-east-1,audience=https://a,sts_endpoint=https://sts-fips.us-east-1.amazonaws.com");
             Assert.Equal("https://sts-fips.us-east-1.amazonaws.com", cfg.StsEndpointOverride);
         }
 
@@ -248,7 +248,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             // sasl extensions are accepted via typed sasl.oauthbearer.extensions property.
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(
-                    "region=us-east-1 audience=https://a extension_logicalCluster=lkc-abc"));
+                    "region=us-east-1,audience=https://a,extension_logicalCluster=lkc-abc"));
             Assert.Contains("extension_logicalCluster", ex.Message);
         }
 
@@ -261,7 +261,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 { "identityPoolId", "pool-xyz" },
             };
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a", ext);
+                "region=us-east-1,audience=https://a", ext);
             Assert.Same(ext, cfg.SaslExtensions);
         }
 
@@ -269,7 +269,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_SaslExtensionsArg_NullKeepsSaslExtensionsNull()
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a", null);
+                "region=us-east-1,audience=https://a", null);
             Assert.Null(cfg.SaslExtensions);
         }
 
@@ -279,7 +279,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_SingleTag_CollectedIntoTags()
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a tag_team=platform");
+                "region=us-east-1,audience=https://a,tag_team=platform");
             Assert.NotNull(cfg.Tags);
             Assert.Single(cfg.Tags);
             Assert.Equal("platform", cfg.Tags["team"]);
@@ -289,8 +289,8 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_MultipleTags_AllCollected()
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a " +
-                "tag_team=platform " +
+                "region=us-east-1,audience=https://a," +
+                "tag_team=platform," +
                 "tag_environment=prod");
             Assert.Equal(2, cfg.Tags.Count);
             Assert.Equal("platform", cfg.Tags["team"]);
@@ -302,7 +302,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(
-                    "region=us-east-1 audience=https://a tag_=value"));
+                    "region=us-east-1,audience=https://a,tag_=value"));
             Assert.Contains("tag", ex.Message);
             Assert.Contains("empty name", ex.Message);
         }
@@ -312,7 +312,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             // AWS allows tag values of 0 chars; mirror that.
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a tag_team=");
+                "region=us-east-1,audience=https://a,tag_team=");
             Assert.Equal("", cfg.Tags["team"]);
         }
 
@@ -320,17 +320,17 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_DuplicateTagName_LastWins()
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a tag_team=infra tag_team=platform");
+                "region=us-east-1,audience=https://a,tag_team=infra,tag_team=platform");
             Assert.Equal("platform", cfg.Tags["team"]);
         }
 
         [Fact]
         public void Parse_ExactlyMaxTags_Accepted()
         {
-            var sb = new System.Text.StringBuilder("region=us-east-1 audience=https://a");
+            var sb = new System.Text.StringBuilder("region=us-east-1,audience=https://a");
             for (int i = 0; i < 50; i++)
             {
-                sb.Append($" tag_k{i}=v{i}");
+                sb.Append($",tag_k{i}=v{i}");
             }
             var cfg = AwsOAuthBearerConfig.Parse(sb.ToString());
             Assert.Equal(50, cfg.Tags.Count);
@@ -339,10 +339,10 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_OverMaxTags_Throws()
         {
-            var sb = new System.Text.StringBuilder("region=us-east-1 audience=https://a");
+            var sb = new System.Text.StringBuilder("region=us-east-1,audience=https://a");
             for (int i = 0; i < 51; i++)
             {
-                sb.Append($" tag_k{i}=v{i}");
+                sb.Append($",tag_k{i}=v{i}");
             }
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(sb.ToString()));
@@ -356,7 +356,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         {
             var ex = Assert.Throws<ArgumentException>(
                 () => AwsOAuthBearerConfig.Parse(
-                    "region=us-east-1 audience=https://a not_a_key=foo"));
+                    "region=us-east-1,audience=https://a,not_a_key=foo"));
             Assert.Contains("not_a_key", ex.Message);
             Assert.Contains("Unknown key", ex.Message);
         }
@@ -364,10 +364,12 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         // ---- Whitespace / ordering ----
 
         [Fact]
-        public void Parse_TabsAndMultipleSpaces_Tolerated()
+        public void Parse_WhitespaceAroundFields_Trimmed()
         {
+            // Leading/trailing ASCII whitespace around each comma-separated field is
+            // trimmed, and empty fields are skipped.
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1\taudience=https://a   duration_seconds=600");
+                "region=us-east-1 , audience=https://a ,,, duration_seconds=600");
             Assert.Equal("us-east-1", cfg.Region);
             Assert.Equal("https://a", cfg.Audience);
             Assert.Equal(TimeSpan.FromSeconds(600), cfg.Duration);
@@ -376,7 +378,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         [Fact]
         public void Parse_LeadingAndTrailingWhitespace_Tolerated()
         {
-            var cfg = AwsOAuthBearerConfig.Parse("  region=us-east-1 audience=https://a   ");
+            var cfg = AwsOAuthBearerConfig.Parse(",,region=us-east-1,audience=https://a,,,");
             Assert.Equal("us-east-1", cfg.Region);
             Assert.Equal("https://a", cfg.Audience);
         }
@@ -385,7 +387,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_OrderInvariant()
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                "duration_seconds=600 audience=https://a region=us-east-1 signing_algorithm=RS256");
+                "duration_seconds=600,audience=https://a,region=us-east-1,signing_algorithm=RS256");
             Assert.Equal("us-east-1", cfg.Region);
             Assert.Equal("https://a", cfg.Audience);
             Assert.Equal(TimeSpan.FromSeconds(600), cfg.Duration);
@@ -396,7 +398,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_DuplicateKey_LastWins()
         {
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 audience=https://a region=us-west-2");
+                "region=us-east-1,audience=https://a,region=us-west-2");
             Assert.Equal("us-west-2", cfg.Region);
         }
 
@@ -406,7 +408,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_NoEquals_Throws()
         {
             var ex = Assert.Throws<ArgumentException>(
-                () => AwsOAuthBearerConfig.Parse("region us-east-1 audience=https://a"));
+                () => AwsOAuthBearerConfig.Parse("region=us-east-1,noequalshere,audience=https://a"));
             Assert.Contains("Malformed", ex.Message);
         }
 
@@ -414,7 +416,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
         public void Parse_LeadingEquals_Throws()
         {
             var ex = Assert.Throws<ArgumentException>(
-                () => AwsOAuthBearerConfig.Parse("=value audience=https://a region=us-east-1"));
+                () => AwsOAuthBearerConfig.Parse("=value,audience=https://a,region=us-east-1"));
             Assert.Contains("Malformed", ex.Message);
         }
 
@@ -426,12 +428,12 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 { "logicalCluster", "lkc-abc" },
             };
             var cfg = AwsOAuthBearerConfig.Parse(
-                "region=us-east-1 " +
-                "audience=https://confluent.cloud/oidc " +
-                "duration_seconds=1800 " +
-                "signing_algorithm=RS256 " +
-                "sts_endpoint=https://sts.us-east-1.amazonaws.com " +
-                "aws_debug=systemdiagnostics " +
+                "region=us-east-1," +
+                "audience=https://confluent.cloud/oidc," +
+                "duration_seconds=1800," +
+                "signing_algorithm=RS256," +
+                "sts_endpoint=https://sts.us-east-1.amazonaws.com," +
+                "aws_debug=systemdiagnostics," +
                 "tag_team=platform",
                 saslExtensions);
 

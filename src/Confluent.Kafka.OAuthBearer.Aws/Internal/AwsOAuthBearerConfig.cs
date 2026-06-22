@@ -114,10 +114,8 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             LoggingOptions awsDebug = LoggingOptions.None;
             Dictionary<string, string> tags = null;
 
-            foreach (var kv in KvStringParser.Parse(
-                raw,
-                new[] { ' ', '\t', '\r', '\n' },
-                contextLabel: "SaslOauthbearerConfig"))
+            foreach (var kv in LibrdkafkaStringParser.ParseKeyValues(
+                raw, ',', "SaslOauthbearerConfig"))
             {
                 var key = kv.Key;
                 var value = kv.Value;

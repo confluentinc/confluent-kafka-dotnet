@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Examples.OAuthBearerAws
                 SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
                 SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
                 SaslOauthbearerConfig =
-                    $"region={awsRegion} " +
+                    $"region={awsRegion}," +
                     $"audience={oidcAudience}",
                 SaslOauthbearerExtensions =
                     $"logicalCluster={kafkaLogicalCluster}," +
@@ -75,7 +75,7 @@ namespace Confluent.Kafka.Examples.OAuthBearerAws
                 SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
                 SaslOauthbearerMetadataAuthenticationType = SaslOauthbearerMetadataAuthenticationType.AwsIam,
                 SaslOauthbearerConfig =
-                    $"region={awsRegion} " +
+                    $"region={awsRegion}," +
                     $"audience={oidcAudience}",
                 SaslOauthbearerExtensions =
                     $"logicalCluster={kafkaLogicalCluster}," +

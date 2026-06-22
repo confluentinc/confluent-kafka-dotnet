@@ -85,7 +85,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
         {
             var snap = new Dictionary<string, string>
             {
-                ["sasl.oauthbearer.config"] = "region=us-east-1 audience=https://a",
+                ["sasl.oauthbearer.config"] = "region=us-east-1,audience=https://a",
             };
             SaslOauthbearerConfigHelper.RequireSaslOauthbearerConfig(snap); // does not throw
         }

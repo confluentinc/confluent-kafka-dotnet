@@ -48,10 +48,8 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
             if (string.IsNullOrEmpty(raw)) return null;
 
             var result = new Dictionary<string, string>();
-            foreach (var kv in KvStringParser.Parse(
-                raw,
-                new[] { ',' },
-                contextLabel: ConfigKey))
+            foreach (var kv in LibrdkafkaStringParser.ParseKeyValues(
+                raw, ',', ConfigKey))
             {
                 // Last-wins on duplicate keys, mirroring librdkafka.
                 result[kv.Key] = kv.Value;

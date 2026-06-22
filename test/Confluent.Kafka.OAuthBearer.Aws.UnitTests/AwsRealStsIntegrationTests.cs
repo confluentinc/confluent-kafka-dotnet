@@ -52,7 +52,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             // duration_seconds=300 explicit — matches the role's permission-policy cap
             // (NumericLessThanEquals on sts:DurationSeconds).
             var cfg = AwsOAuthBearerConfig.Parse(
-                $"region={region} audience={audience} duration_seconds=300 signing_algorithm={algorithm}");
+                $"region={region},audience={audience},duration_seconds=300,signing_algorithm={algorithm}");
 
             using var provider = new AwsStsTokenProvider(cfg);
             var sink = new RecordingSink();

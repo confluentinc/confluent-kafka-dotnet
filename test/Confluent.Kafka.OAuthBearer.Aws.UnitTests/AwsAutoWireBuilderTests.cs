@@ -70,7 +70,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             SaslOauthbearerMethod = SaslOauthbearerMethod.Oidc,
             SaslOauthbearerMetadataAuthenticationType =
                 SaslOauthbearerMetadataAuthenticationType.AwsIam,
-            SaslOauthbearerConfig = "region=us-east-1 audience=https://a",
+            SaslOauthbearerConfig = "region=us-east-1,audience=https://a",
         };
     }
 }
