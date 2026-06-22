@@ -26,8 +26,8 @@ namespace Confluent.Kafka.Internal.OAuthBearer
     {
         internal const string SaslOauthbearerMethodKey = "sasl.oauthbearer.method";
         internal const string SaslOauthbearerMethodOidcValue = "oidc";
-        internal const string SaslOauthbearerMethodDefaultValue = "default";
         internal const string SaslOauthbearerConfigKey = "sasl.oauthbearer.config";
+        internal const string SaslOauthbearerExtensionsKey = "sasl.oauthbearer.extensions";
 
         /// <summary>
         ///     Throws <see cref="ArgumentException"/> unless the snapshot has

@@ -91,8 +91,8 @@ namespace Confluent.Kafka.Internal.OAuthBearer.Aws
         {
             if (kafkaConfig == null) throw new ArgumentNullException(nameof(kafkaConfig));
 
-            kafkaConfig.TryGetValue("sasl.oauthbearer.config", out var rawConfig);
-            kafkaConfig.TryGetValue("sasl.oauthbearer.extensions", out var rawExtensions);
+            kafkaConfig.TryGetValue(SaslOauthbearerConfigHelper.SaslOauthbearerConfigKey, out var rawConfig);
+            kafkaConfig.TryGetValue(SaslOauthbearerConfigHelper.SaslOauthbearerExtensionsKey, out var rawExtensions);
 
             var method = ResolveCreateHandler();
             try
