@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
+using Confluent.Kafka.Internal.OAuthBearer;
 
 
 namespace Confluent.Kafka
@@ -581,7 +582,7 @@ namespace Confluent.Kafka
             this.errorHandler = baseConfig.errorHandler;
             this.oAuthBearerTokenRefreshHandler =
                 baseConfig.oAuthBearerTokenRefreshHandler == default(Action<string>)
-                    ? Internal.OAuthBearer.SaslOauthbearerConfigHelper.ResolveAutoWiredHandler(
+                    ? SaslOauthbearerConfigHelper.ResolveAutoWiredHandler(
                         this, Confluent.Kafka.Config.Snapshot(baseConfig.config))
                     : baseConfig.oAuthBearerTokenRefreshHandler;
 
