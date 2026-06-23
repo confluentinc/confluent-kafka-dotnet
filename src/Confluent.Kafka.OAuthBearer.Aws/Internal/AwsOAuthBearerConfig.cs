@@ -1,0 +1,247 @@
+// Copyright 2026 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Collections.Generic;
+using Amazon;
+using Confluent.Kafka.Internal;
+
+namespace Confluent.Kafka.OAuthBearer.Aws.Internal
+{
+    /// <summary>
+    ///     Internal typed view of the <c>sasl.oauthbearer.config</c> string used
+    ///     by the autowire path.
+    /// </summary>
+    internal sealed class AwsOAuthBearerConfig
+    {
+        internal const string DefaultSigningAlgorithm = "ES384";
+        internal static readonly TimeSpan DefaultDuration = TimeSpan.FromSeconds(300);
+        internal static readonly TimeSpan MinDuration = TimeSpan.FromSeconds(60);
+        internal static readonly TimeSpan MaxDuration = TimeSpan.FromSeconds(3600);
+        private const string TagKeyPrefix = "tag_";
+        private const int MaxTags = 50;
+
+        private AwsOAuthBearerConfig(
+            string region,
+            string audience,
+            string signingAlgorithm,
+            TimeSpan duration,
+            string stsEndpointOverride,
+            LoggingOptions awsDebug,
+            IDictionary<string, string> saslExtensions,
+            IDictionary<string, string> tags)
+        {
+            Region = region;
+            Audience = audience;
+            SigningAlgorithm = signingAlgorithm;
+            Duration = duration;
+            StsEndpointOverride = stsEndpointOverride;
+            AwsDebug = awsDebug;
+            SaslExtensions = saslExtensions;
+            Tags = tags;
+        }
+
+        /// <summary>AWS region targeted by the STS call (e.g. <c>us-east-1</c>).</summary>
+        internal string Region { get; }
+
+        /// <summary>OIDC audience claim the relying party expects.</summary>
+        internal string Audience { get; }
+
+        /// <summary>
+        ///     Signing algorithm (<c>ES384</c> or <c>RS256</c>); defaults to <c>ES384</c>.
+        /// </summary>
+        internal string SigningAlgorithm { get; }
+
+        /// <summary>Requested token lifetime; defaults to 300 seconds, bounded 60–3600.</summary>
+        internal TimeSpan Duration { get; }
+
+        /// <summary>Optional STS endpoint URL (FIPS, VPC, etc.). <c>null</c> when unset.</summary>
+        internal string StsEndpointOverride { get; }
+
+        /// <summary>
+        ///     AWS SDK diagnostic log sink. Defaults to <see cref="LoggingOptions.None"/> —
+        ///     opt-in via the <c>aws_debug</c> key in <c>sasl.oauthbearer.config</c>.
+        /// </summary>
+        internal LoggingOptions AwsDebug { get; }
+
+        /// <summary>SASL extensions to send to the broker (RFC 7628). <c>null</c> when none parsed.</summary>
+        internal IDictionary<string, string> SaslExtensions { get; }
+
+        /// <summary>Tags to attach to the STS request as custom JWT claims (max 50). <c>null</c> when none parsed.</summary>
+        internal IDictionary<string, string> Tags { get; }
+
+        /// <summary>
+        ///     Parses the <c>sasl.oauthbearer.config</c> property into a typed
+        ///     config, applying defaults and validating fields.
+        /// </summary>
+        /// <remarks>
+        ///     Grammar (comma-separated <c>key=value</c> pairs, no quoting):
+        ///     <code>
+        ///       region=&lt;aws-region&gt;            (required)
+        ///       audience=&lt;oidc-audience&gt;       (required)
+        ///       duration_seconds=&lt;60..3600&gt;    (default: 300)
+        ///       signing_algorithm=ES384|RS256       (default: ES384)
+        ///       sts_endpoint=&lt;url&gt;             (optional, FIPS / VPC)
+        ///       aws_debug=none|console|log4net|systemdiagnostics  (default: none — opt-in AWS SDK logging)
+        ///       tag_&lt;name&gt;=&lt;value&gt;        (zero or more JWT custom claims, max 50)
+        ///     </code>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="raw"/> is null.</exception>
+        /// <exception cref="ArgumentException">
+        ///     A required key is missing, an unknown key appears, or a value is
+        ///     malformed / out of range.
+        /// </exception>
+        internal static AwsOAuthBearerConfig Parse(string raw, IDictionary<string, string> saslExtensions = null)
+        {
+            if (raw == null) throw new ArgumentNullException(nameof(raw));
+
+            string region = null;
+            string audience = null;
+            string signingAlgorithm = null;
+            string stsEndpoint = null;
+            int? durationSeconds = null;
+            LoggingOptions awsDebug = LoggingOptions.None;
+            Dictionary<string, string> tags = null;
+
+            foreach (var kv in LibrdkafkaStringParser.ParseKeyValues(
+                raw, ',', "SaslOauthbearerConfig"))
+            {
+                var key = kv.Key;
+                var value = kv.Value;
+
+                switch (key)
+                {
+                    case "region":
+                        AssertNotEmpty(key, value);
+                        region = value;
+                        break;
+                    case "audience":
+                        AssertNotEmpty(key, value);
+                        audience = value;
+                        break;
+                    case "duration_seconds":
+                        if (!int.TryParse(value, out var d))
+                        {
+                            throw new ArgumentException(
+                                $"SaslOauthbearerConfig 'duration_seconds' must be an integer; got '{value}'.");
+                        }
+                        durationSeconds = d;
+                        break;
+                    case "signing_algorithm":
+                        AssertNotEmpty(key, value);
+                        signingAlgorithm = value;
+                        break;
+                    case "sts_endpoint":
+                        AssertNotEmpty(key, value);
+                        stsEndpoint = value;
+                        break;
+                    case "aws_debug":
+                        AssertNotEmpty(key, value);
+                        awsDebug = ParseAwsDebug(value);
+                        break;
+                    default:
+                        if (key.StartsWith(TagKeyPrefix, StringComparison.Ordinal))
+                        {
+                            var name = key.Substring(TagKeyPrefix.Length);
+                            if (name.Length == 0)
+                            {
+                                throw new ArgumentException(
+                                    $"SaslOauthbearerConfig tag key '{key}' has empty name.");
+                            }
+                            if (tags == null)
+                            {
+                                tags = new Dictionary<string, string>();
+                            }
+                            tags[name] = value;
+                        }
+                        else
+                        {
+                            throw new ArgumentException(
+                                $"Unknown key '{key}' in SaslOauthbearerConfig.");
+                        }
+                        break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(region))
+            {
+                throw new ArgumentException("'region' is required in SaslOauthbearerConfig.");
+            }
+            if (string.IsNullOrEmpty(audience))
+            {
+                throw new ArgumentException("'audience' is required in SaslOauthbearerConfig.");
+            }
+            if (signingAlgorithm != null
+                && signingAlgorithm != "ES384"
+                && signingAlgorithm != "RS256")
+            {
+                throw new ArgumentException(
+                    $"SaslOauthbearerConfig 'signing_algorithm' must be 'ES384' or 'RS256'; got '{signingAlgorithm}'.");
+            }
+            if (durationSeconds.HasValue
+                && (durationSeconds.Value < MinDuration.TotalSeconds
+                    || durationSeconds.Value > MaxDuration.TotalSeconds))
+            {
+                throw new ArgumentException(
+                    $"SaslOauthbearerConfig 'duration_seconds' must be between " +
+                    $"{MinDuration.TotalSeconds:F0} and {MaxDuration.TotalSeconds:F0} inclusive; got {durationSeconds.Value}.");
+            }
+
+            if (tags != null && tags.Count > MaxTags)
+            {
+                throw new ArgumentException(
+                    $"SaslOauthbearerConfig has {tags.Count} tags; AWS allows at most {MaxTags}.");
+            }
+
+            return new AwsOAuthBearerConfig(
+                region: region,
+                audience: audience,
+                signingAlgorithm: signingAlgorithm ?? DefaultSigningAlgorithm,
+                duration: TimeSpan.FromSeconds(durationSeconds ?? (int)DefaultDuration.TotalSeconds),
+                stsEndpointOverride: stsEndpoint,
+                awsDebug: awsDebug,
+                saslExtensions: saslExtensions,
+                tags: tags);
+        }
+
+        private static void AssertNotEmpty(string key, string value)
+        {
+            if (value.Length == 0)
+            {
+                throw new ArgumentException(
+                    $"SaslOauthbearerConfig '{key}' must not be empty.");
+            }
+        }
+
+        /// <summary>
+        ///     Maps the string form of the <c>aws_debug</c> key to its
+        ///     <see cref="LoggingOptions"/> enum value. Strict validation —
+        ///     unknown values throw <see cref="ArgumentException"/>.
+        /// </summary>
+        private static LoggingOptions ParseAwsDebug(string value)
+        {
+            switch (value.ToLowerInvariant())
+            {
+                case "none":              return LoggingOptions.None;
+                case "console":           return LoggingOptions.Console;
+                case "log4net":           return LoggingOptions.Log4Net;
+                case "systemdiagnostics": return LoggingOptions.SystemDiagnostics;
+                default:
+                    throw new ArgumentException(
+                        $"SaslOauthbearerConfig 'aws_debug' must be one of: " +
+                        $"none, console, log4net, systemdiagnostics. Got '{value}'.");
+            }
+        }
+    }
+}
