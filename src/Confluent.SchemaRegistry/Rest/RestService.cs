@@ -393,6 +393,11 @@ namespace Confluent.SchemaRegistry
 
                     aggregatedErrorMessage +=
                         $"[{clients[clientIndex].BaseAddress}] {response.StatusCode} {errorCode} {message}";
+
+                    // Retriable status: dispose this response before failing over to
+                    // the next URL so its connection isn't leaked across attempts.
+                    response.Dispose();
+                    response = null;
                 }
                 catch (HttpRequestException e)
                 {
@@ -401,6 +406,11 @@ namespace Confluent.SchemaRegistry
                     {
                         throw;
                     }
+
+                    // Dispose any response held from this (or a prior) attempt so its
+                    // connection isn't leaked before failing over to the next URL.
+                    response?.Dispose();
+                    response = null;
 
                     if (!firstError)
                     {
@@ -418,6 +428,13 @@ namespace Confluent.SchemaRegistry
                     // OperationCanceledException rather than HttpRequestException.
                     // Treat it like a network error and fail over to the next URL
                     // instead of letting it propagate immediately.
+
+                    // Dispose any response created before the cancellation (e.g. a
+                    // timeout while reading the response content) so its connection
+                    // isn't leaked.
+                    response?.Dispose();
+                    response = null;
+
                     if (!firstError)
                     {
                         aggregatedErrorMessage += "; ";
