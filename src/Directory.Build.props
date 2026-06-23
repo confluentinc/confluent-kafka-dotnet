@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>2.14.2</VersionPrefix>
+    <VersionPrefix>2.14.2-aws-iam.8-dev</VersionPrefix>
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
   </PropertyGroup>
 
