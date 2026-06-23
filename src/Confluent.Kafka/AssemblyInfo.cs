@@ -15,7 +15,7 @@
 using System.Runtime.CompilerServices;
 
 // Confluent.Kafka is strong-named, so each friend assembly must be declared
-// with its full PublicKey. These expose internal helpers (e.g. KvStringParser
+// with its full PublicKey. These expose internal helpers (e.g. LibrdkafkaStringParser
 // and the AWS IAM autowire types) to the core test project and to the optional
 // AWS OAUTHBEARER package and its tests.
 [assembly: InternalsVisibleTo("Confluent.Kafka.UnitTests, " +

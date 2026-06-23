@@ -86,7 +86,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.Internal
         ///     config, applying defaults and validating fields.
         /// </summary>
         /// <remarks>
-        ///     Grammar (whitespace-separated <c>key=value</c> pairs, no quoting):
+        ///     Grammar (comma-separated <c>key=value</c> pairs, no quoting):
         ///     <code>
         ///       region=&lt;aws-region&gt;            (required)
         ///       audience=&lt;oidc-audience&gt;       (required)

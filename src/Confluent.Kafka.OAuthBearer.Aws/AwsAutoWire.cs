@@ -46,7 +46,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws
         ///     <c>Assembly.Load</c> + reflected <c>MethodInfo</c>.
         /// </summary>
         /// <param name="saslOauthbearerConfig">
-        ///     The <c>sasl.oauthbearer.config</c> value (whitespace-separated
+        ///     The <c>sasl.oauthbearer.config</c> value (comma-separated
         ///     <c>key=value</c> pairs). Must be non-null and non-empty —
         ///     callers via core's config-validation gate are already guaranteed
         ///     this; direct callers get the same friendly error via a defensive
