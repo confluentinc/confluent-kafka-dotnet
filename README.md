@@ -34,6 +34,7 @@ client. Thanks Andreas!
 confluent-kafka-dotnet is distributed via NuGet. We provide the following  packages:
 
 - [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[netstandard2.0, net462, net8.0, net10.0]* - The core client library.
+- [Confluent.Kafka.OAuthBearer.Aws](https://www.nuget.org/packages/Confluent.Kafka.OAuthBearer.Aws/) *[netstandard2.1, net462, net8.0, net10.0]* - Optional AWS IAM-based OAUTHBEARER authentication for Confluent.Kafka.
 - [Confluent.SchemaRegistry.Serdes.Avro](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Avro/) *[netstandard2.0, net8.0, net10.0]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
 - [Confluent.SchemaRegistry.Serdes.Protobuf](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Protobuf/) *[netstandard2.0, net8.0, net10.0]* - Provides a serializer and deserializer for working with Protobuf serialized data with Confluent Schema Registry integration.
 - [Confluent.SchemaRegistry.Serdes.Json](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Json/) *[netstandard2.0, net8.0, net10.0]* - Provides a serializer and deserializer for working with Json serialized data with Confluent Schema Registry integration.
@@ -61,11 +62,8 @@ Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provide
 
 ### Branch builds
 
-Nuget packages corresponding to all commits to release branches are available from the following nuget package source (Note: this is not a web URL - you
-should specify it in the nuget package manager):
-[https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages
-matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the
-[AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
+Nuget packages corresponding to commits to branches are produced as CI artifacts by [Semaphore](.semaphore/semaphore.yml), with a version suffix of the
+form `ci-<job-id>`.
 
 
 ## Usage
