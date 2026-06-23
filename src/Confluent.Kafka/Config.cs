@@ -39,7 +39,24 @@ namespace Confluent.Kafka
             { "usealldnsips", "use_all_dns_ips"},
             { "resolvecanonicalbootstrapserversonly", "resolve_canonical_bootstrap_servers_only"},
             { "azureimds", "azure_imds"},
+            { "awsiam", "aws_iam"},
         };
+
+        /// <summary>
+        ///     Snapshots an enumerable config into a dictionary, applying
+        ///     last-key-wins semantics to match librdkafka's behavior.
+        /// </summary>
+        internal static IReadOnlyDictionary<string, string> Snapshot(
+            IEnumerable<KeyValuePair<string, string>> config)
+        {
+            var dict = new Dictionary<string, string>();
+            if (config == null) return dict;
+            foreach (var kv in config)
+            {
+                dict[kv.Key] = kv.Value;
+            }
+            return dict;
+        }
 
         /// <summary>
         ///     Initialize a new empty <see cref="Config" /> instance.
