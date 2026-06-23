@@ -114,7 +114,11 @@ namespace Confluent.SchemaRegistry.UnitTests
             }
             finally
             {
+                // Stop the listener and let the accept loop finish before
+                // enumerating the accepted clients, to avoid mutating the list
+                // while it is being read.
                 listener.Stop();
+                await acceptLoop.ConfigureAwait(false);
                 foreach (var client in accepted)
                 {
                     client.Dispose();
