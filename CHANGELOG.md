@@ -13,6 +13,7 @@ Previously this could cause skipping an offset (<2.1.0) or message reprocessing 
 ## Fixes
 
 * Throw an `InvalidOperationException` when calling `StoreOffset` with an EOF consume result, to match `Commit` behavior (#2621)
+* Handle non-http errors during retries (#2633)
 
 
 # 2.14.2
