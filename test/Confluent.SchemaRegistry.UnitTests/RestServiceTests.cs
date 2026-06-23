@@ -16,7 +16,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Xunit;
@@ -61,6 +63,63 @@ namespace Confluent.SchemaRegistry.UnitTests
 
             var aggEx = (AggregateException)ex.InnerException;
             Assert.Equal(2, aggEx.InnerExceptions.Count);
+        }
+
+        [Fact]
+        public async Task Timeout_IsTreatedAsNetworkError_AndDoesNotPropagateRaw()
+        {
+            // A TCP listener that accepts connections but never sends a response
+            // forces the HttpClient request to time out. Request timeouts surface
+            // as TaskCanceledException / OperationCanceledException, which used to
+            // bypass the multi-URL failover logic and propagate directly (see
+            // confluent-kafka-dotnet issue #2626). They should now be treated like
+            // a network error and converted into an HttpRequestException.
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+
+            // Accept connections and hold them open without ever responding.
+            var accepted = new List<TcpClient>();
+            var acceptLoop = Task.Run(async () =>
+            {
+                try
+                {
+                    while (true)
+                    {
+                        accepted.Add(await listener.AcceptTcpClientAsync());
+                    }
+                }
+                catch
+                {
+                    // listener stopped - expected on cleanup.
+                }
+            });
+
+            try
+            {
+                var restService = new RestService(
+                    $"http://localhost:{port}",
+                    500, // short request timeout
+                    null,
+                    new List<X509Certificate2>(),
+                    true,
+                    maxRetries: 1,
+                    retriesWaitMs: 1,
+                    retriesMaxWaitMs: 2);
+
+                var ex = await Assert.ThrowsAsync<HttpRequestException>(
+                    () => restService.GetSubjectsAsync());
+
+                Assert.NotNull(ex.InnerException);
+            }
+            finally
+            {
+                listener.Stop();
+                foreach (var client in accepted)
+                {
+                    client.Dispose();
+                }
+            }
         }
     }
 }
