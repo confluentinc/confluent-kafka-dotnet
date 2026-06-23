@@ -146,7 +146,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.Contains("missing or empty", ex.Message);
         }
 
-        [Fact(Skip = "Requires librdkafka with aws_iam support (companion PR #5428): Build() passes aws_iam to librdkafka, which stock builds reject. Un-skip + bump librdkafka.redist once it ships.")]
+        [Fact]
         public void ProducerBuilder_Build_ExplicitHandlerWithMarker_PrecedenceRuleHonored()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
@@ -159,7 +159,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.NotNull(p);
         }
 
-        [Fact(Skip = "Requires librdkafka with aws_iam support (companion PR #5428): Build() passes aws_iam to librdkafka, which stock builds reject. Un-skip + bump librdkafka.redist once it ships.")]
+        [Fact]
         public void ConsumerBuilder_Build_ExplicitHandlerWithMarker_PrecedenceRuleHonored()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
@@ -171,7 +171,7 @@ namespace Confluent.Kafka.UnitTests.OAuthBearer
             Assert.NotNull(c);
         }
 
-        [Fact(Skip = "Requires librdkafka with aws_iam support (companion PR #5428): Build() passes aws_iam to librdkafka, which stock builds reject. Un-skip + bump librdkafka.redist once it ships.")]
+        [Fact]
         public void AdminClientBuilder_Build_ExplicitHandlerWithMarker_PrecedenceRuleHonored()
         {
             AwsAutoWireDispatcher.ResetCacheForTests();
