@@ -407,6 +407,22 @@ namespace Confluent.SchemaRegistry
                     aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] HttpRequestException: {e.Message}";
                     aggregatedExceptions.Add(e);
                 }
+                catch (OperationCanceledException e)
+                {
+                    // A request timeout surfaces as TaskCanceledException /
+                    // OperationCanceledException rather than HttpRequestException.
+                    // Treat it like a network error and fail over to the next URL
+                    // instead of letting it propagate immediately.
+                    if (!firstError)
+                    {
+                        aggregatedErrorMessage += "; ";
+                    }
+
+                    firstError = false;
+
+                    aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {e.GetType().Name}: {e.Message}";
+                    aggregatedExceptions.Add(e);
+                }
             }
 
             Exception innerException = aggregatedExceptions.Count == 1
@@ -421,9 +437,24 @@ namespace Confluent.SchemaRegistry
             HttpResponseMessage response = null;
             for (int i = 0; i < maxRetries; i++)
             {
-                response = await client
-                    .SendAsync(await createRequest())
-                    .ConfigureAwait(continueOnCapturedContext: false);
+                try
+                {
+                    response = await client
+                        .SendAsync(await createRequest())
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                }
+                catch (Exception e) when (IsRetriableException(e) && i < maxRetries - 1)
+                {
+                    // The request failed before a response was received: a
+                    // connection failure (HttpRequestException) or a request
+                    // timeout (TaskCanceledException / OperationCanceledException).
+                    // Once retries are exhausted the exception propagates so the 
+                    // caller can fail over to the next URL.
+                    await Task.Delay(RetryUtility.CalculateRetryDelay(retriesWaitMs, retriesMaxWaitMs, i))
+                        .ConfigureAwait(false);
+                    continue;
+                }
+
                 if (IsSuccess((int)response.StatusCode) || !IsRetriable((int)response.StatusCode) || i >= maxRetries)
                 {
                     return response;
@@ -438,6 +469,18 @@ namespace Confluent.SchemaRegistry
         private static bool IsSuccess(int statusCode)
         {
             return statusCode >= 200 && statusCode < 300;
+        }
+
+        private static bool IsRetriableException(Exception e)
+        {
+            // Network-level failures that occur before/instead of an HTTP
+            // response: connection failures surface as HttpRequestException,
+            // and request timeouts surface as TaskCanceledException /
+            // OperationCanceledException. SchemaRegistryException derives from
+            // HttpRequestException but represents a server response, so it must
+            // not be treated as a network error.
+            return (e is HttpRequestException && !(e is SchemaRegistryException))
+                || e is OperationCanceledException;
         }
 
         private static bool IsRetriable(int statusCode)
