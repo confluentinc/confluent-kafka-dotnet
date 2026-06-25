@@ -10,6 +10,10 @@ Previously this could cause skipping an offset (<2.1.0) or message reprocessing 
 
 * Added support for .NET 10 (LTS) and dropped support for .NET 6 (end of support since November 2024). The library now multi-targets `net8.0` and `net10.0` alongside `netstandard2.0` and `net462`. Builds on the approach proposed in #2545 by @ffernandolima, adapted for the centralized `Directory.Build.props` structure on current master.
 
+## Enhancements
+
+* Add AWS IAM OAUTHBEARER autowire — set `SaslOauthbearerMetadataAuthenticationType.AwsIam` plus `sasl.oauthbearer.config` and reference `AWSSDK.SecurityToken` to mint OAUTHBEARER tokens via AWS STS `GetWebIdentityToken` with no code changes. AWS SDK is reflection-loaded at `Build()` time; `Confluent.Kafka` has no compile-time AWS dependency.
+
 ## Fixes
 
 * Throw an `InvalidOperationException` when calling `StoreOffset` with an EOF consume result, to match `Commit` behavior (#2621)

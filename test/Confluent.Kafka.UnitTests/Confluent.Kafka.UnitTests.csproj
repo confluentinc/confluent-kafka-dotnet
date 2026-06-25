@@ -20,6 +20,10 @@
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
     <PackageReference Include="Moq" Version="4.8.2" />
+    <!-- Required for the StsReflectionShim test harness only.
+         Confluent.Kafka core does NOT reference AWSSDK — verified by the
+         optional-deps invariant test. -->
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.504" />
   </ItemGroup>
 
 </Project>

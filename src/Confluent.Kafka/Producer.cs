@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
+using Confluent.Kafka.Internal.OAuthBearer.Aws;
 
 
 namespace Confluent.Kafka
@@ -592,7 +593,8 @@ namespace Confluent.Kafka
                     .Where(prop =>
                         prop.Key != ConfigPropertyNames.Producer.EnableBackgroundPoll &&
                         prop.Key != ConfigPropertyNames.Producer.EnableDeliveryReports &&
-                        prop.Key != ConfigPropertyNames.Producer.DeliveryReportFields))
+                        prop.Key != ConfigPropertyNames.Producer.DeliveryReportFields &&
+                        !AwsAutoWire.IsMarker(prop)))
                 .ToList();
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)

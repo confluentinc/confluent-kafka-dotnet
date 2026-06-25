@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka.Internal.OAuthBearer.Aws;
 
 
 namespace Confluent.Kafka
@@ -128,12 +129,28 @@ namespace Confluent.Kafka
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(producer, stats),
-                oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
-                    ? default(Action<string>)
-                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
+                oAuthBearerTokenRefreshHandler = ResolveOAuthBearerHandler(producer),
                 partitioners = this.Partitioners,
                 defaultPartitioner = this.DefaultPartitioner,
             };
+        }
+
+        /// <summary>
+        ///     Selects the OAUTHBEARER refresh handler with the precedence:
+        ///     explicit handler &gt; marker-triggered AWS autowire &gt; none.
+        /// </summary>
+        private Action<string> ResolveOAuthBearerHandler(IProducer<TKey, TValue> producer)
+        {
+            if (this.OAuthBearerTokenRefreshHandler != null)
+            {
+                return oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig);
+            }
+            var auto = AwsAutoWire.TryCreateHandler(this.Config);
+            if (auto != null)
+            {
+                return oAuthBearerConfig => auto(producer, oAuthBearerConfig);
+            }
+            return null;
         }
 
         /// <summary>

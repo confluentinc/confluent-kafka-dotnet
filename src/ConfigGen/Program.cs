@@ -28,6 +28,19 @@ namespace ConfigGen
         };
 
         /// <summary>
+        ///     Extra enum values to append to librdkafka-extracted enums that are recognised
+        ///     only on the .NET side. Used when the .NET client implements a config value
+        ///     above librdkafka and strips it before native handoff.
+        /// </summary>
+        internal static Dictionary<string, List<string>> DotnetOnlyEnumValues => new Dictionary<string, List<string>>
+        {
+            // aws_iam: handled by the .NET-side reflection autowire path; the value is
+            // stripped from the config dictionary before reaching rd_kafka_new.
+            // See src/Confluent.Kafka/Internal/OAuthBearer/Aws/AwsAutoWire.cs.
+            { "sasl.oauthbearer.metadata.authentication.type", new List<string> { "aws_iam" } }
+        };
+
+        /// <summary>
         ///     A function that filters out properties from the librdkafka list that should
         ///     not be automatically extracted.
         /// </summary>
@@ -321,6 +334,7 @@ namespace Confluent.Kafka
             { "client_credentials", "ClientCredentials"},
             { "urn:ietf:params:oauth:grant-type:jwt-bearer", "JwtBearer"},
             { "azure_imds", "AzureIMDS"},
+            { "aws_iam", "AwsIam"},
         };
 
         static string EnumNameToDotnetName(string enumName)
@@ -408,6 +422,10 @@ namespace Confluent.Kafka
                         // Only expose the options allowed by the Java client.
                         vs = new List<string> { "Latest", "Earliest", "Error" };
                     }
+                }
+                if (MappingConfiguration.DotnetOnlyEnumValues.TryGetValue(prop.Name, out var extras))
+                {
+                    vs = vs.Concat(extras).ToList();
                 }
                 if (j != 0) { codeText += "\n"; }
                 codeText += $"    /// <summary>\n";
