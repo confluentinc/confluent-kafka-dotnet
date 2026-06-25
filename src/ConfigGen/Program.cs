@@ -321,6 +321,7 @@ namespace Confluent.Kafka
             { "client_credentials", "ClientCredentials"},
             { "urn:ietf:params:oauth:grant-type:jwt-bearer", "JwtBearer"},
             { "azure_imds", "AzureIMDS"},
+            { "aws_iam", "AwsIam"},
         };
 
         static string EnumNameToDotnetName(string enumName)
