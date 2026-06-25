@@ -581,7 +581,11 @@ namespace Confluent.SchemaRegistry
                         await bearerProvider.InitOrRefreshAsync().ConfigureAwait(continueOnCapturedContext: false);
                     }
 
-                    request.Headers.Add("Confluent-Identity-Pool-Id", bearerProvider.GetIdentityPool());
+                    var identityPool = bearerProvider.GetIdentityPool();
+                    if (!string.IsNullOrEmpty(identityPool))
+                    {
+                        request.Headers.Add("Confluent-Identity-Pool-Id", identityPool);
+                    }
                     request.Headers.Add("target-sr-cluster", bearerProvider.GetLogicalCluster());
                 }
                 request.Headers.Authorization = authenticationHeaderValueProvider.GetAuthenticationHeader();
