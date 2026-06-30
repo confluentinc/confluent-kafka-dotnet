@@ -1,4 +1,4 @@
-# Unreleased
+# 2.15.0
 
 ## Upgrade considerations
 
@@ -17,6 +17,7 @@ Previously this could cause skipping an offset (<2.1.0) or message reprocessing 
 
 ## Enhancements
 
+* References librdkafka.redist 2.15.0. Refer to the [librdkafka v2.15.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.15.0) for more information.
 * Added support for .NET 10 (LTS) and dropped support for .NET 6 (end of support since November 2024). The library now multi-targets `net8.0` and `net10.0` alongside `netstandard2.0` and `net462`. Builds on the approach proposed in #2545 by @ffernandolima, adapted for the centralized `Directory.Build.props` structure on current master.
 
 ## Fixes
