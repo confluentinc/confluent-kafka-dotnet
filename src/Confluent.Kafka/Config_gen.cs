@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v2.15.0-RC2 *** - do not modify manually.
+// *** Auto-generated from librdkafka v2.15.0 *** - do not modify manually.
 //
 // Copyright 2018-2022 Confluent Inc.
 //
@@ -2015,7 +2015,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         /// <![CDATA[
-        ///     tba description,
+        ///     The maximum number of records returned in a single call to `rd_kafka_share_poll()`. This value is sent to the broker in the ShareFetch request and therefore bounds the number of records the broker acquires and returns per fetch. Note: this limit is currently best-effort and not strictly enforced, so a poll may occasionally return more records than this value. This property is only supported for share consumers.
         ///
         ///     default: 500
         ///     importance: low
