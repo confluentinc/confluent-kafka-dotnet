@@ -17,7 +17,6 @@
 // Refer to LICENSE for more information.
 
 using System;
-using Confluent.Kafka.Impl;
 
 
 namespace Confluent.Kafka
@@ -44,44 +43,17 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Initialize a new Error instance from a native pointer to
-        ///     a rd_kafka_error_t object, then destroy the native object
+        ///     Initialize a new Error instance from individual field values.
+        ///     Used internally by NativeError (in Confluent.Kafka) which reads
+        ///     field values from a native rd_kafka_error_t before passing them here.
         /// </summary>
-        /// <param name="error">
-        ///     The rd_kafka_error_t object to initialize from.
-        /// </param>
-        internal Error(IntPtr error) : this(error, true)
+        internal Error(ErrorCode code, string reason, bool isFatal, bool isRetriable, bool txnRequiresAbort)
         {
-        }
-
-        /// <summary>
-        ///     Initialize a new Error instance from a native pointer to
-        ///     a rd_kafka_error_t object, then destroy the native object if <paramref name="destroy"/> is true
-        /// </summary>
-        /// <param name="error">
-        ///     The rd_kafka_error_t object to initialize from.
-        /// </param>
-        /// <param name="destroy">
-        ///     Destroy the passed error.
-        /// </param>
-        internal Error(IntPtr error, bool destroy)
-        {
-            if (error == IntPtr.Zero)
-            {
-                Code = ErrorCode.NoError;
-                reason = null;
-                IsFatal = false;
-                IsRetriable = false;
-                TxnRequiresAbort = false;
-                return;
-            }
-            
-            Code = Librdkafka.error_code(error);
-            IsFatal = Librdkafka.error_is_fatal(error);
-            TxnRequiresAbort = Librdkafka.error_txn_requires_abort(error);
-            IsRetriable = Librdkafka.error_is_retriable(error);
-            reason = Librdkafka.error_string(error);
-            if (destroy) { Librdkafka.error_destroy(error); }
+            Code = code;
+            this.reason = reason;
+            IsFatal = isFatal;
+            IsRetriable = isRetriable;
+            TxnRequiresAbort = txnRequiresAbort;
         }
 
         /// <summary>

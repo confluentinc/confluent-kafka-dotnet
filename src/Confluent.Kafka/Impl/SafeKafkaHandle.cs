@@ -264,7 +264,7 @@ namespace Confluent.Kafka.Impl
             IntPtr err = Librdkafka.sasl_set_credentials(handle, username, password);
             if (err != IntPtr.Zero)
             {
-                throw new KafkaException(new Error(err, true));
+                throw new KafkaException((Error)new NativeError(err, true));
             }
         }
 
@@ -524,29 +524,29 @@ namespace Confluent.Kafka.Impl
 
         internal void InitTransactions(int millisecondsTimeout)
         {
-            var error = new Error(Librdkafka.init_transactions(this.handle, (IntPtr)millisecondsTimeout));
+            var error = new NativeError(Librdkafka.init_transactions(this.handle, (IntPtr)millisecondsTimeout));
             if (error.Code != ErrorCode.NoError)
             {
                 if (error.IsRetriable)
                 {
                     throw new KafkaRetriableException(error);
                 }
-                throw new KafkaException(error);
+                throw new KafkaException((Error)error);
             }
         }
 
         internal void BeginTransaction()
         {
-            var error = new Error(Librdkafka.begin_transaction(this.handle));
+            var error = new NativeError(Librdkafka.begin_transaction(this.handle));
             if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(error);
+                throw new KafkaException((Error)error);
             }
         }
 
         internal void CommitTransaction(int millisecondsTimeout)
         {
-            var error = new Error(Librdkafka.commit_transaction(this.handle, (IntPtr)millisecondsTimeout));
+            var error = new NativeError(Librdkafka.commit_transaction(this.handle, (IntPtr)millisecondsTimeout));
             if (error.Code != ErrorCode.NoError)
             {
                 if (error.TxnRequiresAbort)
@@ -557,20 +557,20 @@ namespace Confluent.Kafka.Impl
                 {
                     throw new KafkaRetriableException(error);
                 }
-                throw new KafkaException(error);
+                throw new KafkaException((Error)error);
             }
         }
 
         internal void AbortTransaction(int millisecondsTimeout)
         {
-            var error = new Error(Librdkafka.abort_transaction(this.handle, (IntPtr)millisecondsTimeout));
+            var error = new NativeError(Librdkafka.abort_transaction(this.handle, (IntPtr)millisecondsTimeout));
             if (error.Code != ErrorCode.NoError)
             {
                 if (error.IsRetriable)
                 {
                     throw new KafkaRetriableException(error);
                 }
-                throw new KafkaException(error);
+                throw new KafkaException((Error)error);
             }
         }
 
@@ -589,7 +589,7 @@ namespace Confluent.Kafka.Impl
                 cgmdPtr = this.DeserializeConsumerGroupMetadata(serializedMetadata);
                 offsetsPtr = GetCTopicPartitionList(offsets);
 
-                var error = new Error(Librdkafka.send_offsets_to_transaction(this.handle, offsetsPtr, cgmdPtr, (IntPtr)millisecondsTimeout));
+                var error = new NativeError(Librdkafka.send_offsets_to_transaction(this.handle, offsetsPtr, cgmdPtr, (IntPtr)millisecondsTimeout));
                 if (error.Code != ErrorCode.NoError)
                 {
                     if (error.IsRetriable)
@@ -600,7 +600,7 @@ namespace Confluent.Kafka.Impl
                     {
                         throw new KafkaTxnRequiresAbortException(error);
                     }
-                    throw new KafkaException(error);
+                    throw new KafkaException((Error)error);
                 }
             }
             finally
@@ -624,10 +624,10 @@ namespace Confluent.Kafka.Impl
 
         internal unsafe byte[] SerializeConsumerGroupMetadata(IntPtr consumerGroupMetadata)
         {
-            var error = new Error(Librdkafka.consumer_group_metadata_write(consumerGroupMetadata, out IntPtr buffer, out IntPtr dataSize));
+            var error = new NativeError(Librdkafka.consumer_group_metadata_write(consumerGroupMetadata, out IntPtr buffer, out IntPtr dataSize));
             if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(error);
+                throw new KafkaException((Error)error);
             }
             var result = new byte[(int)dataSize];
             byte* pIter = (byte*)buffer;
@@ -641,10 +641,10 @@ namespace Confluent.Kafka.Impl
 
         internal IntPtr DeserializeConsumerGroupMetadata(byte[] buffer)
         {
-            var error = new Error(Librdkafka.consumer_group_metadata_read(out IntPtr cgmd, buffer, (IntPtr)buffer.Length));
+            var error = new NativeError(Librdkafka.consumer_group_metadata_read(out IntPtr cgmd, buffer, (IntPtr)buffer.Length));
             if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(error);
+                throw new KafkaException((Error)error);
             }
             return cgmd;
         }
@@ -846,7 +846,7 @@ namespace Confluent.Kafka.Impl
                 var errorPtr = assignMethodError(handle, list);
                 if (errorPtr != IntPtr.Zero)
                 {
-                    error = new Error(errorPtr);
+                    error = new NativeError(errorPtr);
                 }
             }
 
@@ -856,7 +856,7 @@ namespace Confluent.Kafka.Impl
             }
 
             if (err != ErrorCode.NoError) { throw new KafkaException(CreatePossiblyFatalError(err, null)); }
-            else if (error != null) { throw new KafkaException(error); }
+            else if (error != null) { throw new KafkaException((Error)error); }
         }
 
         internal void Assign(IEnumerable<TopicPartitionOffset> partitions)
@@ -1444,10 +1444,10 @@ namespace Confluent.Kafka.Impl
         private void setOption_RequireStableOffsets(IntPtr optionsPtr, bool requireStable)
         {
             var rError = Librdkafka.AdminOptions_set_require_stable_offsets(optionsPtr, (IntPtr)(int)(requireStable ? 1 : 0));
-            var error = new Error(rError, true);
+            var error = new NativeError(rError, true);
             if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(error);
+                throw new KafkaException((Error)error);
             }
 
         }
@@ -1455,10 +1455,10 @@ namespace Confluent.Kafka.Impl
         private void setOption_IncludeAuthorizedOperations(IntPtr optionsPtr, bool includeAuthorizedOperations)
         {
             var rError = Librdkafka.AdminOptions_set_include_authorized_operations(optionsPtr, (IntPtr)(int)(includeAuthorizedOperations ? 1 : 0));
-            var error = new Error(rError, true);
+            var error = new NativeError(rError, true);
             if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(error);
+                throw new KafkaException((Error)error);
             }
 
         }
@@ -1468,7 +1468,7 @@ namespace Confluent.Kafka.Impl
             var error = Librdkafka.AdminOptions_set_match_consumer_group_states(optionsPtr, states, (UIntPtr)states.Count());
             if (error != IntPtr.Zero)
             {
-                throw new KafkaException(new Error(error, true));
+                throw new KafkaException((Error)new NativeError(error, true));
             }
         }
 
@@ -1477,17 +1477,17 @@ namespace Confluent.Kafka.Impl
             var error = Librdkafka.AdminOptions_set_match_consumer_group_types(optionsPtr, types, (UIntPtr)types.Count());
             if (error != IntPtr.Zero)
             {
-                throw new KafkaException(new Error(error, true));
+                throw new KafkaException((Error)new NativeError(error, true));
             }
         }
 
         private void setOption_IsolationLevel(IntPtr optionsPtr, IsolationLevel IsolationLevel)
         {
             var rError = Librdkafka.AdminOptions_set_isolation_level(optionsPtr, (IntPtr)(int)IsolationLevel);
-            var error = new Error(rError, true);
+            var error = new NativeError(rError, true);
             if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(error);
+                throw new KafkaException((Error)error);
             }
         }
 
@@ -1579,7 +1579,7 @@ namespace Confluent.Kafka.Impl
                     var error = Librdkafka.ConfigResource_add_incremental_config(resourcePtr, rc.Name, rc.IncrementalOperation, rc.Value);
                     if (error != IntPtr.Zero)
                     {
-                        throw new KafkaException(new Error(error, true));
+                        throw new KafkaException((Error)new NativeError(error, true));
                     }
                 }
                 configPtrs[configPtrsIdx++] = resourcePtr;

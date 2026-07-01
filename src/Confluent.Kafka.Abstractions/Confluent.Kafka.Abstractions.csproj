@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <RootNamespace>Confluent.Kafka</RootNamespace>
+    <AssemblyName>Confluent.Kafka.Abstractions</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\Confluent.Kafka\Confluent.Kafka.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Key= causes the SDK to auto-extract the public key from the .snk so the
+         strong-named Confluent.Kafka assembly is accepted as a trusted friend. -->
+    <InternalsVisibleTo Include="Confluent.Kafka"
+                        Key="0024000004800000940000000602000000240000525341310004000001000100bd9c9e7ea9186a6723b299e7330bc89b4c6dac860c132d1cb8c94065b432c5d4ea039e22ddaa1e48b9c639f5a03d79637a0eadd0bae27f3785f3ce2d1478cb445382561ab878b565a0c410de5d61ca965baaf51e3a84c6aacf9096d0bcf3d930bdbe11291f75dafd38672c79843be7e060c651ba21584b8eeba0d59bfb0b469b" />
+  </ItemGroup>
+
+</Project>

@@ -133,7 +133,7 @@ namespace Confluent.Kafka
             return groupsResultPtrArr.Select(groupResultPtr => new DeleteGroupReport
             {
                 Group = PtrToStringUTF8(Librdkafka.group_result_name(groupResultPtr)),
-                Error = new Error(Librdkafka.group_result_error(groupResultPtr), false)
+                Error = new NativeError(Librdkafka.group_result_error(groupResultPtr), false)
             }).ToList();
         }
 
@@ -145,7 +145,7 @@ namespace Confluent.Kafka
             return aclsResultsPtrArr.Select(aclResultPtr =>
                 new CreateAclReport 
                 {
-                    Error = new Error(Librdkafka.acl_result_error(aclResultPtr), false)
+                    Error = new NativeError(Librdkafka.acl_result_error(aclResultPtr), false)
                 }
             ).ToList();
         }
@@ -201,7 +201,7 @@ namespace Confluent.Kafka
                                         resultResponsePtr, out UIntPtr resultResponseAclCntPtr);
                 return new DeleteAclsReport 
                 {
-                    Error = new Error(Librdkafka.DeleteAcls_result_response_error(resultResponsePtr), false),
+                    Error = new NativeError(Librdkafka.DeleteAcls_result_response_error(resultResponsePtr), false),
                     AclBindings = extractAclBindings(matchingAcls, (int) resultResponseAclCntPtr)
                 };
             }).ToList();
@@ -217,7 +217,7 @@ namespace Confluent.Kafka
             return new DeleteConsumerGroupOffsetsReport
             {
                 Group = PtrToStringUTF8(Librdkafka.group_result_name(groupsOffsetsResultArr[0])),
-                Error = new Error(Librdkafka.group_result_error(groupsOffsetsResultArr[0]), false),
+                Error = new NativeError(Librdkafka.group_result_error(groupsOffsetsResultArr[0]), false),
                 Partitions = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(Librdkafka.group_result_partitions(groupsOffsetsResultArr[0]))
                     .Select(a => new TopicPartitionOffsetError(a.Topic, a.Partition, a.Offset, a.Error))
                     .ToList()
@@ -237,7 +237,7 @@ namespace Confluent.Kafka
 
                 return new ListConsumerGroupOffsetsReport {
                     Group = PtrToStringUTF8(Librdkafka.group_result_name(resultGroupPtr)),
-                    Error = new Error(Librdkafka.group_result_error(resultGroupPtr), false),
+                    Error = new NativeError(Librdkafka.group_result_error(resultGroupPtr), false),
                     Partitions = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitionsPtr),
                 };
             }).ToList();
@@ -256,7 +256,7 @@ namespace Confluent.Kafka
 
                 return new AlterConsumerGroupOffsetsReport {
                     Group = PtrToStringUTF8(Librdkafka.group_result_name(resultGroupPtr)),
-                    Error = new Error(Librdkafka.group_result_error(resultGroupPtr), false),
+                    Error = new NativeError(Librdkafka.group_result_error(resultGroupPtr), false),
                     Partitions = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitionsPtr),
                 };
             }).ToList();
@@ -293,7 +293,7 @@ namespace Confluent.Kafka
             {
                 IntPtr[] errorsPtrArr = new IntPtr[(int)errorCountPtr];
                 Marshal.Copy(errorsPtr, errorsPtrArr, 0, (int)errorCountPtr);
-                result.Errors = errorsPtrArr.Select(errorPtr => new Error(errorPtr)).ToList();
+                result.Errors = errorsPtrArr.Select(errorPtr => (Error)new NativeError(errorPtr)).ToList();
             }
 
             return result;
@@ -368,7 +368,7 @@ namespace Confluent.Kafka
                     GroupId =
                         PtrToStringUTF8(Librdkafka.ConsumerGroupDescription_group_id(groupPtr)),
                     Error =
-                        new Error(Librdkafka.ConsumerGroupDescription_error(groupPtr), false),
+                        new NativeError(Librdkafka.ConsumerGroupDescription_error(groupPtr), false),
                     IsSimpleConsumerGroup =
                         (int)Librdkafka.ConsumerGroupDescription_is_simple_consumer_group(groupPtr) == 1,
                     PartitionAssignor =
@@ -404,7 +404,7 @@ namespace Confluent.Kafka
                 
                 var user = PtrToStringUTF8(Librdkafka.UserScramCredentialsDescription_user(resultDescriptionPtr));
                 IntPtr cError = Librdkafka.UserScramCredentialsDescription_error(resultDescriptionPtr);
-                var error = new Error(cError, false);
+                var error = new NativeError(cError, false);
                 var scramCredentialInfos = new List<ScramCredentialInfo>();
                 if (Librdkafka.error_code(cError)==0)
                 {
@@ -445,7 +445,7 @@ namespace Confluent.Kafka
                 PtrToStringUTF8(
                     Librdkafka.AlterUserScramCredentials_result_response_user(resultResponsePtr));
                 var error =
-                    new Error(Librdkafka.AlterUserScramCredentials_result_response_error(resultResponsePtr), false);
+                    new NativeError(Librdkafka.AlterUserScramCredentials_result_response_error(resultResponsePtr), false);
                 return new AlterUserScramCredentialsReport 
                 {
                     User = user,
@@ -503,7 +503,7 @@ namespace Confluent.Kafka
 
                 var topicName = PtrToStringUTF8(Librdkafka.TopicDescription_name(topicPtr));
                 var topicId = Librdkafka.TopicDescription_topic_id(topicPtr);
-                var error = new Error(Librdkafka.TopicDescription_error(topicPtr), false);
+                var error = new NativeError(Librdkafka.TopicDescription_error(topicPtr), false);
                 var isInternal = Librdkafka.TopicDescription_is_internal(topicPtr) != IntPtr.Zero;
                 List<AclOperation> authorizedOperations = extractAuthorizedOperations(
                     Librdkafka.TopicDescription_authorized_operations(
@@ -1406,7 +1406,7 @@ namespace Confluent.Kafka
 
             var completionSource = new TaskCompletionSource<List<DescribeConfigsResult>>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DescribeConfigs(
+            kafkaHandle.DescribeConfigs(
                 resources, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1425,7 +1425,7 @@ namespace Confluent.Kafka
             // physical address, it returns an id that refers to the object via
             // a handle-table.
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.AlterConfigs(
+            kafkaHandle.AlterConfigs(
                 configs, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1444,7 +1444,7 @@ namespace Confluent.Kafka
             // physical address, it returns an id that refers to the object via
             // a handle-table.
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.IncrementalAlterConfigs(
+            kafkaHandle.IncrementalAlterConfigs(
                 configs, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1461,7 +1461,7 @@ namespace Confluent.Kafka
 
             var completionSource = new TaskCompletionSource<List<CreateTopicReport>>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.CreateTopics(
+            kafkaHandle.CreateTopics(
                 topics, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1477,7 +1477,7 @@ namespace Confluent.Kafka
 
             var completionSource = new TaskCompletionSource<List<DeleteTopicReport>>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DeleteTopics(
+            kafkaHandle.DeleteTopics(
                 topics, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1490,7 +1490,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<List<DeleteGroupReport>>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DeleteGroups(
+            kafkaHandle.DeleteGroups(
                 groups, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1503,7 +1503,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<DeleteConsumerGroupOffsetsResult>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DeleteConsumerGroupOffsets(
+            kafkaHandle.DeleteConsumerGroupOffsets(
                 group, partitions, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1520,7 +1520,7 @@ namespace Confluent.Kafka
 
             var completionSource = new TaskCompletionSource<List<CreatePartitionsReport>>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.CreatePartitions(
+            kafkaHandle.CreatePartitions(
                 partitionsSpecifications, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1534,7 +1534,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<List<DeleteRecordsResult>>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DeleteRecords(
+            kafkaHandle.DeleteRecords(
                 topicPartitionOffsets, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1544,7 +1544,7 @@ namespace Confluent.Kafka
         private Handle handle;
 
         private SafeKafkaHandle kafkaHandle
-            => handle.LibrdkafkaHandle;
+            => (SafeKafkaHandle)handle.LibrdkafkaHandle;
 
 
         /// <summary>
@@ -1717,7 +1717,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<Null>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.CreateAcls(
+            kafkaHandle.CreateAcls(
                 aclBindings, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1730,7 +1730,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<DescribeAclsResult>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DescribeAcls(
+            kafkaHandle.DescribeAcls(
                 aclBindingFilter, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1744,7 +1744,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<List<DeleteAclsResult>>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DeleteAcls(
+            kafkaHandle.DeleteAcls(
                 aclBindingFilters, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1757,7 +1757,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<List<AlterConsumerGroupOffsetsResult>>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.AlterConsumerGroupOffsets(
+            kafkaHandle.AlterConsumerGroupOffsets(
                 groupPartitions, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1770,7 +1770,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<List<ListConsumerGroupOffsetsResult>>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.ListConsumerGroupOffsets(
+            kafkaHandle.ListConsumerGroupOffsets(
                 groupPartitions, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1783,7 +1783,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<ListConsumerGroupsResult>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.ListConsumerGroups(
+            kafkaHandle.ListConsumerGroups(
                 options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1797,7 +1797,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<DescribeConsumerGroupsResult>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DescribeConsumerGroups(
+            kafkaHandle.DescribeConsumerGroups(
                 groups, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1810,7 +1810,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<DescribeUserScramCredentialsResult>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DescribeUserScramCredentials(
+            kafkaHandle.DescribeUserScramCredentials(
                 users, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1823,7 +1823,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<Null>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.AlterUserScramCredentials(
+            kafkaHandle.AlterUserScramCredentials(
                 alterations, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1836,7 +1836,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<DescribeTopicsResult>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DescribeTopics(
+            kafkaHandle.DescribeTopics(
                 topicCollection, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1849,7 +1849,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<DescribeClusterResult>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DescribeCluster(
+            kafkaHandle.DescribeCluster(
                 options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1861,7 +1861,7 @@ namespace Confluent.Kafka
         public Task<ListOffsetsResult> ListOffsetsAsync(IEnumerable<TopicPartitionOffsetSpec> topicPartitionOffsetSpecs,ListOffsetsOptions options = null) {
             var completionSource = new TaskCompletionSource<ListOffsetsResult>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.ListOffsets(
+            kafkaHandle.ListOffsets(
                 topicPartitionOffsetSpecs, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
@@ -1874,7 +1874,7 @@ namespace Confluent.Kafka
         {
             var completionSource = new TaskCompletionSource<ElectLeadersResult>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.ElectLeaders(
+            kafkaHandle.ElectLeaders(
                 electionType, partitions, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;

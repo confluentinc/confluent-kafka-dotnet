@@ -39,4 +39,8 @@
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Confluent.Kafka.Abstractions\Confluent.Kafka.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>

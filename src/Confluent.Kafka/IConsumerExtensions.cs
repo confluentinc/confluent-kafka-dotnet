@@ -16,6 +16,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Confluent.Kafka.Impl;
 
 
 namespace Confluent.Kafka
@@ -46,7 +47,7 @@ namespace Confluent.Kafka
         {
             try
             {
-                return consumer.Handle.LibrdkafkaHandle.Position(new List<TopicPartition> { partition }).First();
+                return ((SafeKafkaHandle)consumer.Handle.LibrdkafkaHandle).Position(new List<TopicPartition> { partition }).First();
             }
             catch (TopicPartitionOffsetException e)
             {

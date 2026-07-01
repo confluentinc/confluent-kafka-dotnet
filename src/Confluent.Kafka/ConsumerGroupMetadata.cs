@@ -18,7 +18,12 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     The consumer group metadata associated with a consumer.
+    ///     The concrete internal implementation of <see cref="IConsumerGroupMetadata"/>.
+    ///     Obtained via Consumer.ConsumerGroupMetadata and passed to
+    ///     IProducer.SendOffsetsToTransaction.
     /// </summary>
-    public interface IConsumerGroupMetadata { }
+    internal class ConsumerGroupMetadata : IConsumerGroupMetadata
+    {
+        internal byte[] serializedMetadata;
+    }
 }

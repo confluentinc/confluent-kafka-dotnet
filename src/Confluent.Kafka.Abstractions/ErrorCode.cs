@@ -898,13 +898,19 @@ namespace Confluent.Kafka
     public static class ErrorCodeExtensions
     {
         /// <summary>
-        ///     Returns the static error string associated with 
-        ///     the particular ErrorCode value.
+        ///     Delegate registered by Confluent.Kafka at assembly-load time to forward
+        ///     <see cref="GetReason"/> calls to librdkafka's rd_kafka_err2str().
+        ///     Falls back to the enum member name when Confluent.Kafka is not loaded.
+        /// </summary>
+        internal static Func<ErrorCode, string> s_getReasonImpl;
+
+        /// <summary>
+        ///     Returns the error string associated with the particular
+        ///     <see cref="ErrorCode"/> value.
+        ///     When Confluent.Kafka is loaded the string comes from librdkafka via
+        ///     rd_kafka_err2str(). Otherwise the enum member name is returned.
         /// </summary>
         public static string GetReason(this ErrorCode code)
-        {
-            Impl.Librdkafka.Initialize(null);
-            return Internal.Util.Marshal.PtrToStringUTF8(Impl.Librdkafka.err2str(code));
-        }
+            => s_getReasonImpl?.Invoke(code) ?? code.ToString();
     }
 }
