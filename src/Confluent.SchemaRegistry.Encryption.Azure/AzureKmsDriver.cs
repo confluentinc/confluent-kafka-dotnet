@@ -110,9 +110,9 @@ namespace Confluent.SchemaRegistry.Encryption.Azure
         }
 
         /// <summary>
-        ///     Resolves a possibly-versionless Azure Key Vault key identifier into the concrete,
-        ///     currently-enabled version. If <paramref name="kmsKeyId" /> already includes a
-        ///     version segment, it is returned unchanged and no call is made.
+        ///     Resolves a possibly-versionless Azure Key Vault key identifier into the concrete
+        ///     latest key version returned by Key Vault. If <paramref name="kmsKeyId" /> already
+        ///     includes a version segment, it is returned unchanged and no call is made.
         ///
         ///     This exists because, unlike AWS KMS and GCP KMS, Azure Key Vault's wrap/unwrap
         ///     operations address an explicit key version and do not embed that version in the
