@@ -1,6 +1,6 @@
 # 2.x.0
 
-## Fixes
+## Enhancements
 
 * Add support for saving Azure key version with DEK (#2641)
 
