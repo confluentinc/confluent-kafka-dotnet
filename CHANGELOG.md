@@ -1,3 +1,10 @@
+# 2.x.0
+
+## Enhancements
+
+* Add support for saving Azure key version with DEK (#2641)
+
+
 # 2.15.0
 
 ## Upgrade considerations
