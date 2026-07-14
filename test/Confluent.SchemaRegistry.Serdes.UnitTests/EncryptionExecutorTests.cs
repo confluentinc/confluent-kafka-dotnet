@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.SchemaRegistry.Encryption;
 using Xunit;
 
@@ -49,7 +50,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public async void TransformThreadsContextFromSubject()
+        public async Task TransformThreadsContextFromSubject()
         {
             // Context-qualified subject: the context should be parsed out of the
             // subject and threaded through to the dek registry client, not dropped,
@@ -66,6 +67,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             using (var executor = NewExecutor())
             {
                 await executor.Transform(NewContext("widget-value"), new byte[] { 1, 2, 3 });
+            }
+            Assert.True(kekStore.ContainsKey(new KekId("kek1", false, null)));
+
+            // Explicitly-qualified default context (":.:subject"): should behave
+            // identically to an unqualified subject, not be stored under the
+            // literal "." context.
+            using (var executor = NewExecutor())
+            {
+                await executor.Transform(NewContext(":.:widget-value"), new byte[] { 1, 2, 3 });
             }
             Assert.True(kekStore.ContainsKey(new KekId("kek1", false, null)));
         }

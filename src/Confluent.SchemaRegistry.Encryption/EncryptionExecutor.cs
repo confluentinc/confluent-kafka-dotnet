@@ -156,7 +156,8 @@ namespace Confluent.SchemaRegistry.Encryption
 
         /// <summary>
         ///     Returns the context parsed from the given qualified subject (of the form
-        ///     ":.context:subject"), or null if the subject has no context prefix.
+        ///     ":.context:subject"), or null if the subject has no context prefix or is
+        ///     explicitly qualified with the default (".") context.
         ///     Tenant is not handled here as it is a server-side-only concept.
         /// </summary>
         internal static string ContextFor(string qualifiedSubject)
@@ -166,9 +167,10 @@ namespace Confluent.SchemaRegistry.Encryption
             {
                 string rest = qualifiedSubject.Substring(ContextPrefix.Length);
                 int ix = rest.IndexOf(ContextDelimiter, StringComparison.Ordinal);
-                return ix >= 0
+                string context = ix >= 0
                     ? qualifiedSubject.Substring(1, ix + ContextPrefix.Length - 1)
                     : qualifiedSubject.Substring(1);
+                return context == "." ? null : context;
             }
 
             return null;
