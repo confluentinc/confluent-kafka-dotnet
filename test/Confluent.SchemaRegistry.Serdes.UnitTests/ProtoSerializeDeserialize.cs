@@ -102,14 +102,17 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             var method = typeof(ProtobufUtils).GetMethod(
                 "FindMessageByName", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
 
-            dynamic result = method.Invoke(null, new object[]
+            var result = method.Invoke(null, new object[]
             {
                 fds, ".io.confluent.kafka.serializers.protobuf.test.SecondMessage"
             });
 
             Assert.NotNull(result);
-            Assert.Equal("SecondMessage", (string)result.Name);
+            var nameProperty = result.GetType().GetProperty("Name");
+            Assert.NotNull(nameProperty);
+            Assert.Equal("SecondMessage", (string)nameProperty.GetValue(result));
         }
 
         [Fact]
