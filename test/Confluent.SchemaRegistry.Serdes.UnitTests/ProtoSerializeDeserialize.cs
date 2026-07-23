@@ -21,6 +21,7 @@ using System;
 using Xunit;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.Protobuf;
 using Confluent.SchemaRegistry.Encryption;
@@ -77,6 +78,41 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var rootFile = fds.Files.First(s => s.Name == "__root.proto");
             Assert.Equal(1, rootFile.MessageTypes.Count);
             Assert.Equal("ReferrerMessage", rootFile.MessageTypes.First().Name);
+        }
+
+        [Fact]
+        public void FindMessageByNameFindsNonFirstMessage()
+        {
+            // Regression test: FindMessageByName used to return after checking
+            // only the first candidate at each level (file or nested type),
+            // so a message other than the first one in the schema could never
+            // be found.
+            string schema = @"syntax = ""proto3"";
+            package io.confluent.kafka.serializers.protobuf.test;
+
+            message FirstMessage {
+                string first_field = 1;
+            }
+
+            message SecondMessage {
+                string second_field = 1;
+            }";
+
+            var fds = ProtobufUtils.Parse(schema, new Dictionary<string, string>());
+
+            var method = typeof(ProtobufUtils).GetMethod(
+                "FindMessageByName", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            var result = method.Invoke(null, new object[]
+            {
+                fds, ".io.confluent.kafka.serializers.protobuf.test.SecondMessage"
+            });
+
+            Assert.NotNull(result);
+            var nameProperty = result.GetType().GetProperty("Name");
+            Assert.NotNull(nameProperty);
+            Assert.Equal("SecondMessage", (string)nameProperty.GetValue(result));
         }
 
         [Fact]
