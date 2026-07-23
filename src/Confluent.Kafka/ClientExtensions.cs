@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Confluent.Kafka
 {
@@ -41,6 +42,9 @@ namespace Confluent.Kafka
         /// <seealso cref="OAuthBearerSetTokenFailure"/>
         public static void OAuthBearerSetToken(this IClient client, string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions = null)
         {
+            ArgumentNullException.ThrowIfNull(tokenValue);
+            ArgumentNullException.ThrowIfNull(principalName);
+
             client.Handle.LibrdkafkaHandle.OAuthBearerSetToken(tokenValue, lifetimeMs, principalName, extensions);
         }
 
