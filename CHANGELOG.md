@@ -5,6 +5,10 @@
 * Add support for saving Azure key version with DEK (#2641)
 * Pass context when clients make KEK calls to DEK Registry (#2642)
 
+## Fixes
+
+* Fix early return in FindMessageByName (#2644)
+
 
 # 2.15.0
 
