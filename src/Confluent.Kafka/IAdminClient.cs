@@ -456,12 +456,19 @@ namespace Confluent.Kafka
         ///    Describes consumer groups in the cluster.
         /// </summary>
         /// <param name="groups">
-        ///     The list of groups to describe. This can be set
-        ///     to null to describe all groups.
+        ///     The list of groups to describe. Must contain at
+        ///     least one group. To list all groups, use
+        ///     <see cref="ListConsumerGroupsAsync(ListConsumerGroupsOptions)"/> first.
         /// </param>
         /// <param name="options">
         ///     The options to use while describing consumer groups.
         /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        ///     Thrown if <paramref name="groups"/> is null.
+        /// </exception>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if <paramref name="groups"/> is empty.
+        /// </exception>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if there is any client-level error.
         /// </exception>
