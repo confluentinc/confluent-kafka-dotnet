@@ -193,7 +193,11 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     foreach (var messageType in file.MessageTypes)
                     {
-                        return FindMessageByName(messageType, messageFullName);
+                        DescriptorProto found = FindMessageByName(messageType, messageFullName);
+                        if (found != null)
+                        {
+                            return found;
+                        }
                     }
                 }
             }
@@ -207,7 +211,11 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 foreach (DescriptorProto nestedType in messageType.NestedTypes)
                 {
-                    return FindMessageByName(nestedType, messageFullName);
+                    DescriptorProto found = FindMessageByName(nestedType, messageFullName);
+                    if (found != null)
+                    {
+                        return found;
+                    }
                 }
             }
             return null;
