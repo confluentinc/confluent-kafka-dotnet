@@ -51,6 +51,32 @@ blocks:
             - dotnet --list-sdks
             - dotnet restore -p:TargetFramework=net10.0
             - make test-latest  
+  - name: 'Linux s390x'
+    dependencies: [ ]
+    # TODO: drop the "branch = 's390x-ci'" clause once this block has been
+    # validated end to end; it exists only so the block runs during bring-up.
+    run:
+      when: "branch = 's390x-ci' OR branch = 'master' OR tag =~ '^v[0-9]\\.'"
+    task:
+      # Semaphore has no native s390x agent yet, so this runs on an amd64 agent
+      # that offloads the work over SSH to a dedicated IBM Z host, the same way
+      # librdkafka's s390x block does.
+      agent:
+        machine:
+          type: s1-prod-ubuntu24-04-amd64-1
+      env_vars:
+        - name: S390X_USER
+          value: "ubuntu"
+        - name: LOCAL_KEY
+          value: "./s390x.prv"
+      epilogue:
+        commands:
+          - if [[ "$LOCAL_KEY" =~ ^\./.*$ ]]; then rm -f $LOCAL_KEY; fi
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - . vault-setup
+            - scripts/run-tests-s390x.sh
   - name: 'Windows x64'
     dependencies: [ ]
     task:
