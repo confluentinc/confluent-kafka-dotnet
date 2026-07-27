@@ -51,15 +51,14 @@ if [[ "$ON_S390X" != "--on-s390x" ]]; then
         echo "Added $S390X_HOST to the list of known hosts"
     fi
 
-    # Prefer Semaphore's own refs: its checkout can leave a detached HEAD, in which
-    # case symbolic-ref finds nothing and describe --exact-match fails on a branch
-    # build, leaving the remote with no ref to clone.
-    CURRENT_TARGET="${SEMAPHORE_GIT_TAG_NAME:-$SEMAPHORE_GIT_BRANCH}"
+    # Identify the commit by SHA rather than by ref name. The agent is already
+    # checked out on exactly what is being tested, so this is unambiguous, whereas
+    # branch names are not: on a pull request Semaphore sets SEMAPHORE_GIT_BRANCH to
+    # the *base* branch, so resolving by name silently tested master instead of the
+    # pull request.
+    CURRENT_TARGET=$(git rev-parse HEAD)
     if [ -z "$CURRENT_TARGET" ]; then
-        CURRENT_TARGET=$(git symbolic-ref --short -q HEAD || git describe --tags --exact-match)
-    fi
-    if [ -z "$CURRENT_TARGET" ]; then
-        echo "Could not determine the git ref to build"
+        echo "Could not determine the commit to build"
         exit 1
     fi
 
@@ -119,10 +118,13 @@ EOF
     echo "User added to docker group"
 fi
 
-echo "ON s390x: cloning confluent-kafka-dotnet at $CURRENT_TARGET"
-git clone --depth 1 --single-branch --branch $CURRENT_TARGET \
-    https://github.com/confluentinc/confluent-kafka-dotnet.git $DIR/confluent-kafka-dotnet
+echo "ON s390x: fetching confluent-kafka-dotnet at $CURRENT_TARGET"
+git init -q $DIR/confluent-kafka-dotnet
 cd $DIR/confluent-kafka-dotnet
+git remote add origin https://github.com/confluentinc/confluent-kafka-dotnet.git
+git fetch -q --depth 1 origin "$CURRENT_TARGET"
+git checkout -q FETCH_HEAD
+echo "ON s390x: building $(git log --oneline -1)"
 
 # Written into the throwaway clone so the container has a single entrypoint and
 # we avoid several layers of shell quoting.
@@ -165,6 +167,7 @@ chmod +x run-unit-tests.sh
 # No --platform flag: the host is natively s390x, so this pulls the s390x image.
 # -u 0 because the UBI9 image runs as uid 1001, which cannot write bin/ and obj/
 # into the bind mount.
+set +e
 newgrp docker <<'EOF'
 docker run --rm -u 0 \
     -e DOTNET_CLI_TELEMETRY_OPTOUT=true \
@@ -172,3 +175,11 @@ docker run --rm -u 0 \
     registry.access.redhat.com/ubi9/dotnet-100 \
     ./run-unit-tests.sh
 EOF
+RET=$?
+set -e
+
+# The container runs as root, so bin/ and obj/ come back root owned and the driver
+# cannot remove the work directory afterwards. Hand them back before returning.
+sudo chown -R "$(id -u):$(id -g)" "$DIR" || true
+
+exit $RET
