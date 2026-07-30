@@ -53,10 +53,8 @@ blocks:
             - make test-latest  
   - name: 'Linux s390x'
     dependencies: [ ]
-    # TODO: drop the "branch = 's390x-ci'" clause once this block has been
-    # validated end to end; it exists only so the block runs during bring-up.
     run:
-      when: "branch = 's390x-ci' OR branch = 'master' OR pull_request =~ '.*' OR tag =~ '^v[0-9]\\.'"
+      when: "branch = 'master' OR pull_request =~ '.*' OR tag =~ '^v[0-9]\\.'"
     task:
       # Semaphore has no native s390x agent yet, so this runs on an amd64 agent
       # that offloads the work over SSH to a dedicated IBM Z host, the same way
