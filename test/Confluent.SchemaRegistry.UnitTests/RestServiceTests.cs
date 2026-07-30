@@ -20,6 +20,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -63,6 +64,89 @@ namespace Confluent.SchemaRegistry.UnitTests
 
             var aggEx = (AggregateException)ex.InnerException;
             Assert.Equal(2, aggEx.InnerExceptions.Count);
+        }
+
+        [Fact]
+        public async Task RetriableStatus_SurfacesAsSchemaRegistryException_WithStatusAndErrorCode()
+        {
+            // A retriable error response used to be reported as a plain
+            // HttpRequestException once all URLs were exhausted, with the status
+            // and error code available only as text in the message. Callers that
+            // switch on SchemaRegistryException.Status (e.g. the CSFLE executor
+            // treating 404 as "no dek") therefore had a hole for these statuses.
+            using (var server = new StubHttpServer(
+                       HttpStatusCode.ServiceUnavailable,
+                       "{\"error_code\":50070,\"message\":\"Key 'test-value' not found\"}"))
+            {
+                var restService = new RestService(
+                    server.Url,
+                    5000,
+                    null,
+                    new List<X509Certificate2>(),
+                    true,
+                    maxRetries: 1,
+                    retriesWaitMs: 1,
+                    retriesMaxWaitMs: 2);
+
+                var ex = await Assert.ThrowsAsync<SchemaRegistryException>(
+                    () => restService.GetSubjectsAsync());
+
+                Assert.Equal(HttpStatusCode.ServiceUnavailable, ex.Status);
+                Assert.Equal(50070, ex.ErrorCode);
+                Assert.Contains("Key 'test-value' not found", ex.Message);
+            }
+        }
+
+        [Fact]
+        public async Task RetriableStatus_WithUnparseableBody_PreservesStatus()
+        {
+            // The status must survive even when the error body is not in the
+            // Schema Registry format (e.g. an HTML response from a proxy).
+            using (var server = new StubHttpServer(
+                       HttpStatusCode.InternalServerError,
+                       "<html>gateway error</html>"))
+            {
+                var restService = new RestService(
+                    server.Url,
+                    5000,
+                    null,
+                    new List<X509Certificate2>(),
+                    true,
+                    maxRetries: 1,
+                    retriesWaitMs: 1,
+                    retriesMaxWaitMs: 2);
+
+                var ex = await Assert.ThrowsAsync<SchemaRegistryException>(
+                    () => restService.GetSubjectsAsync());
+
+                Assert.Equal(HttpStatusCode.InternalServerError, ex.Status);
+                Assert.Equal(-1, ex.ErrorCode);
+            }
+        }
+
+        [Fact]
+        public async Task NonRetriableStatus_SurfacesAsSchemaRegistryException()
+        {
+            using (var server = new StubHttpServer(
+                       HttpStatusCode.NotFound,
+                       "{\"error_code\":40470,\"message\":\"Key 'test-value' not found\"}"))
+            {
+                var restService = new RestService(
+                    server.Url,
+                    5000,
+                    null,
+                    new List<X509Certificate2>(),
+                    true,
+                    maxRetries: 1,
+                    retriesWaitMs: 1,
+                    retriesMaxWaitMs: 2);
+
+                var ex = await Assert.ThrowsAsync<SchemaRegistryException>(
+                    () => restService.GetSubjectsAsync());
+
+                Assert.Equal(HttpStatusCode.NotFound, ex.Status);
+                Assert.Equal(40470, ex.ErrorCode);
+            }
         }
 
         [Fact]
@@ -123,6 +207,79 @@ namespace Confluent.SchemaRegistry.UnitTests
                 {
                     client.Dispose();
                 }
+            }
+        }
+
+        /// <summary>
+        ///     An HTTP server that answers every request with the same status and body.
+        /// </summary>
+        private class StubHttpServer : IDisposable
+        {
+            private readonly TcpListener listener;
+            private readonly Task listenLoop;
+
+            public string Url { get; }
+
+            public StubHttpServer(HttpStatusCode status, string body)
+            {
+                // A raw socket rather than an HttpListener, which on Windows can
+                // require a URL reservation to start.
+                listener = new TcpListener(IPAddress.Loopback, 0);
+                listener.Start();
+                Url = $"http://localhost:{((IPEndPoint)listener.LocalEndpoint).Port}";
+
+                var bodyBytes = Encoding.UTF8.GetBytes(body);
+                var headerBytes = Encoding.ASCII.GetBytes(
+                    $"HTTP/1.1 {(int)status} {status}\r\n" +
+                    "Content-Type: application/vnd.schemaregistry.v1+json\r\n" +
+                    $"Content-Length: {bodyBytes.Length}\r\n" +
+                    "Connection: close\r\n\r\n");
+
+                listenLoop = Task.Run(async () =>
+                {
+                    try
+                    {
+                        while (true)
+                        {
+                            using var client = await listener.AcceptTcpClientAsync();
+                            var stream = client.GetStream();
+                            await ReadRequestAsync(stream);
+                            await stream.WriteAsync(headerBytes, 0, headerBytes.Length);
+                            await stream.WriteAsync(bodyBytes, 0, bodyBytes.Length);
+                            await stream.FlushAsync();
+                        }
+                    }
+                    catch
+                    {
+                        // listener stopped - expected on cleanup.
+                    }
+                });
+            }
+
+            /// <summary>
+            ///     Consume the request up to the end of its headers, so that the
+            ///     client isn't answered before it has finished sending.
+            /// </summary>
+            private static async Task ReadRequestAsync(NetworkStream stream)
+            {
+                var buffer = new byte[1024];
+                var request = new StringBuilder();
+                while (request.ToString().IndexOf("\r\n\r\n", StringComparison.Ordinal) < 0)
+                {
+                    var read = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    if (read == 0)
+                    {
+                        return;
+                    }
+
+                    request.Append(Encoding.ASCII.GetString(buffer, 0, read));
+                }
+            }
+
+            public void Dispose()
+            {
+                listener.Stop();
+                listenLoop.Wait();
             }
         }
     }
