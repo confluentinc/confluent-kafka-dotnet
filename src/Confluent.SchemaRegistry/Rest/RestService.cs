@@ -398,8 +398,11 @@ namespace Confluent.SchemaRegistry
                         errorCode = errorObject.Value<int>("error_code");
                         parsedErrorBody = true;
                     }
-                    catch
+                    catch (Exception e) when (!(e is OperationCanceledException))
                     {
+                        // A cancellation is not a malformed body: let it reach the
+                        // handler below, which treats it as a network error and
+                        // preserves it as the inner exception.
                         parsedErrorBody = false;
                     }
 

@@ -30,9 +30,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
     public class BaseSerializeDeserializeTests
     {
         /// <summary>
-        ///     The error the DEK Registry returns for a key that does not exist
-        ///     (DekRegistryErrors.KEY_NOT_FOUND_ERROR_CODE), which callers are
-        ///     expected to treat as "not found" rather than as a failure.
+        ///     The error the DEK Registry returns for a key that does not exist:
+        ///     HTTP 404 with error code 40470, which callers are expected to treat
+        ///     as "not found" rather than as a failure. Raised server-side by
+        ///     DekRegistryErrors.keyNotFoundException in the dek-registry module
+        ///     of the schema-registry repository.
         /// </summary>
         protected static SchemaRegistryException KeyNotFound(string name)
             => new SchemaRegistryException($"Key '{name}' not found", HttpStatusCode.NotFound, 40470);
