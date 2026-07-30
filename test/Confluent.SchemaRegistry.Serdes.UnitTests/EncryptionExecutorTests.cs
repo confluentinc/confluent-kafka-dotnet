@@ -15,8 +15,10 @@
 // Refer to LICENSE for more information.
 
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using Confluent.SchemaRegistry.Encryption;
+using Moq;
 using Xunit;
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
@@ -78,6 +80,40 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 await executor.Transform(NewContext(":.:widget-value"), new byte[] { 1, 2, 3 });
             }
             Assert.True(kekStore.ContainsKey(new KekId("kek1", false, null)));
+        }
+
+        [Fact]
+        public async Task TransformCreatesDekWhenNotFound()
+        {
+            // A 404 from the DEK Registry means no dek exists yet for the subject,
+            // so one should be created rather than the error propagating.
+            using (var executor = NewExecutor())
+            {
+                await executor.Transform(NewContext("widget-value"), new byte[] { 1, 2, 3 });
+            }
+            Assert.Single(dekStore);
+        }
+
+        [Fact]
+        public async Task TransformDoesNotTreatRetriableErrorAsMissingDek()
+        {
+            // A retriable error response (e.g. 503) must not be mistaken for
+            // "no dek exists": creating a dek would mask a transient failure,
+            // and during consume it would be reported as missing key material.
+            dekRegistryMock.Setup(x => x.GetDekAsync(It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<DekFormat>(), It.IsAny<bool>()))
+                .ThrowsAsync(new SchemaRegistryException("Error while retrieving key",
+                    HttpStatusCode.ServiceUnavailable, 50070));
+
+            using (var executor = NewExecutor())
+            {
+                var ex = await Assert.ThrowsAsync<RuleException>(
+                    () => executor.Transform(NewContext("widget-value"), new byte[] { 1, 2, 3 }));
+
+                var inner = Assert.IsType<SchemaRegistryException>(ex.InnerException);
+                Assert.Equal(HttpStatusCode.ServiceUnavailable, inner.Status);
+            }
+            Assert.Empty(dekStore);
         }
     }
 }
