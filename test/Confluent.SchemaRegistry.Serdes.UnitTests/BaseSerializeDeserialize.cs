@@ -21,6 +21,7 @@ using Moq;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Net;
 using Confluent.SchemaRegistry.Encryption;
 using Confluent.SchemaRegistry.Rules;
 
@@ -28,8 +29,19 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 {
     public class BaseSerializeDeserializeTests
     {
+        /// <summary>
+        ///     The error the DEK Registry returns for a key that does not exist:
+        ///     HTTP 404 with error code 40470, which callers are expected to treat
+        ///     as "not found" rather than as a failure. Raised server-side by
+        ///     DekRegistryErrors.keyNotFoundException in the dek-registry module
+        ///     of the schema-registry repository.
+        /// </summary>
+        protected static SchemaRegistryException KeyNotFound(string name)
+            => new SchemaRegistryException($"Key '{name}' not found", HttpStatusCode.NotFound, 40470);
+
         protected ISchemaRegistryClient schemaRegistryClient;
         protected IDekRegistryClient dekRegistryClient;
+        protected Mock<IDekRegistryClient> dekRegistryMock;
         protected IClock clock;
         protected long now;
         protected string testTopic;
@@ -150,7 +162,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             );
             schemaRegistryClient = schemaRegistryMock.Object;
             
-            var dekRegistryMock = new Mock<IDekRegistryClient>();
+            dekRegistryMock = new Mock<IDekRegistryClient>();
             dekRegistryMock.Setup(x => x.CreateKekAsync(It.IsAny<Kek>(), It.IsAny<string>())).ReturnsAsync(
                 (Kek kek, string context) =>
                 {
@@ -173,7 +185,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 (string name, bool ignoreDeletedKeks, string context) =>
                 {
                     var kekId = new KekId(name, false, context);
-                    return kekStore.TryGetValue(kekId, out RegisteredKek registeredKek) ? registeredKek : null;
+                    return kekStore.TryGetValue(kekId, out RegisteredKek registeredKek)
+                        ? registeredKek
+                        : throw KeyNotFound(name);
                 });
             dekRegistryMock.Setup(x => x.CreateDekAsync(It.IsAny<string>(), It.IsAny<Dek>())).ReturnsAsync(
                 (string kekName, Dek dek) =>
@@ -208,7 +222,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 (string kekName, string subject, DekFormat? algorithm, bool ignoreDeletedKeks) =>
                 {
                     var dekId = new DekId(kekName, subject, 1, algorithm, false);
-                    return dekStore.TryGetValue(dekId, out RegisteredDek registeredDek) ? registeredDek : null;
+                    return dekStore.TryGetValue(dekId, out RegisteredDek registeredDek)
+                        ? registeredDek
+                        : throw KeyNotFound(subject);
                 });
             dekRegistryMock.Setup(x => x.GetDekVersionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<DekFormat>(), It.IsAny<bool>())).ReturnsAsync(
                 (string kekName, string subject, int version, DekFormat? algorithm, bool ignoreDeletedKeks) =>
@@ -221,7 +237,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                         }
                     }
                     var dekId = new DekId(kekName, subject, version, algorithm, false);
-                    return dekStore.TryGetValue(dekId, out RegisteredDek registeredDek) ? registeredDek : null;
+                    return dekStore.TryGetValue(dekId, out RegisteredDek registeredDek)
+                        ? registeredDek
+                        : throw KeyNotFound(subject);
                 });
             dekRegistryClient = dekRegistryMock.Object;
             

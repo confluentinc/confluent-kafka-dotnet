@@ -56,5 +56,28 @@ namespace Confluent.SchemaRegistry
             ErrorCode = errorCode;
             Status = status;
         }
+
+        /// <summary>
+        ///     Initialize a new instance of SchemaRegistryException.
+        /// </summary>
+        /// <param name="message">
+        ///     Additional information about the error.
+        /// </param>
+        /// <param name="status">
+        ///     The HTTP Status Code.
+        /// </param>
+        /// <param name="errorCode">
+        ///     The Confluent Schema Registry error code.
+        /// </param>
+        /// <param name="innerException">
+        ///     The exception that caused this one, if any.
+        /// </param>
+        public SchemaRegistryException(string message, HttpStatusCode status, int errorCode,
+            Exception innerException)
+            : base(message + "; error code: " + errorCode, innerException)
+        {
+            ErrorCode = errorCode;
+            Status = status;
+        }
     }
 }
