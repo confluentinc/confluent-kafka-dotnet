@@ -589,6 +589,37 @@ namespace Confluent.SchemaRegistry.Encryption
             }
         }
 
+        /// <remarks>
+        ///     BinaryWriter and BinaryReader always use little endian, on every platform, so
+        ///     they cannot be paired with IPAddress.HostToNetworkOrder/NetworkToHostOrder:
+        ///     those byte swap on little endian hosts and are a no-op on big endian ones, so
+        ///     the combination only produces network byte order on a little endian host. On a
+        ///     big endian host such as s390x it would emit the version little endian, making
+        ///     ciphertext unreadable across architectures. Convert explicitly instead.
+        /// </remarks>
+        private static byte[] ToBigEndian(int value)
+        {
+            byte[] bytes = BitConverter.GetBytes(value);
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bytes);
+            }
+            return bytes;
+        }
+
+        /// <remarks>
+        ///     See <see cref="ToBigEndian" />.
+        /// </remarks>
+        private static int FromBigEndian(byte[] bytes)
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                bytes = (byte[])bytes.Clone();
+                Array.Reverse(bytes);
+            }
+            return BitConverter.ToInt32(bytes, 0);
+        }
+
         private byte[] PrefixVersion(int version, byte[] ciphertext)
         {
             byte[] buffer = new byte[1 + EncryptionExecutor.VersionSize + ciphertext.Length];
@@ -597,7 +628,7 @@ namespace Confluent.SchemaRegistry.Encryption
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(EncryptionExecutor.MagicByte);
-                    writer.Write(IPAddress.HostToNetworkOrder(version));
+                    writer.Write(ToBigEndian(version));
                     writer.Write(ciphertext);
                     return stream.ToArray();
                 }
@@ -613,7 +644,7 @@ namespace Confluent.SchemaRegistry.Encryption
                     int remainingSize = ciphertext.Length;
                     reader.ReadByte();
                     remainingSize--;
-                    int version = IPAddress.NetworkToHostOrder(reader.ReadInt32());
+                    int version = FromBigEndian(reader.ReadBytes(EncryptionExecutor.VersionSize));
                     remainingSize -= EncryptionExecutor.VersionSize;
                     byte[] remaining = reader.ReadBytes(remainingSize);
                     return (version, remaining);
