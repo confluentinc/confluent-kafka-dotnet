@@ -317,6 +317,16 @@ namespace Confluent.SchemaRegistry
             HttpResponseMessage response = null;
             bool firstError = true;
 
+            // The status and error code of the most recent attempt, if that attempt
+            // received a response from Schema Registry rather than failing at the
+            // network level. Retained so that a retriable error response (e.g. 503)
+            // surfaces as a SchemaRegistryException once every URL is exhausted,
+            // rather than as an HttpRequestException with the status available only
+            // as text. Reset on a network-level failure, so the exception that is
+            // thrown always describes the last attempt.
+            HttpStatusCode? lastResponseStatus = null;
+            int lastResponseErrorCode = -1;
+
             int startClientIndex;
             lock (lastClientUsedLock)
             {
@@ -378,6 +388,7 @@ namespace Confluent.SchemaRegistry
 
                     firstError = false;
 
+                    bool parsedErrorBody;
                     try
                     {
                         var errorObject = JObject.Parse(
@@ -385,14 +396,19 @@ namespace Confluent.SchemaRegistry
                                 .ConfigureAwait(continueOnCapturedContext: false));
                         message = errorObject.Value<string>("message");
                         errorCode = errorObject.Value<int>("error_code");
+                        parsedErrorBody = true;
                     }
                     catch
                     {
-                        aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {response.StatusCode}";
+                        parsedErrorBody = false;
                     }
 
-                    aggregatedErrorMessage +=
-                        $"[{clients[clientIndex].BaseAddress}] {response.StatusCode} {errorCode} {message}";
+                    aggregatedErrorMessage += parsedErrorBody
+                        ? $"[{clients[clientIndex].BaseAddress}] {response.StatusCode} {errorCode} {message}"
+                        : $"[{clients[clientIndex].BaseAddress}] {response.StatusCode}";
+
+                    lastResponseStatus = response.StatusCode;
+                    lastResponseErrorCode = errorCode;
 
                     // Retriable status: dispose this response before failing over to
                     // the next URL so its connection isn't leaked across attempts.
@@ -411,6 +427,7 @@ namespace Confluent.SchemaRegistry
                     // connection isn't leaked before failing over to the next URL.
                     response?.Dispose();
                     response = null;
+                    lastResponseStatus = null;
 
                     if (!firstError)
                     {
@@ -434,6 +451,7 @@ namespace Confluent.SchemaRegistry
                     // isn't leaked.
                     response?.Dispose();
                     response = null;
+                    lastResponseStatus = null;
 
                     if (!firstError)
                     {
@@ -447,9 +465,23 @@ namespace Confluent.SchemaRegistry
                 }
             }
 
-            Exception innerException = aggregatedExceptions.Count == 1
-                ? aggregatedExceptions[0]
-                : new AggregateException(aggregatedExceptions);
+            Exception innerException = aggregatedExceptions.Count == 0
+                ? null
+                : aggregatedExceptions.Count == 1
+                    ? aggregatedExceptions[0]
+                    : new AggregateException(aggregatedExceptions);
+
+            if (lastResponseStatus.HasValue)
+            {
+                // The last attempt received an error response from Schema Registry
+                // with a retriable status (non-retriable statuses throw above), and
+                // every URL has now been tried. Report it the same way as any other
+                // error response, so that callers can inspect Status / ErrorCode
+                // instead of parsing the message.
+                throw new SchemaRegistryException(
+                    aggregatedErrorMessage, lastResponseStatus.Value, lastResponseErrorCode, innerException);
+            }
+
             throw new HttpRequestException(aggregatedErrorMessage, innerException);
         }
 
