@@ -60,7 +60,12 @@ namespace Confluent.SchemaRegistry.Encryption.AliCloud
             int? roleSessionExpiration = null;
             if (!string.IsNullOrEmpty(roleSessionExpirationValue))
             {
-                roleSessionExpiration = int.Parse(roleSessionExpirationValue);
+                if (!int.TryParse(roleSessionExpirationValue, out var parsed))
+                {
+                    throw new ArgumentException(
+                        $"Invalid {RoleSessionExpiration} value: '{roleSessionExpirationValue}' (expected integer seconds)");
+                }
+                roleSessionExpiration = parsed;
             }
             config.TryGetValue(Policy, out string policy);
             config.TryGetValue(StsEndpoint, out string stsEndpoint);
