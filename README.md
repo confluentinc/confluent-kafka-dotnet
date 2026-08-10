@@ -84,35 +84,55 @@ requests before proceeding. You might typically want to do this in highly concur
 for example in the context of handling web requests. Behind the scenes, the client will manage
 optimizing communication with the Kafka brokers for you, batching requests as appropriate.
 
+Production applications should serialize with Schema Registry. Producing plain string
+or raw values leads to data-quality issues, broken consumers, and ungovernable data.
+This example requires the `Confluent.SchemaRegistry` and
+`Confluent.SchemaRegistry.Serdes.Json` packages in addition to `Confluent.Kafka`.
+
 ```csharp
 using System;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 
 class Program
 {
+    public class User
+    {
+        public string Name { get; set; }
+        public int FavoriteNumber { get; set; }
+    }
+
     public static async Task Main(string[] args)
     {
         var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
+        var schemaRegistryConfig = new SchemaRegistryConfig { Url = "http://localhost:8081" };
 
-        // If serializers are not specified, default serializers from
-        // `Confluent.Kafka.Serializers` will be automatically used where
-        // available. Note: by default strings are encoded as UTF8.
-        using (var p = new ProducerBuilder<Null, string>(config).Build())
+        // The JSON schema is generated from the User type, then registered and
+        // validated on produce.
+        using var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig);
+        using var p = new ProducerBuilder<Null, User>(config)
+            .SetValueSerializer(new JsonSerializer<User>(schemaRegistry))
+            .Build();
+
+        try
         {
-            try
-            {
-                var dr = await p.ProduceAsync("test-topic", new Message<Null, string> { Value = "test" });
-                Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
-            }
-            catch (ProduceException<Null, string> e)
-            {
-                Console.WriteLine($"Delivery failed: {e.Error.Reason}");
-            }
+            var user = new User { Name = "Confluent", FavoriteNumber = 42 };
+            var dr = await p.ProduceAsync("test-topic", new Message<Null, User> { Value = user });
+            Console.WriteLine($"Delivered to '{dr.TopicPartitionOffset}'");
+        }
+        catch (ProduceException<Null, User> e)
+        {
+            Console.WriteLine($"Delivery failed: {e.Error.Reason}");
         }
     }
 }
 ```
+
+Avro and Protobuf serializers are also available — see [Schema Registry Integration](#schema-registry-integration)
+and the [JsonSerialization](examples/JsonSerialization), [AvroSpecific](examples/AvroSpecific),
+and [Protobuf](examples/Protobuf) examples.
 
 Note that a server round-trip is slow (3ms at a minimum; actual latency depends on many factors).
 In highly concurrent scenarios you will achieve high overall throughput out of the producer using
