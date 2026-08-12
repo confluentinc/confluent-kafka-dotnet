@@ -93,5 +93,44 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.NotNull(meta);
             Assert.Equal(new List<string> { "PII" }, meta.Tags.ToList());
         }
+
+        [Fact]
+        public void OnlyTheLastRuleSurvivesWhenRepeatingBlocks()
+        {
+            // Documents a protobuf-net limitation, not desired behavior: repeated
+            // `rules { ... }` blocks parse, but each one overwrites the previous instead of
+            // appending, so only the last rule is kept — silently. In practice .NET supports
+            // at most one inline rule per field.
+            var (fields, rules) = ParseFieldOption(
+                @"rules { name: ""a"" expr: ""this >= 0"" } rules { name: ""b"" expr: ""this <= 150"" }");
+            Assert.Equal(1, fields);
+            Assert.Equal(1, rules);
+        }
+
+        [Fact]
+        public void OnlyTheLastMessageRuleSurvivesWhenRepeatingBlocks()
+        {
+            string schema = @"
+                syntax = ""proto3"";
+                package example;
+                import ""confluent/meta.proto"";
+                message M {
+                  option (.confluent.message_meta) = {
+                    rules { name: ""m1"" expr: ""true"" }
+                    rules { name: ""m2"" expr: ""true"" }
+                  };
+                  int32 n = 1;
+                }
+            ";
+            var fds = ProtobufUtils.Parse(schema, new Dictionary<string, string>());
+            var file = fds.Files.First(f => f.Name == "__root.proto");
+            var msg = file.MessageTypes.First();
+            Assert.Equal(1, msg.Fields.Count);
+            var meta = ProtobufUtils.GetMeta(msg.Options);
+            Assert.NotNull(meta);
+            // Same last-wins truncation at the message level.
+            Assert.Equal(new List<string> { "m2" }, meta.Rules.Select(r => r.Name).ToList());
+        }
+
     }
 }

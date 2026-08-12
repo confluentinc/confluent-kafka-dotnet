@@ -184,6 +184,12 @@ namespace Confluent.SchemaRegistry.Serdes
                         await ValidateInlineRules(writerSchema, data).ConfigureAwait(false);
                     }
                 }
+                else if (ValidationEnabled())
+                {
+                    // No domain rules run on this path, so before and after collapse to a
+                    // single validation point; the writer schema is the local one.
+                    await ValidateInlineRules(writerSchema, data).ConfigureAwait(false);
+                }
                 
                 SerializationContext context = new SerializationContext(
                     isKey ? MessageComponentType.Key : MessageComponentType.Value, topic, headers);

@@ -290,6 +290,12 @@ namespace Confluent.SchemaRegistry.Serdes
                         await ValidateInlineRules(parsedSchema, value).ConfigureAwait(false);
                     }
                 }
+                else if (ValidationEnabled())
+                {
+                    // No domain rules run on this path, so before and after collapse to a
+                    // single validation point; parsedSchema is the local one here.
+                    await ValidateInlineRules(parsedSchema, value).ConfigureAwait(false);
+                }
 
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
 

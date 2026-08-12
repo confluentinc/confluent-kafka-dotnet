@@ -32,6 +32,8 @@ using IFileSystem = ProtobufNet::Google.Protobuf.Reflection.IFileSystem;
 using FileDescriptorSet = ProtobufNet::Google.Protobuf.Reflection.FileDescriptorSet;
 using DescriptorProto = ProtobufNet::Google.Protobuf.Reflection.DescriptorProto;
 using FieldDescriptorProto = ProtobufNet::Google.Protobuf.Reflection.FieldDescriptorProto;
+using FileDescriptorProto = ProtobufNet::Google.Protobuf.Reflection.FileDescriptorProto;
+using PbnSerializer = ProtobufNet::ProtoBuf.Serializer;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -515,6 +517,48 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             var meta = GetMeta(fd.Options);
             return meta == null ? new HashSet<string>() : new HashSet<string>(meta.Tags);
+        }
+
+        /// <summary>
+        ///     Builds the protobuf-net descriptor set the rule walkers need from a
+        ///     compiled-in <see cref="FileDescriptor"/>, for the paths where no schema text
+        ///     is available from the registry.
+        ///
+        ///     protobuf-net's descriptor types are protobuf messages over the same wire
+        ///     format as <see cref="FileDescriptor.SerializedData"/>, so the descriptors can
+        ///     be loaded directly rather than round-tripped through .proto text. Custom
+        ///     options survive as extension data, which is what <see cref="GetMeta"/> reads.
+        /// </summary>
+        internal static FileDescriptorSet ParseFromDescriptor(FileDescriptor fileDescriptor)
+        {
+            var set = new FileDescriptorSet();
+            var visited = new HashSet<string>();
+            AddFileWithDependencies(set, fileDescriptor, visited);
+            // Process() resolves the fully-qualified names and field type names the walkers
+            // navigate by. It reports unresolved extendees for the well-known option types,
+            // which is harmless here: the walkers read the raw extension bytes rather than
+            // asking protobuf-net to interpret the options.
+            set.Process();
+            return set;
+        }
+
+        private static void AddFileWithDependencies(FileDescriptorSet set,
+            FileDescriptor fileDescriptor, ISet<string> visited)
+        {
+            if (fileDescriptor == null || !visited.Add(fileDescriptor.Name))
+            {
+                return;
+            }
+
+            foreach (FileDescriptor dependency in fileDescriptor.Dependencies)
+            {
+                AddFileWithDependencies(set, dependency, visited);
+            }
+
+            using (var stream = new MemoryStream(fileDescriptor.SerializedData.ToByteArray()))
+            {
+                set.Files.Add(PbnSerializer.Deserialize<FileDescriptorProto>(stream));
+            }
         }
 
         internal static FileDescriptorSet Parse(string schema, IDictionary<string, string> imports)

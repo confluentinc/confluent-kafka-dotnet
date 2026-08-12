@@ -33,6 +33,14 @@
     <PackageReference Include="protobuf-net.Reflection" Version="3.3.8" PrivateAssets="contentfiles;analyzers;build;compile">
       <Aliases>ProtobufNet</Aliases>
     </PackageReference>
+    <!--
+    protobuf-net.Reflection only depends on protobuf-net.Core, which has no runtime model
+    and so cannot deserialize its own descriptor types. The full runtime is needed to load
+    a FileDescriptorProto from its binary form - see ProtobufUtils.ParseFromDescriptor.
+    -->
+    <PackageReference Include="protobuf-net" Version="3.3.8" PrivateAssets="contentfiles;analyzers;build;compile">
+      <Aliases>ProtobufNet</Aliases>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

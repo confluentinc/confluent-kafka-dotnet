@@ -17,6 +17,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Avro;
+using Avro.Generic;
 using Confluent.Kafka;
 using Confluent.SchemaRegistry.Rules;
 using Xunit;
@@ -470,5 +472,130 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Contains("1 violation)", ex.Message);
         }
 
+        // ------------------------------------------------------------------------------
+        // Auto-register path: no reader schema is selected, so before/after collapse to a
+        // single validation point. Regression tests for validation being skipped entirely
+        // when UseLatestVersion was not set.
+        // ------------------------------------------------------------------------------
+
+        [Fact]
+        public void AvroValidatesWhenNoReaderSchemaIsSelected()
+        {
+            var writerSchema = global::Avro.Schema.Parse(AvroValidationSchema);
+            var config = new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                ValidationRulesExecution = ValidationRulesExecution.AfterDomainRules
+            };
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, config,
+                ValidatingRegistry());
+            var headers = new Headers();
+            var context = new SerializationContext(MessageComponentType.Value, testTopic, headers);
+
+            var valid = new GenericRecord((RecordSchema)writerSchema);
+            valid.Add("name", "Alice");
+            valid.Add("favorite_number", 30);
+            valid.Add("favorite_color", "blue");
+            Assert.True(serializer.SerializeAsync(valid, context).Result.Length > 0);
+
+            var invalid = new GenericRecord((RecordSchema)writerSchema);
+            invalid.Add("name", "");
+            invalid.Add("favorite_number", 30);
+            invalid.Add("favorite_color", "blue");
+            var ex = Assert.Throws<AggregateException>(() =>
+                serializer.SerializeAsync(invalid, context).Result);
+            Assert.Contains("name must not be empty", ex.InnerException.Message);
+        }
+
+        [Fact]
+        public void JsonValidatesWhenNoReaderSchemaIsSelected()
+        {
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                ValidationRulesExecution = ValidationRulesExecution.AfterDomainRules
+            };
+            var serializer = new JsonSerializer<ValidationCustomer>(schemaRegistryClient,
+                new Schema(JsonValidationSchema, SchemaType.Json), config, null,
+                ValidatingRegistry());
+            var headers = new Headers();
+            var context = new SerializationContext(MessageComponentType.Value, testTopic, headers);
+
+            Assert.True(serializer.SerializeAsync(JsonCustomer("Alice", 30), context)
+                .Result.Length > 0);
+
+            var ex = Assert.Throws<AggregateException>(() =>
+                serializer.SerializeAsync(JsonCustomer("", 30), context).Result);
+            Assert.Contains("name must not be empty", ex.InnerException.Message);
+        }
+        [Fact]
+        public void ProtobufValidatesWhenNoReaderSchemaIsSelected()
+        {
+            // No reader schema is selected, so the rules have to come from the compiled-in
+            // descriptor rather than schema text fetched from the registry.
+            var config = new ProtobufSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                ValidationRulesExecution = ValidationRulesExecution.AfterDomainRules
+            };
+            var serializer = new ProtobufSerializer<Example.ValidationPerson>(schemaRegistryClient,
+                config, ValidatingRegistry());
+            var headers = new Headers();
+            var context = new SerializationContext(MessageComponentType.Value, testTopic, headers);
+
+            var valid = new Example.ValidationPerson { Name = "Alice", FavoriteNumber = 30 };
+            Assert.True(serializer.SerializeAsync(valid, context).Result.Length > 0);
+
+            var invalid = new Example.ValidationPerson { Name = "", FavoriteNumber = 30 };
+            var ex = Assert.Throws<AggregateException>(() =>
+                serializer.SerializeAsync(invalid, context).Result);
+            Assert.Contains("name must not be empty", ex.InnerException.Message);
+        }
+
+        [Fact]
+        public void ProtobufReportsMessageLevelViolationsFromTheLocalDescriptor()
+        {
+            var config = new ProtobufSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                ValidationRulesExecution = ValidationRulesExecution.BeforeDomainRules
+            };
+            var serializer = new ProtobufSerializer<Example.ValidationPerson>(schemaRegistryClient,
+                config, ValidatingRegistry());
+            var headers = new Headers();
+            var context = new SerializationContext(MessageComponentType.Value, testTopic, headers);
+
+            var invalid = new Example.ValidationPerson { Name = "forbidden", FavoriteNumber = -1 };
+            var ex = Assert.Throws<AggregateException>(() =>
+                serializer.SerializeAsync(invalid, context).Result);
+            Assert.Contains("2 violations", ex.InnerException.Message);
+            Assert.Contains("<root>: nameNotForbidden", ex.InnerException.Message);
+            Assert.Contains("favorite_number: numberPositive", ex.InnerException.Message);
+        }
+        [Fact]
+        public void ProtobufReadsBracketedListRulesFromTheLocalDescriptor()
+        {
+            // protoc handles the bracketed list form that protobuf-net's .proto text parser
+            // cannot, so both rules are present when read from the compiled-in descriptor.
+            var config = new ProtobufSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                ValidationRulesExecution = ValidationRulesExecution.AfterDomainRules
+            };
+            var serializer = new ProtobufSerializer<Example.ValidationListForm>(schemaRegistryClient,
+                config, ValidatingRegistry());
+            var headers = new Headers();
+            var context = new SerializationContext(MessageComponentType.Value, testTopic, headers);
+
+            Assert.True(serializer
+                .SerializeAsync(new Example.ValidationListForm { Id = "ord-1234" }, context)
+                .Result.Length > 0);
+
+            var ex = Assert.Throws<AggregateException>(() => serializer
+                .SerializeAsync(new Example.ValidationListForm { Id = "x" }, context).Result);
+            Assert.Contains("2 violations", ex.InnerException.Message);
+            Assert.Contains("idPrefix", ex.InnerException.Message);
+            Assert.Contains("id is too short", ex.InnerException.Message);
+        }
     }
 }

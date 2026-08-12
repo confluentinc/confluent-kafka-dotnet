@@ -63,6 +63,13 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private List<int> indexArray;
 
+        /// <summary>
+        ///     protobuf-net descriptor sets built from compiled-in file descriptors, keyed by
+        ///     file name. Only used when no schema was selected from the registry.
+        /// </summary>
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, FileDescriptorSet>
+            localParsedSchemas = new System.Collections.Concurrent.ConcurrentDictionary<string, FileDescriptorSet>();
+
 
         /// <summary>
         ///     Initialize a new instance of the ProtobufSerializer class.
@@ -295,6 +302,14 @@ namespace Confluent.SchemaRegistry.Serdes
                         await ValidateInlineRules(fdSet, value).ConfigureAwait(false);
                     }
                 }
+                else if (ValidationEnabled())
+                {
+                    // No domain rules run on this path, so before and after collapse to a
+                    // single validation point. There is no schema text from the registry to
+                    // parse, so read the rules from the compiled-in descriptor instead.
+                    await ValidateInlineRules(GetLocalParsedSchema(value.Descriptor.File), value)
+                        .ConfigureAwait(false);
+                }
 
                 var buffer = new byte[value.CalculateSize()];
                 value.WriteTo(buffer);
@@ -331,6 +346,22 @@ namespace Confluent.SchemaRegistry.Serdes
             return name.StartsWith("confluent/") ||
                    name.StartsWith("google/protobuf/") ||
                    name.StartsWith("google/type/");
+        }
+
+        /// <summary>
+        ///     The protobuf-net descriptor set for a compiled-in file descriptor, cached per
+        ///     file since building it deserializes the whole dependency closure.
+        /// </summary>
+        private FileDescriptorSet GetLocalParsedSchema(FileDescriptor fileDescriptor)
+        {
+            if (localParsedSchemas.TryGetValue(fileDescriptor.Name, out FileDescriptorSet cached))
+            {
+                return cached;
+            }
+
+            FileDescriptorSet fdSet = ProtobufUtils.ParseFromDescriptor(fileDescriptor);
+            localParsedSchemas[fileDescriptor.Name] = fdSet;
+            return fdSet;
         }
 
         /// <summary>
