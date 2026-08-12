@@ -80,7 +80,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
             var nonProtobufConfig = config
                 .Where(item => !item.Key.StartsWith("protobuf.") && !item.Key.StartsWith("rules.")
-                    && !item.Key.StartsWith("subject.name.strategy."));
+                    && !item.Key.StartsWith("subject.name.strategy.")
+                    && !item.Key.StartsWith("validation.rules."));
             if (nonProtobufConfig.Count() > 0)
             {
                 throw new ArgumentException($"ProtobufSerializer: unknown configuration parameter {nonProtobufConfig.First().Key}");
@@ -278,11 +279,21 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await ProtobufUtils.Transform(ctx, fdSet, message, transform).ConfigureAwait(false);
                     };
+                    if (ValidationEnabled(ValidationRulesExecution.BeforeDomainRules))
+                    {
+                        await ValidateInlineRules(fdSet, value).ConfigureAwait(false);
+                    }
+
                     value = await ExecuteRules(context.Component == MessageComponentType.Key,
                             subject, context.Topic, context.Headers, RuleMode.Write,
                             null, latestSchema, value, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
+
+                    if (ValidationEnabled(ValidationRulesExecution.AfterDomainRules))
+                    {
+                        await ValidateInlineRules(fdSet, value).ConfigureAwait(false);
+                    }
                 }
 
                 var buffer = new byte[value.CalculateSize()];
@@ -321,5 +332,17 @@ namespace Confluent.SchemaRegistry.Serdes
                    name.StartsWith("google/protobuf/") ||
                    name.StartsWith("google/type/");
         }
+
+        /// <summary>
+        ///     Evaluates the descriptor's inline validation rules against the message,
+        ///     throwing a single exception listing every violation found.
+        /// </summary>
+        private async Task ValidateInlineRules(object fdSet, object value)
+        {
+            var violations = await ProtobufUtils.Validate(GetValidationExecutor(), fdSet, value,
+                validationRulesFailFast).ConfigureAwait(false);
+            ValidationRules.ThrowIfFailed(violations);
+        }
+
     }
 }

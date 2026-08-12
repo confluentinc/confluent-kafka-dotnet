@@ -134,7 +134,7 @@ namespace Confluent.SchemaRegistry.Rules
             }
         }
 
-        private Script BuildScript(RuleWithArgs ruleWithArgs, object msg)
+        internal Script BuildScript(RuleWithArgs ruleWithArgs, object msg)
         {
             // Build the script factory
             ScriptHost.Builder scriptHostBuilder = ScriptHost.NewBuilder();
@@ -188,7 +188,7 @@ namespace Confluent.SchemaRegistry.Rules
                 .ToList();
         }
 
-        private static Google.Api.Expr.V1Alpha1.Type FindType(Object arg)
+        internal static Google.Api.Expr.V1Alpha1.Type FindType(Object arg)
         {
             if (arg == null)
             {
@@ -328,14 +328,14 @@ namespace Confluent.SchemaRegistry.Rules
             cache.Clear();
         }
 
-        private enum ScriptType
+        internal enum ScriptType
         {
             Avro,
             Json,
             Protobuf
         }
 
-        private class RuleWithArgs : IEquatable<RuleWithArgs>
+        internal class RuleWithArgs : IEquatable<RuleWithArgs>
         {
             public string Rule { get; }
             public ScriptType ScriptType { get; }
