@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+import "confluent/meta.proto";
+
+package example;
+
+message ValidationPerson {
+    option (confluent.message_meta) = {
+        rules { name: "nameNotForbidden" expr: "this.name != 'forbidden'" }
+    };
+
+    string name = 1 [(confluent.field_meta) = {
+        rules { name: "nameNotEmpty" doc: "name must not be empty" expr: "size(this) > 0" }
+    }];
+    int32 favorite_number = 2 [(confluent.field_meta) = {
+        rules { name: "numberPositive" expr: "this >= 0" }
+    }];
+}
+
+// Uses the bracketed list form, which protoc accepts and protobuf-net's .proto text
+// parser does not - see ProtobufRulesSyntaxTests. Reading rules from the compiled-in
+// descriptor sidesteps that parser entirely.
+message ValidationListForm {
+    string id = 1 [(confluent.field_meta) = {
+        rules: [
+            { name: "idPrefix", expr: "this.startsWith('ord-')" },
+            { name: "idLength", doc: "id is too short", expr: "size(this) > 4" }
+        ]
+    }];
+}
