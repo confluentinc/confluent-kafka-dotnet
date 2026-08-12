@@ -30,7 +30,7 @@
     Set PrivateAssets per https://learn.microsoft.com/en-us/nuget/create-packages/select-assemblies-referenced-by-projects
     and https://stackoverflow.com/questions/52207524/disable-transitive-packagereference-dependency-for-a-specific-msbuild-project
     -->
-    <PackageReference Include="protobuf-net.Reflection" Version="3.2.12" PrivateAssets="contentfiles;analyzers;build;compile">
+    <PackageReference Include="protobuf-net.Reflection" Version="3.3.8" PrivateAssets="contentfiles;analyzers;build;compile">
       <Aliases>ProtobufNet</Aliases>
     </PackageReference>
   </ItemGroup>
