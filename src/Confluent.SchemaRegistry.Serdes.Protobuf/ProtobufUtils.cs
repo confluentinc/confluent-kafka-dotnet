@@ -32,6 +32,8 @@ using IFileSystem = ProtobufNet::Google.Protobuf.Reflection.IFileSystem;
 using FileDescriptorSet = ProtobufNet::Google.Protobuf.Reflection.FileDescriptorSet;
 using DescriptorProto = ProtobufNet::Google.Protobuf.Reflection.DescriptorProto;
 using FieldDescriptorProto = ProtobufNet::Google.Protobuf.Reflection.FieldDescriptorProto;
+using FileDescriptorProto = ProtobufNet::Google.Protobuf.Reflection.FileDescriptorProto;
+using PbnSerializer = ProtobufNet::ProtoBuf.Serializer;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -281,36 +283,282 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
-        private static ISet<string> GetInlineTags(FieldDescriptorProto fd)
+        /// <summary>
+        ///     Walks the message against the descriptor, evaluating every inline validation
+        ///     rule declared in the confluent.Meta extension and collecting all failures.
+        ///     Read-only — the message is not modified.
+        ///
+        ///     Two kinds of rules are evaluated:
+        ///     <list type="bullet">
+        ///       <item>Message-level (confluent.message_meta rules) — <c>this</c> is the
+        ///         message.</item>
+        ///       <item>Field-level (confluent.field_meta rules) — <c>this</c> is the field
+        ///         value; for repeated and map fields that is the whole collection. Honors
+        ///         the skip-on-null contract: an unset oneof member does not have its rules
+        ///         invoked.</item>
+        ///     </list>
+        ///
+        ///     Failures are returned with their dotted-path location (e.g. addr.zip,
+        ///     items[3], labels["k"]). The walk continues after each failure unless failFast
+        ///     is set.
+        ///
+        ///     Only message_meta and field_meta rules are evaluated; rules on files, enums
+        ///     and enum values are ignored, matching the JVM client.
+        /// </summary>
+        internal static async Task<IList<ValidationRuleError>> Validate(IValidationRuleExecutor executor,
+            object desc, object message, bool failFast)
         {
-            ISet<string> tags = new HashSet<string>();
-            var options = fd.Options?.UninterpretedOptions;
-            if (options != null)
+            var violations = new List<ValidationRuleError>();
+            if (executor == null || desc == null || message == null)
             {
-                foreach (var option in options)
+                return violations;
+            }
+
+            await Validate(executor, desc, "", message, failFast, violations).ConfigureAwait(false);
+            return violations;
+        }
+
+        /// <summary>
+        ///     Mirrors <see cref="Transform" />'s dispatch shape, walking the descriptor's
+        ///     fields and descending into message-valued fields, map values and repeated
+        ///     elements.
+        /// </summary>
+        private static async Task Validate(IValidationRuleExecutor executor, object desc, string path,
+            object message, bool failFast, IList<ValidationRuleError> violations)
+        {
+            if (desc == null || !(message is IMessage protoMessage))
+            {
+                return;
+            }
+
+            string messageFullName = protoMessage.Descriptor.FullName;
+            if (!messageFullName.StartsWith("."))
+            {
+                messageFullName = "." + messageFullName;
+            }
+
+            DescriptorProto messageType = FindMessageByName(desc, messageFullName);
+            if (messageType == null)
+            {
+                return;
+            }
+
+            // Message-level rules: this = the message.
+            foreach (ValidationRule rule in GetInlineValidationRules(GetMeta(messageType.Options)))
+            {
+                await ValidationRules.Evaluate(executor, rule, messageType, protoMessage, path, violations)
+                    .ConfigureAwait(false);
+                if (failFast && violations.Any())
                 {
-                    switch (option.Names.Count())
+                    return;
+                }
+            }
+
+            foreach (FieldDescriptor fd in protoMessage.Descriptor.Fields.InDeclarationOrder())
+            {
+                FieldDescriptorProto schemaFd = FindFieldByName(messageType, fd.Name);
+                if (schemaFd == null)
+                {
+                    continue;
+                }
+
+                // Skip-on-null: an unset oneof member does not invoke the executor.
+                if (fd.ContainingOneof != null && !fd.Accessor.HasValue(protoMessage))
+                {
+                    continue;
+                }
+
+                object value = fd.Accessor.GetValue(protoMessage);
+                if (value == null)
+                {
+                    continue;
+                }
+
+                string childPath = path.Length == 0 ? fd.Name : $"{path}.{fd.Name}";
+                foreach (ValidationRule rule in GetInlineValidationRules(GetMeta(schemaFd.Options)))
+                {
+                    await ValidationRules.Evaluate(executor, rule, schemaFd, value, childPath, violations)
+                        .ConfigureAwait(false);
+                    if (failFast && violations.Any())
                     {
-                        case 1:
-                            if (option.Names[0].name_part.Contains("field_meta")
-                                && option.Names[0].name_part.Contains("tags"))
+                        return;
+                    }
+                }
+
+                if (fd.IsMap)
+                {
+                    if (value is IDictionary map)
+                    {
+                        foreach (DictionaryEntry entry in map)
+                        {
+                            if (!(entry.Value is IMessage))
                             {
-                                tags.Add(option.AggregateValue);
+                                continue;
                             }
 
-                            break;
-                        case 2:
-                            if (option.Names[0].name_part.Contains("field_meta")
-                                && option.Names[1].name_part.Contains("tags"))
+                            await Validate(executor, schemaFd.GetMessageType(),
+                                $"{childPath}[\"{entry.Key}\"]", entry.Value, failFast, violations)
+                                .ConfigureAwait(false);
+                            if (failFast && violations.Any())
                             {
-                                tags.Add(option.AggregateValue);
+                                return;
+                            }
+                        }
+                    }
+                }
+                else if (fd.IsRepeated)
+                {
+                    if (value is IList list)
+                    {
+                        for (int i = 0; i < list.Count; i++)
+                        {
+                            if (!(list[i] is IMessage))
+                            {
+                                continue;
                             }
 
-                            break;
+                            await Validate(executor, schemaFd.GetMessageType(), $"{childPath}[{i}]",
+                                list[i], failFast, violations).ConfigureAwait(false);
+                            if (failFast && violations.Any())
+                            {
+                                return;
+                            }
+                        }
+                    }
+                }
+                else if (value is IMessage)
+                {
+                    await Validate(executor, schemaFd.GetMessageType(), childPath, value, failFast,
+                        violations).ConfigureAwait(false);
+                    if (failFast && violations.Any())
+                    {
+                        return;
                     }
                 }
             }
-            return tags;
+        }
+
+        private static IList<ValidationRule> GetInlineValidationRules(
+            global::Confluent.SchemaRegistry.Serdes.Protobuf.Meta meta)
+        {
+            if (meta == null || meta.Rules.Count == 0)
+            {
+                return new List<ValidationRule>();
+            }
+
+            return meta.Rules
+                .Select(r => new ValidationRule
+                {
+                    Name = r.Name,
+                    Doc = r.Doc,
+                    Expr = r.Expr,
+                    Sql = r.Sql
+                })
+                .ToList();
+        }
+
+        /// <summary>
+        ///     The field number of the confluent.Meta extension on descriptor options.
+        /// </summary>
+        private const int MetaFieldNumber = 1088;
+
+        /// <summary>
+        ///     Reads the confluent.Meta option off a descriptor's options, or null when the
+        ///     option is absent.
+        ///
+        ///     protobuf-net resolves the option into an extension holding the serialized
+        ///     Meta message, so it never shows up in UninterpretedOptions; the bytes are
+        ///     read back out of the extension and parsed with the generated Meta type.
+        /// </summary>
+        internal static global::Confluent.SchemaRegistry.Serdes.Protobuf.Meta GetMeta(
+            global::ProtoBuf.IExtensible options)
+        {
+            if (options == null)
+            {
+                return null;
+            }
+
+            var extension = options.GetExtensionObject(false);
+            if (extension == null)
+            {
+                return null;
+            }
+
+            Stream stream = extension.BeginQuery();
+            try
+            {
+                var input = new CodedInputStream(stream);
+                uint tag;
+                while ((tag = input.ReadTag()) != 0)
+                {
+                    // Wire type 2 (length-delimited) carries the embedded Meta message.
+                    if ((int)(tag >> 3) == MetaFieldNumber && (tag & 7) == 2)
+                    {
+                        return global::Confluent.SchemaRegistry.Serdes.Protobuf.Meta.Parser
+                            .ParseFrom(input.ReadBytes());
+                    }
+
+                    input.SkipLastField();
+                }
+            }
+            catch (InvalidProtocolBufferException)
+            {
+                return null;
+            }
+            finally
+            {
+                extension.EndQuery(stream);
+            }
+
+            return null;
+        }
+
+        private static ISet<string> GetInlineTags(FieldDescriptorProto fd)
+        {
+            var meta = GetMeta(fd.Options);
+            return meta == null ? new HashSet<string>() : new HashSet<string>(meta.Tags);
+        }
+
+        /// <summary>
+        ///     Builds the protobuf-net descriptor set the rule walkers need from a
+        ///     compiled-in <see cref="FileDescriptor"/>, for the paths where no schema text
+        ///     is available from the registry.
+        ///
+        ///     protobuf-net's descriptor types are protobuf messages over the same wire
+        ///     format as <see cref="FileDescriptor.SerializedData"/>, so the descriptors can
+        ///     be loaded directly rather than round-tripped through .proto text. Custom
+        ///     options survive as extension data, which is what <see cref="GetMeta"/> reads.
+        /// </summary>
+        internal static FileDescriptorSet ParseFromDescriptor(FileDescriptor fileDescriptor)
+        {
+            var set = new FileDescriptorSet();
+            var visited = new HashSet<string>();
+            AddFileWithDependencies(set, fileDescriptor, visited);
+            // Process() resolves the fully-qualified names and field type names the walkers
+            // navigate by. It reports unresolved extendees for the well-known option types,
+            // which is harmless here: the walkers read the raw extension bytes rather than
+            // asking protobuf-net to interpret the options.
+            set.Process();
+            return set;
+        }
+
+        private static void AddFileWithDependencies(FileDescriptorSet set,
+            FileDescriptor fileDescriptor, ISet<string> visited)
+        {
+            if (fileDescriptor == null || !visited.Add(fileDescriptor.Name))
+            {
+                return;
+            }
+
+            foreach (FileDescriptor dependency in fileDescriptor.Dependencies)
+            {
+                AddFileWithDependencies(set, dependency, visited);
+            }
+
+            using (var stream = new MemoryStream(fileDescriptor.SerializedData.ToByteArray()))
+            {
+                set.Files.Add(PbnSerializer.Deserialize<FileDescriptorProto>(stream));
+            }
         }
 
         internal static FileDescriptorSet Parse(string schema, IDictionary<string, string> imports)

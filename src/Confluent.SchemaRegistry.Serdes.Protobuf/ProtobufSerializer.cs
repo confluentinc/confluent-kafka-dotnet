@@ -63,6 +63,13 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private List<int> indexArray;
 
+        /// <summary>
+        ///     protobuf-net descriptor sets built from compiled-in file descriptors, keyed by
+        ///     file name. Only used when no schema was selected from the registry.
+        /// </summary>
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, FileDescriptorSet>
+            localParsedSchemas = new System.Collections.Concurrent.ConcurrentDictionary<string, FileDescriptorSet>();
+
 
         /// <summary>
         ///     Initialize a new instance of the ProtobufSerializer class.
@@ -80,7 +87,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
             var nonProtobufConfig = config
                 .Where(item => !item.Key.StartsWith("protobuf.") && !item.Key.StartsWith("rules.")
-                    && !item.Key.StartsWith("subject.name.strategy."));
+                    && !item.Key.StartsWith("subject.name.strategy.")
+                    && !item.Key.StartsWith("validation.rules."));
             if (nonProtobufConfig.Count() > 0)
             {
                 throw new ArgumentException($"ProtobufSerializer: unknown configuration parameter {nonProtobufConfig.First().Key}");
@@ -278,11 +286,29 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await ProtobufUtils.Transform(ctx, fdSet, message, transform).ConfigureAwait(false);
                     };
+                    if (ValidationEnabled(ValidationRulesExecution.BeforeDomainRules))
+                    {
+                        await ValidateInlineRules(fdSet, value).ConfigureAwait(false);
+                    }
+
                     value = await ExecuteRules(context.Component == MessageComponentType.Key,
                             subject, context.Topic, context.Headers, RuleMode.Write,
                             null, latestSchema, value, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
+
+                    if (ValidationEnabled(ValidationRulesExecution.AfterDomainRules))
+                    {
+                        await ValidateInlineRules(fdSet, value).ConfigureAwait(false);
+                    }
+                }
+                else if (ValidationEnabled())
+                {
+                    // No domain rules run on this path, so before and after collapse to a
+                    // single validation point. There is no schema text from the registry to
+                    // parse, so read the rules from the compiled-in descriptor instead.
+                    await ValidateInlineRules(GetLocalParsedSchema(value.Descriptor.File), value)
+                        .ConfigureAwait(false);
                 }
 
                 var buffer = new byte[value.CalculateSize()];
@@ -321,5 +347,33 @@ namespace Confluent.SchemaRegistry.Serdes
                    name.StartsWith("google/protobuf/") ||
                    name.StartsWith("google/type/");
         }
+
+        /// <summary>
+        ///     The protobuf-net descriptor set for a compiled-in file descriptor, cached per
+        ///     file since building it deserializes the whole dependency closure.
+        /// </summary>
+        private FileDescriptorSet GetLocalParsedSchema(FileDescriptor fileDescriptor)
+        {
+            if (localParsedSchemas.TryGetValue(fileDescriptor.Name, out FileDescriptorSet cached))
+            {
+                return cached;
+            }
+
+            FileDescriptorSet fdSet = ProtobufUtils.ParseFromDescriptor(fileDescriptor);
+            localParsedSchemas[fileDescriptor.Name] = fdSet;
+            return fdSet;
+        }
+
+        /// <summary>
+        ///     Evaluates the descriptor's inline validation rules against the message,
+        ///     throwing a single exception listing every violation found.
+        /// </summary>
+        private async Task ValidateInlineRules(object fdSet, object value)
+        {
+            var violations = await ProtobufUtils.Validate(GetValidationExecutor(), fdSet, value,
+                validationRulesFailFast).ConfigureAwait(false);
+            ValidationRules.ThrowIfFailed(violations);
+        }
+
     }
 }
