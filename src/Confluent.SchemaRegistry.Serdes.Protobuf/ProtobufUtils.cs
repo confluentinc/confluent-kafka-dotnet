@@ -134,19 +134,57 @@ namespace Confluent.SchemaRegistry.Serdes
                             continue;
                         }
                         object value = fd.Accessor.GetValue(copy);
-                        DescriptorProto d = messageType;
-                        if (value is IMessage)
+                        object newValue;
+                        if (fd.IsMap)
                         {
-                            // Pass the schema-based descriptor which has the metadata
-                            d = schemaFd.GetMessageType();
+                            // A map's values are descended into with the value type's own
+                            // descriptor, the same way the validation walk descends into
+                            // them; a map of scalars has nothing below it to descend into.
+                            DescriptorProto valueType = GetMapValueMessageType(schemaFd);
+                            newValue = valueType == null
+                                ? value
+                                : await TransformMapValues(ctx, valueType, value, fieldTransform)
+                                    .ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            // Descend with the field's own message type - for a repeated
+                            // field's elements as much as for a singular message. Walking
+                            // them against the containing descriptor looks their fields up
+                            // in the wrong message, which is also how the schema-based
+                            // metadata is found.
+                            DescriptorProto d = messageType;
+                            if (IsMessageKind(schemaFd))
+                            {
+                                d = schemaFd.GetMessageType() ?? messageType;
+                            }
+
+                            newValue = await Transform(ctx, d, value, fieldTransform)
+                                .ConfigureAwait(false);
                         }
 
-                        object newValue = await Transform(ctx, d, value, fieldTransform).ConfigureAwait(false);
                         if (ctx.Rule.Kind == RuleKind.Condition)
                         {
                             if (newValue is bool b && !b)
                             {
                                 throw new RuleConditionException(ctx.Rule);
+                            }
+                        }
+                        else if (fd.IsMap)
+                        {
+                            // The map was updated through the live collection; a repeated
+                            // or map field cannot be assigned.
+                        }
+                        else if (fd.IsRepeated)
+                        {
+                            if (value is IList target && newValue is IList transformed
+                                && !ReferenceEquals(target, transformed))
+                            {
+                                target.Clear();
+                                foreach (object element in transformed)
+                                {
+                                    target.Add(element);
+                                }
                             }
                         }
                         else
@@ -185,6 +223,57 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 return message;
             }
+        }
+
+        /// <summary>
+        ///     Whether a field holds a message, so that the walks descend into it.
+        /// </summary>
+        private static bool IsMessageKind(FieldDescriptorProto schemaFd) =>
+            schemaFd.type == FieldDescriptorProto.Type.TypeMessage
+            || schemaFd.type == FieldDescriptorProto.Type.TypeGroup;
+
+        /// <summary>
+        ///     The descriptor of a map field's value type, or null when the values are
+        ///     scalars. A map field's own message type is its entry type, whose fields are
+        ///     the key and the value - not the descriptor either walk needs, since both
+        ///     descend into the values themselves.
+        /// </summary>
+        private static DescriptorProto GetMapValueMessageType(FieldDescriptorProto schemaFd)
+        {
+            DescriptorProto entryType = schemaFd.GetMessageType();
+            FieldDescriptorProto valueFd = entryType == null
+                ? null
+                : entryType.Fields.FirstOrDefault(field => field.Name == "value");
+            return valueFd != null && IsMessageKind(valueFd) ? valueFd.GetMessageType() : null;
+        }
+
+        /// <summary>
+        ///     Transforms every value of a map in place, descending into each with
+        ///     <paramref name="valueType" />.
+        /// </summary>
+        private static async Task<object> TransformMapValues(RuleContext ctx,
+            DescriptorProto valueType, object value, IFieldTransform fieldTransform)
+        {
+            if (!(value is IDictionary map))
+            {
+                return value;
+            }
+
+            // Collected first: a map cannot be written to while it is being enumerated.
+            var updates = new List<KeyValuePair<object, object>>();
+            foreach (DictionaryEntry entry in map)
+            {
+                object newValue = await Transform(ctx, valueType, entry.Value, fieldTransform)
+                    .ConfigureAwait(false);
+                updates.Add(new KeyValuePair<object, object>(entry.Key, newValue));
+            }
+
+            foreach (KeyValuePair<object, object> update in updates)
+            {
+                map[update.Key] = update.Value;
+            }
+
+            return map;
         }
 
         private static DescriptorProto FindMessageByName(object desc, string messageFullName)
@@ -396,7 +485,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 continue;
                             }
 
-                            await Validate(executor, schemaFd.GetMessageType(),
+                            await Validate(executor, GetMapValueMessageType(schemaFd),
                                 $"{childPath}[\"{entry.Key}\"]", entry.Value, failFast, violations)
                                 .ConfigureAwait(false);
                             if (failFast && violations.Any())

@@ -28,3 +28,21 @@ message ValidationListForm {
         ]
     }];
 }
+
+// Collection shapes for the walk tests: a nested message, a repeated message and a map of
+// messages, all reached only by descending with the field's own message type.
+message ValidationItem {
+  option (confluent.message_meta) = {
+    rules { name: "itemPositive" expr: "this.v > 0" }
+  };
+
+  int32 v = 1;
+  string label = 2 [(confluent.field_meta) = { tags: "PII" }];
+}
+
+message ValidationContainer {
+  ValidationItem inner = 1;
+  repeated ValidationItem items = 2;
+  map<string, ValidationItem> labels = 3;
+  repeated string tags = 4 [(confluent.field_meta) = { tags: "PII" }];
+}
