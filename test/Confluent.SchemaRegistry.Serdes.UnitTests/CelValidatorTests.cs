@@ -16,6 +16,7 @@
 
 using System.Threading.Tasks;
 using Confluent.SchemaRegistry.Rules;
+using Google.Protobuf.Collections;
 using Xunit;
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
@@ -120,6 +121,30 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var ex = await Assert.ThrowsAsync<RuleException>(
                 () => validator.Execute(Rule("1 + 1"), null, 1));
             Assert.Contains("must return bool or string", ex.Message);
+        }
+
+        // A field-level rule on a repeated or map field binds the collection itself to
+        // `this`. Protobuf surfaces those as RepeatedField<T> and MapField<K,V>, which are
+        // neither Dictionary<,> nor List<>, and whose elements are messages - so both the
+        // declared type and the registry have to be derived from what the collection holds.
+        [Fact]
+        public async Task ProtobufCollectionFieldValues()
+        {
+            var validator = new CelValidator();
+            var person = new Example.ValidationPerson { Name = "Alice", FavoriteNumber = 5 };
+
+            Assert.Equal(true, await validator.Execute(
+                Rule("this.name == 'Alice'"), null, person));
+            Assert.Equal(true, await validator.Execute(
+                Rule("this[0].name == 'Alice'"), null,
+                new RepeatedField<Example.ValidationPerson> { person }));
+            Assert.Equal(true, await validator.Execute(
+                Rule("this['a'].name == 'Alice'"), null,
+                new MapField<string, Example.ValidationPerson> { { "a", person } }));
+            Assert.Equal(true, await validator.Execute(
+                Rule("size(this) > 0"), null, new RepeatedField<string> { "t" }));
+            Assert.Equal(true, await validator.Execute(
+                Rule("this['a'] >= 0"), null, new MapField<string, int> { { "a", 1 } }));
         }
 
         [Fact]

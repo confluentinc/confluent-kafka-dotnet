@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -89,8 +90,12 @@ namespace Confluent.SchemaRegistry.Rules
                 { "this", CelExecutor.FindType(message) },
                 { "now", Checked.CheckedTimestamp }
             };
+            // A rule on a repeated or map field binds a collection to `this`, and the
+            // registry has to be chosen from what the collection holds - otherwise the
+            // elements' fields cannot be resolved at evaluation time.
+            object typeSample = TypeSample(message);
             var ruleWithArgs = new CelExecutor.RuleWithArgs(
-                rule.Expr, DetermineScriptType(message), declTypes, schema?.ToString());
+                rule.Expr, DetermineScriptType(typeSample), declTypes, schema?.ToString());
 
             Script script;
             await cacheMutex.WaitAsync().ConfigureAwait(false);
@@ -100,7 +105,7 @@ namespace Confluent.SchemaRegistry.Rules
                 {
                     try
                     {
-                        script = executor.BuildScript(ruleWithArgs, message);
+                        script = executor.BuildScript(ruleWithArgs, typeSample);
                     }
                     catch (Exception e)
                     {
@@ -140,6 +145,33 @@ namespace Confluent.SchemaRegistry.Rules
             throw new RuleException(
                 $"Validation rule '{name}' must return bool or string; got " +
                 $"{result?.GetType().Name ?? "null"}");
+        }
+
+        /// <summary>
+        ///     The value whose type determines the registry to evaluate with: the value
+        ///     itself, or - when it is a collection of Avro records or protobuf messages -
+        ///     the first element, whose type is the one that has to be registered. Anything
+        ///     else, including an empty collection, is left as it is.
+        /// </summary>
+        private static object TypeSample(object message)
+        {
+            IEnumerable elements = message is IDictionary map ? map.Values : message as IList;
+            if (elements == null)
+            {
+                return message;
+            }
+
+            foreach (object element in elements)
+            {
+                if (element is IMessage || element is ISpecificRecord || element is GenericRecord)
+                {
+                    return element;
+                }
+
+                break;
+            }
+
+            return message;
         }
 
         /// <summary>
