@@ -40,6 +40,8 @@ namespace Confluent.SchemaRegistry
         protected bool latestCompatibilityStrict = false;
         protected IDictionary<string, string> useLatestWithMetadata = null;
         protected AsyncSubjectNameStrategyDelegate subjectNameStrategy = null;
+        protected ValidationRulesExecution validationRulesExecution = ValidationRulesExecution.Disabled;
+        protected bool validationRulesFailFast = false;
 
         protected SemaphoreSlim serdeMutex = new SemaphoreSlim(1);
         
@@ -63,6 +65,43 @@ namespace Confluent.SchemaRegistry
             {
                 executor.Configure(ruleConfigs, schemaRegistryClient);
             }
+
+            this.validationRulesExecution = config.ValidationRulesExecution;
+            this.validationRulesFailFast = config.ValidationRulesFailFast;
+        }
+
+        /// <summary>
+        ///     Returns true when inline validation rules should run at the given phase.
+        ///
+        ///     Pass no phase when there is a single validation point — a serialization path
+        ///     that applies no domain rules has nothing to run before or after, so any
+        ///     enabled mode validates there.
+        /// </summary>
+        protected bool ValidationEnabled(ValidationRulesExecution? phase = null)
+        {
+            if (phase == null)
+            {
+                return validationRulesExecution != ValidationRulesExecution.Disabled;
+            }
+
+            return validationRulesExecution == phase.Value;
+        }
+
+        /// <summary>
+        ///     Returns the executor used to evaluate inline validation rules, or throws when
+        ///     validation is enabled but no rules package has registered one.
+        /// </summary>
+        protected IValidationRuleExecutor GetValidationExecutor()
+        {
+            IValidationRuleExecutor executor = ruleRegistry.GetValidationExecutor();
+            if (executor == null)
+            {
+                throw new InvalidOperationException(
+                    "No validation rule executor registered; call CelValidator.Register() from " +
+                    "Confluent.SchemaRegistry.Rules, or register one on the RuleRegistry.");
+            }
+
+            return executor;
         }
 
         protected async Task<string> GetSubjectName(string topic, bool isKey, string recordType)

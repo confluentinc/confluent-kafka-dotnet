@@ -211,10 +211,27 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await AvroUtils.Transform(ctx, schema, message, transform).ConfigureAwait(false);
                     };
+                    if (ValidationEnabled(ValidationRulesExecution.BeforeDomainRules))
+                    {
+                        await ValidateInlineRules(schema, data).ConfigureAwait(false);
+                    }
+
                     data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Write,
                             null, latestSchema, data, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
+
+                    if (ValidationEnabled(ValidationRulesExecution.AfterDomainRules))
+                    {
+                        await ValidateInlineRules(schema, data).ConfigureAwait(false);
+                    }
+                }
+                else if (ValidationEnabled())
+                {
+                    // No domain rules run on this path, so before and after collapse to a
+                    // single validation point; the writer schema is the local one.
+                    await ValidateInlineRules(currentSchemaData.WriterSchema, data)
+                        .ConfigureAwait(false);
                 }
 
                 SerializationContext context = new SerializationContext(
@@ -259,5 +276,17 @@ namespace Confluent.SchemaRegistry.Serdes
                 .ConfigureAwait(continueOnCapturedContext: false);
             return Avro.Schema.Parse(schema.SchemaString, namedSchemas);
         }
+
+        /// <summary>
+        ///     Evaluates the schema's inline validation rules against the message, throwing a
+        ///     single exception listing every violation found.
+        /// </summary>
+        private async Task ValidateInlineRules(Avro.Schema schema, object data)
+        {
+            var violations = await AvroUtils.Validate(GetValidationExecutor(), schema, data,
+                validationRulesFailFast).ConfigureAwait(false);
+            ValidationRules.ThrowIfFailed(violations);
+        }
+
     }
 }
