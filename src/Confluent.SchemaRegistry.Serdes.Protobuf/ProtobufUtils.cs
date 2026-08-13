@@ -126,8 +126,20 @@ namespace Confluent.SchemaRegistry.Serdes
                 DescriptorProto messageType = FindMessageByName(desc, messageFullName);
                 foreach (FieldDescriptor fd in copy.Descriptor.Fields.InDeclarationOrder())
                 {
-                    FieldDescriptorProto schemaFd = FindFieldByName(messageType, fd.Name);
-                    using (ctx.EnterField(copy, fd.FullName, fd.Name, GetType(fd), GetInlineTags(schemaFd)))
+                    FieldDescriptorProto schemaFd = FindFieldByNumber(messageType, fd.FieldNumber);
+                    if (schemaFd == null)
+                    {
+                        // The schema does not declare this field, so it carries no tags.
+                        continue;
+                    }
+
+                    // The names come from the registered schema alongside the tags: rules
+                    // and metadata tags are written against it. The value is still read
+                    // through the runtime field.
+                    string schemaFieldName = schemaFd.Name;
+                    string schemaFullName = FieldFullName(messageType, schemaFd);
+                    using (ctx.EnterField(copy, schemaFullName, schemaFieldName, GetType(fd),
+                        GetInlineTags(schemaFd)))
                     {
                         if (fd.ContainingOneof != null && !fd.Accessor.HasValue(copy)) {
                             // Skip oneof fields that are not set
@@ -312,6 +324,46 @@ namespace Confluent.SchemaRegistry.Serdes
             return null;
         }
 
+        /// <summary>
+        ///     The fully qualified name of a schema-side field, which protobuf-net's
+        ///     FieldDescriptorProto does not carry on its own.
+        /// </summary>
+        private static string FieldFullName(DescriptorProto messageType, FieldDescriptorProto fd)
+        {
+            string messageName = messageType.GetFullyQualifiedName();
+            if (messageName.StartsWith("."))
+            {
+                messageName = messageName.Substring(1);
+            }
+
+            return messageName + "." + fd.Name;
+        }
+
+        /// <summary>
+        ///     Finds a field by number. Protobuf identifies a field by its number, and
+        ///     renaming a field at the same number is a compatible change, so with
+        ///     use.latest.version the registered schema's name for a field can differ from
+        ///     the message's - resolving by name would find nothing and silently skip the
+        ///     field's rules and tags.
+        /// </summary>
+        private static FieldDescriptorProto FindFieldByNumber(DescriptorProto desc, int fieldNumber)
+        {
+            if (desc == null)
+            {
+                return null;
+            }
+
+            foreach (FieldDescriptorProto fd in desc.Fields)
+            {
+                if (fd.Number == fieldNumber)
+                {
+                    return fd;
+                }
+            }
+
+            return null;
+        }
+
         private static FieldDescriptorProto FindFieldByName(DescriptorProto desc, string fieldName)
         {
             foreach (FieldDescriptorProto fd in desc.Fields)
@@ -445,7 +497,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             foreach (FieldDescriptor fd in protoMessage.Descriptor.Fields.InDeclarationOrder())
             {
-                FieldDescriptorProto schemaFd = FindFieldByName(messageType, fd.Name);
+                FieldDescriptorProto schemaFd = FindFieldByNumber(messageType, fd.FieldNumber);
                 if (schemaFd == null)
                 {
                     continue;
@@ -463,7 +515,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     continue;
                 }
 
-                string childPath = path.Length == 0 ? fd.Name : $"{path}.{fd.Name}";
+                // Paths and names come from the registered schema, which is what a rule
+                // refers to.
+                string childPath = path.Length == 0 ? schemaFd.Name : $"{path}.{schemaFd.Name}";
                 foreach (ValidationRule rule in GetInlineValidationRules(GetMeta(schemaFd.Options)))
                 {
                     await ValidationRules.Evaluate(executor, rule, schemaFd, value, childPath, violations)

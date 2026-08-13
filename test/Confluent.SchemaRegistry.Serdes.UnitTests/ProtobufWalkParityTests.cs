@@ -103,6 +103,70 @@ message ValidationContainer {
             Assert.Equal(new[] { "t1-suffix", "t2-suffix" }, container.Tags.ToArray());
         }
 
+        [Fact]
+        public async Task TransformWalkLeavesAbsentFieldsAbsent()
+        {
+            // Writing a transformed default back would materialize the field: an absent
+            // message would become present, carrying a transformed default.
+            var recorder = new RecordingTransform();
+            var rule = new Rule("t", RuleKind.Transform, RuleMode.Write, "TEST",
+                new HashSet<string> { "PII" }, null);
+            var target = new Schema(ContainerSchema, SchemaType.Protobuf);
+            var ctx = new RuleContext(null, null, target, "topic-value", "topic", null, false,
+                RuleMode.Write, rule, 0, new List<Rule> { rule }, null);
+
+            // inner is absent; only the tagged repeated scalars are present.
+            var container = new Example.ValidationContainer { Tags = { "t1" } };
+            var result = await ProtobufUtils.Transform(ctx, ParseSchema(), container, recorder);
+
+            var transformed = Assert.IsType<Example.ValidationContainer>(result);
+            Assert.Null(transformed.Inner);
+            Assert.Equal(new[] { "t1-suffix" }, transformed.Tags.ToArray());
+        }
+
+        /// <summary>
+        ///     Protobuf identifies a field by its number, and renaming a field at the same
+        ///     number is a compatible change, so with use.latest.version the registered
+        ///     schema's name for a field can differ from the message's. Resolving the
+        ///     schema-side field by name would find nothing and silently skip its rules and
+        ///     tags - here, leaving a tagged field untransformed.
+        /// </summary>
+        [Fact]
+        public async Task WalksResolveRenamedFieldsByNumber()
+        {
+            // The registered schema calls field 2 "renamed" and tags it; the generated class
+            // calls it "label".
+            const string renamedSchema = @"syntax = ""proto3"";
+import ""confluent/meta.proto"";
+
+package example;
+
+message ValidationItem {
+    option (confluent.message_meta) = {
+        rules { name: ""itemPositive"" expr: ""this.v > 0"" }
+    };
+
+    int32 v = 1;
+    string renamed = 2 [(confluent.field_meta) = { tags: ""PII"" }];
+}";
+            object schema = ProtobufUtils.Parse(renamedSchema, null);
+            var item = new Example.ValidationItem { V = 1, Label = "secret" };
+
+            var recorder = new RecordingTransform();
+            var rule = new Rule("t", RuleKind.Transform, RuleMode.Write, "TEST",
+                new HashSet<string> { "PII" }, null);
+            var target = new Schema(renamedSchema, SchemaType.Protobuf);
+            var ctx = new RuleContext(null, null, target, "topic-value", "topic", null, false,
+                RuleMode.Write, rule, 0, new List<Rule> { rule }, null);
+
+            var result = await ProtobufUtils.Transform(ctx, schema, item, recorder);
+
+            var transformed = Assert.IsType<Example.ValidationItem>(result);
+            Assert.Equal("secret-suffix", transformed.Label);
+            // The name reported to the rule is the registered schema's.
+            Assert.Equal(new[] { "renamed" }, recorder.Visited.ToArray());
+        }
+
         private class CountingValidator : IValidationRuleExecutor
         {
             public int Evaluations { get; private set; }
