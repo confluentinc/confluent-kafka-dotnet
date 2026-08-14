@@ -308,7 +308,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </summary>
         private static async Task Validate(IValidationRuleExecutor executor, JsonSchema rootSchema,
             JsonSchema schema, string path, object message, bool failFast,
-            IList<ValidationRuleError> violations)
+            IList<ValidationRuleError> violations, JsonObjectType? typeOverride = null)
         {
             if (schema == null || message == null)
             {
@@ -331,7 +331,63 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
             }
 
-            JsonObjectType effectiveType = GetSchemaType(rootSchema, schema);
+            JsonObjectType effectiveType = typeOverride ?? GetSchemaType(rootSchema, schema);
+
+            // A schema whose type allows several kinds has to be narrowed to the one the
+            // value actually is before dispatching: JsonObjectType is a flag set, so
+            // ["array","object"] carries the Array flag, and an object value would enter the
+            // array branch, fail its IList check and return with the object's own property
+            // rules never visited. Transform resolves the type the same way.
+            if (typeOverride == null && HasMultipleFlags(effectiveType))
+            {
+                JToken jsonObject = JToken.FromObject(message);
+                foreach (JsonObjectType flag in Enum.GetValues(typeof(JsonObjectType)))
+                {
+                    if (!effectiveType.HasFlag(flag) || flag.Equals(default(JsonObjectType)))
+                    {
+                        continue;
+                    }
+
+                    bool isValid;
+                    lock (rootSchema)
+                    {
+                        JsonObjectType originalType = schema.Type;
+                        try
+                        {
+                            schema.Type = flag;
+                            var validator = new JsonSchemaValidator();
+                            isValid = validator.Validate(jsonObject, schema).Count == 0;
+                        }
+                        finally
+                        {
+                            schema.Type = originalType;
+                        }
+                    }
+
+                    if (isValid)
+                    {
+                        // The rules for this node have already been evaluated above, so the
+                        // resolved pass must not read them again.
+                        await ValidateResolved(executor, rootSchema, schema, path, message,
+                            failFast, violations, flag).ConfigureAwait(false);
+                        return;
+                    }
+                }
+            }
+
+            await ValidateResolved(executor, rootSchema, schema, path, message, failFast,
+                violations, effectiveType).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        ///     Walks into whatever the schema describes, with its type already resolved to a
+        ///     single kind. The rules for this node have been evaluated by
+        ///     <see cref="Validate" />.
+        /// </summary>
+        private static async Task ValidateResolved(IValidationRuleExecutor executor,
+            JsonSchema rootSchema, JsonSchema schema, string path, object message,
+            bool failFast, IList<ValidationRuleError> violations, JsonObjectType effectiveType)
+        {
             if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
             {
                 if (schema.AllOf.Count > 0)

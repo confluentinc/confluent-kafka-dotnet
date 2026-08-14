@@ -771,5 +771,55 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Contains("isGreen", ex.InnerException.Message);
         }
 
+
+        // JsonObjectType is a flag set, so a schema declaring ["array","object"] carries both
+        // the Array and Object flags. An object value used to enter the array branch, fail its
+        // IList check and return - with the object's own property rules never visited. The
+        // type is now narrowed to the kind the value actually is first, as Transform does.
+        private const string MultiTypeSchema = @"{
+            ""type"": [""array"", ""object""],
+            ""properties"": {
+                ""name"": {
+                    ""type"": ""string"",
+                    ""confluent:rules"": [
+                        { ""name"": ""nameNotEmpty"", ""doc"": ""name must not be empty"", ""expr"": ""size(this) > 0"" }
+                    ]
+                }
+            }
+        }";
+
+        private JsonSerializer<ValidationCustomer> MultiTypeSerializerFor()
+        {
+            var schema = new RegisteredSchema("topic-value", 1, 1, MultiTypeSchema, SchemaType.Json, null);
+            store[MultiTypeSchema] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true,
+                ValidationRulesExecution = ValidationRulesExecution.AfterDomainRules
+            };
+            return new JsonSerializer<ValidationCustomer>(schemaRegistryClient, config, null, ValidatingRegistry());
+        }
+
+        [Fact]
+        public void JsonVisitsPropertiesOfAMultiTypeSchema()
+        {
+            var serializer = MultiTypeSerializerFor();
+            var context = new SerializationContext(MessageComponentType.Value, testTopic);
+
+            var ex = Assert.Throws<AggregateException>(() =>
+                serializer.SerializeAsync(JsonCustomer("", 30), context).Result);
+            Assert.Contains("name must not be empty", ex.InnerException.Message);
+        }
+
+        [Fact]
+        public void JsonMultiTypeSchemaStillPassesAValidValue()
+        {
+            var serializer = MultiTypeSerializerFor();
+            var context = new SerializationContext(MessageComponentType.Value, testTopic);
+            Assert.True(serializer.SerializeAsync(JsonCustomer("Alice", 30), context).Result.Length > 0);
+        }
+
     }
 }
