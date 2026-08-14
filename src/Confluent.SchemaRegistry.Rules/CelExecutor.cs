@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 using Avro;
 using Avro.Generic;
 using Avro.Specific;
@@ -263,12 +266,76 @@ namespace Confluent.SchemaRegistry.Rules
             }
         }
 
+        /// <summary>
+        ///     Presents a value the way its declared type implies. A protobuf enum arrives as
+        ///     the generated CLR enum, which CEL has no type for; its number is what
+        ///     <see cref="FindTypeForClass" /> declares and so what has to be bound. A
+        ///     repeated or map field of enums needs the same for its elements, which is why
+        ///     this descends.
+        ///     <para>
+        ///         A collection is rebuilt only if something inside it actually changed, so a
+        ///         byte[] - which is an IList of bytes - and a list of messages are handed
+        ///         back exactly as they came in.
+        ///     </para>
+        /// </summary>
+        internal static object ToCelValue(object value)
+        {
+            if (value is System.Enum)
+            {
+                return Convert.ToInt64(value, CultureInfo.InvariantCulture);
+            }
+
+            // A protobuf repeated or map field is homogeneous, so a collection of enums is
+            // all enums. Converting it to a typed collection keeps the declared element type
+            // an int; rebuilding it as object would type it dyn and the comparison would not
+            // resolve. Anything else - a byte[], a list of messages - is left alone.
+            if (value is IDictionary dictionary)
+            {
+                var converted = new Dictionary<object, long>(dictionary.Count);
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    if (!(entry.Value is System.Enum))
+                    {
+                        return value;
+                    }
+
+                    converted[entry.Key] = Convert.ToInt64(entry.Value, CultureInfo.InvariantCulture);
+                }
+
+                return converted.Count > 0 ? converted : value;
+            }
+
+            if (value is IList list && !(value is byte[]))
+            {
+                var converted = new List<long>(list.Count);
+                foreach (object element in list)
+                {
+                    if (!(element is System.Enum))
+                    {
+                        return value;
+                    }
+
+                    converted.Add(Convert.ToInt64(element, CultureInfo.InvariantCulture));
+                }
+
+                return converted.Count > 0 ? (object)converted : value;
+            }
+
+            return value;
+        }
+
         private static Google.Api.Expr.V1Alpha1.Type FindTypeForClass(System.Type type)
         {
             var underlyingType = Nullable.GetUnderlyingType(type);
             if (underlyingType != null) type = underlyingType;
 
             if (type == typeof(bool)) return Checked.CheckedBool;
+
+            // A protobuf enum is compared by its number, as in the Java, Go and C++
+            // clients: a rule reads `this == 1`, not the generated symbol. Without this the
+            // generated enum type matches nothing below and the rule fails to compile, so a
+            // rule on an enum field rejected every message.
+            if (type.IsEnum) return Checked.CheckedInt;
 
             if (type == typeof(long) || type == typeof(int) ||
                 type == typeof(short) || type == typeof(sbyte) ||

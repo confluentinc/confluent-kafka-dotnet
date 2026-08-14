@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.SchemaRegistry.Rules;
 using Google.Protobuf.Collections;
@@ -191,5 +192,48 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 () => validator.Execute(Rule(expr), null, (ulong)25));
             Assert.Contains("no matching overload", ex.ToString());
         }
+
+        // A protobuf enum reaches the executor as the generated CLR enum, which CEL has no
+        // type for - Cel.NET rejects it outright with "enum not allowed here", so a rule on
+        // an enum field used to fail to compile and reject every message. It is compared by
+        // its number instead, as in the Java, Go and C++ clients.
+        [Theory]
+        [InlineData("this == 1", true)]
+        [InlineData("this == 0", false)]
+        [InlineData("this > 0", true)]
+        public async Task EnumValuesBindByTheirNumber(string expr, bool expected)
+        {
+            var validator = new CelValidator();
+            Assert.Equal(expected, await validator.Execute(
+                Rule(expr), null, Example.ValidationColor.Green));
+        }
+
+        // A repeated enum field binds as the whole collection, so a rule about its elements
+        // is a comprehension - and the elements have to be numbers there too.
+        [Fact]
+        public async Task RepeatedEnumValuesBindByTheirNumber()
+        {
+            var validator = new CelValidator();
+            var greens = new List<Example.ValidationColor>
+                { Example.ValidationColor.Green, Example.ValidationColor.Green };
+            Assert.Equal(true, await validator.Execute(Rule("this.all(v, v == 1)"), null, greens));
+
+            var mixed = new List<Example.ValidationColor>
+                { Example.ValidationColor.Green, Example.ValidationColor.Red };
+            Assert.Equal(false, await validator.Execute(Rule("this.all(v, v == 1)"), null, mixed));
+        }
+
+        // Only enums are rewritten. A byte[] is an IList of bytes and a string is a
+        // collection of chars; neither may be turned into a list of numbers.
+        [Fact]
+        public async Task NonEnumValuesAreUnchanged()
+        {
+            var validator = new CelValidator();
+            Assert.Equal(true, await validator.Execute(Rule("this == b'ab'"), null, new byte[] { 97, 98 }));
+            Assert.Equal(true, await validator.Execute(Rule("size(this) == 2"), null, "ab"));
+            Assert.Equal(true, await validator.Execute(
+                Rule("this.all(v, size(v) > 0)"), null, new List<string> { "a", "b" }));
+        }
+
     }
 }

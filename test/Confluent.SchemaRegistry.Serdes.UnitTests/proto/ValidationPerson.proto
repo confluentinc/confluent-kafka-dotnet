@@ -66,3 +66,16 @@ message ValidationPresence {
     }];
   }
 }
+
+// An enum field is compared by its number, matching the other clients - a rule reads
+// `this == 1`, not the symbol name.
+enum ValidationColor {
+  VALIDATION_COLOR_RED = 0;
+  VALIDATION_COLOR_GREEN = 1;
+}
+
+message ValidationEnumHolder {
+  ValidationColor color = 1 [(confluent.field_meta) = {
+    rules { name: "isGreen", expr: "this == 1" }
+  }];
+}

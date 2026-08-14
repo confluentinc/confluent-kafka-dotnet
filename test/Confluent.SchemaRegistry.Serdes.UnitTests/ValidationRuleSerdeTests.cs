@@ -744,5 +744,32 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Contains("plainRule", ex.InnerException.Message);
         }
 
+
+        // The walk delivers an enum field to the executor as its number, so a rule on it can
+        // pass. Before, every message with such a field was rejected because the rule could
+        // not compile.
+        [Fact]
+        public void ProtobufEvaluatesRulesOnEnumFields()
+        {
+            var config = new ProtobufSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                ValidationRulesExecution = ValidationRulesExecution.AfterDomainRules
+            };
+            var serializer = new ProtobufSerializer<Example.ValidationEnumHolder>(
+                schemaRegistryClient, config, ValidatingRegistry());
+            var context = new SerializationContext(MessageComponentType.Value, testTopic,
+                new Headers());
+
+            // isGreen is `this == 1`, and GREEN is 1.
+            var green = new Example.ValidationEnumHolder { Color = Example.ValidationColor.Green };
+            Assert.True(serializer.SerializeAsync(green, context).Result.Length > 0);
+
+            var red = new Example.ValidationEnumHolder { Color = Example.ValidationColor.Red };
+            var ex = Assert.Throws<AggregateException>(() =>
+                serializer.SerializeAsync(red, context).Result);
+            Assert.Contains("isGreen", ex.InnerException.Message);
+        }
+
     }
 }

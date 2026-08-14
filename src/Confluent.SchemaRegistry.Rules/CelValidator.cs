@@ -85,6 +85,11 @@ namespace Confluent.SchemaRegistry.Rules
                 throw new RuleException($"Validation rule '{name}' has no expression");
             }
 
+            // Present the value the way its declared type implies before anything reads it:
+            // the declared type, the script-type sample and the binding all derive from it,
+            // and Cel.NET rejects a CLR enum outright ("enum not allowed here").
+            message = CelExecutor.ToCelValue(message);
+
             var declTypes = new Dictionary<string, Google.Api.Expr.V1Alpha1.Type>
             {
                 { "this", CelExecutor.FindType(message) },
