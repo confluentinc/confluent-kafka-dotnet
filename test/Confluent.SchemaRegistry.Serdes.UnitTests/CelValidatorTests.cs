@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Threading.Tasks;
 using Confluent.SchemaRegistry.Rules;
 using Google.Protobuf.Collections;
@@ -152,6 +153,43 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         {
             CelValidator.Register();
             Assert.NotNull(RuleRegistry.GlobalInstance.GetValidationExecutor());
+        }
+
+        /// <summary>
+        ///     A rule on an unsigned field may compare it against a plain integer literal,
+        ///     because BuiltinLibrary enables cross-type numeric comparisons. Without them
+        ///     `this > 0` on a ulong would not type-check, and .NET would reject expressions
+        ///     the Java, Go and Python clients accept.
+        /// </summary>
+        [Theory]
+        [InlineData("this > 0", (ulong)25, true)]
+        [InlineData("this > 0u", (ulong)25, true)]
+        // 2^64-5 is positive unsigned; read as a signed long it would be -5.
+        [InlineData("this > 0", ulong.MaxValue - 4, true)]
+        [InlineData("this % 10u == 5u", (ulong)25, true)]
+        [InlineData("this % 10u == 5u", ulong.MaxValue - 4, false)]
+        [InlineData("this + 1u > 0u", (ulong)25, true)]
+        public async Task UnsignedFieldsCompareAgainstPlainLiterals(string expr, ulong value, bool expected)
+        {
+            var validator = new CelValidator();
+            Assert.Equal(expected, await validator.Execute(Rule(expr), null, value));
+        }
+
+        /// <summary>
+        ///     Ordering is all that widens. Equality and arithmetic against a plain integer
+        ///     literal still fail to check, which is what Java, Go and Python do too - so a
+        ///     rule that works in one client works in all of them.
+        /// </summary>
+        [Theory]
+        [InlineData("this == 25")]
+        [InlineData("this != 25")]
+        [InlineData("this % 10 == 5")]
+        public async Task UnsignedEqualityAndArithmeticStayHomogeneous(string expr)
+        {
+            var validator = new CelValidator();
+            var ex = await Assert.ThrowsAnyAsync<Exception>(
+                () => validator.Execute(Rule(expr), null, (ulong)25));
+            Assert.Contains("no matching overload", ex.ToString());
         }
     }
 }
