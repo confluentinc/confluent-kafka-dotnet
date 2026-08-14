@@ -92,7 +92,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
             var nonAvroConfig = config
                 .Where(item => !item.Key.StartsWith("avro.") && !item.Key.StartsWith("rules.")
-                    && !item.Key.StartsWith("subject.name.strategy."));
+                    && !item.Key.StartsWith("subject.name.strategy.")
+                    && !item.Key.StartsWith("validation.rules."));
             if (nonAvroConfig.Count() > 0)
             {
                 throw new ArgumentException($"AvroSerializer: unknown configuration parameter {nonAvroConfig.First().Key}");

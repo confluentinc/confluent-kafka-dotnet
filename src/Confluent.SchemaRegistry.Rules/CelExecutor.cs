@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 using Avro;
 using Avro.Generic;
 using Avro.Specific;
@@ -134,7 +137,7 @@ namespace Confluent.SchemaRegistry.Rules
             }
         }
 
-        private Script BuildScript(RuleWithArgs ruleWithArgs, object msg)
+        internal Script BuildScript(RuleWithArgs ruleWithArgs, object msg)
         {
             // Build the script factory
             ScriptHost.Builder scriptHostBuilder = ScriptHost.NewBuilder();
@@ -188,7 +191,7 @@ namespace Confluent.SchemaRegistry.Rules
                 .ToList();
         }
 
-        private static Google.Api.Expr.V1Alpha1.Type FindType(Object arg)
+        internal static Google.Api.Expr.V1Alpha1.Type FindType(Object arg)
         {
             if (arg == null)
             {
@@ -263,12 +266,76 @@ namespace Confluent.SchemaRegistry.Rules
             }
         }
 
+        /// <summary>
+        ///     Presents a value the way its declared type implies. A protobuf enum arrives as
+        ///     the generated CLR enum, which CEL has no type for; its number is what
+        ///     <see cref="FindTypeForClass" /> declares and so what has to be bound. A
+        ///     repeated or map field of enums needs the same for its elements, which is why
+        ///     this descends.
+        ///     <para>
+        ///         A collection is rebuilt only if something inside it actually changed, so a
+        ///         byte[] - which is an IList of bytes - and a list of messages are handed
+        ///         back exactly as they came in.
+        ///     </para>
+        /// </summary>
+        internal static object ToCelValue(object value)
+        {
+            if (value is System.Enum)
+            {
+                return Convert.ToInt64(value, CultureInfo.InvariantCulture);
+            }
+
+            // A protobuf repeated or map field is homogeneous, so a collection of enums is
+            // all enums. Converting it to a typed collection keeps the declared element type
+            // an int; rebuilding it as object would type it dyn and the comparison would not
+            // resolve. Anything else - a byte[], a list of messages - is left alone.
+            if (value is IDictionary dictionary)
+            {
+                var converted = new Dictionary<object, long>(dictionary.Count);
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    if (!(entry.Value is System.Enum))
+                    {
+                        return value;
+                    }
+
+                    converted[entry.Key] = Convert.ToInt64(entry.Value, CultureInfo.InvariantCulture);
+                }
+
+                return converted.Count > 0 ? converted : value;
+            }
+
+            if (value is IList list && !(value is byte[]))
+            {
+                var converted = new List<long>(list.Count);
+                foreach (object element in list)
+                {
+                    if (!(element is System.Enum))
+                    {
+                        return value;
+                    }
+
+                    converted.Add(Convert.ToInt64(element, CultureInfo.InvariantCulture));
+                }
+
+                return converted.Count > 0 ? (object)converted : value;
+            }
+
+            return value;
+        }
+
         private static Google.Api.Expr.V1Alpha1.Type FindTypeForClass(System.Type type)
         {
             var underlyingType = Nullable.GetUnderlyingType(type);
             if (underlyingType != null) type = underlyingType;
 
             if (type == typeof(bool)) return Checked.CheckedBool;
+
+            // A protobuf enum is compared by its number, as in the Java, Go and C++
+            // clients: a rule reads `this == 1`, not the generated symbol. Without this the
+            // generated enum type matches nothing below and the rule fails to compile, so a
+            // rule on an enum field rejected every message.
+            if (type.IsEnum) return Checked.CheckedInt;
 
             if (type == typeof(long) || type == typeof(int) ||
                 type == typeof(short) || type == typeof(sbyte) ||
@@ -301,8 +368,18 @@ namespace Confluent.SchemaRegistry.Rules
 
             if (typeof(IDictionary).IsAssignableFrom(type))
             {
-                var objType = FindTypeForClass(typeof(object));
-                return Decls.NewMapType(objType, objType);
+                // Protobuf's MapField<K,V> implements the non-generic IDictionary without
+                // being a Dictionary<,>, so take the key and value types from whichever
+                // generic dictionary interface it closes over. Falling back to object
+                // would leave the map unusable: an object-keyed map cannot be indexed.
+                var mapArguments = ClosedGenericArguments(type, typeof(IDictionary<,>));
+                if (mapArguments != null)
+                {
+                    return Decls.NewMapType(FindElementTypeForClass(mapArguments[0]),
+                        FindElementTypeForClass(mapArguments[1]));
+                }
+
+                return Decls.NewMapType(Checked.CheckedDyn, Checked.CheckedDyn);
             }
 
             if (type.IsGenericType &&
@@ -315,11 +392,53 @@ namespace Confluent.SchemaRegistry.Rules
 
             if (typeof(IList).IsAssignableFrom(type))
             {
-                var objType = FindTypeForClass(typeof(object));
-                return Decls.NewListType(objType);
+                // As above for protobuf's RepeatedField<T>.
+                var listArguments = ClosedGenericArguments(type, typeof(IList<>));
+                if (listArguments != null)
+                {
+                    return Decls.NewListType(FindElementTypeForClass(listArguments[0]));
+                }
+
+                return Checked.CheckedListDyn;
             }
-            
+
             return Decls.NewObjectType(type.FullName);
+        }
+
+        /// <summary>
+        ///     The type of an element inside a list or a map. A protobuf message or Avro
+        ///     record element stays dynamic: its CLR type name is not the schema type name
+        ///     the checker would need, and the registry resolves its fields at evaluation
+        ///     time anyway.
+        /// </summary>
+        private static Google.Api.Expr.V1Alpha1.Type FindElementTypeForClass(System.Type type)
+        {
+            if (typeof(IMessage).IsAssignableFrom(type) ||
+                typeof(ISpecificRecord).IsAssignableFrom(type) ||
+                typeof(GenericRecord).IsAssignableFrom(type) ||
+                type == typeof(object))
+            {
+                return Checked.CheckedDyn;
+            }
+
+            return FindTypeForClass(type);
+        }
+
+        /// <summary>
+        ///     The type arguments with which <paramref name="type" /> closes over
+        ///     <paramref name="openGeneric" />, or null if it does not implement it.
+        /// </summary>
+        private static System.Type[] ClosedGenericArguments(System.Type type, System.Type openGeneric)
+        {
+            foreach (System.Type candidate in type.GetInterfaces())
+            {
+                if (candidate.IsGenericType && candidate.GetGenericTypeDefinition() == openGeneric)
+                {
+                    return candidate.GetGenericArguments();
+                }
+            }
+
+            return null;
         }
 
         public void Dispose()
@@ -328,14 +447,14 @@ namespace Confluent.SchemaRegistry.Rules
             cache.Clear();
         }
 
-        private enum ScriptType
+        internal enum ScriptType
         {
             Avro,
             Json,
             Protobuf
         }
 
-        private class RuleWithArgs : IEquatable<RuleWithArgs>
+        internal class RuleWithArgs : IEquatable<RuleWithArgs>
         {
             public string Rule { get; }
             public ScriptType ScriptType { get; }
