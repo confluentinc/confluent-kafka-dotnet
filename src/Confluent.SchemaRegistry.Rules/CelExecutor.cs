@@ -134,7 +134,7 @@ namespace Confluent.SchemaRegistry.Rules
             }
         }
 
-        private Script BuildScript(RuleWithArgs ruleWithArgs, object msg)
+        internal Script BuildScript(RuleWithArgs ruleWithArgs, object msg)
         {
             // Build the script factory
             ScriptHost.Builder scriptHostBuilder = ScriptHost.NewBuilder();
@@ -188,7 +188,7 @@ namespace Confluent.SchemaRegistry.Rules
                 .ToList();
         }
 
-        private static Google.Api.Expr.V1Alpha1.Type FindType(Object arg)
+        internal static Google.Api.Expr.V1Alpha1.Type FindType(Object arg)
         {
             if (arg == null)
             {
@@ -301,8 +301,18 @@ namespace Confluent.SchemaRegistry.Rules
 
             if (typeof(IDictionary).IsAssignableFrom(type))
             {
-                var objType = FindTypeForClass(typeof(object));
-                return Decls.NewMapType(objType, objType);
+                // Protobuf's MapField<K,V> implements the non-generic IDictionary without
+                // being a Dictionary<,>, so take the key and value types from whichever
+                // generic dictionary interface it closes over. Falling back to object
+                // would leave the map unusable: an object-keyed map cannot be indexed.
+                var mapArguments = ClosedGenericArguments(type, typeof(IDictionary<,>));
+                if (mapArguments != null)
+                {
+                    return Decls.NewMapType(FindElementTypeForClass(mapArguments[0]),
+                        FindElementTypeForClass(mapArguments[1]));
+                }
+
+                return Decls.NewMapType(Checked.CheckedDyn, Checked.CheckedDyn);
             }
 
             if (type.IsGenericType &&
@@ -315,11 +325,53 @@ namespace Confluent.SchemaRegistry.Rules
 
             if (typeof(IList).IsAssignableFrom(type))
             {
-                var objType = FindTypeForClass(typeof(object));
-                return Decls.NewListType(objType);
+                // As above for protobuf's RepeatedField<T>.
+                var listArguments = ClosedGenericArguments(type, typeof(IList<>));
+                if (listArguments != null)
+                {
+                    return Decls.NewListType(FindElementTypeForClass(listArguments[0]));
+                }
+
+                return Checked.CheckedListDyn;
             }
-            
+
             return Decls.NewObjectType(type.FullName);
+        }
+
+        /// <summary>
+        ///     The type of an element inside a list or a map. A protobuf message or Avro
+        ///     record element stays dynamic: its CLR type name is not the schema type name
+        ///     the checker would need, and the registry resolves its fields at evaluation
+        ///     time anyway.
+        /// </summary>
+        private static Google.Api.Expr.V1Alpha1.Type FindElementTypeForClass(System.Type type)
+        {
+            if (typeof(IMessage).IsAssignableFrom(type) ||
+                typeof(ISpecificRecord).IsAssignableFrom(type) ||
+                typeof(GenericRecord).IsAssignableFrom(type) ||
+                type == typeof(object))
+            {
+                return Checked.CheckedDyn;
+            }
+
+            return FindTypeForClass(type);
+        }
+
+        /// <summary>
+        ///     The type arguments with which <paramref name="type" /> closes over
+        ///     <paramref name="openGeneric" />, or null if it does not implement it.
+        /// </summary>
+        private static System.Type[] ClosedGenericArguments(System.Type type, System.Type openGeneric)
+        {
+            foreach (System.Type candidate in type.GetInterfaces())
+            {
+                if (candidate.IsGenericType && candidate.GetGenericTypeDefinition() == openGeneric)
+                {
+                    return candidate.GetGenericArguments();
+                }
+            }
+
+            return null;
         }
 
         public void Dispose()
@@ -328,14 +380,14 @@ namespace Confluent.SchemaRegistry.Rules
             cache.Clear();
         }
 
-        private enum ScriptType
+        internal enum ScriptType
         {
             Avro,
             Json,
             Protobuf
         }
 
-        private class RuleWithArgs : IEquatable<RuleWithArgs>
+        internal class RuleWithArgs : IEquatable<RuleWithArgs>
         {
             public string Rule { get; }
             public ScriptType ScriptType { get; }
