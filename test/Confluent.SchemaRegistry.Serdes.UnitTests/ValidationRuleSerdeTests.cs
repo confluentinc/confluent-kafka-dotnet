@@ -46,6 +46,18 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public string Name { get; set; }
     }
 
+    public class NestedRuleChild
+    {
+        [Newtonsoft.Json.JsonProperty("code")]
+        public string Code { get; set; }
+    }
+
+    public class NestedRuleParent
+    {
+        [Newtonsoft.Json.JsonProperty("child")]
+        public NestedRuleChild Child { get; set; }
+    }
+
     public class ValidationRuleSerdeTests : BaseSerializeDeserializeTests
     {
         public ValidationRuleSerdeTests() : base()
@@ -597,5 +609,90 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Contains("idPrefix", ex.InnerException.Message);
             Assert.Contains("id is too short", ex.InnerException.Message);
         }
+
+        // A rule on an object-valued property is declared once and must fire once. The
+        // property's schema and the schema the walk recurses into for it are the same
+        // object, so a walk that read rules both in the property loop and on arrival
+        // reports every such rule twice.
+        private const string NestedRuleSchema = @"{
+            ""type"": ""object"",
+            ""confluent:rules"": [ { ""name"": ""rootRule"", ""expr"": ""has(this.child)"" } ],
+            ""properties"": {
+                ""child"": {
+                    ""type"": ""object"",
+                    ""confluent:rules"": [ { ""name"": ""childRule"", ""expr"": ""this.code == 'ok'"" } ],
+                    ""properties"": {
+                        ""code"": {
+                            ""type"": ""string"",
+                            ""confluent:rules"": [ { ""name"": ""codeRule"", ""expr"": ""size(this) > 0"" } ]
+                        }
+                    }
+                }
+            }
+        }";
+
+        private async Task<Dictionary<string, int>> CountRuleFirings(NestedRuleParent message)
+        {
+            var schema = new RegisteredSchema("topic-value", 1, 1, NestedRuleSchema, SchemaType.Json, null);
+            store[NestedRuleSchema] = 1;
+            subjectStore["topic-value"] = new List<RegisteredSchema> { schema };
+            var config = new JsonSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true,
+                ValidationRulesExecution = ValidationRulesExecution.AfterDomainRules
+            };
+            var serializer = new JsonSerializer<NestedRuleParent>(
+                schemaRegistryClient, config, null, ValidatingRegistry());
+
+            string text = "";
+            try
+            {
+                await serializer.SerializeAsync(message,
+                    new SerializationContext(MessageComponentType.Value, testTopic));
+            }
+            catch (Exception e)
+            {
+                text = e.ToString();
+            }
+
+            var counts = new Dictionary<string, int>();
+            foreach (var name in new[] { "rootRule", "childRule", "codeRule" })
+            {
+                int n = 0, i = 0;
+                while ((i = text.IndexOf(name, i, StringComparison.Ordinal)) >= 0)
+                {
+                    n++;
+                    i += name.Length;
+                }
+
+                if (n > 0)
+                {
+                    counts[name] = n;
+                }
+            }
+
+            return counts;
+        }
+
+        [Fact]
+        public async Task JsonEvaluatesEachRuleExactlyOnce()
+        {
+            // Both the object-valued property's rule and the scalar property's rule are violated.
+            var counts = await CountRuleFirings(
+                new NestedRuleParent { Child = new NestedRuleChild { Code = "" } });
+            Assert.Equal(new Dictionary<string, int> { { "childRule", 1 }, { "codeRule", 1 } }, counts);
+        }
+
+        [Fact]
+        public async Task JsonStillEvaluatesRootAndScalarRules()
+        {
+            // Proof that moving rule evaluation did not drop the root level.
+            Assert.Equal(new Dictionary<string, int> { { "rootRule", 1 } },
+                await CountRuleFirings(new NestedRuleParent()));
+            Assert.Empty(await CountRuleFirings(
+                new NestedRuleParent { Child = new NestedRuleChild { Code = "ok" } }));
+        }
+
     }
 }

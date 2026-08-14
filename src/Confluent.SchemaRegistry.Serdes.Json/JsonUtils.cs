@@ -315,6 +315,22 @@ namespace Confluent.SchemaRegistry.Serdes
                 return;
             }
 
+            // Rules declared at this level: this = the value at this location. This is the
+            // only place rules are read - a property's schema and the schema the walk
+            // recurses into for that property are the same object, so reading them in the
+            // property loop as well would charge every rule on an object-valued property
+            // twice. The message == null guard above is also the skip-on-null contract.
+            // Matches the JVM client.
+            foreach (ValidationRule rule in GetInlineValidationRules(schema))
+            {
+                await ValidationRules.Evaluate(executor, rule, schema, message, path, violations)
+                    .ConfigureAwait(false);
+                if (failFast && violations.Any())
+                {
+                    return;
+                }
+            }
+
             JsonObjectType effectiveType = GetSchemaType(rootSchema, schema);
             if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
             {
@@ -402,7 +418,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     violations).ConfigureAwait(false);
             }
 
-            // otherwise a primitive leaf — property-level rules were evaluated by the parent
+            // otherwise a primitive leaf - its rules were evaluated above, and it has no children
         }
 
         private static async Task ValidateArray(IValidationRuleExecutor executor, JsonSchema rootSchema,
@@ -426,25 +442,14 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <summary>
-        ///     Evaluates object-level rules, then each declared property's rules, then
-        ///     recurses into the property values. Undeclared properties are not walked,
-        ///     matching the JVM client.
+        ///     Recurses into each declared property value. Undeclared properties are not
+        ///     walked, matching the JVM client. Rules are not read here - see Validate,
+        ///     which each property value goes through.
         /// </summary>
         private static async Task ValidateProperties(IValidationRuleExecutor executor, JsonSchema rootSchema,
             JsonSchema schema, string path, object message, bool failFast,
             IList<ValidationRuleError> violations)
         {
-            // Object-level rules: this = the object value.
-            foreach (ValidationRule rule in GetInlineValidationRules(schema))
-            {
-                await ValidationRules.Evaluate(executor, rule, schema, message, path, violations)
-                    .ConfigureAwait(false);
-                if (failFast && violations.Any())
-                {
-                    return;
-                }
-            }
-
             foreach (var it in schema.Properties)
             {
                 string fullName = path + '.' + it.Key;
@@ -473,20 +478,6 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
 
                     value = fieldAccessor.GetFieldValue(message);
-                }
-
-                // Skip-on-null: an absent or null property does not invoke the executor.
-                if (value != null)
-                {
-                    foreach (ValidationRule rule in GetInlineValidationRules(it.Value))
-                    {
-                        await ValidationRules.Evaluate(executor, rule, it.Value, value, fullName, violations)
-                            .ConfigureAwait(false);
-                        if (failFast && violations.Any())
-                        {
-                            return;
-                        }
-                    }
                 }
 
                 await Validate(executor, rootSchema, it.Value, fullName, value, failFast, violations)
