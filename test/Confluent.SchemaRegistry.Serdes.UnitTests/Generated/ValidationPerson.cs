@@ -40,14 +40,20 @@ namespace Example {
             "IAMoCzIoLmV4YW1wbGUuVmFsaWRhdGlvbkNvbnRhaW5lci5MYWJlbHNFbnRy",
             "eRIWCgR0YWdzGAQgAygJQgiCRAUaA1BJSRpGCgtMYWJlbHNFbnRyeRILCgNr",
             "ZXkYASABKAkSJgoFdmFsdWUYAiABKAsyFy5leGFtcGxlLlZhbGlkYXRpb25J",
-            "dGVtOgI4AWIGcHJvdG8z"));
+            "dGVtOgI4ASLjAQoSVmFsaWRhdGlvblByZXNlbmNlEi8KBXBsYWluGAEgASgJ",
+            "QiCCRB0iGwoJcGxhaW5SdWxlGg5zaXplKHRoaXMpID4gMBIwCgNvcHQYAiAB",
+            "KAlCHoJEGyIZCgdvcHRSdWxlGg5zaXplKHRoaXMpID4gMEgBiAEBEi0KBG1h",
+            "bnkYAyADKAlCH4JEHCIaCghtYW55UnVsZRoOc2l6ZSh0aGlzKSA+IDASKQoB",
+            "YRgEIAEoCUIcgkQZIhcKBWFSdWxlGg5zaXplKHRoaXMpID4gMEgAQggKBmNo",
+            "b2ljZUIGCgRfb3B0YgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Confluent.SchemaRegistry.Serdes.Protobuf.MetaReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationPerson), global::Example.ValidationPerson.Parser, new[]{ "Name", "FavoriteNumber" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationListForm), global::Example.ValidationListForm.Parser, new[]{ "Id" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationItem), global::Example.ValidationItem.Parser, new[]{ "V", "Label" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationContainer), global::Example.ValidationContainer.Parser, new[]{ "Inner", "Items", "Labels", "Tags" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
+            new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationContainer), global::Example.ValidationContainer.Parser, new[]{ "Inner", "Items", "Labels", "Tags" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationPresence), global::Example.ValidationPresence.Parser, new[]{ "Plain", "Opt", "Many", "A" }, new[]{ "Choice", "Opt" }, null, null, null)
           }));
     }
     #endregion
@@ -1007,6 +1013,367 @@ namespace Example {
           }
           case 34: {
             tags_.AddEntriesFrom(ref input, _repeated_tags_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// The presence shapes, for pinning skip-on-null. proto3 tracks explicit presence for a
+  /// oneof member, an `optional` scalar and a singular message field; a plain scalar, a
+  /// repeated field and a map have none, so they are never "unset".
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class ValidationPresence : pb::IMessage<ValidationPresence>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<ValidationPresence> _parser = new pb::MessageParser<ValidationPresence>(() => new ValidationPresence());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<ValidationPresence> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Example.ValidationPersonReflection.Descriptor.MessageTypes[4]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ValidationPresence() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ValidationPresence(ValidationPresence other) : this() {
+      plain_ = other.plain_;
+      opt_ = other.opt_;
+      many_ = other.many_.Clone();
+      switch (other.ChoiceCase) {
+        case ChoiceOneofCase.A:
+          A = other.A;
+          break;
+      }
+
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ValidationPresence Clone() {
+      return new ValidationPresence(this);
+    }
+
+    /// <summary>Field number for the "plain" field.</summary>
+    public const int PlainFieldNumber = 1;
+    private string plain_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Plain {
+      get { return plain_; }
+      set {
+        plain_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "opt" field.</summary>
+    public const int OptFieldNumber = 2;
+    private readonly static string OptDefaultValue = "";
+
+    private string opt_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Opt {
+      get { return opt_ ?? OptDefaultValue; }
+      set {
+        opt_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+    /// <summary>Gets whether the "opt" field is set</summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool HasOpt {
+      get { return opt_ != null; }
+    }
+    /// <summary>Clears the value of the "opt" field</summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void ClearOpt() {
+      opt_ = null;
+    }
+
+    /// <summary>Field number for the "many" field.</summary>
+    public const int ManyFieldNumber = 3;
+    private static readonly pb::FieldCodec<string> _repeated_many_codec
+        = pb::FieldCodec.ForString(26);
+    private readonly pbc::RepeatedField<string> many_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> Many {
+      get { return many_; }
+    }
+
+    /// <summary>Field number for the "a" field.</summary>
+    public const int AFieldNumber = 4;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string A {
+      get { return HasA ? (string) choice_ : ""; }
+      set {
+        choice_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        choiceCase_ = ChoiceOneofCase.A;
+      }
+    }
+    /// <summary>Gets whether the "a" field is set</summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool HasA {
+      get { return choiceCase_ == ChoiceOneofCase.A; }
+    }
+    /// <summary> Clears the value of the oneof if it's currently set to "a" </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void ClearA() {
+      if (HasA) {
+        ClearChoice();
+      }
+    }
+
+    private object choice_;
+    /// <summary>Enum of possible cases for the "choice" oneof.</summary>
+    public enum ChoiceOneofCase {
+      None = 0,
+      A = 4,
+    }
+    private ChoiceOneofCase choiceCase_ = ChoiceOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ChoiceOneofCase ChoiceCase {
+      get { return choiceCase_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void ClearChoice() {
+      choiceCase_ = ChoiceOneofCase.None;
+      choice_ = null;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as ValidationPresence);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(ValidationPresence other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Plain != other.Plain) return false;
+      if (Opt != other.Opt) return false;
+      if(!many_.Equals(other.many_)) return false;
+      if (A != other.A) return false;
+      if (ChoiceCase != other.ChoiceCase) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Plain.Length != 0) hash ^= Plain.GetHashCode();
+      if (HasOpt) hash ^= Opt.GetHashCode();
+      hash ^= many_.GetHashCode();
+      if (HasA) hash ^= A.GetHashCode();
+      hash ^= (int) choiceCase_;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Plain.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Plain);
+      }
+      if (HasOpt) {
+        output.WriteRawTag(18);
+        output.WriteString(Opt);
+      }
+      many_.WriteTo(output, _repeated_many_codec);
+      if (HasA) {
+        output.WriteRawTag(34);
+        output.WriteString(A);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Plain.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Plain);
+      }
+      if (HasOpt) {
+        output.WriteRawTag(18);
+        output.WriteString(Opt);
+      }
+      many_.WriteTo(ref output, _repeated_many_codec);
+      if (HasA) {
+        output.WriteRawTag(34);
+        output.WriteString(A);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Plain.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Plain);
+      }
+      if (HasOpt) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Opt);
+      }
+      size += many_.CalculateSize(_repeated_many_codec);
+      if (HasA) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(A);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(ValidationPresence other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Plain.Length != 0) {
+        Plain = other.Plain;
+      }
+      if (other.HasOpt) {
+        Opt = other.Opt;
+      }
+      many_.Add(other.many_);
+      switch (other.ChoiceCase) {
+        case ChoiceOneofCase.A:
+          A = other.A;
+          break;
+      }
+
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Plain = input.ReadString();
+            break;
+          }
+          case 18: {
+            Opt = input.ReadString();
+            break;
+          }
+          case 26: {
+            many_.AddEntriesFrom(input, _repeated_many_codec);
+            break;
+          }
+          case 34: {
+            A = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Plain = input.ReadString();
+            break;
+          }
+          case 18: {
+            Opt = input.ReadString();
+            break;
+          }
+          case 26: {
+            many_.AddEntriesFrom(ref input, _repeated_many_codec);
+            break;
+          }
+          case 34: {
+            A = input.ReadString();
             break;
           }
         }

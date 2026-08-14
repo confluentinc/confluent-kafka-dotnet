@@ -694,5 +694,55 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 new NestedRuleParent { Child = new NestedRuleChild { Code = "ok" } }));
         }
 
+
+        // Skip-on-null is decided by whether the field tracks presence, not by whether it
+        // sits in a oneof. proto3 hides the difference - an `optional` scalar there is a
+        // synthetic oneof - but proto2 does not, so an unset proto2 `optional` is the shape
+        // that tells the two predicates apart. It must not invoke the rule.
+        [Fact]
+        public void ProtobufSkipsUnsetFieldsThatTrackPresence()
+        {
+            var config = new ProtobufSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                ValidationRulesExecution = ValidationRulesExecution.AfterDomainRules
+            };
+            var serializer = new ProtobufSerializer<Example.ValidationProto2Presence>(
+                schemaRegistryClient, config, ValidatingRegistry());
+            var context = new SerializationContext(MessageComponentType.Value, testTopic,
+                new Headers());
+
+            // opt is unset, so optRule must not run even though the empty string would fail it.
+            var unset = new Example.ValidationProto2Presence { Req = "r" };
+            Assert.True(serializer.SerializeAsync(unset, context).Result.Length > 0);
+
+            // Explicitly set to the empty string, the field is present and the rule runs.
+            var present = new Example.ValidationProto2Presence { Req = "r", Opt = "" };
+            var ex = Assert.Throws<AggregateException>(() =>
+                serializer.SerializeAsync(present, context).Result);
+            Assert.Contains("optRule", ex.InnerException.Message);
+        }
+
+        // A field with no presence to report is never "unset": its rule always runs, and
+        // asking HasValue about it throws. Guards against a fix that tests HasValue first.
+        [Fact]
+        public void ProtobufStillEvaluatesFieldsWithoutPresence()
+        {
+            var config = new ProtobufSerializerConfig
+            {
+                AutoRegisterSchemas = true,
+                ValidationRulesExecution = ValidationRulesExecution.AfterDomainRules
+            };
+            var serializer = new ProtobufSerializer<Example.ValidationPresence>(
+                schemaRegistryClient, config, ValidatingRegistry());
+            var context = new SerializationContext(MessageComponentType.Value, testTopic,
+                new Headers());
+
+            // plain and many have no presence; plain is empty, so plainRule fires.
+            var ex = Assert.Throws<AggregateException>(() =>
+                serializer.SerializeAsync(new Example.ValidationPresence(), context).Result);
+            Assert.Contains("plainRule", ex.InnerException.Message);
+        }
+
     }
 }

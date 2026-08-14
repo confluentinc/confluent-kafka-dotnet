@@ -141,8 +141,12 @@ namespace Confluent.SchemaRegistry.Serdes
                     using (ctx.EnterField(copy, schemaFullName, schemaFieldName, GetType(fd),
                         GetInlineTags(schemaFd)))
                     {
-                        if (fd.ContainingOneof != null && !fd.Accessor.HasValue(copy)) {
-                            // Skip oneof fields that are not set
+                        // Skip-on-null: a field that tracks presence and is unset does not
+                        // invoke the executor. HasPresence covers a oneof member, an
+                        // `optional` scalar and a singular message field alike, which is the
+                        // predicate the Java, Go and C++ clients use. It has to be tested
+                        // first: HasValue throws for a field with no presence to report.
+                        if (fd.HasPresence && !fd.Accessor.HasValue(copy)) {
                             continue;
                         }
                         object value = fd.Accessor.GetValue(copy);
@@ -503,8 +507,12 @@ namespace Confluent.SchemaRegistry.Serdes
                     continue;
                 }
 
-                // Skip-on-null: an unset oneof member does not invoke the executor.
-                if (fd.ContainingOneof != null && !fd.Accessor.HasValue(protoMessage))
+                // Skip-on-null: a field that tracks presence and is unset does not invoke
+                // the executor. HasPresence covers a oneof member, an `optional` scalar and a
+                // singular message field alike, which is the predicate the Java, Go and C++
+                // clients use. It has to be tested first: HasValue throws for a field with no
+                // presence to report.
+                if (fd.HasPresence && !fd.Accessor.HasValue(protoMessage))
                 {
                     continue;
                 }

@@ -46,3 +46,23 @@ message ValidationContainer {
   map<string, ValidationItem> labels = 3;
   repeated string tags = 4 [(confluent.field_meta) = { tags: "PII" }];
 }
+
+// The presence shapes, for pinning skip-on-null. proto3 tracks explicit presence for a
+// oneof member, an `optional` scalar and a singular message field; a plain scalar, a
+// repeated field and a map have none, so they are never "unset".
+message ValidationPresence {
+  string plain = 1 [(confluent.field_meta) = {
+    rules { name: "plainRule", expr: "size(this) > 0" }
+  }];
+  optional string opt = 2 [(confluent.field_meta) = {
+    rules { name: "optRule", expr: "size(this) > 0" }
+  }];
+  repeated string many = 3 [(confluent.field_meta) = {
+    rules { name: "manyRule", expr: "size(this) > 0" }
+  }];
+  oneof choice {
+    string a = 4 [(confluent.field_meta) = {
+      rules { name: "aRule", expr: "size(this) > 0" }
+    }];
+  }
+}
