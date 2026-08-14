@@ -235,5 +235,61 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 Rule("this.all(v, size(v) > 0)"), null, new List<string> { "a", "b" }));
         }
 
+
+        // The CEL type of a field comes from its descriptor, not from the CLR type of the
+        // value. C#'s generated types imply the right type for each protobuf scalar, so the
+        // two usually agree - but only by coincidence of the type system, and not at all for
+        // an enum. These pin the descriptor as the authority.
+        [Theory]
+        // A uint64 is a CEL uint: it compares against an unsigned literal, and homogeneous
+        // equality rejects a signed one - as in the Java, Go and Python clients.
+        [InlineData("big", "this == 1u", true)]
+        [InlineData("big", "this == 2u", false)]
+        // An int64 is the mirror image.
+        [InlineData("small", "this == 1", true)]
+        // An enum is compared by its number.
+        [InlineData("color", "this == 1", true)]
+        // A repeated uint64 binds the whole list, whose elements are uints too.
+        [InlineData("bigs", "this.all(v, v == 1u)", true)]
+        public async Task FieldTypeComesFromTheDescriptor(string fieldName, string expr, bool expected)
+        {
+            var validator = new CelValidator();
+            var fd = Example.ValidationTypedFields.Descriptor.FindFieldByName(fieldName);
+            object value = fieldName == "bigs" ? (object)new List<ulong> { 1UL } : (object)1UL;
+            if (fieldName == "small")
+            {
+                value = 1L;
+            }
+
+            Assert.Equal(expected, await validator.Execute(Rule(expr), fd, value));
+        }
+
+        [Theory]
+        // An unsigned field does not accept a signed literal, and vice versa. Both would
+        // compile if the type were inferred from a CLR long.
+        [InlineData("big", "this == 1")]
+        [InlineData("small", "this == 1u")]
+        [InlineData("color", "this == 1u")]
+        public async Task FieldTypeRejectsTheWrongLiteral(string fieldName, string expr)
+        {
+            var validator = new CelValidator();
+            var fd = Example.ValidationTypedFields.Descriptor.FindFieldByName(fieldName);
+            await Assert.ThrowsAsync<RuleException>(() => validator.Execute(Rule(expr), fd, 1L));
+        }
+
+        // The declared type and the bound value have to move together. Handing a signed CLR
+        // value for an unsigned field must still evaluate as unsigned rather than fail at
+        // evaluation with a type mismatch - the value is presented as the field's type too.
+        [Fact]
+        public async Task ValueIsPresentedAsTheDeclaredType()
+        {
+            var validator = new CelValidator();
+            var fd = Example.ValidationTypedFields.Descriptor.FindFieldByName("big");
+            // A CLR long, not a ulong, for a uint64 field.
+            Assert.Equal(true, await validator.Execute(Rule("this == 1u"), fd, 1L));
+            // And the bits are reinterpreted, not rejected: -1 is uint64 max.
+            Assert.Equal(true, await validator.Execute(Rule("this > 0u"), fd, -1L));
+        }
+
     }
 }

@@ -15,6 +15,7 @@ using Cel.Tools;
 using Duration = Google.Protobuf.WellKnownTypes.Duration;
 using Google.Api.Expr.V1Alpha1;
 using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using Google.Protobuf.WellKnownTypes;
 using Newtonsoft.Json.Linq;
 using NodaTime;
@@ -322,6 +323,152 @@ namespace Confluent.SchemaRegistry.Rules
             }
 
             return value;
+        }
+
+        /// <summary>
+        ///     Presents a field's value the way its declared type implies, so that the value
+        ///     and the type <see cref="FindTypeForField" /> declares always agree. Without
+        ///     this the two could disagree - a uint64 field declared uint while its value is
+        ///     bound as an int - and the rule would fail at evaluation instead of answering.
+        /// </summary>
+        internal static object ToCelValueForField(FieldDescriptor field, object value)
+        {
+            if (value == null || field.IsMap)
+            {
+                return ToCelValue(value);
+            }
+
+            if (field.IsRepeated)
+            {
+                if (!(value is IList list))
+                {
+                    return ToCelValue(value);
+                }
+
+                var converted = new List<object>(list.Count);
+                foreach (object element in list)
+                {
+                    converted.Add(ToCelScalar(field.FieldType, element));
+                }
+
+                return converted;
+            }
+
+            return ToCelScalar(field.FieldType, value);
+        }
+
+        private static object ToCelScalar(FieldType fieldType, object value)
+        {
+            switch (fieldType)
+            {
+                case FieldType.Float:
+                case FieldType.Double:
+                    return value is double ? value : Convert.ToDouble(value, CultureInfo.InvariantCulture);
+                case FieldType.Int32:
+                case FieldType.Int64:
+                case FieldType.SInt32:
+                case FieldType.SInt64:
+                case FieldType.SFixed32:
+                case FieldType.SFixed64:
+                case FieldType.Enum:
+                    return value is long ? value : Convert.ToInt64(value, CultureInfo.InvariantCulture);
+                case FieldType.UInt32:
+                case FieldType.UInt64:
+                case FieldType.Fixed32:
+                case FieldType.Fixed64:
+                    return ToUnsigned(value);
+                case FieldType.Bool:
+                    return value is bool ? value : Convert.ToBoolean(value, CultureInfo.InvariantCulture);
+                default:
+                    // string, bytes, message, group: already what CEL expects.
+                    return value;
+            }
+        }
+
+        /// <summary>
+        ///     An unsigned field's value as a ulong. A signed input is reinterpreted bit for
+        ///     bit rather than rejected: that is the same value on the wire, and it is what
+        ///     the Java client does with Long bits for a uint64 field.
+        /// </summary>
+        private static object ToUnsigned(object value)
+        {
+            switch (value)
+            {
+                case ulong u:
+                    return u;
+                case uint u:
+                    return (ulong)u;
+                case long l:
+                    return unchecked((ulong)l);
+                case int i:
+                    return unchecked((ulong)(long)i);
+                default:
+                    return value;
+            }
+        }
+
+        /// <summary>
+        ///     The CEL type of a protobuf field, taken from the field's own declared type.
+        ///     Returns null when the descriptor does not settle it - a message, a map, or an
+        ///     unrecognised type - and the caller should fall back to inferring from the value.
+        ///     <para>
+        ///         Keyed on the descriptor rather than the CLR type of the value, which is what
+        ///         every other client and protovalidate do. C#'s generated types happen to
+        ///         imply the right CEL type for each protobuf scalar, so inferring from the
+        ///         value lands in the same place - but only by coincidence of the type system,
+        ///         and it did not hold for enums, which have no CEL counterpart at all.
+        ///     </para>
+        /// </summary>
+        internal static Google.Api.Expr.V1Alpha1.Type FindTypeForField(FieldDescriptor field)
+        {
+            if (field.IsMap)
+            {
+                // The key and value types live on the entry message; the bound value is a
+                // dictionary and infers correctly from itself.
+                return null;
+            }
+
+            Google.Api.Expr.V1Alpha1.Type singular = FindTypeForFieldType(field.FieldType);
+            if (singular == null)
+            {
+                return null;
+            }
+
+            // A repeated field binds the whole collection.
+            return field.IsRepeated ? Decls.NewListType(singular) : singular;
+        }
+
+        private static Google.Api.Expr.V1Alpha1.Type FindTypeForFieldType(FieldType fieldType)
+        {
+            switch (fieldType)
+            {
+                case FieldType.Float:
+                case FieldType.Double:
+                    return Checked.CheckedDouble;
+                case FieldType.Int32:
+                case FieldType.Int64:
+                case FieldType.SInt32:
+                case FieldType.SInt64:
+                case FieldType.SFixed32:
+                case FieldType.SFixed64:
+                case FieldType.Enum:
+                    return Checked.CheckedInt;
+                case FieldType.UInt32:
+                case FieldType.UInt64:
+                case FieldType.Fixed32:
+                case FieldType.Fixed64:
+                    return Checked.CheckedUint;
+                case FieldType.Bool:
+                    return Checked.CheckedBool;
+                case FieldType.String:
+                    return Checked.CheckedString;
+                case FieldType.Bytes:
+                    return Checked.CheckedBytes;
+                default:
+                    // Message and group bind the message itself, whose type comes from its
+                    // descriptor rather than from here.
+                    return null;
+            }
         }
 
         private static Google.Api.Expr.V1Alpha1.Type FindTypeForClass(System.Type type)

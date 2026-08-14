@@ -47,9 +47,11 @@ namespace Example {
             "YRgEIAEoCUIcgkQZIhcKBWFSdWxlGg5zaXplKHRoaXMpID4gMEgAQggKBmNo",
             "b2ljZUIGCgRfb3B0IloKFFZhbGlkYXRpb25FbnVtSG9sZGVyEkIKBWNvbG9y",
             "GAEgASgOMhguZXhhbXBsZS5WYWxpZGF0aW9uQ29sb3JCGYJEFiIUCgdpc0dy",
-            "ZWVuGgl0aGlzID09IDEqRwoPVmFsaWRhdGlvbkNvbG9yEhgKFFZBTElEQVRJ",
-            "T05fQ09MT1JfUkVEEAASGgoWVkFMSURBVElPTl9DT0xPUl9HUkVFThABYgZw",
-            "cm90bzM="));
+            "ZWVuGgl0aGlzID09IDEiagoVVmFsaWRhdGlvblR5cGVkRmllbGRzEgsKA2Jp",
+            "ZxgBIAEoBBINCgVzbWFsbBgCIAEoAxInCgVjb2xvchgDIAEoDjIYLmV4YW1w",
+            "bGUuVmFsaWRhdGlvbkNvbG9yEgwKBGJpZ3MYBCADKAQqRwoPVmFsaWRhdGlv",
+            "bkNvbG9yEhgKFFZBTElEQVRJT05fQ09MT1JfUkVEEAASGgoWVkFMSURBVElP",
+            "Tl9DT0xPUl9HUkVFThABYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Confluent.SchemaRegistry.Serdes.Protobuf.MetaReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Example.ValidationColor), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -58,7 +60,8 @@ namespace Example {
             new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationItem), global::Example.ValidationItem.Parser, new[]{ "V", "Label" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationContainer), global::Example.ValidationContainer.Parser, new[]{ "Inner", "Items", "Labels", "Tags" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
             new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationPresence), global::Example.ValidationPresence.Parser, new[]{ "Plain", "Opt", "Many", "A" }, new[]{ "Choice", "Opt" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationEnumHolder), global::Example.ValidationEnumHolder.Parser, new[]{ "Color" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationEnumHolder), global::Example.ValidationEnumHolder.Parser, new[]{ "Color" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Example.ValidationTypedFields), global::Example.ValidationTypedFields.Parser, new[]{ "Big", "Small", "Color", "Bigs" }, null, null, null, null)
           }));
     }
     #endregion
@@ -1589,6 +1592,310 @@ namespace Example {
             break;
           case 8: {
             Color = (global::Example.ValidationColor) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// Unsigned and enum fields, whose CEL type the CLR type of the value cannot settle on its
+  /// own. Used to pin that the walk types a field from its descriptor.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class ValidationTypedFields : pb::IMessage<ValidationTypedFields>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<ValidationTypedFields> _parser = new pb::MessageParser<ValidationTypedFields>(() => new ValidationTypedFields());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<ValidationTypedFields> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Example.ValidationPersonReflection.Descriptor.MessageTypes[6]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ValidationTypedFields() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ValidationTypedFields(ValidationTypedFields other) : this() {
+      big_ = other.big_;
+      small_ = other.small_;
+      color_ = other.color_;
+      bigs_ = other.bigs_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ValidationTypedFields Clone() {
+      return new ValidationTypedFields(this);
+    }
+
+    /// <summary>Field number for the "big" field.</summary>
+    public const int BigFieldNumber = 1;
+    private ulong big_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong Big {
+      get { return big_; }
+      set {
+        big_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "small" field.</summary>
+    public const int SmallFieldNumber = 2;
+    private long small_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long Small {
+      get { return small_; }
+      set {
+        small_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "color" field.</summary>
+    public const int ColorFieldNumber = 3;
+    private global::Example.ValidationColor color_ = global::Example.ValidationColor.Red;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Example.ValidationColor Color {
+      get { return color_; }
+      set {
+        color_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "bigs" field.</summary>
+    public const int BigsFieldNumber = 4;
+    private static readonly pb::FieldCodec<ulong> _repeated_bigs_codec
+        = pb::FieldCodec.ForUInt64(34);
+    private readonly pbc::RepeatedField<ulong> bigs_ = new pbc::RepeatedField<ulong>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<ulong> Bigs {
+      get { return bigs_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as ValidationTypedFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(ValidationTypedFields other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Big != other.Big) return false;
+      if (Small != other.Small) return false;
+      if (Color != other.Color) return false;
+      if(!bigs_.Equals(other.bigs_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Big != 0UL) hash ^= Big.GetHashCode();
+      if (Small != 0L) hash ^= Small.GetHashCode();
+      if (Color != global::Example.ValidationColor.Red) hash ^= Color.GetHashCode();
+      hash ^= bigs_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Big != 0UL) {
+        output.WriteRawTag(8);
+        output.WriteUInt64(Big);
+      }
+      if (Small != 0L) {
+        output.WriteRawTag(16);
+        output.WriteInt64(Small);
+      }
+      if (Color != global::Example.ValidationColor.Red) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Color);
+      }
+      bigs_.WriteTo(output, _repeated_bigs_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Big != 0UL) {
+        output.WriteRawTag(8);
+        output.WriteUInt64(Big);
+      }
+      if (Small != 0L) {
+        output.WriteRawTag(16);
+        output.WriteInt64(Small);
+      }
+      if (Color != global::Example.ValidationColor.Red) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Color);
+      }
+      bigs_.WriteTo(ref output, _repeated_bigs_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Big != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Big);
+      }
+      if (Small != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(Small);
+      }
+      if (Color != global::Example.ValidationColor.Red) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Color);
+      }
+      size += bigs_.CalculateSize(_repeated_bigs_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(ValidationTypedFields other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Big != 0UL) {
+        Big = other.Big;
+      }
+      if (other.Small != 0L) {
+        Small = other.Small;
+      }
+      if (other.Color != global::Example.ValidationColor.Red) {
+        Color = other.Color;
+      }
+      bigs_.Add(other.bigs_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Big = input.ReadUInt64();
+            break;
+          }
+          case 16: {
+            Small = input.ReadInt64();
+            break;
+          }
+          case 24: {
+            Color = (global::Example.ValidationColor) input.ReadEnum();
+            break;
+          }
+          case 34:
+          case 32: {
+            bigs_.AddEntriesFrom(input, _repeated_bigs_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Big = input.ReadUInt64();
+            break;
+          }
+          case 16: {
+            Small = input.ReadInt64();
+            break;
+          }
+          case 24: {
+            Color = (global::Example.ValidationColor) input.ReadEnum();
+            break;
+          }
+          case 34:
+          case 32: {
+            bigs_.AddEntriesFrom(ref input, _repeated_bigs_codec);
             break;
           }
         }

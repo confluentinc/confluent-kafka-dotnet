@@ -26,6 +26,7 @@ using Cel.Common.Types.Pb;
 using Cel.Tools;
 using Google.Api.Expr.V1Alpha1;
 using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using NodaTime;
 
 namespace Confluent.SchemaRegistry.Rules
@@ -64,8 +65,9 @@ namespace Confluent.SchemaRegistry.Rules
         ///     Evaluates a single validation rule against a value.
         /// </summary>
         /// <param name="rule">the rule to evaluate</param>
-        /// <param name="schema">a schema hint describing the value; unused by CEL, which
-        ///     derives the type from the value itself</param>
+        /// <param name="schema">a hint describing the value. A protobuf
+        ///     <see cref="FieldDescriptor" /> settles the CEL type from the field's own
+        ///     declared type; anything else leaves it to be inferred from the value</param>
         /// <param name="message">the value to validate</param>
         public async Task<object> Execute(ValidationRule rule, object schema, object message)
         {
@@ -90,9 +92,26 @@ namespace Confluent.SchemaRegistry.Rules
             // and Cel.NET rejects a CLR enum outright ("enum not allowed here").
             message = CelExecutor.ToCelValue(message);
 
+            // Prefer the field's declared type over the CLR type of the value: the
+            // descriptor is what the rule was written against, and it distinguishes cases the
+            // value cannot - an enum from an int, a uint64 from an int64. Falls back to the
+            // value for a message, a map, or when no descriptor was supplied.
+            Google.Api.Expr.V1Alpha1.Type thisType = null;
+            if (schema is FieldDescriptor field)
+            {
+                thisType = CelExecutor.FindTypeForField(field);
+                if (thisType != null)
+                {
+                    // The value has to be presented as that same type, or the two disagree
+                    // and the rule fails at evaluation rather than answering.
+                    message = CelExecutor.ToCelValueForField(field, message);
+                }
+            }
+
+            thisType = thisType ?? CelExecutor.FindType(message);
             var declTypes = new Dictionary<string, Google.Api.Expr.V1Alpha1.Type>
             {
-                { "this", CelExecutor.FindType(message) },
+                { "this", thisType },
                 { "now", Checked.CheckedTimestamp }
             };
             // A rule on a repeated or map field binds a collection to `this`, and the

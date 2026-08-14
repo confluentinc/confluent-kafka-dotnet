@@ -528,7 +528,11 @@ namespace Confluent.SchemaRegistry.Serdes
                 string childPath = path.Length == 0 ? schemaFd.Name : $"{path}.{schemaFd.Name}";
                 foreach (ValidationRule rule in GetInlineValidationRules(GetMeta(schemaFd.Options)))
                 {
-                    await ValidationRules.Evaluate(executor, rule, schemaFd, value, childPath, violations)
+                    // The rules come from the registered schema, but the type hint is the
+                    // runtime field: it is what describes the value actually in hand, and it
+                    // settles distinctions the CLR type cannot - an enum from an int, a
+                    // uint64 from an int64.
+                    await ValidationRules.Evaluate(executor, rule, fd, value, childPath, violations)
                         .ConfigureAwait(false);
                     if (failFast && violations.Any())
                     {

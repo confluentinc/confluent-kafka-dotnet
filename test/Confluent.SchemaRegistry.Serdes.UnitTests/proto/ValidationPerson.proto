@@ -79,3 +79,12 @@ message ValidationEnumHolder {
     rules { name: "isGreen", expr: "this == 1" }
   }];
 }
+
+// Unsigned and enum fields, whose CEL type the CLR type of the value cannot settle on its
+// own. Used to pin that the walk types a field from its descriptor.
+message ValidationTypedFields {
+  uint64 big = 1;
+  int64 small = 2;
+  ValidationColor color = 3;
+  repeated uint64 bigs = 4;
+}
