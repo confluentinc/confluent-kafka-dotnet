@@ -176,7 +176,7 @@ namespace Confluent.SchemaRegistry.Rules
                 .WithDeclarations(ToDecls(ruleWithArgs.DeclTypes))
                 .WithTypes(type);
 
-            scriptBuilder = scriptBuilder.WithLibraries(new StringsLib(), new BuiltinLibrary());
+            scriptBuilder = scriptBuilder.WithLibraries(new StringsLib(), new MathLib(), new BuiltinLibrary());
             return scriptBuilder.Build();
         }
 

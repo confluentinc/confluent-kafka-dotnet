@@ -291,5 +291,22 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(true, await validator.Execute(Rule("this > 0u"), fd, -1L));
         }
 
+        // The math extension is registered in CelExecutor.WithLibraries, matching the JVM
+        // client's CelExtensions.math(). This exercises it end-to-end through the validator.
+        [Theory]
+        [InlineData("math.greatest(1, 5, 3) == 5")]
+        [InlineData("math.least([4, 2, 8]) == 2")]
+        [InlineData("math.greatest(1, 2u, 3.0) == 3.0")]
+        [InlineData("math.abs(-4) == 4")]
+        [InlineData("math.round(2.5) == 3.0")]
+        [InlineData("math.sign(-3) == -1")]
+        [InlineData("math.isNaN(0.0/0.0)")]
+        [InlineData("math.bitAnd(12, 10) == 8")]
+        [InlineData("math.bitShiftLeft(1, 3) == 8")]
+        public async Task MathExtension(string expr)
+        {
+            var validator = new CelValidator();
+            Assert.Equal(true, await validator.Execute(Rule(expr), null, 0));
+        }
     }
 }
