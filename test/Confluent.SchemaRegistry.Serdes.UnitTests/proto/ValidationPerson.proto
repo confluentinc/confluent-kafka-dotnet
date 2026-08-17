@@ -6,20 +6,20 @@ package example;
 
 message ValidationPerson {
     option (confluent.message_meta) = {
-        rules { name: "nameNotForbidden" expr: "this.name != 'forbidden'" }
+        rules: [{name: "nameNotForbidden", expr: "this.name != 'forbidden'"}]
     };
 
     string name = 1 [(confluent.field_meta) = {
-        rules { name: "nameNotEmpty" doc: "name must not be empty" expr: "size(this) > 0" }
+        rules: [{name: "nameNotEmpty", doc: "name must not be empty", expr: "size(this) > 0"}]
     }];
     int32 favorite_number = 2 [(confluent.field_meta) = {
-        rules { name: "numberPositive" expr: "this >= 0" }
+        rules: [{name: "numberPositive", expr: "this >= 0"}]
     }];
 }
 
-// Uses the bracketed list form, which protoc accepts and protobuf-net's .proto text
-// parser does not - see ProtobufRulesSyntaxTests. Reading rules from the compiled-in
-// descriptor sidesteps that parser entirely.
+// The bracketed list form (the cross-client canonical form) with more than one rule per
+// field. protobuf-net's .proto text parser accepts it as of 3.3.21; these fixtures are
+// compiled by protoc, so both rules are present in the descriptor either way.
 message ValidationListForm {
     string id = 1 [(confluent.field_meta) = {
         rules: [
@@ -33,7 +33,7 @@ message ValidationListForm {
 // messages, all reached only by descending with the field's own message type.
 message ValidationItem {
   option (confluent.message_meta) = {
-    rules { name: "itemPositive" expr: "this.v > 0" }
+    rules: [{name: "itemPositive", expr: "this.v > 0"}]
   };
 
   int32 v = 1;
@@ -52,17 +52,17 @@ message ValidationContainer {
 // repeated field and a map have none, so they are never "unset".
 message ValidationPresence {
   string plain = 1 [(confluent.field_meta) = {
-    rules { name: "plainRule", expr: "size(this) > 0" }
+    rules: [{name: "plainRule", expr: "size(this) > 0"}]
   }];
   optional string opt = 2 [(confluent.field_meta) = {
-    rules { name: "optRule", expr: "size(this) > 0" }
+    rules: [{name: "optRule", expr: "size(this) > 0"}]
   }];
   repeated string many = 3 [(confluent.field_meta) = {
-    rules { name: "manyRule", expr: "size(this) > 0" }
+    rules: [{name: "manyRule", expr: "size(this) > 0"}]
   }];
   oneof choice {
     string a = 4 [(confluent.field_meta) = {
-      rules { name: "aRule", expr: "size(this) > 0" }
+      rules: [{name: "aRule", expr: "size(this) > 0"}]
     }];
   }
 }
@@ -76,7 +76,7 @@ enum ValidationColor {
 
 message ValidationEnumHolder {
   ValidationColor color = 1 [(confluent.field_meta) = {
-    rules { name: "isGreen", expr: "this == 1" }
+    rules: [{name: "isGreen", expr: "this == 1"}]
   }];
 }
 

@@ -38,7 +38,7 @@ package example;
 
 message ValidationItem {
     option (confluent.message_meta) = {
-        rules { name: ""itemPositive"" expr: ""this.v > 0"" }
+        rules: [{name: ""itemPositive"", expr: ""this.v > 0""}]
     };
 
     int32 v = 1;
@@ -143,7 +143,7 @@ package example;
 
 message ValidationItem {
     option (confluent.message_meta) = {
-        rules { name: ""itemPositive"" expr: ""this.v > 0"" }
+        rules: [{name: ""itemPositive"", expr: ""this.v > 0""}]
     };
 
     int32 v = 1;

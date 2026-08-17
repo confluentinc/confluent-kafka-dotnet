@@ -369,11 +369,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         // ------------------------------------------------------------------------------
 
         // The rules live in the registered schema text; the generated C# class needs no
-        // knowledge of them.
-        // Rules are written as repeated `rules { ... }` blocks rather than the bracketed
-        // list form (`rules: [{...}]`) used by the other clients: protobuf-net's .proto
-        // parser does not accept the list form and silently yields a message with no
-        // fields. See ProtobufRulesSyntaxTests.
+        // knowledge of them. Rules use the bracketed list form (`rules: [{...}]`) shared with
+        // the other clients (JVM, Go, Python, JavaScript).
         private const string ProtobufValidationSchema = @"syntax = ""proto3"";
         import ""confluent/meta.proto"";
 
@@ -381,15 +378,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
         message PersonWithPic {
             option (.confluent.message_meta) = {
-                rules { name: ""nameNotForbidden"" expr: ""this.name != 'forbidden'"" }
+                rules: [{name: ""nameNotForbidden"", expr: ""this.name != 'forbidden'""}]
             };
 
             string favorite_color = 1;
             int32 favorite_number = 2 [(.confluent.field_meta) = {
-                rules { name: ""numberPositive"" doc: ""number must not be negative"" expr: ""this >= 0"" }
+                rules: [{name: ""numberPositive"", doc: ""number must not be negative"", expr: ""this >= 0""}]
             }];
             string name = 3 [(.confluent.field_meta) = {
-                rules { name: ""nameNotEmpty"" expr: ""size(this) > 0"" }
+                rules: [{name: ""nameNotEmpty"", expr: ""size(this) > 0""}]
             }];
             bytes picture = 4;
         }";
@@ -587,8 +584,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [Fact]
         public void ProtobufReadsBracketedListRulesFromTheLocalDescriptor()
         {
-            // protoc handles the bracketed list form that protobuf-net's .proto text parser
-            // cannot, so both rules are present when read from the compiled-in descriptor.
+            // The bracketed list form compiles to two rules in the local descriptor; both are
+            // read and enforced when the schema is auto-registered from that descriptor.
             var config = new ProtobufSerializerConfig
             {
                 AutoRegisterSchemas = true,

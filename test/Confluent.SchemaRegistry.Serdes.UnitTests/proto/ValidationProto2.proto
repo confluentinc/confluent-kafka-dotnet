@@ -9,7 +9,7 @@ package example;
 // `ContainingOneof != null`. An unset field here must not invoke the rule.
 message ValidationProto2Presence {
   optional string opt = 1 [(confluent.field_meta) = {
-    rules { name: "optRule", expr: "size(this) > 0" }
+    rules: [{name: "optRule", expr: "size(this) > 0"}]
   }];
   required string req = 2;
 }
