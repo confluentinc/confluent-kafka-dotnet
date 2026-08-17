@@ -30,7 +30,15 @@
     Set PrivateAssets per https://learn.microsoft.com/en-us/nuget/create-packages/select-assemblies-referenced-by-projects
     and https://stackoverflow.com/questions/52207524/disable-transitive-packagereference-dependency-for-a-specific-msbuild-project
     -->
-    <PackageReference Include="protobuf-net.Reflection" Version="3.2.12" PrivateAssets="contentfiles;analyzers;build;compile">
+    <PackageReference Include="protobuf-net.Reflection" Version="3.3.21" PrivateAssets="contentfiles;analyzers;build;compile">
+      <Aliases>ProtobufNet</Aliases>
+    </PackageReference>
+    <!--
+    protobuf-net.Reflection only depends on protobuf-net.Core, which has no runtime model
+    and so cannot deserialize its own descriptor types. The full runtime is needed to load
+    a FileDescriptorProto from its binary form - see ProtobufUtils.ParseFromDescriptor.
+    -->
+    <PackageReference Include="protobuf-net" Version="3.3.21" PrivateAssets="contentfiles;analyzers;build;compile">
       <Aliases>ProtobufNet</Aliases>
     </PackageReference>
   </ItemGroup>
