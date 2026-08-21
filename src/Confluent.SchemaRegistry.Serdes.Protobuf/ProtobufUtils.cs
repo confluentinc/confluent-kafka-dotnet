@@ -47,6 +47,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             { "confluent/meta.proto", GetResource("confluent.meta.proto") },
             { "confluent/type/decimal.proto", GetResource("confluent.type.decimal.proto") },
+            { "confluent/type/variant.proto", GetResource("confluent.type.variant.proto") },
             { "google/type/calendar_period.proto", GetResource("google.type.calendar_period.proto") },
             { "google/type/color.proto", GetResource("google.type.color.proto") },
             { "google/type/date.proto", GetResource("google.type.date.proto") },

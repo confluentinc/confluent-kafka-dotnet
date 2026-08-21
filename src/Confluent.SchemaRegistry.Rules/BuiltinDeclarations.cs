@@ -12,6 +12,12 @@ namespace Confluent.SchemaRegistry.Rules
         private static readonly Type Decimal =
             Decls.NewAbstractType(CelTypeLabels.DecimalName, new List<Type>());
 
+        // Abstract (opaque) type declaration for confluent.type.Variant. Same rationale as
+        // Decimal: cel.net has no opaque type, so the runtime value is VariantT, whose type
+        // name matches this.
+        private static readonly Type Variant =
+            Decls.NewAbstractType(CelTypeLabels.VariantName, new List<Type>());
+
         public static IList<Decl> Create()
         {
             IList<Decl> decls = new List<Decl>();
@@ -60,8 +66,72 @@ namespace Confluent.SchemaRegistry.Rules
 
             AddDecimal(decls);
             AddTimestamp(decls);
+            AddVariant(decls);
 
             return decls;
+        }
+
+        // ---- Variant ----
+
+        private static void AddVariant(IList<Decl> decls)
+        {
+            // variant(...) constructor. (dyn) runtime-dispatches on the actual type (Avro
+            // Variant, proto confluent.type.Variant, map); (bytes, bytes) builds directly
+            // from (value, metadata) bytes.
+            decls.Add(Decls.NewFunction(
+                "variant",
+                Decls.NewOverload("dyn_to_variant", new List<Type> { Decls.Dyn }, Variant),
+                Decls.NewOverload("bytes_bytes_to_variant",
+                    new List<Type> { Decls.Bytes, Decls.Bytes }, Variant)));
+
+            // Parsing: strict (raises on malformed) and soft (null on failure).
+            decls.Add(Decls.NewFunction(
+                "variants.parseJson",
+                Decls.NewOverload("variants_parse_json", new List<Type> { Decls.String }, Variant)));
+            // tryParseJson returns CEL null on failure, so its result type is dyn (an abstract
+            // type is not comparable to null in the checker).
+            decls.Add(Decls.NewFunction(
+                "variants.tryParseJson",
+                Decls.NewOverload("variants_try_parse_json", new List<Type> { Decls.String }, Decls.Dyn)));
+
+            // Inspection.
+            decls.Add(Decls.NewFunction(
+                "variants.type",
+                Decls.NewOverload("variants_type", new List<Type> { Variant }, Decls.String)));
+            decls.Add(Decls.NewFunction(
+                "variants.isNull",
+                Decls.NewOverload("variants_is_null", new List<Type> { Decls.Dyn }, Decls.Bool)));
+
+            // Navigation: field/index/path return a Variant, or CEL null on a miss — so the
+            // declared result is dyn (so `... == null` type-checks, and the result still feeds
+            // another variants.* call, since dyn is assignable to the abstract Variant param).
+            decls.Add(Decls.NewFunction(
+                "variants.path",
+                Decls.NewOverload("variants_path",
+                    new List<Type> { Variant, Decls.String }, Decls.Dyn)));
+            decls.Add(Decls.NewFunction(
+                "variants.field",
+                Decls.NewOverload("variants_field",
+                    new List<Type> { Variant, Decls.String }, Decls.Dyn)));
+            decls.Add(Decls.NewFunction(
+                "variants.index",
+                Decls.NewOverload("variants_index",
+                    new List<Type> { Variant, Decls.Int }, Decls.Dyn)));
+
+            // Typed extraction: as (strict) / tryAs (null on mismatch) -> dyn.
+            decls.Add(Decls.NewFunction(
+                "variants.as",
+                Decls.NewOverload("variants_as",
+                    new List<Type> { Variant, Decls.String }, Decls.Dyn)));
+            decls.Add(Decls.NewFunction(
+                "variants.tryAs",
+                Decls.NewOverload("variants_try_as",
+                    new List<Type> { Variant, Decls.String }, Decls.Dyn)));
+
+            // Serialization.
+            decls.Add(Decls.NewFunction(
+                "variants.toJson",
+                Decls.NewOverload("variants_to_json", new List<Type> { Variant }, Decls.String)));
         }
 
         // ---- Decimal ----

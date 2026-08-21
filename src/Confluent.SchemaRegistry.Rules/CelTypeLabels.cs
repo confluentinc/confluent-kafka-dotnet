@@ -31,6 +31,11 @@ namespace Confluent.SchemaRegistry.Rules
         public const string DecimalName = "confluent.type.Decimal";
 
         /// <summary>
+        ///     CEL type label for <c>confluent.type.Variant</c> (Spark/Parquet Variant).
+        /// </summary>
+        public const string VariantName = "confluent.type.Variant";
+
+        /// <summary>
         ///     CEL type label for <c>google.protobuf.Timestamp</c> (= CEL built-in timestamp).
         /// </summary>
         public const string TimestampName = "google.protobuf.Timestamp";
