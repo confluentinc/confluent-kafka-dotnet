@@ -19,10 +19,11 @@ using System.Globalization;
 using System.Numerics;
 using System.Text;
 
-namespace Confluent.SchemaRegistry.Rules
+namespace Confluent.SchemaRegistry
 {
     /// <summary>
-    ///     Arbitrary-precision signed decimal, the CEL Decimal backing type for this client.
+    ///     Arbitrary-precision signed decimal, the CEL Decimal backing type for this client and
+    ///     the unscaled/scale representation used by the Variant codec.
     ///     A value is <c>unscaled × 10^(-scale)</c> — a <see cref="BigInteger" /> unscaled
     ///     value and an <see cref="int" /> scale, exactly like Java's
     ///     <c>java.math.BigDecimal</c>. .NET's <see cref="decimal" /> tops out at 28–29
@@ -30,13 +31,16 @@ namespace Confluent.SchemaRegistry.Rules
     ///     JS/Rust) requires the 38-significant-digit division and square root those clients
     ///     produce, so the arithmetic here mirrors Java's <c>MathContext(38, HALF_UP)</c>.
     /// </summary>
-    internal readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
+    public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
     {
         /// <summary>
         ///     Significant-digit precision for division and square root, matching Java's
         ///     <c>MathContext(38, HALF_UP)</c> used across the other clients.
         /// </summary>
         private const int DivisionPrecision = 38;
+
+        private static readonly BigInteger MaxDecimalValue = new BigInteger(decimal.MaxValue);
+        private static readonly BigInteger MinDecimalValue = new BigInteger(decimal.MinValue);
 
         private readonly BigInteger unscaled;
         private readonly int scale;
@@ -63,6 +67,21 @@ namespace Confluent.SchemaRegistry.Rules
         public static BigDecimal FromLong(long value) => new BigDecimal(new BigInteger(value), 0);
 
         public static BigDecimal FromBigInteger(BigInteger value) => new BigDecimal(value, 0);
+
+        /// <summary>
+        ///     Lossless conversion from a <see cref="decimal" />, built directly from its bits so
+        ///     that scale and trailing zeros are preserved (<c>1.50m</c> becomes scale 2).
+        /// </summary>
+        public static BigDecimal FromDecimal(decimal value)
+        {
+            int[] bits = decimal.GetBits(value);           // [lo, mid, hi, flags]
+            BigInteger unscaled = (new BigInteger((uint)bits[2]) << 64)
+                                | (new BigInteger((uint)bits[1]) << 32)
+                                | new BigInteger((uint)bits[0]);
+            int scale = (bits[3] >> 16) & 0xFF;            // scale is bits 16-23
+            if ((bits[3] & unchecked((int)0x80000000)) != 0) unscaled = -unscaled; // sign bit 31
+            return new BigDecimal(unscaled, scale);
+        }
 
         /// <summary>
         ///     Parse a decimal string, accepting an optional sign, an optional fractional
@@ -132,7 +151,35 @@ namespace Confluent.SchemaRegistry.Rules
                 throw new ArgumentException($"Cannot convert {value} to Decimal");
             }
 
-            return Parse(value.ToString("R", CultureInfo.InvariantCulture));
+            return Parse(EnsureFractional(value.ToString("R", CultureInfo.InvariantCulture)));
+        }
+
+        /// <summary>
+        ///     A <see cref="BigDecimal" /> from a <see cref="float" />, via the shortest decimal
+        ///     string that round-trips to the same float — Java <c>Float.toString</c>. A whole-number
+        ///     value keeps a trailing <c>.0</c> (scale 1), matching Java/Python and the other clients.
+        /// </summary>
+        public static BigDecimal FromFloat(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                throw new ArgumentException($"Cannot convert {value} to Decimal");
+            }
+
+            return Parse(EnsureFractional(value.ToString("R", CultureInfo.InvariantCulture)));
+        }
+
+        // Java Double/Float.toString always emit a fractional digit for a whole number ("2.0",
+        // scale 1); .NET's "R" format omits it ("2", scale 0), which would diverge from the other
+        // clients and propagate through multiply. Restore the ".0" unless the value is in
+        // scientific notation.
+        private static string EnsureFractional(string s)
+        {
+            if (s.IndexOf('.') < 0 && s.IndexOf('E') < 0 && s.IndexOf('e') < 0)
+            {
+                return s + ".0";
+            }
+            return s;
         }
 
         // ---- Arithmetic --------------------------------------------------------------
@@ -210,13 +257,18 @@ namespace Confluent.SchemaRegistry.Rules
                 s -= 1;
             }
 
+            BigInteger resultUnscaled = sign < 0 ? -q : q;
+            int resultScale = s - baseShift;
             if (exact)
             {
-                StripTrailingZeros(ref q, ref s);
+                // Java targets the preferred scale (dividend.scale - divisor.scale) for an
+                // exact result: strip trailing zeros only down to it, and pad back up to it
+                // when the natural scale is smaller. Never strip below the preferred scale
+                // (6.0/3 -> "2.0", not "2"; 10.00/2 -> "5.00").
+                ApplyPreferredScale(ref resultUnscaled, ref resultScale, scale - divisor.scale);
             }
 
-            BigInteger resultUnscaled = sign < 0 ? -q : q;
-            return new BigDecimal(resultUnscaled, s - baseShift);
+            return new BigDecimal(resultUnscaled, resultScale);
         }
 
         /// <summary>
@@ -286,7 +338,10 @@ namespace Confluent.SchemaRegistry.Rules
 
             if (exact)
             {
-                StripTrailingZeros(ref q, ref s);
+                // Java targets the preferred scale (radicand.scale / 2) for an exact result:
+                // strip trailing zeros only down to it, padding back up when the natural scale
+                // is smaller (sqrt(4.00) -> "2.0"; sqrt(100.0000) -> "10.00").
+                ApplyPreferredScale(ref q, ref s, scale / 2);
             }
 
             return new BigDecimal(q, s);
@@ -366,7 +421,14 @@ namespace Confluent.SchemaRegistry.Rules
             // Hash on the trailing-zero-stripped form so equal values hash equally.
             BigInteger q = unscaled;
             int sc = scale;
-            StripTrailingZeros(ref q, ref sc);
+            if (q.IsZero)
+            {
+                sc = 0; // every zero is value-equal regardless of scale
+            }
+            else
+            {
+                StripTrailingZeros(ref q, ref sc);
+            }
             return q.GetHashCode() * 397 ^ sc;
         }
 
@@ -421,6 +483,44 @@ namespace Confluent.SchemaRegistry.Rules
             }
         }
 
+        /// <summary>
+        ///     Nearest <see cref="decimal" /> (may lose precision). Throws
+        ///     <see cref="OverflowException" /> when the integer part does not fit in a
+        ///     <see cref="decimal" /> — Java <c>toBigDecimal</c> narrowed to System.Decimal.
+        /// </summary>
+        public decimal ToDecimal()
+        {
+            BigInteger uns = unscaled;
+            int sc = scale;
+            if (sc < 0)
+            {
+                uns *= BigInteger.Pow(10, -sc);
+                sc = 0;
+            }
+            else if (sc > 28)
+            {
+                // System.Decimal holds at most 28 fractional digits; round the excess away with
+                // HALF_UP so an exactly-representable high-scale value (e.g. 1.5 stored at scale 30)
+                // converts instead of overflowing the 10^sc divisor, and a sub-1e-28 value rounds to 0.
+                BigInteger dropDivisor = BigInteger.Pow(10, sc - 28);
+                BigInteger q = BigInteger.DivRem(uns, dropDivisor, out BigInteger dropRem);
+                if (BigInteger.Abs(dropRem) * 2 >= dropDivisor)
+                {
+                    q += uns.Sign; // round half away from zero
+                }
+                uns = q;
+                sc = 28;
+            }
+
+            BigInteger scaleDivisor = BigInteger.Pow(10, sc);
+            BigInteger quotient = BigInteger.DivRem(uns, scaleDivisor, out BigInteger remainder);
+            if (quotient > MaxDecimalValue || quotient < MinDecimalValue)
+            {
+                throw new OverflowException("The value cannot fit into System.Decimal.");
+            }
+            return (decimal)quotient + (decimal)remainder / (decimal)scaleDivisor;
+        }
+
         public override string ToString() => ToPlainString();
 
         // ---- Helpers -----------------------------------------------------------------
@@ -444,6 +544,29 @@ namespace Confluent.SchemaRegistry.Rules
             {
                 value /= 10;
                 scale--;
+            }
+        }
+
+        /// <summary>
+        ///     Rewrite an exact div/sqrt result to Java <c>BigDecimal</c>'s preferred scale:
+        ///     strip trailing zeros down to (but never below) <paramref name="preferredScale" />,
+        ///     then pad with trailing zeros back up to it when the natural scale is smaller.
+        ///     Mirrors Go's <c>applyPreferredScale</c>. The preferred scale is
+        ///     <c>dividend.scale - divisor.scale</c> for division and <c>radicand.scale / 2</c>
+        ///     for square root.
+        /// </summary>
+        private static void ApplyPreferredScale(ref BigInteger value, ref int scale, int preferredScale)
+        {
+            while (scale > preferredScale && !value.IsZero && value % 10 == 0)
+            {
+                value /= 10;
+                scale--;
+            }
+
+            if (scale < preferredScale)
+            {
+                value *= Pow10(preferredScale - scale);
+                scale = preferredScale;
             }
         }
 

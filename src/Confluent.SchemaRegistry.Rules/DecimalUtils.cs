@@ -123,8 +123,9 @@ namespace Confluent.SchemaRegistry.Rules
                 case double dbl:
                     return BigDecimal.FromDouble(dbl);
                 case float f:
-                    // Stringify at float precision (not widened to double) so 0.1f → "0.1".
-                    return BigDecimal.Parse(f.ToString("R", CultureInfo.InvariantCulture));
+                    // Float precision (not widened to double) so 0.1f → "0.1", with the
+                    // whole-number ".0" preserved (scale 1) to match Java/Python.
+                    return BigDecimal.FromFloat(f);
                 case string s:
                     return BigDecimal.Parse(s);
                 case byte[] _:
