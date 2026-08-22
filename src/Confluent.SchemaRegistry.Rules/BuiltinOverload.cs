@@ -239,7 +239,11 @@ namespace Confluent.SchemaRegistry.Rules
 
                     break;
                 case "double":
-                    if (vt == VariantType.Float || vt == VariantType.Double)
+                    if (vt == VariantType.Float)
+                    {
+                        return DoubleT.DoubleOf(v.GetFloat());
+                    }
+                    if (vt == VariantType.Double)
                     {
                         return DoubleT.DoubleOf(v.GetDouble());
                     }

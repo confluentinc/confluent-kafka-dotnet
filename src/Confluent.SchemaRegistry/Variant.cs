@@ -184,6 +184,39 @@ namespace Confluent.SchemaRegistry
             return ti == TTrue;
         }
 
+        /// <summary>The signed 8-bit integer of an INT8 value (exact width; no widening).</summary>
+        public sbyte GetByte()
+        {
+            int ti = PrimitiveInfo();
+            if (ti != TInt1) throw new VariantException("variant is not a byte");
+            return (sbyte)ReadSignedLong(value, pos + 1, 1);
+        }
+
+        /// <summary>The signed 16-bit integer of an INT8/INT16 value (widens within 16 bits).</summary>
+        public short GetShort()
+        {
+            int ti = PrimitiveInfo();
+            switch (ti)
+            {
+                case TInt1: return (short)ReadSignedLong(value, pos + 1, 1);
+                case TInt2: return (short)ReadSignedLong(value, pos + 1, 2);
+                default: throw new VariantException("variant is not a short");
+            }
+        }
+
+        /// <summary>The signed 32-bit integer of an INT8/INT16/INT32 value (widens within 32 bits).</summary>
+        public int GetInt()
+        {
+            int ti = PrimitiveInfo();
+            switch (ti)
+            {
+                case TInt1: return (int)ReadSignedLong(value, pos + 1, 1);
+                case TInt2: return (int)ReadSignedLong(value, pos + 1, 2);
+                case TInt4: return (int)ReadSignedLong(value, pos + 1, 4);
+                default: throw new VariantException("variant is not an int");
+            }
+        }
+
         /// <summary>
         ///     The raw integer for any integer-backed type (byte/short/int/long, date days,
         ///     timestamp micros, time micros, timestamp-nanos) - mirrors Java <c>getLong</c>.
@@ -207,12 +240,20 @@ namespace Confluent.SchemaRegistry
             }
         }
 
+        /// <summary>The 32-bit float of a FLOAT value (exact; does not read DOUBLE).</summary>
+        public float GetFloat()
+        {
+            int ti = PrimitiveInfo();
+            if (ti != TFloat) throw new VariantException("variant is not a float");
+            return ReadFloatLE(value, pos + 1);
+        }
+
+        /// <summary>The 64-bit double of a DOUBLE value (exact; does not widen FLOAT).</summary>
         public double GetDouble()
         {
             int ti = PrimitiveInfo();
-            if (ti == TFloat) return ReadFloatLE(value, pos + 1);
             if (ti == TDouble) return ReadDoubleLE(value, pos + 1);
-            throw new VariantException("variant is not a float/double");
+            throw new VariantException("variant is not a double");
         }
 
         /// <summary>The unscaled integer and scale of a decimal value (scale preserved).</summary>
@@ -245,7 +286,7 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>The UUID as its canonical big-endian hex string (e.g. "00112233-...").</summary>
-        public string GetUuidString()
+        public string GetUuid()
         {
             int ti = PrimitiveInfo();
             if (ti != TUuid) throw new VariantException("variant is not a uuid");
@@ -312,7 +353,7 @@ namespace Confluent.SchemaRegistry
             dataStart = offsetStart + (numFields + 1) * offsetSize;
         }
 
-        public int NumObjectElements()
+        public int NumObjectFields()
         {
             ObjectInfo(out int n, out _, out _, out _, out _, out _);
             return n;
@@ -397,7 +438,7 @@ namespace Confluent.SchemaRegistry
                 case VariantType.Object:
                 {
                     sb.Append('{');
-                    int n = NumObjectElements();
+                    int n = NumObjectFields();
                     for (int i = 0; i < n; i++)
                     {
                         if (i > 0) sb.Append(',');
@@ -430,6 +471,8 @@ namespace Confluent.SchemaRegistry
                     sb.Append(GetLong().ToString(CultureInfo.InvariantCulture));
                     break;
                 case VariantType.Float:
+                    sb.Append(FormatDouble(GetFloat()));
+                    break;
                 case VariantType.Double:
                     sb.Append(FormatDouble(GetDouble()));
                     break;
@@ -463,7 +506,7 @@ namespace Confluent.SchemaRegistry
                     sb.Append('"').Append(Convert.ToBase64String(GetBinary())).Append('"');
                     break;
                 case VariantType.Uuid:
-                    sb.Append('"').Append(GetUuidString()).Append('"');
+                    sb.Append('"').Append(GetUuid()).Append('"');
                     break;
                 default:
                     throw new VariantException("unsupported variant type for JSON: " + t);

@@ -52,6 +52,13 @@ namespace Confluent.SchemaRegistry.UnitTests
             return b;
         }
 
+        private static byte[] F32(float f)
+        {
+            var b = BitConverter.GetBytes(f);
+            if (!BitConverter.IsLittleEndian) Array.Reverse(b);
+            return b;
+        }
+
         private static byte[] Dec(int scale, BigInteger unscaled, int width)
         {
             var le = unscaled.ToByteArray();
@@ -68,7 +75,7 @@ namespace Confluent.SchemaRegistry.UnitTests
             Variant v = Variant.ParseJson(
                 "{\"name\":\"alice\",\"age\":30,\"scores\":[10,20,30],\"nested\":{\"x\":1},\"explicit\":null}");
             Assert.Equal(VariantType.Object, v.GetVariantType());
-            Assert.Equal(5, v.NumObjectElements());
+            Assert.Equal(5, v.NumObjectFields());
             Assert.Equal("alice", v.GetFieldByKey("name").GetString());
             Assert.Equal(30L, v.GetFieldByKey("age").GetLong());
             Assert.Equal(30L, v.GetFieldByKey("scores").GetElementAtIndex(2).GetLong());
@@ -128,6 +135,33 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.False(Prim(TFalse).GetBoolean());
             var bin = Prim(TBinary, Combine(Le(4, 4), new byte[] { 1, 2, 3, 4 })).GetBinary();
             Assert.Equal(new byte[] { 1, 2, 3, 4 }, bin);
+        }
+
+        [Fact]
+        public void NarrowedIntGetters()
+        {
+            // GetByte reads INT8 only.
+            Assert.Equal((sbyte)-5, Prim(TInt1, Le(-5, 1)).GetByte());
+            Assert.Throws<VariantException>(() => Prim(TInt2, Le(-300, 2)).GetByte());
+            // GetShort widens INT8 -> INT16.
+            Assert.Equal((short)-5, Prim(TInt1, Le(-5, 1)).GetShort());
+            Assert.Equal((short)-300, Prim(TInt2, Le(-300, 2)).GetShort());
+            Assert.Throws<VariantException>(() => Prim(TInt4, Le(100000, 4)).GetShort());
+            // GetInt widens INT8/INT16 -> INT32.
+            Assert.Equal(-5, Prim(TInt1, Le(-5, 1)).GetInt());
+            Assert.Equal(-300, Prim(TInt2, Le(-300, 2)).GetInt());
+            Assert.Equal(100000, Prim(TInt4, Le(100000, 4)).GetInt());
+            Assert.Throws<VariantException>(() => Prim(TInt8, Le(9876543210L, 8)).GetInt());
+        }
+
+        [Fact]
+        public void FloatAndDoubleAreExact()
+        {
+            // GetFloat reads FLOAT only; GetDouble reads DOUBLE only (no widening).
+            Assert.Equal(2.5f, Prim(TFloat, F32(2.5f)).GetFloat());
+            Assert.Equal(2.5, Prim(TDouble, F64(2.5)).GetDouble());
+            Assert.Throws<VariantException>(() => Prim(TFloat, F32(2.5f)).GetDouble());
+            Assert.Throws<VariantException>(() => Prim(TDouble, F64(2.5)).GetFloat());
         }
 
         [Theory]
@@ -190,6 +224,107 @@ namespace Confluent.SchemaRegistry.UnitTests
         {
             const string src = "{\"a\":1,\"b\":[true,null,\"x\"],\"c\":{\"d\":2}}";
             Assert.Equal(src, Variant.ParseJson(src).ToJson()); // sorted keys, compact
+        }
+
+        [Fact]
+        public void Builder_NestedDoc_MatchesParseJson()
+        {
+            // A document using only JSON-representable types, so ParseJson produces identical bytes.
+            // amount=150 does not fit INT8, so the JSON path selects INT16 - AppendShort matches it.
+            const string json = "{\"id\":42,\"amount\":150," +
+                "\"big\":123456789012345678901234567890,\"tags\":[\"x\",\"y\"]," +
+                "\"nested\":{\"flag\":true,\"pi\":3.5},\"note\":null}";
+
+            BigInteger big = BigInteger.Parse("123456789012345678901234567890");
+            byte[] bigBe = big.ToByteArray();  // little-endian two's-complement
+            Array.Reverse(bigBe);              // -> big-endian two's-complement
+
+            var b = new VariantBuilder();
+            b.StartObject();
+            b.AppendKey("id"); b.AppendByte(42);
+            b.AppendKey("amount"); b.AppendShort(150);
+            b.AppendKey("big"); b.AppendDecimal(bigBe, 0);
+            b.AppendKey("tags");
+            b.StartArray();
+            b.AppendString("x");
+            b.AppendString("y");
+            b.EndArray();
+            b.AppendKey("nested");
+            b.StartObject();
+            b.AppendKey("flag"); b.AppendBoolean(true);
+            b.AppendKey("pi"); b.AppendDouble(3.5);
+            b.EndObject();
+            b.AppendKey("note"); b.AppendNull();
+            b.EndObject();
+            Variant built = b.Build();
+
+            Variant parsed = Variant.ParseJson(json);
+            Assert.Equal(parsed.ToJson(), built.ToJson());
+            Assert.Equal(parsed.ValueBytes, built.ValueBytes);       // byte-identical value
+            Assert.Equal(parsed.MetadataBytes, built.MetadataBytes); // byte-identical metadata
+        }
+
+        [Fact]
+        public void Builder_RootScalar_MatchesParseJson()
+        {
+            var b = new VariantBuilder();
+            b.AppendString("hello");
+            Variant built = b.Build();
+
+            Variant parsed = Variant.ParseJson("\"hello\"");
+            Assert.Equal("\"hello\"", built.ToJson());
+            Assert.Equal(VariantType.String, built.GetVariantType());
+            Assert.Equal(parsed.ValueBytes, built.ValueBytes);
+            Assert.Equal(parsed.MetadataBytes, built.MetadataBytes);
+        }
+
+        [Fact]
+        public void Builder_TypedScalars_RoundTripThroughReader()
+        {
+            var b = new VariantBuilder();
+            b.StartArray();
+            b.AppendLong(9876543210L);
+            b.AppendFloat(2.5f);
+            b.AppendUuid(new byte[] {
+                0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff });
+            b.AppendDate(18262);
+            b.EndArray();
+            Variant v = b.Build();
+
+            Assert.Equal(VariantType.Array, v.GetVariantType());
+            Assert.Equal(9876543210L, v.GetElementAtIndex(0).GetLong());
+            Assert.Equal(2.5f, v.GetElementAtIndex(1).GetFloat());
+            Assert.Equal("00112233-4455-6677-8899-aabbccddeeff", v.GetElementAtIndex(2).GetUuid());
+            Assert.Equal(VariantType.Date, v.GetElementAtIndex(3).GetVariantType());
+        }
+
+        [Fact]
+        public void Builder_Misuse_Throws()
+        {
+            // Build with an open container.
+            Assert.Throws<VariantException>(() =>
+            {
+                var b = new VariantBuilder();
+                b.StartObject();
+                b.Build();
+            });
+            // AppendKey outside an object.
+            Assert.Throws<VariantException>(() => new VariantBuilder().AppendKey("k"));
+            // Value in an object without a preceding AppendKey.
+            Assert.Throws<VariantException>(() =>
+            {
+                var b = new VariantBuilder();
+                b.StartObject();
+                b.AppendLong(1);
+            });
+            // Mismatched end.
+            Assert.Throws<VariantException>(() =>
+            {
+                var b = new VariantBuilder();
+                b.StartArray();
+                b.EndObject();
+            });
         }
 
         [Fact]
