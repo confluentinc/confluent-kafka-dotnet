@@ -383,12 +383,14 @@ namespace Confluent.SchemaRegistry
                 }
                 return null;
             }
+            // Encode the lookup key once, outside the loop, rather than on every comparison.
+            byte[] keyBytes = EncodeKey(key);
             int low = 0, high = numFields - 1;
             while (low <= high)
             {
                 int mid = (low + high) >> 1;
                 int midId = ReadUnsignedLE(value, idStart + idSize * mid, idSize);
-                int cmp = string.CompareOrdinal(GetMetadataKey(midId), key);
+                int cmp = CompareKeys(EncodeKey(GetMetadataKey(midId)), keyBytes);
                 if (cmp < 0) low = mid + 1;
                 else if (cmp > 0) high = mid - 1;
                 else
@@ -398,6 +400,26 @@ namespace Confluent.SchemaRegistry
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        ///     Encodes an object field key to the UTF-8 bytes that <see cref="CompareKeys" />
+        ///     orders. Callers that compare the same key repeatedly should encode it once.
+        /// </summary>
+        internal static byte[] EncodeKey(string key)
+        {
+            return Encoding.UTF8.GetBytes(key);
+        }
+
+        /// <summary>
+        ///     Compares two object field keys by UTF-8 byte order, as required by the Variant
+        ///     spec. This differs from ordinal (UTF-16 code unit) comparison for supplementary
+        ///     characters (U+10000 and above), whose surrogate code units sort before U+E000-U+FFFF
+        ///     in UTF-16 but after them in UTF-8.
+        /// </summary>
+        internal static int CompareKeys(byte[] a, byte[] b)
+        {
+            return a.AsSpan().SequenceCompareTo(b);
         }
 
         /// <summary>The (key, value) of the field at <paramref name="idx" /> (key-sorted).</summary>

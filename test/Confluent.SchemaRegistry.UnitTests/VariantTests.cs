@@ -102,6 +102,59 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        public void ObjectKeysSortedByUtf8ByteOrder()
+        {
+            // Object field keys must be ordered by the unsigned byte order of their UTF-8
+            // encoding, not by UTF-16/ordinal order. U+FFFF encodes to UTF-8 EF BF BF and
+            // U+10000 to F0 90 80 80, so U+FFFF must sort first - but in UTF-16 the high
+            // surrogate 0xD800 of U+10000 sorts before 0xFFFF. Append in the wrong order.
+            string bmpKey = "￿";                   // U+FFFF
+            string supplementaryKey = "\U00010000";     // U+10000 (surrogate pair)
+
+            var b = new VariantBuilder();
+            b.StartObject();
+            b.AppendKey(supplementaryKey); b.AppendLong(2);
+            b.AppendKey(bmpKey); b.AppendLong(1);
+            b.EndObject();
+            Variant v = b.Build();
+
+            Assert.Equal(VariantType.Object, v.GetVariantType());
+            Assert.Equal(2, v.NumObjectFields());
+            Assert.Equal(bmpKey, v.GetFieldAtIndex(0).Key);
+            Assert.Equal(supplementaryKey, v.GetFieldAtIndex(1).Key);
+            Assert.Equal(1L, v.GetFieldByKey(bmpKey).GetLong());
+            Assert.Equal(2L, v.GetFieldByKey(supplementaryKey).GetLong());
+        }
+
+        [Fact]
+        public void LargeObjectBinarySearchWithSupplementaryKey()
+        {
+            // 42 fields exceeds the binary-search threshold (32), so the reader's binary
+            // search runs; it must compare keys by UTF-8 byte order for the supplementary key.
+            string bmpKey = "￿";                   // U+FFFF
+            string supplementaryKey = "\U00010000";     // U+10000 (surrogate pair)
+
+            var b = new VariantBuilder();
+            b.StartObject();
+            for (int i = 0; i < 40; i++)
+            {
+                b.AppendKey($"a{i:D3}");
+                b.AppendLong(i);
+            }
+            b.AppendKey(bmpKey); b.AppendLong(998);
+            b.AppendKey(supplementaryKey); b.AppendLong(999);
+            b.EndObject();
+            Variant v = b.Build();
+
+            Assert.Equal(42, v.NumObjectFields());
+            Assert.NotNull(v.GetFieldByKey(bmpKey));
+            Assert.Equal(998L, v.GetFieldByKey(bmpKey).GetLong());
+            Assert.NotNull(v.GetFieldByKey(supplementaryKey));
+            Assert.Equal(999L, v.GetFieldByKey(supplementaryKey).GetLong());
+            Assert.Equal(37L, v.GetFieldByKey("a037").GetLong());
+        }
+
+        [Fact]
         public void GetVariantType_ForEachPrimitive()
         {
             Assert.Equal(VariantType.Null, Prim(TNull).GetVariantType());
@@ -297,6 +350,25 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.Equal(2.5f, v.GetElementAtIndex(1).GetFloat());
             Assert.Equal("00112233-4455-6677-8899-aabbccddeeff", v.GetElementAtIndex(2).GetUuid());
             Assert.Equal(VariantType.Date, v.GetElementAtIndex(3).GetVariantType());
+        }
+
+        [Fact]
+        public void LargeDataRegionUses4ByteOffsets()
+        {
+            // Regression: a container whose data region exceeds 0xFFFFFF (16 MiB)
+            // requires 4-byte offsets. A single string element of length 16777216
+            // pushes the array's data region past the 3-byte cap, exercising the
+            // 4-byte size path. (~16 MiB alloc; takes a couple seconds.)
+            const int len = 16777216; // 0x1000000
+            var b = new VariantBuilder();
+            b.StartArray();
+            b.AppendString(new string('a', len));
+            b.EndArray();
+            Variant v = b.Build();
+
+            Assert.Equal(VariantType.Array, v.GetVariantType());
+            Assert.Equal(1, v.NumArrayElements());
+            Assert.Equal(len, v.GetElementAtIndex(0).GetString().Length);
         }
 
         [Fact]

@@ -508,7 +508,9 @@ namespace Confluent.SchemaRegistry
         private void FinishWritingObject(int start, List<FieldEntry> fields)
         {
             int numFields = fields.Count;
-            fields.Sort((a, b) => string.CompareOrdinal(a.Key, b.Key));
+            // Compare the already-encoded dictionary key bytes rather than re-encoding on each
+            // comparison.
+            fields.Sort((a, b) => Variant.CompareKeys(dictionaryKeys[a.Id], dictionaryKeys[b.Id]));
             int maxId = 0;
             foreach (var f in fields) maxId = Math.Max(maxId, f.Id);
             int dataSize = value.Count - start;
@@ -537,7 +539,8 @@ namespace Confluent.SchemaRegistry
         {
             if (v <= 0xFF) return 1;
             if (v <= 0xFFFF) return 2;
-            return 3;
+            if (v <= 0xFFFFFF) return 3;
+            return 4;
         }
 
         private static void AppendUintLE(List<byte> outBytes, int v, int numBytes)
