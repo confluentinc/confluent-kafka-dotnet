@@ -133,7 +133,35 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentException($"Cannot convert {value} to Decimal");
             }
 
-            return Parse(value.ToString("R", CultureInfo.InvariantCulture));
+            return Parse(EnsureFractional(value.ToString("R", CultureInfo.InvariantCulture)));
+        }
+
+        /// <summary>
+        ///     A <see cref="BigDecimal" /> from a <see cref="float" />, via the shortest decimal
+        ///     string that round-trips to the same float — Java <c>Float.toString</c>. A whole-number
+        ///     value keeps a trailing <c>.0</c> (scale 1), matching Java/Python and the other clients.
+        /// </summary>
+        public static BigDecimal FromFloat(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                throw new ArgumentException($"Cannot convert {value} to Decimal");
+            }
+
+            return Parse(EnsureFractional(value.ToString("R", CultureInfo.InvariantCulture)));
+        }
+
+        // Java Double/Float.toString always emit a fractional digit for a whole number ("2.0",
+        // scale 1); .NET's "R" format omits it ("2", scale 0), which would diverge from the other
+        // clients and propagate through multiply. Restore the ".0" unless the value is in
+        // scientific notation.
+        private static string EnsureFractional(string s)
+        {
+            if (s.IndexOf('.') < 0 && s.IndexOf('E') < 0 && s.IndexOf('e') < 0)
+            {
+                return s + ".0";
+            }
+            return s;
         }
 
         // ---- Arithmetic --------------------------------------------------------------
@@ -367,7 +395,14 @@ namespace Confluent.SchemaRegistry
             // Hash on the trailing-zero-stripped form so equal values hash equally.
             BigInteger q = unscaled;
             int sc = scale;
-            StripTrailingZeros(ref q, ref sc);
+            if (q.IsZero)
+            {
+                sc = 0; // every zero is value-equal regardless of scale
+            }
+            else
+            {
+                StripTrailingZeros(ref q, ref sc);
+            }
             return q.GetHashCode() * 397 ^ sc;
         }
 

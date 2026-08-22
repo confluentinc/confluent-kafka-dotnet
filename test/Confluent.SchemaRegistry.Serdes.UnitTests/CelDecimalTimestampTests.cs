@@ -76,6 +76,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [InlineData("string(decimals.ceil(decimal(\"2.1\")))", "3")]
         // string(Decimal) is plain (never scientific).
         [InlineData("string(decimal(\"1.50\"))", "1.50")]
+        // decimal(double) keeps the whole-number ".0" (scale 1), matching Java valueOf / Python
+        // str(float); the scale then carries through multiply (1+1 -> 2).
+        [InlineData("string(decimal(2.0))", "2.0")]
+        [InlineData("string(decimals.mul(decimal(2.0), decimal(0.5)))", "1.00")]
         public async Task DecimalStringForms(string expr, string expected)
         {
             Assert.Equal(expected, await Eval(expr, 1));
