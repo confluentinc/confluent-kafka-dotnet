@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Numerics;
 using Xunit;
 
@@ -68,6 +69,51 @@ namespace Confluent.SchemaRegistry.UnitTests
             BigDecimal b = BigDecimal.Parse("1.5");
             Assert.True(a.Equals(b));
             Assert.Equal(a.GetHashCode(), b.GetHashCode());
+        }
+
+        // FromDecimal is lossless: it preserves scale/trailing zeros (1.50m -> scale 2, "1.50").
+        [Fact]
+        public void FromDecimal_PreservesScaleAndTrailingZeros()
+        {
+            BigDecimal d = BigDecimal.FromDecimal(1.50m);
+            Assert.Equal("1.50", d.ToPlainString());
+            Assert.Equal(2, d.Scale);
+        }
+
+        [Fact]
+        public void FromDecimal_Negative_RoundTripsThroughToDecimal()
+        {
+            Assert.Equal(-123.456m, BigDecimal.FromDecimal(-123.456m).ToDecimal());
+        }
+
+        [Fact]
+        public void FromDecimal_ToDecimal_RoundTrips()
+        {
+            decimal[] values =
+            {
+                0m,
+                1m,
+                1.50m,
+                -123.456m,
+                12.34m,
+                123456789123456789.56m,
+                -4.1748330066797328106875724500m,
+                decimal.MaxValue,
+                decimal.MinValue
+            };
+
+            foreach (decimal value in values)
+            {
+                Assert.Equal(value, BigDecimal.FromDecimal(value).ToDecimal());
+            }
+        }
+
+        // A BigDecimal whose integer part exceeds System.Decimal's range overflows on ToDecimal.
+        [Fact]
+        public void ToDecimal_ValueTooLarge_ThrowsOverflow()
+        {
+            BigDecimal tooBig = BigDecimal.Parse("123456789012345678901234567890");
+            Assert.Throws<OverflowException>(() => tooBig.ToDecimal());
         }
     }
 }

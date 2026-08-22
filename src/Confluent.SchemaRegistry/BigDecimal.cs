@@ -39,6 +39,9 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         private const int DivisionPrecision = 38;
 
+        private static readonly BigInteger MaxDecimalValue = new BigInteger(decimal.MaxValue);
+        private static readonly BigInteger MinDecimalValue = new BigInteger(decimal.MinValue);
+
         private readonly BigInteger unscaled;
         private readonly int scale;
 
@@ -64,6 +67,21 @@ namespace Confluent.SchemaRegistry
         public static BigDecimal FromLong(long value) => new BigDecimal(new BigInteger(value), 0);
 
         public static BigDecimal FromBigInteger(BigInteger value) => new BigDecimal(value, 0);
+
+        /// <summary>
+        ///     Lossless conversion from a <see cref="decimal" />, built directly from its bits so
+        ///     that scale and trailing zeros are preserved (<c>1.50m</c> becomes scale 2).
+        /// </summary>
+        public static BigDecimal FromDecimal(decimal value)
+        {
+            int[] bits = decimal.GetBits(value);           // [lo, mid, hi, flags]
+            BigInteger unscaled = (new BigInteger((uint)bits[2]) << 64)
+                                | (new BigInteger((uint)bits[1]) << 32)
+                                | new BigInteger((uint)bits[0]);
+            int scale = (bits[3] >> 16) & 0xFF;            // scale is bits 16-23
+            if ((bits[3] & unchecked((int)0x80000000)) != 0) unscaled = -unscaled; // sign bit 31
+            return new BigDecimal(unscaled, scale);
+        }
 
         /// <summary>
         ///     Parse a decimal string, accepting an optional sign, an optional fractional
@@ -455,6 +473,23 @@ namespace Confluent.SchemaRegistry
             {
                 return unscaled.Sign < 0 ? double.NegativeInfinity : double.PositiveInfinity;
             }
+        }
+
+        /// <summary>
+        ///     Nearest <see cref="decimal" /> (may lose precision). Throws
+        ///     <see cref="OverflowException" /> when the integer part does not fit in a
+        ///     <see cref="decimal" /> — Java <c>toBigDecimal</c> narrowed to System.Decimal.
+        /// </summary>
+        public decimal ToDecimal()
+        {
+            BigInteger uns = unscaled;
+            int sc = scale;
+            if (sc < 0) { uns *= BigInteger.Pow(10, -sc); sc = 0; }
+            BigInteger scaleDivisor = BigInteger.Pow(10, sc);
+            BigInteger quotient = BigInteger.DivRem(uns, scaleDivisor, out BigInteger remainder);
+            if (quotient > MaxDecimalValue || quotient < MinDecimalValue)
+                throw new OverflowException("The value cannot fit into System.Decimal.");
+            return (decimal)quotient + (decimal)remainder / (decimal)scaleDivisor;
         }
 
         public override string ToString() => ToPlainString();
