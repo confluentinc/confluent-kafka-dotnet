@@ -273,6 +273,13 @@ namespace Confluent.SchemaRegistry
             unscaled = new BigInteger(le); // .NET BigInteger(byte[]) is little-endian two's-complement
         }
 
+        /// <summary>The decimal value (unscaled integer and scale) as a <see cref="BigDecimal" />.</summary>
+        public BigDecimal GetDecimal()
+        {
+            GetDecimalParts(out BigInteger unscaled, out int scale);
+            return new BigDecimal(unscaled, scale);
+        }
+
         public byte[] GetBinary()
         {
             int ti = PrimitiveInfo();
@@ -502,8 +509,7 @@ namespace Confluent.SchemaRegistry
                 case VariantType.Decimal8:
                 case VariantType.Decimal16:
                 {
-                    GetDecimalParts(out BigInteger unscaled, out int scale);
-                    sb.Append(DecimalPlainString(unscaled, scale));
+                    sb.Append(GetDecimal().ToPlainString());
                     break;
                 }
                 case VariantType.Date:
@@ -674,21 +680,6 @@ namespace Confluent.SchemaRegistry
             DateTime dt = DateTimeOffset.FromUnixTimeSeconds(days * 86400L).UtcDateTime;
             return string.Format(CultureInfo.InvariantCulture,
                 "{0:D4}-{1:D2}-{2:D2}", dt.Year, dt.Month, dt.Day);
-        }
-
-        // Exact fixed-point string for unscaled*10^-scale (never scientific), toPlainString-style.
-        internal static string DecimalPlainString(BigInteger unscaled, int scale)
-        {
-            bool negative = unscaled.Sign < 0;
-            string digits = BigInteger.Abs(unscaled).ToString(CultureInfo.InvariantCulture);
-            string sign = negative ? "-" : "";
-            if (scale == 0) return sign + digits;
-            if (digits.Length <= scale)
-            {
-                digits = new string('0', scale - digits.Length + 1) + digits;
-            }
-            int point = digits.Length - scale;
-            return sign + digits.Substring(0, point) + "." + digits.Substring(point);
         }
 
         // Integral doubles render as N.0; other values use the shortest round-trip. (Java's

@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
-using System.Numerics;
 using Cel.Common.Types;
 using Cel.Common.Types.Ref;
 using Cel.Common.Types.Traits;
@@ -260,8 +259,7 @@ namespace Confluent.SchemaRegistry.Rules
                     if (vt == VariantType.Decimal4 || vt == VariantType.Decimal8 ||
                         vt == VariantType.Decimal16)
                     {
-                        v.GetDecimalParts(out BigInteger unscaled, out int scale);
-                        return DecimalT.Of(new BigDecimal(unscaled, scale));
+                        return DecimalT.Of(v.GetDecimal());
                     }
 
                     break;

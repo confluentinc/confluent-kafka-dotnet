@@ -19,10 +19,11 @@ using System.Globalization;
 using System.Numerics;
 using System.Text;
 
-namespace Confluent.SchemaRegistry.Rules
+namespace Confluent.SchemaRegistry
 {
     /// <summary>
-    ///     Arbitrary-precision signed decimal, the CEL Decimal backing type for this client.
+    ///     Arbitrary-precision signed decimal, the CEL Decimal backing type for this client and
+    ///     the unscaled/scale representation used by the Variant codec.
     ///     A value is <c>unscaled × 10^(-scale)</c> — a <see cref="BigInteger" /> unscaled
     ///     value and an <see cref="int" /> scale, exactly like Java's
     ///     <c>java.math.BigDecimal</c>. .NET's <see cref="decimal" /> tops out at 28–29
@@ -30,7 +31,7 @@ namespace Confluent.SchemaRegistry.Rules
     ///     JS/Rust) requires the 38-significant-digit division and square root those clients
     ///     produce, so the arithmetic here mirrors Java's <c>MathContext(38, HALF_UP)</c>.
     /// </summary>
-    internal readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
+    public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
     {
         /// <summary>
         ///     Significant-digit precision for division and square root, matching Java's

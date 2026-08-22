@@ -332,6 +332,35 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        public void AppendDecimal_BigDecimal_RoundTrips()
+        {
+            // Unscaled value needs > 64 bits, so this lands in DECIMAL16.
+            var value = new BigDecimal(BigInteger.Parse("1234567890123456789012345678"), 5);
+
+            var b = new VariantBuilder();
+            b.StartArray();
+            b.AppendDecimal(value);
+            b.EndArray();
+            Variant built = b.Build();
+
+            Variant element = built.GetElementAtIndex(0);
+            Assert.Equal(VariantType.Decimal16, element.GetVariantType());
+
+            BigDecimal read = element.GetDecimal();
+            Assert.Equal(value.Unscaled, read.Unscaled);
+            Assert.Equal(value.Scale, read.Scale);
+            Assert.Equal(value.ToPlainString(), read.ToPlainString());
+            Assert.Equal("12345678901234567890123.45678", read.ToPlainString());
+        }
+
+        [Fact]
+        public void AppendDecimal_NegativeScale_Throws()
+        {
+            var b = new VariantBuilder();
+            Assert.Throws<VariantException>(() => b.AppendDecimal(new BigInteger(1234), -1));
+        }
+
+        [Fact]
         public void Float_ToJson_UsesShortestFloat32()
         {
             // Regression: FLOAT must render the shortest decimal that round-trips to

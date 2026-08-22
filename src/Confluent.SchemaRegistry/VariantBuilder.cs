@@ -133,6 +133,13 @@ namespace Confluent.SchemaRegistry
             WriteDecimal(unscaled, scale);
         }
 
+        /// <summary>Append a decimal from a <see cref="BigDecimal" />.</summary>
+        public void AppendDecimal(BigDecimal d)
+        {
+            BeforeValue();
+            WriteDecimal(d.Unscaled, d.Scale);
+        }
+
         /// <summary>Append a string (auto short-string when &lt;= 63 UTF-8 bytes, else long-string).</summary>
         public void AppendString(string s)
         {
@@ -444,6 +451,7 @@ namespace Confluent.SchemaRegistry
 
         private void WriteDecimal(BigInteger unscaled, int scale)
         {
+            if (scale < 0) throw new VariantException("decimal scale must be non-negative");
             int digits = BigInteger.Abs(unscaled).ToString(CultureInfo.InvariantCulture).Length;
             int code, width;
             if (scale <= 9 && digits <= 9) { code = Variant.TDecimal4; width = 4; }
