@@ -484,11 +484,32 @@ namespace Confluent.SchemaRegistry
         {
             BigInteger uns = unscaled;
             int sc = scale;
-            if (sc < 0) { uns *= BigInteger.Pow(10, -sc); sc = 0; }
+            if (sc < 0)
+            {
+                uns *= BigInteger.Pow(10, -sc);
+                sc = 0;
+            }
+            else if (sc > 28)
+            {
+                // System.Decimal holds at most 28 fractional digits; round the excess away with
+                // HALF_UP so an exactly-representable high-scale value (e.g. 1.5 stored at scale 30)
+                // converts instead of overflowing the 10^sc divisor, and a sub-1e-28 value rounds to 0.
+                BigInteger dropDivisor = BigInteger.Pow(10, sc - 28);
+                BigInteger q = BigInteger.DivRem(uns, dropDivisor, out BigInteger dropRem);
+                if (BigInteger.Abs(dropRem) * 2 >= dropDivisor)
+                {
+                    q += uns.Sign; // round half away from zero
+                }
+                uns = q;
+                sc = 28;
+            }
+
             BigInteger scaleDivisor = BigInteger.Pow(10, sc);
             BigInteger quotient = BigInteger.DivRem(uns, scaleDivisor, out BigInteger remainder);
             if (quotient > MaxDecimalValue || quotient < MinDecimalValue)
+            {
                 throw new OverflowException("The value cannot fit into System.Decimal.");
+            }
             return (decimal)quotient + (decimal)remainder / (decimal)scaleDivisor;
         }
 

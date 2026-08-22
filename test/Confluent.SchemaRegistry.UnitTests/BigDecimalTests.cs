@@ -115,5 +115,37 @@ namespace Confluent.SchemaRegistry.UnitTests
             BigDecimal tooBig = BigDecimal.Parse("123456789012345678901234567890");
             Assert.Throws<OverflowException>(() => tooBig.ToDecimal());
         }
+
+        // 1.5e30 at scale 30 equals exactly 1.5; it must convert rather than overflow the 10^30 divisor.
+        [Fact]
+        public void ToDecimal_ExactlyRepresentableHighScale_Converts()
+        {
+            BigDecimal d = new BigDecimal(BigInteger.Parse("1500000000000000000000000000000"), 30);
+            Assert.Equal(1.5m, d.ToDecimal());
+        }
+
+        // Values below 1e-28 (System.Decimal's finest granularity) round to 0.
+        [Fact]
+        public void ToDecimal_SubGranularity_RoundsToZero()
+        {
+            Assert.Equal(0m, new BigDecimal(BigInteger.One, 30).ToDecimal());
+            Assert.Equal(0m, new BigDecimal(BigInteger.One, 29).ToDecimal());
+        }
+
+        // HALF_UP at the 28-dp boundary: 5e-29 rounds up to 1e-28.
+        [Fact]
+        public void ToDecimal_HalfUpAtBoundary_RoundsUp()
+        {
+            BigDecimal d = new BigDecimal(new BigInteger(5), 29);
+            Assert.Equal(0.0000000000000000000000000001m, d.ToDecimal());
+        }
+
+        // A genuinely too-large integer value still overflows.
+        [Fact]
+        public void ToDecimal_TooLargeInteger_ThrowsOverflow()
+        {
+            BigDecimal d = new BigDecimal(BigInteger.Parse("123456789012345678901234567890"), 0);
+            Assert.Throws<OverflowException>(() => d.ToDecimal());
+        }
     }
 }
