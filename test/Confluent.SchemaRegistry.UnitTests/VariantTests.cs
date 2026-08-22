@@ -332,6 +332,25 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        public void Float_ToJson_UsesShortestFloat32()
+        {
+            // Regression: FLOAT must render the shortest decimal that round-trips to
+            // the same float32 (matching Java Float.toString / Apache Arrow), not the
+            // double-widened shortest string (e.g. "0.10000000149011612").
+            var b1 = new VariantBuilder();
+            b1.AppendFloat(0.1f);
+            Assert.Equal("0.1", b1.Build().ToJson());
+
+            var b2 = new VariantBuilder();
+            b2.AppendFloat(0.3f);
+            Assert.Equal("0.3", b2.Build().ToJson());
+
+            var b3 = new VariantBuilder();
+            b3.AppendFloat(2.0f);
+            Assert.Equal("2.0", b3.Build().ToJson()); // integer ".0" preserved
+        }
+
+        [Fact]
         public void Builder_TypedScalars_RoundTripThroughReader()
         {
             var b = new VariantBuilder();

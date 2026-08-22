@@ -493,7 +493,7 @@ namespace Confluent.SchemaRegistry
                     sb.Append(GetLong().ToString(CultureInfo.InvariantCulture));
                     break;
                 case VariantType.Float:
-                    sb.Append(FormatDouble(GetFloat()));
+                    sb.Append(FormatFloat(GetFloat()));
                     break;
                 case VariantType.Double:
                     sb.Append(FormatDouble(GetDouble()));
@@ -704,6 +704,28 @@ namespace Confluent.SchemaRegistry
                 return ((long)d).ToString(CultureInfo.InvariantCulture) + ".0";
             }
             return d.ToString("R", CultureInfo.InvariantCulture);
+        }
+
+        // Integral floats render as N.0; other values use the shortest decimal that
+        // round-trips to the same float32 (matches Java Float.toString / Apache Arrow).
+        // A robust shortest-round-trip search is used because float "R"/"G9" is not
+        // reliably shortest across all target frameworks (e.g. net462).
+        private static string FormatFloat(float f)
+        {
+            if (float.IsNaN(f) || float.IsInfinity(f))
+            {
+                throw new VariantException("cannot render non-finite float as JSON");
+            }
+            if (f == Math.Floor(f) && Math.Abs(f) < 1e16f)
+            {
+                return ((long)f).ToString(CultureInfo.InvariantCulture) + ".0";
+            }
+            for (int p = 1; p <= 9; p++)
+            {
+                string s = f.ToString("G" + p, CultureInfo.InvariantCulture);
+                if (float.Parse(s, CultureInfo.InvariantCulture) == f) return s;
+            }
+            return f.ToString("G9", CultureInfo.InvariantCulture);
         }
 
         private static string FormatUuid(byte[] data, int start)
