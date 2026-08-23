@@ -12,6 +12,7 @@ using Cel.Common.Types.Json;
 using Cel.Common.Types.Pb;
 using Cel.Extension;
 using Cel.Tools;
+using IVal = Cel.Common.Types.Ref.IVal;
 using Duration = Google.Protobuf.WellKnownTypes.Duration;
 using Google.Api.Expr.V1Alpha1;
 using Google.Protobuf;
@@ -146,7 +147,8 @@ namespace Confluent.SchemaRegistry.Rules
             switch (ruleWithArgs.ScriptType)
             {
                 case ScriptType.Avro:
-                    scriptHostBuilder = scriptHostBuilder.Registry(AvroRegistry.NewRegistry());
+                    scriptHostBuilder =
+                        scriptHostBuilder.Registry(AvroRegistry.NewRegistry(AvroValueToCel));
                     if (msg is ISpecificRecord)
                     {
                         type = ((ISpecificRecord)msg).Schema;
@@ -217,6 +219,27 @@ namespace Confluent.SchemaRegistry.Rules
             return FindTypeForClass(arg.GetType());
         }
 
+        /// <summary>
+        ///     Presents an Avro value the way this client's CEL surface expects, for the shapes
+        ///     whose logical representation differs from cel.net's default mapping. A
+        ///     <c>decimal</c> logical type decodes to an <see cref="AvroDecimal" />, which cel.net
+        ///     would otherwise carry as its own <c>avro.decimal</c> value — a different CEL type
+        ///     from the <see cref="DecimalT" /> that <c>decimal(...)</c> produces, so
+        ///     <c>decimals.*</c> would not accept it and <c>==</c> against a decimal literal
+        ///     would answer false. Carrying it as a DecimalT makes a decimal field usable with no
+        ///     <c>decimal(...)</c> call, and keeps equality numeric. Returning null leaves the
+        ///     value to cel.net's standard mapping.
+        /// </summary>
+        private static IVal AvroValueToCel(object value)
+        {
+            if (value is AvroDecimal dec)
+            {
+                return DecimalT.Of(DecimalUtils.ToBigDecimal(dec.UnscaledValue, dec.Scale));
+            }
+
+            return null;
+        }
+
         private static Google.Api.Expr.V1Alpha1.Type FindTypeForAvroType(Avro.Schema schema)
         {
             Avro.Schema.Type type = schema.Tag;
@@ -261,7 +284,14 @@ namespace Confluent.SchemaRegistry.Rules
 
                     throw new ArgumentException("Unsupported union type");
                 case Avro.Schema.Type.Logical:
-                    return FindTypeForAvroType((schema as LogicalSchema).BaseSchema);
+                    // A logical-typed value is the logical representation, not the underlying
+                    // primitive: timestamp-* decodes to DateTime, decimal to AvroDecimal, uuid
+                    // to Guid. Declaring the base type (Int for a timestamp-millis long, say)
+                    // would be a check/runtime mismatch, so defer to the runtime value —
+                    // matching the JVM client's findCelTypeForAvroSchema. Field types inside a
+                    // record come from cel.net's AvroTypeDescription, which does the same;
+                    // this path covers a schema handed in for a value directly.
+                    return Checked.CheckedDyn;
                 default:
                     throw new ArgumentException("Unsupported type " + type);
             }

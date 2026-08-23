@@ -216,12 +216,18 @@ namespace Confluent.SchemaRegistry.Rules
 
         private static void AddTimestamp(IList<Decl> decls)
         {
-            // timestamp.of — (dyn) runtime-dispatch + explicit (int, string) epoch + unit.
+            // One overload on the *standard* timestamp constructor, rather than a timestamp.of
+            // namespace of our own: timestamp(int, int), an epoch value at a Flink-style decimal
+            // precision (0 seconds, 3 millis, 6 micros, 9 nanos).
+            //
+            // Nothing is needed for the one-argument cases: cel.net's TypeAdapterSupport already
+            // adapts Timestamp, Instant, ZonedDateTime and DateTime to a CEL timestamp, and the
+            // standard unary `timestamp` overload converts a string or an int (epoch seconds), so
+            // an Avro or Protobuf timestamp field needs no wrapper at all.
             decls.Add(Decls.NewFunction(
-                "timestamp.of",
-                Decls.NewOverload("timestamp_of_dyn", new List<Type> { Decls.Dyn }, Decls.Timestamp),
-                Decls.NewOverload("timestamp_of_int_string",
-                    new List<Type> { Decls.Int, Decls.String }, Decls.Timestamp)));
+                "timestamp",
+                Decls.NewOverload("timestamp_int_int",
+                    new List<Type> { Decls.Int, Decls.Int }, Decls.Timestamp)));
         }
     }
 }

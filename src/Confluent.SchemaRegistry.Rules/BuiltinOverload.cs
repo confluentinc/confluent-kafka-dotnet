@@ -83,12 +83,16 @@ namespace Confluent.SchemaRegistry.Rules
                 DecimalsUnary("decimals.floor", d => d.SetScale(0, BigDecimal.Rounding.Floor)),
                 DecimalsUnary("decimals.ceil", d => d.SetScale(0, BigDecimal.Rounding.Ceiling)),
 
-                // timestamp.of(dyn) runtime-dispatches; timestamp.of(int, string) is epoch + unit.
+                // One overload on the *standard* timestamp constructor: the binary
+                // timestamp(int, int) precision form. cel.net indexes overloads by function
+                // name, and its dispatcher merges two definitions of one name when their arity
+                // slots are disjoint — so leaving the unary slot null keeps the standard
+                // timestamp(dyn) conversion (string, int-as-seconds, identity) intact.
                 Overload.NewOverload(
-                    "timestamp.of", Trait.None,
-                    v => Guard(() => TimestampT.TimestampOf(TimestampUtils.ToTimestamp(v.Value()))),
+                    "timestamp", Trait.None,
+                    null,
                     (a, b) => Guard(() =>
-                        TimestampT.TimestampOf(TimestampUtils.FromEpoch(ToLong(a), (string)b.Value()))),
+                        TimestampT.TimestampOf(TimestampUtils.FromEpochPrecision(ToLong(a), ToLong(b)))),
                     null),
 
                 // variant(dyn) runtime-dispatches on the actual type; variant(bytes, bytes)

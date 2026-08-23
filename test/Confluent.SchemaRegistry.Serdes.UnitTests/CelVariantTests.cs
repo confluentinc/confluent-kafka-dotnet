@@ -109,7 +109,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Variant v = b.Build();
 
             Assert.Equal(true, await Eval(
-                "variants.as(variant(this), 'timestamp') == timestamp.of(2500000000, 'nanos')", v));
+                "variants.as(variant(this), 'timestamp') == timestamp(2500000000, 9)", v));
             // Independent nanos check via the RFC-3339 string path (would fail if nanos were dropped).
             Assert.Equal(true, await Eval(
                 "variants.as(variant(this), 'timestamp') == timestamp('1970-01-01T00:00:02.500000000Z')", v));
@@ -126,7 +126,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Variant v = b.Build();
 
             Assert.Equal(true, await Eval(
-                "variants.as(variant(this), 'timestamp') == timestamp.of(-1000000001, 'nanos')", v));
+                "variants.as(variant(this), 'timestamp') == timestamp(-1000000001, 9)", v));
         }
 
         // ---- Marshalling: the two schema-side shapes into CEL ----

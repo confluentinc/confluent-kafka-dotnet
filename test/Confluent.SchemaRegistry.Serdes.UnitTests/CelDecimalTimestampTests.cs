@@ -26,7 +26,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 {
     /// <summary>
     ///     Tests for the CEL Decimal (<c>decimal(...)</c> / <c>decimals.*</c>) and Timestamp
-    ///     (<c>timestamp.of</c>) function families, and for marshalling each of the four
+    ///     (<c>timestamp</c>) function families, and for marshalling each of the four
     ///     schema-side decimal/timestamp shapes into CEL: an Avro logical timestamp, a
     ///     Protobuf WKT timestamp, an Avro logical decimal, and a Protobuf
     ///     <c>confluent.type.Decimal</c>.
@@ -156,11 +156,15 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [InlineData("timestamp(-1) == timestamp(\"1969-12-31T23:59:59Z\")", true)]
         [InlineData("timestamp(-86400) == timestamp(\"1969-12-31T00:00:00Z\")", true)]
         [InlineData("timestamp(0) == timestamp(\"1970-01-01T00:00:00Z\")", true)]
-        // The explicit timestamp.of(value, unit) family is unaffected: each unit still scales
-        // as named, and "millis" on the x1000 value lands on the same instant.
-        [InlineData("timestamp.of(1700000000000, \"millis\") == timestamp(1700000000)", true)]
-        [InlineData("timestamp.of(1700000000, \"seconds\") == timestamp(1700000000)", true)]
-        [InlineData("timestamp.of(1700000000000000, \"micros\") == timestamp(1700000000)", true)]
+        // The two-argument timestamp(value, precision) form is unaffected: each precision
+        // still scales as named, and precision 3 on the x1000 value lands on the same instant.
+        [InlineData("timestamp(1700000000, 0) == timestamp(1700000000)", true)]
+        [InlineData("timestamp(1700000000000, 3) == timestamp(1700000000)", true)]
+        [InlineData("timestamp(1700000000000000, 6) == timestamp(1700000000)", true)]
+        [InlineData("timestamp(1700000000000000000, 9) == timestamp(1700000000)", true)]
+        // Sub-second precision survives, and the same integer differs across the two arities.
+        [InlineData("timestamp(1700000000123, 3) == timestamp(\"2023-11-14T22:13:20.123Z\")", true)]
+        [InlineData("timestamp(1700000000, 3) == timestamp(1700000000)", false)]
         public async Task TimestampBareIntIsEpochSeconds(string expr, bool expected)
         {
             Assert.Equal(expected, await Eval(expr, 1));
@@ -173,13 +177,26 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 "string(timestamp(1700000000)) == \"2023-11-14T22:13:20Z\"", 1));
         }
 
-        [Fact]
-        public async Task TimestampOfRawIntStillRequiresUnit()
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        [InlineData(4)]
+        [InlineData(7)]
+        [InlineData(10)]
+        [InlineData(-3)]
+        public async Task TimestampRejectsPrecisionOutsideTheSet(int precision)
         {
-            // timestamp.of(dyn) deliberately refuses a bare integer; only the standard
-            // timestamp(int) conversion assigns it a unit (seconds).
+            // With the unit a number rather than a name, rejecting anything outside
+            // {0, 3, 6, 9} is the only thing between a typo and a silently wrong instant.
             await Assert.ThrowsAnyAsync<Exception>(
-                () => Eval("timestamp.of(1700000000) == timestamp(0)", 1));
+                () => Eval($"timestamp(1700000000, {precision}) == timestamp(0)", 1));
+        }
+
+        [Fact]
+        public async Task TimestampOfNamespaceIsGone()
+        {
+            await Assert.ThrowsAnyAsync<Exception>(
+                () => Eval("timestamp.of(1700000000000, 3) == timestamp(0)", 1));
         }
 
         // ---- Marshalling: the four schema-side shapes into CEL ----
@@ -225,6 +242,39 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(true, await Eval("decimals.gt(decimal(this.amount), decimal(\"10.00\"))", record));
         }
 
+        /// <summary>
+        ///     Cross-client parity: an Avro <c>decimal</c> logical type is usable as a Decimal
+        ///     with <b>no <c>decimal(...)</c> call</b>, and the wrapped form keeps working
+        ///     alongside it. The Avro registry's value adapter carries the AvroDecimal as a
+        ///     DecimalT (see CelExecutor.AvroValueToCel), so <c>decimals.*</c> accept it directly
+        ///     and <c>==</c> stays numeric — without it, cel.net's own <c>avro.decimal</c> value
+        ///     is a different CEL type and <c>==</c> against a decimal literal answers false.
+        /// </summary>
+        [Fact]
+        public async Task AvroLogicalDecimalNeedsNoConstructor()
+        {
+            var schema = (RecordSchema)Avro.Schema.Parse(@"{
+                ""type"": ""record"", ""name"": ""DecimalRecord"",
+                ""fields"": [ { ""name"": ""amount"",
+                    ""type"": { ""type"": ""bytes"", ""logicalType"": ""decimal"",
+                                ""precision"": 8, ""scale"": 2 } } ] }");
+            var record = new GenericRecord(schema);
+            record.Add("amount", new AvroDecimal(12.34m));
+
+            // Bare: no constructor call on the field.
+            Assert.Equal(true, await Eval("decimals.eq(this.amount, decimal(\"12.34\"))", record));
+            Assert.Equal(true, await Eval("decimals.gt(this.amount, decimal(\"10.00\"))", record));
+            // The wrapped form must keep working (decimal(...) re-entry).
+            Assert.Equal(true,
+                await Eval("decimals.eq(decimal(this.amount), decimal(\"12.34\"))", record));
+            // `==` is numeric on it: 12.34 equals 12.340 despite the differing scale.
+            Assert.Equal(true, await Eval("this.amount == decimal(\"12.340\")", record));
+            // The schema's scale is applied, not guessed: as scale 0 this would be 1234.
+            Assert.Equal(true, await Eval("decimals.lt(this.amount, decimal(\"100\"))", record));
+            // Negative control: a false comparison still fails.
+            Assert.Equal(false, await Eval("decimals.gt(this.amount, decimal(\"100\"))", record));
+        }
+
         [Fact]
         public async Task AvroLogicalTimestampIntoCel()
         {
@@ -234,7 +284,42 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                     ""type"": { ""type"": ""long"", ""logicalType"": ""timestamp-millis"" } } ] }");
             var record = new GenericRecord(schema);
             record.Add("ts", new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
-            Assert.Equal(true, await Eval("timestamp.of(this.ts) < now", record));
+            Assert.Equal(true, await Eval("timestamp(this.ts) < now", record));
+        }
+
+        /// <summary>
+        ///     Cross-client parity: an Avro timestamp logical type is usable as a timestamp with
+        ///     <b>no constructor call at all</b>. cel.net's TypeAdapterSupport maps a DateTime to
+        ///     a CEL timestamp, so it is comparable against <c>now</c> and carries the timestamp
+        ///     accessors. Every one of the seven clients has this test; the constructor is only
+        ///     needed for a plain numeric field whose unit the schema cannot supply.
+        /// </summary>
+        [Fact]
+        public async Task AvroLogicalTimestampNeedsNoConstructor()
+        {
+            var schema = (RecordSchema)Avro.Schema.Parse(@"{
+                ""type"": ""record"", ""name"": ""TsRecord"",
+                ""fields"": [ { ""name"": ""ts"",
+                    ""type"": { ""type"": ""long"", ""logicalType"": ""timestamp-millis"" } } ] }");
+
+            GenericRecord At(DateTime when)
+            {
+                var r = new GenericRecord(schema);
+                r.Add("ts", when);
+                return r;
+            }
+
+            // Bare comparison against `now`, plus the control that proves it really compares.
+            Assert.Equal(true, await Eval("this.ts < now",
+                At(new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc))));
+            Assert.Equal(false, await Eval("this.ts < now",
+                At(new DateTime(2100, 1, 1, 0, 0, 0, DateTimeKind.Utc))));
+
+            // The schema's millis unit is applied, not guessed, and the accessors work directly.
+            var exact = At(new DateTime(2023, 11, 14, 22, 13, 20, 123, DateTimeKind.Utc));
+            Assert.Equal(true, await Eval(
+                "this.ts == timestamp(\"2023-11-14T22:13:20.123Z\")", exact));
+            Assert.Equal(true, await Eval("this.ts.getFullYear() == 2023", exact));
         }
     }
 }
