@@ -68,7 +68,17 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             "0.010101010101010101010101010101010101010")]
         [InlineData("string(decimals.div(decimal(\"2\"), decimal(\"3\")))",
             "0.66666666666666666666666666666666666667")]
+        // Exact division targets Java's preferred scale (dividend.scale - divisor.scale):
+        // trailing zeros are kept down to it and padded up to it, never stripped below.
+        [InlineData("string(decimals.div(decimal(\"6.0\"), decimal(\"3\")))", "2.0")]
+        [InlineData("string(decimals.div(decimal(\"10.00\"), decimal(\"2\")))", "5.00")]
+        [InlineData("string(decimals.div(decimal(\"-6.0\"), decimal(\"3\")))", "-2.0")]
+        [InlineData("string(decimals.div(decimal(\"100.00\"), decimal(\"4\")))", "25.00")]
+        [InlineData("string(decimals.div(decimal(\"6\"), decimal(\"3\")))", "2")]
         [InlineData("string(decimals.sqrt(decimal(\"2\")))", "1.4142135623730950488016887242096980786")]
+        // Exact square root targets Java's preferred scale (radicand.scale / 2).
+        [InlineData("string(decimals.sqrt(decimal(\"4.00\")))", "2.0")]
+        [InlineData("string(decimals.sqrt(decimal(\"100.0000\")))", "10.00")]
         // Rounding family (Flink-aligned).
         [InlineData("string(decimals.round(decimal(\"2.567\"), 2))", "2.57")]
         [InlineData("string(decimals.trunc(decimal(\"2.567\"), 2))", "2.56")]

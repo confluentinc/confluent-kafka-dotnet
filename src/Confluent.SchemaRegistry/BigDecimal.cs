@@ -257,13 +257,18 @@ namespace Confluent.SchemaRegistry
                 s -= 1;
             }
 
+            BigInteger resultUnscaled = sign < 0 ? -q : q;
+            int resultScale = s - baseShift;
             if (exact)
             {
-                StripTrailingZeros(ref q, ref s);
+                // Java targets the preferred scale (dividend.scale - divisor.scale) for an
+                // exact result: strip trailing zeros only down to it, and pad back up to it
+                // when the natural scale is smaller. Never strip below the preferred scale
+                // (6.0/3 -> "2.0", not "2"; 10.00/2 -> "5.00").
+                ApplyPreferredScale(ref resultUnscaled, ref resultScale, scale - divisor.scale);
             }
 
-            BigInteger resultUnscaled = sign < 0 ? -q : q;
-            return new BigDecimal(resultUnscaled, s - baseShift);
+            return new BigDecimal(resultUnscaled, resultScale);
         }
 
         /// <summary>
@@ -333,7 +338,10 @@ namespace Confluent.SchemaRegistry
 
             if (exact)
             {
-                StripTrailingZeros(ref q, ref s);
+                // Java targets the preferred scale (radicand.scale / 2) for an exact result:
+                // strip trailing zeros only down to it, padding back up when the natural scale
+                // is smaller (sqrt(4.00) -> "2.0"; sqrt(100.0000) -> "10.00").
+                ApplyPreferredScale(ref q, ref s, scale / 2);
             }
 
             return new BigDecimal(q, s);
@@ -536,6 +544,29 @@ namespace Confluent.SchemaRegistry
             {
                 value /= 10;
                 scale--;
+            }
+        }
+
+        /// <summary>
+        ///     Rewrite an exact div/sqrt result to Java <c>BigDecimal</c>'s preferred scale:
+        ///     strip trailing zeros down to (but never below) <paramref name="preferredScale" />,
+        ///     then pad with trailing zeros back up to it when the natural scale is smaller.
+        ///     Mirrors Go's <c>applyPreferredScale</c>. The preferred scale is
+        ///     <c>dividend.scale - divisor.scale</c> for division and <c>radicand.scale / 2</c>
+        ///     for square root.
+        /// </summary>
+        private static void ApplyPreferredScale(ref BigInteger value, ref int scale, int preferredScale)
+        {
+            while (scale > preferredScale && !value.IsZero && value % 10 == 0)
+            {
+                value /= 10;
+                scale--;
+            }
+
+            if (scale < preferredScale)
+            {
+                value *= Pow10(preferredScale - scale);
+                scale = preferredScale;
             }
         }
 
