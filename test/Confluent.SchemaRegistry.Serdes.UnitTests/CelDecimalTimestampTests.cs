@@ -137,6 +137,51 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             await Assert.ThrowsAnyAsync<Exception>(() => Eval(expr, 1));
         }
 
+        // ---- timestamp(<bare int>) is epoch SECONDS (cross-client contract) ----
+
+        [Theory]
+        // CROSS-CLIENT CONTRACT: the standard CEL `timestamp(<int>)` conversion reads a bare
+        // integer as epoch SECONDS (never millis), matching cel-go / cel-java / cel-cpp. In
+        // Cel.NET this is the `int64_to_timestamp` overload declared in Checker/Standard.cs,
+        // implemented by IntT.ConvertToType via Instant.FromUnixTimeSeconds. Pinned here so
+        // the unit can't drift to millis.
+        [InlineData("timestamp(1700000000) == timestamp(\"2023-11-14T22:13:20Z\")", true)]
+        // ...and it is NOT the millis reading of the same integer
+        // (1700000000 ms would be 1970-01-20T16:13:20Z).
+        [InlineData("timestamp(1700000000) == timestamp(\"1970-01-20T16:13:20Z\")", false)]
+        // Component accessors and the round-trip back to int agree.
+        [InlineData("timestamp(1700000000).getFullYear() == 2023", true)]
+        [InlineData("int(timestamp(\"2023-11-14T22:13:20Z\")) == 1700000000", true)]
+        // Negative / pre-epoch ints run backwards from the epoch in seconds.
+        [InlineData("timestamp(-1) == timestamp(\"1969-12-31T23:59:59Z\")", true)]
+        [InlineData("timestamp(-86400) == timestamp(\"1969-12-31T00:00:00Z\")", true)]
+        [InlineData("timestamp(0) == timestamp(\"1970-01-01T00:00:00Z\")", true)]
+        // The explicit timestamp.of(value, unit) family is unaffected: each unit still scales
+        // as named, and "millis" on the x1000 value lands on the same instant.
+        [InlineData("timestamp.of(1700000000000, \"millis\") == timestamp(1700000000)", true)]
+        [InlineData("timestamp.of(1700000000, \"seconds\") == timestamp(1700000000)", true)]
+        [InlineData("timestamp.of(1700000000000000, \"micros\") == timestamp(1700000000)", true)]
+        public async Task TimestampBareIntIsEpochSeconds(string expr, bool expected)
+        {
+            Assert.Equal(expected, await Eval(expr, 1));
+        }
+
+        [Fact]
+        public async Task TimestampBareIntEpochSecondsStringForm()
+        {
+            Assert.Equal(true, await Eval(
+                "string(timestamp(1700000000)) == \"2023-11-14T22:13:20Z\"", 1));
+        }
+
+        [Fact]
+        public async Task TimestampOfRawIntStillRequiresUnit()
+        {
+            // timestamp.of(dyn) deliberately refuses a bare integer; only the standard
+            // timestamp(int) conversion assigns it a unit (seconds).
+            await Assert.ThrowsAnyAsync<Exception>(
+                () => Eval("timestamp.of(1700000000) == timestamp(0)", 1));
+        }
+
         // ---- Marshalling: the four schema-side shapes into CEL ----
 
         [Fact]
