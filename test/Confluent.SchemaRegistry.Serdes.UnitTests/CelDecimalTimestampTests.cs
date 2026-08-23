@@ -93,6 +93,19 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 "decimals.eq(decimal(b\"\\x04\\xd2\", 2), decimal(\"12.34\"))", 1));
         }
 
+        [Theory]
+        // A scale argument outside int32 range must error (matching Java's requireIntScale),
+        // rather than silently taking the low 32 bits (e.g. 2^32 -> 0) and producing a wildly
+        // wrong Decimal. 3_000_000_000 and -3_000_000_000 both exceed int32.
+        [InlineData("decimals.round(decimal(\"2.5\"), 3000000000)")]
+        [InlineData("decimals.trunc(decimal(\"2.5\"), 3000000000)")]
+        [InlineData("decimals.round(decimal(\"2.5\"), -3000000000)")]
+        [InlineData("decimal(b\"\\x04\\xd2\", 3000000000)")]
+        public async Task ScaleOutOfIntRange_Throws(string expr)
+        {
+            await Assert.ThrowsAnyAsync<Exception>(() => Eval(expr, 1));
+        }
+
         // ---- Marshalling: the four schema-side shapes into CEL ----
 
         [Fact]

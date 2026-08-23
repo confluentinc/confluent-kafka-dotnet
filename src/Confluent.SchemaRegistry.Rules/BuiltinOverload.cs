@@ -42,7 +42,8 @@ namespace Confluent.SchemaRegistry.Rules
                 Overload.NewOverload(
                     "decimal", Trait.None,
                     v => Guard(() => DecimalT.Of(DecimalUtils.ToBigDecimal(v.Value()))),
-                    (a, b) => Guard(() => DecimalT.Of(DecimalUtils.ToBigDecimal(ToBytes(a), (int)ToLong(b)))),
+                    (a, b) => Guard(() => DecimalT.Of(DecimalUtils.ToBigDecimal(
+                        ToBytes(a), RequireIntScale(ToLong(b), "decimal(bytes, scale)")))),
                     null),
 
                 DecimalsBinaryBool("decimals.eq", (a, b) => a.CompareTo(b) == 0),
@@ -70,12 +71,14 @@ namespace Confluent.SchemaRegistry.Rules
                     "decimals.round", Trait.None,
                     v => Guard(() => DecimalT.Of(ToDecimal(v).SetScale(0, BigDecimal.Rounding.HalfUp))),
                     (a, b) => Guard(() =>
-                        DecimalT.Of(ToDecimal(a).SetScale((int)ToLong(b), BigDecimal.Rounding.HalfUp))),
+                        DecimalT.Of(ToDecimal(a).SetScale(
+                            RequireIntScale(ToLong(b), "decimals.round"), BigDecimal.Rounding.HalfUp))),
                     null),
                 Overload.NewOverload(
                     "decimals.trunc", Trait.None,
                     v => Guard(() => DecimalT.Of(TruncUnary(ToDecimal(v)))),
-                    (a, b) => Guard(() => DecimalT.Of(TruncScale(ToDecimal(a), (int)ToLong(b)))),
+                    (a, b) => Guard(() => DecimalT.Of(TruncScale(
+                        ToDecimal(a), RequireIntScale(ToLong(b), "decimals.trunc")))),
                     null),
                 DecimalsUnary("decimals.floor", d => d.SetScale(0, BigDecimal.Rounding.Floor)),
                 DecimalsUnary("decimals.ceil", d => d.SetScale(0, BigDecimal.Rounding.Ceiling)),
@@ -89,10 +92,14 @@ namespace Confluent.SchemaRegistry.Rules
                     null),
 
                 // variant(dyn) runtime-dispatches on the actual type; variant(bytes, bytes)
-                // builds directly from (value, metadata) bytes.
+                // builds directly from (value, metadata) bytes. CEL null passes through as
+                // CEL null (matching the navigation accessors and the Java reference), rather
+                // than erroring.
                 Overload.NewOverload(
                     "variant", Trait.None,
-                    v => Guard(() => VariantT.Of(VariantUtils.ToVariant(v.Value()))),
+                    v => IsCelNull(v)
+                        ? NullT.NullValue
+                        : Guard(() => VariantT.Of(VariantUtils.ToVariant(v.Value()))),
                     (a, b) => Guard(() => (IVal)VariantT.Of(new SrVariant(ToBytes(a), ToBytes(b)))),
                     null),
 
@@ -111,12 +118,15 @@ namespace Confluent.SchemaRegistry.Rules
 
         // ---- Variant helpers ----
 
+        // A CEL-null argument: a missing IVal, a NullT, or an IVal wrapping a null value.
+        private static bool IsCelNull(IVal v) => v == null || v is NullT || v.Value() == null;
+
         // A variants.* navigation receiver: CEL null passes through as null; a VariantT,
         // raw Variant, proto confluent.type.Variant message, or map is converted; anything
         // else is a hard error (VariantUtils.ToVariant throws).
         private static SrVariant ReceiverVariantOrNull(IVal v)
         {
-            if (v == null || v is NullT || v.Value() == null)
+            if (IsCelNull(v))
             {
                 return null;
             }
@@ -312,33 +322,35 @@ namespace Confluent.SchemaRegistry.Rules
         {
             long raw = v.GetLong();
             // TIMESTAMP_TZ / TIMESTAMP_NTZ store microseconds; the two nanos variants store
-            // nanoseconds - collapse both to microseconds (matching Python/JS).
-            long micros = vt == VariantType.TimestampTz || vt == VariantType.TimestampNtz
-                ? raw
-                : raw / 1000;
-            long seconds = FloorDiv(micros, 1_000_000L);
-            int nanos = (int)FloorMod(micros, 1_000_000L) * 1000;
-            return TimestampT.TimestampOf(new Timestamp { Seconds = seconds, Nanos = nanos });
+            // nanoseconds. The CEL surface is a proto Timestamp (seconds + int32 nanos), which
+            // holds full nanosecond precision, so preserve the nanos of the NANOS variants
+            // rather than collapsing to micros. FromEpoch* floor-divide, so negative epoch
+            // values round toward -infinity (matching Java's variantGetTimestamp).
+            Timestamp ts = vt == VariantType.TimestampTz || vt == VariantType.TimestampNtz
+                ? TimestampUtils.FromEpochMicros(raw)
+                : TimestampUtils.FromEpochNanos(raw);
+            return TimestampT.TimestampOf(ts);
         }
-
-        private static long FloorDiv(long x, long y)
-        {
-            long q = x / y;
-            if ((x ^ y) < 0 && q * y != x)
-            {
-                q--;
-            }
-
-            return q;
-        }
-
-        private static long FloorMod(long x, long y) => x - FloorDiv(x, y) * y;
 
         // ---- Decimal / timestamp helpers ----
 
         private static BigDecimal ToDecimal(IVal v) => v is DecimalT d ? d.Decimal : (BigDecimal)v.Value();
 
         private static long ToLong(IVal v) => Convert.ToInt64(v.Value(), CultureInfo.InvariantCulture);
+
+        // Narrow a CEL int (i64) to a Java/.NET int32 for use as a BigDecimal scale, throwing a
+        // clear error on out-of-range values. CEL int is i64; BigDecimal scale is i32. A raw
+        // (int) cast would silently take the lower 32 bits (e.g. 2^32 -> 0), yielding a wildly
+        // wrong Decimal. Mirrors Java's DecimalUtils/BuiltinOverload.requireIntScale.
+        private static int RequireIntScale(long scale, string functionName)
+        {
+            if (scale < int.MinValue || scale > int.MaxValue)
+            {
+                throw new ArgumentException(functionName + ": scale out of int range: " + scale);
+            }
+
+            return (int)scale;
+        }
 
         private static byte[] ToBytes(IVal v)
         {

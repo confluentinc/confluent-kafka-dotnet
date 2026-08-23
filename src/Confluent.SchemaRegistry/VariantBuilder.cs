@@ -305,9 +305,122 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         internal static void Build(string json, out byte[] value, out byte[] metadata)
         {
+            ValidateJsonNumbers(json);
             var builder = new VariantBuilder();
             builder.ProcessJson(JToken.Parse(json));
             builder.Finish(out value, out metadata);
+        }
+
+        // Newtonsoft's JToken.Parse accepts non-standard JSON number grammar (leading zeros,
+        // leading/trailing decimal points, etc.) that serde_json/Jackson reject. Pre-validate the
+        // raw text against the strict RFC 8259 number grammar so ParseJson matches the Java
+        // reference. Numbers inside string literals are skipped.
+        private static void ValidateJsonNumbers(string json)
+        {
+            if (json == null) throw new ArgumentNullException(nameof(json));
+            bool inString = false;
+            int i = 0;
+            while (i < json.Length)
+            {
+                char c = json[i];
+                if (inString)
+                {
+                    if (c == '\\')
+                    {
+                        i += 2; // skip the escaped char
+                        continue;
+                    }
+                    if (c == '"') inString = false;
+                    i++;
+                    continue;
+                }
+                if (c == '"')
+                {
+                    inString = true;
+                    i++;
+                    continue;
+                }
+                if (c == '-' || c == '+' || c == '.' || (c >= '0' && c <= '9'))
+                {
+                    // Permit the non-finite bareword -Infinity, which Newtonsoft accepts (as
+                    // Jackson does with ALLOW_NON_NUMERIC_NUMBERS) and which parses to
+                    // double.NegativeInfinity. It is the only non-finite literal whose leading
+                    // char ('-') triggers the strict number scan; NaN and Infinity begin with
+                    // letters and are skipped past without validation. Handling it here keeps the
+                    // RFC 8259 rejection of 007/.5/1. intact.
+                    if (c == '-' && MatchesAt(json, i, "-Infinity"))
+                    {
+                        i += 9; // length of "-Infinity"
+                        continue;
+                    }
+                    int start = i;
+                    while (i < json.Length && IsNumberChar(json[i])) i++;
+                    string token = json.Substring(start, i - start);
+                    if (!IsValidJsonNumber(token))
+                    {
+                        throw new VariantException(
+                            $"malformed variant: invalid JSON number '{token}'");
+                    }
+                    continue;
+                }
+                i++;
+            }
+        }
+
+        private static bool IsNumberChar(char c)
+        {
+            return c == '-' || c == '+' || c == '.' || c == 'e' || c == 'E'
+                   || (c >= '0' && c <= '9');
+        }
+
+        // Whether json contains literal at position i.
+        private static bool MatchesAt(string json, int i, string literal)
+        {
+            if (i + literal.Length > json.Length) return false;
+            for (int k = 0; k < literal.Length; k++)
+            {
+                if (json[i + k] != literal[k]) return false;
+            }
+            return true;
+        }
+
+        // Validate a captured number token against the RFC 8259 number grammar.
+        private static bool IsValidJsonNumber(string token)
+        {
+            int len = token.Length;
+            int i = 0;
+            if (i < len && token[i] == '-') i++;
+            // integer part
+            if (i >= len) return false;
+            if (token[i] == '0')
+            {
+                i++;
+            }
+            else if (token[i] >= '1' && token[i] <= '9')
+            {
+                i++;
+                while (i < len && token[i] >= '0' && token[i] <= '9') i++;
+            }
+            else
+            {
+                return false;
+            }
+            // fraction
+            if (i < len && token[i] == '.')
+            {
+                i++;
+                if (i >= len || token[i] < '0' || token[i] > '9') return false;
+                while (i < len && token[i] >= '0' && token[i] <= '9') i++;
+            }
+            // exponent
+            if (i < len && (token[i] == 'e' || token[i] == 'E'))
+            {
+                i++;
+                if (i < len && (token[i] == '+' || token[i] == '-')) i++;
+                if (i >= len || token[i] < '0' || token[i] > '9') return false;
+                while (i < len && token[i] >= '0' && token[i] <= '9') i++;
+            }
+            return i == len;
         }
 
         private void ProcessJson(JToken token)

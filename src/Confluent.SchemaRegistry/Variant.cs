@@ -579,6 +579,11 @@ namespace Confluent.SchemaRegistry
             {
                 result = (result << 8) | data[pos + i];
             }
+            if (result < 0)
+            {
+                throw new VariantException(
+                    "malformed variant: unsigned integer field exceeds the supported range");
+            }
             return result;
         }
 
@@ -684,12 +689,14 @@ namespace Confluent.SchemaRegistry
 
         // Integral doubles render as N.0; other values use the shortest round-trip. (Java's
         // Double.toString scientific-notation edge cases are a known minor divergence.)
+        // Non-finite values render as the JSON barewords NaN/Infinity/-Infinity (matching Java's
+        // Jackson mapper with WRITE_NAN_AS_STRINGS disabled). These are emitted explicitly
+        // because double.ToString is culture-sensitive and can produce "∞"/"-∞".
         private static string FormatDouble(double d)
         {
-            if (double.IsNaN(d) || double.IsInfinity(d))
-            {
-                throw new VariantException("cannot render non-finite double as JSON");
-            }
+            if (double.IsNaN(d)) return "NaN";
+            if (double.IsPositiveInfinity(d)) return "Infinity";
+            if (double.IsNegativeInfinity(d)) return "-Infinity";
             if (d == Math.Floor(d) && Math.Abs(d) < 1e16)
             {
                 return ((long)d).ToString(CultureInfo.InvariantCulture) + ".0";
@@ -703,10 +710,9 @@ namespace Confluent.SchemaRegistry
         // reliably shortest across all target frameworks (e.g. net462).
         private static string FormatFloat(float f)
         {
-            if (float.IsNaN(f) || float.IsInfinity(f))
-            {
-                throw new VariantException("cannot render non-finite float as JSON");
-            }
+            if (float.IsNaN(f)) return "NaN";
+            if (float.IsPositiveInfinity(f)) return "Infinity";
+            if (float.IsNegativeInfinity(f)) return "-Infinity";
             if (f == Math.Floor(f) && Math.Abs(f) < 1e16f)
             {
                 return ((long)f).ToString(CultureInfo.InvariantCulture) + ".0";

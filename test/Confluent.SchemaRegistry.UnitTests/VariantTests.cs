@@ -455,6 +455,152 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.Throws<VariantException>(() => Prim(TNull).GetLong());
         }
 
+        [Fact]
+        public void OversizedUnsignedField_ThrowsVariantException()
+        {
+            // Fix #24: a 4-byte length/count/offset field with the high bit set (value >= 2^31)
+            // must throw a clean VariantException, not an ArgumentOutOfRange/OverflowException or
+            // a silent negative count.
+
+            // is_large array header (0x13) with a 4-byte element count of FF FF FF FF.
+            var largeArray = new byte[] { 0x13, 0xFF, 0xFF, 0xFF, 0xFF };
+            Assert.Throws<VariantException>(
+                () => new Variant(largeArray, EmptyMeta).NumArrayElements());
+
+            // long-string header (0x40) with a 4-byte length of FF FF FF FF.
+            var longString = new byte[] { 0x40, 0xFF, 0xFF, 0xFF, 0xFF };
+            Assert.Throws<VariantException>(
+                () => new Variant(longString, EmptyMeta).GetString());
+        }
+
+        [Theory]
+        // Fix #22: non-standard number grammar that Newtonsoft accepts but RFC 8259 rejects.
+        [InlineData("007")]
+        [InlineData("00")]
+        [InlineData("-01")]
+        [InlineData("1.")]
+        [InlineData("1.e3")]
+        [InlineData(".5")]
+        [InlineData(".")]
+        [InlineData("-")]
+        // Already rejected by Newtonsoft; confirmed still rejected.
+        [InlineData("+1")]
+        [InlineData("1e")]
+        public void ParseJson_RejectsMalformedNumbers(string json)
+        {
+            Assert.Throws<VariantException>(() => Variant.ParseJson(json));
+        }
+
+        [Theory]
+        // Fix #22: valid RFC 8259 numbers still parse.
+        [InlineData("0")]
+        [InlineData("0.5")]
+        [InlineData("-0")]
+        [InlineData("123")]
+        [InlineData("1.5")]
+        [InlineData("1e10")]
+        [InlineData("-1.5E+3")]
+        [InlineData("3.14e-2")]
+        [InlineData("[1,2,3]")]
+        [InlineData("{\"a\":1}")]
+        // Numbers inside string values/keys must NOT be validated as JSON numbers.
+        [InlineData("{\"x\":\"007\"}")]
+        [InlineData("{\"key2\":1}")]
+        [InlineData("{\"a\":\"1.\"}")]
+        public void ParseJson_AcceptsValidNumbers(string json)
+        {
+            // Must not throw.
+            Variant v = Variant.ParseJson(json);
+            Assert.NotNull(v);
+        }
+
+        [Fact]
+        public void ToJson_NonFiniteDouble_RendersBarewords()
+        {
+            // Cross-language contract: non-finite doubles serialize as the bareword JSON tokens
+            // NaN/Infinity/-Infinity (capitalized, unquoted), diverging from Spark which quotes them.
+            Assert.Equal("NaN", Prim(TDouble, F64(double.NaN)).ToJson());
+            Assert.Equal("Infinity", Prim(TDouble, F64(double.PositiveInfinity)).ToJson());
+            Assert.Equal("-Infinity", Prim(TDouble, F64(double.NegativeInfinity)).ToJson());
+        }
+
+        [Fact]
+        public void ToJson_NonFiniteFloat_RendersBarewords()
+        {
+            Assert.Equal("NaN", Prim(TFloat, F32(float.NaN)).ToJson());
+            Assert.Equal("Infinity", Prim(TFloat, F32(float.PositiveInfinity)).ToJson());
+            Assert.Equal("-Infinity", Prim(TFloat, F32(float.NegativeInfinity)).ToJson());
+        }
+
+        [Fact]
+        public void Builder_AcceptsAndStoresNonFiniteDouble()
+        {
+            // The builder must accept (not reject) non-finite doubles; the stored value reads back
+            // exactly and serializes to a bareword.
+            var b = new VariantBuilder();
+            b.AppendDouble(double.NaN);
+            Variant v = b.Build();
+            Assert.True(double.IsNaN(v.GetDouble()));
+            Assert.Equal("NaN", v.ToJson());
+
+            var b2 = new VariantBuilder();
+            b2.AppendDouble(double.PositiveInfinity);
+            Assert.Equal("Infinity", b2.Build().ToJson());
+
+            var b3 = new VariantBuilder();
+            b3.AppendDouble(double.NegativeInfinity);
+            Assert.Equal("-Infinity", b3.Build().ToJson());
+        }
+
+        [Fact]
+        public void Builder_AcceptsAndStoresNonFiniteFloat()
+        {
+            var b = new VariantBuilder();
+            b.AppendFloat(float.NaN);
+            Variant v = b.Build();
+            Assert.True(float.IsNaN(v.GetFloat()));
+            Assert.Equal("NaN", v.ToJson());
+
+            var b2 = new VariantBuilder();
+            b2.AppendFloat(float.PositiveInfinity);
+            Assert.Equal("Infinity", b2.Build().ToJson());
+
+            var b3 = new VariantBuilder();
+            b3.AppendFloat(float.NegativeInfinity);
+            Assert.Equal("-Infinity", b3.Build().ToJson());
+        }
+
+        [Fact]
+        public void ParseJson_OverflowMagnitude_BecomesInfinity()
+        {
+            // A magnitude too large for a double overflows to Infinity and serializes as a bareword.
+            Assert.Equal("Infinity", Variant.ParseJson("1e400").ToJson());
+            Assert.Equal(VariantType.Double, Variant.ParseJson("1e400").GetVariantType());
+            Assert.True(double.IsPositiveInfinity(Variant.ParseJson("1e400").GetDouble()));
+        }
+
+        [Fact]
+        public void ParseJson_BarewordNonFinite_RoundTrips()
+        {
+            // Bareword NaN/Infinity/-Infinity literal input is accepted (matching Java's Jackson
+            // mapper with ALLOW_NON_NUMERIC_NUMBERS) and round-trips through toJson.
+            Assert.Equal("NaN", Variant.ParseJson("NaN").ToJson());
+            Assert.Equal("Infinity", Variant.ParseJson("Infinity").ToJson());
+            Assert.Equal("-Infinity", Variant.ParseJson("-Infinity").ToJson());
+            Assert.True(double.IsNaN(Variant.ParseJson("NaN").GetDouble()));
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("\t\n")]
+        public void ParseJson_EmptyOrWhitespace_Throws(string json)
+        {
+            // Empty/whitespace input must throw (a typed failure that variants.tryParseJson catches
+            // and maps to CEL null), not return a malformed Variant or crash.
+            Assert.ThrowsAny<Exception>(() => Variant.ParseJson(json));
+        }
+
         private static byte[] Combine(byte[] a, byte[] b)
         {
             var r = new byte[a.Length + b.Length];
