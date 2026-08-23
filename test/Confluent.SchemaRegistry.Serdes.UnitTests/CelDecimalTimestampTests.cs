@@ -55,9 +55,30 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [InlineData("decimals.eq(decimals.abs(decimal(\"-2.5\")), decimal(\"2.5\"))", true)]
         [InlineData("decimals.sign(decimal(\"-2.5\")) == -1", true)]
         [InlineData("double(decimal(\"100.50\")) == 100.5", true)]
+        // The CEL == / != operators on two Decimal values are NUMERIC (value-equal,
+        // scale-insensitive), matching decimals.eq. This routes DecimalT.Equal through
+        // BigDecimal.Equals (CompareTo == 0), not scale-sensitive struct equality.
+        [InlineData("decimal(\"2.0\") == decimal(\"2.00\")", true)]
+        [InlineData("decimal(\"2.0\") == decimal(\"2.0\")", true)]
+        [InlineData("decimal(\"2.0\") == decimal(\"2.1\")", false)]
+        [InlineData("decimal(\"2.0\") != decimal(\"2.00\")", false)]
+        [InlineData("decimal(\"2.0\") != decimal(\"2.1\")", true)]
         public async Task DecimalOperators(string expr, bool expected)
         {
             Assert.Equal(expected, await Eval(expr, 1));
+        }
+
+        [Theory]
+        // decimal(this) == decimal(literal) is numeric: the receiver's scale (2.00, scale 2)
+        // does not affect equality with 2.0 (scale 1) / 2 (scale 0).
+        [InlineData("decimal(this) == decimal(\"2.00\")", true)]
+        [InlineData("decimal(this) == decimal(\"2\")", true)]
+        [InlineData("decimal(this) == decimal(\"2.5\")", false)]
+        [InlineData("decimal(this) != decimal(\"2.5\")", true)]
+        public async Task DecimalEqualityOnReceiver(string expr, bool expected)
+        {
+            // Receiver decodes to a scale-2 Decimal (2.00); equality must ignore that scale.
+            Assert.Equal(expected, await Eval(expr, new AvroDecimal(2.00m)));
         }
 
         [Theory]
