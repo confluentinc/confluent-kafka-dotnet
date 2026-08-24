@@ -166,12 +166,21 @@ namespace Confluent.SchemaRegistry.Rules
                     break;
                 case ScriptType.Protobuf:
                     // A registry carrying ProtoValueToCel, so a confluent.type.Decimal is a
-                    // DecimalT wherever it appears - including a field reached by selection,
-                    // which no boundary conversion can see. Without it cel.net answers `==` with
+                    // DecimalT wherever it appears - including a field reached by selection, which
+                    // no boundary conversion can see. Without it cel.net answers `==` with
                     // lhs.Equal(rhs) on the raw message, comparing unscaled bytes and scale field
                     // by field, and `this.subtotal == this.total` was false for 1.50 against 1.5.
+                    //
+                    // Deliberately the registry hook rather than ScriptHost.Adapter /
+                    // EnvOptions.CustomTypeAdapter: an environment-level adapter is consulted for
+                    // the bound value only. cel.net's attribute layer adapts the *container* first
+                    // and then reads fields off the resulting PbObjectT using the registry that
+                    // object was built with, so an environment adapter never sees a nested field.
+                    // See ProtoTypeRegistry.NewRegistry(customAdapter) for the full comparison
+                    // with cel-go, which adapts field values natively and so does not have this
+                    // limitation.
                     scriptHostBuilder = scriptHostBuilder.Registry(
-                        ProtoTypeRegistry.NewRegistry().WithCustomAdapter(ProtoValueToCel));
+                        ProtoTypeRegistry.NewRegistry(ProtoValueToCel));
                     type = msg;
                     break;
                 default:
