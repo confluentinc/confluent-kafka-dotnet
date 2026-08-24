@@ -165,6 +165,13 @@ namespace Confluent.SchemaRegistry.Rules
                     type = msg.GetType();
                     break;
                 case ScriptType.Protobuf:
+                    // A registry carrying ProtoValueToCel, so a confluent.type.Decimal is a
+                    // DecimalT wherever it appears - including a field reached by selection,
+                    // which no boundary conversion can see. Without it cel.net answers `==` with
+                    // lhs.Equal(rhs) on the raw message, comparing unscaled bytes and scale field
+                    // by field, and `this.subtotal == this.total` was false for 1.50 against 1.5.
+                    scriptHostBuilder = scriptHostBuilder.Registry(
+                        ProtoTypeRegistry.NewRegistry().WithCustomAdapter(ProtoValueToCel));
                     type = msg;
                     break;
                 default:
@@ -211,6 +218,13 @@ namespace Confluent.SchemaRegistry.Rules
                 return FindTypeForAvroType(((GenericRecord)arg).Schema);
             }
 
+            if (arg is DecimalT)
+            {
+                // Matches DecimalT.Type() and the declaration in BuiltinDeclarations, so a
+                // converted decimal and decimal(...) are one type.
+                return Decls.NewObjectType(CelTypeLabels.DecimalName);
+            }
+
             if (arg is IMessage)
             {
                 return Decls.NewObjectType(((IMessage)arg).Descriptor.FullName);
@@ -238,6 +252,48 @@ namespace Confluent.SchemaRegistry.Rules
             }
 
             return null;
+        }
+
+        /// <summary>
+        ///     A <c>confluent.type.Decimal</c> message as a <see cref="DecimalT" />, or null for
+        ///     anything else. The protobuf counterpart of <c>AvroValueToCel</c>'s AvroDecimal arm,
+        ///     and needed for the same reason: cel.net intercepts <c>==</c> in the planner and
+        ///     answers it with <c>lhs.Equal(rhs)</c>, so a decimal left as a protobuf message
+        ///     compares structurally - field by field over unscaled bytes and scale - and calls
+        ///     12.34 and 12.340 unequal even though they are the same number. Carried as a
+        ///     DecimalT it compares numerically, and <c>string()</c> / <c>double()</c> resolve.
+        ///     <para>
+        ///         Only reaches a value bound directly. A decimal reached by selection instead
+        ///         (<c>this.amount</c>) is resolved inside cel.net, past any boundary.
+        ///     </para>
+        /// </summary>
+        internal static object ToCelDecimalOrNull(object value)
+        {
+            if (value is DecimalT)
+            {
+                return value;
+            }
+
+            if (value is IMessage msg
+                && msg.Descriptor?.FullName == CelTypeLabels.DecimalName)
+            {
+                return DecimalT.Of(DecimalUtils.ToBigDecimal(msg));
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        ///     Presents a protobuf value the way this client's CEL surface expects. The protobuf
+        ///     counterpart of <see cref="AvroValueToCel" />: a <c>confluent.type.Decimal</c>
+        ///     message is carried as a <see cref="DecimalT" /> so it compares numerically rather
+        ///     than by its encoding. Returning null leaves the value to cel.net's standard
+        ///     mapping. Reaches message fields as well as top-level values, because the registry
+        ///     adapts its fields through this same hook.
+        /// </summary>
+        private static IVal ProtoValueToCel(object value)
+        {
+            return ToCelDecimalOrNull(value) as IVal;
         }
 
         private static Google.Api.Expr.V1Alpha1.Type FindTypeForAvroType(Avro.Schema schema)

@@ -6,15 +6,26 @@ namespace Confluent.SchemaRegistry.Rules
 {
     public class BuiltinDeclarations
     {
-        // Abstract (opaque) type declaration for confluent.type.Decimal. The label is the
-        // cross-language spec; cel.net has no opaque type, so the runtime value is DecimalT,
-        // whose type name matches this. Timestamp uses CEL's built-in timestamp type.
+        // Object type declaration for confluent.type.Decimal - deliberately an object type and
+        // not an abstract one. DecimalT.Type() is TypeT.NewObjectTypeValue(DecimalName), and a
+        // protobuf confluent.type.Decimal field is declared by CelExecutor.FindType as
+        // Decls.NewObjectType of the same name; an abstract declaration is a third, incompatible
+        // identity for the same logical type, so `decimals.eq(this, decimal("12.34"))` on a bare
+        // decimal field failed to check with "found no matching overload ... applied to
+        // '(confluent.type.Decimal, { abstractType: { name: confluent.type.Decimal } })'".
+        // One kind for all three makes a bare decimal field usable with no decimal(...) call.
         private static readonly Type Decimal =
-            Decls.NewAbstractType(CelTypeLabels.DecimalName, new List<Type>());
+            Decls.NewObjectType(CelTypeLabels.DecimalName);
 
-        // Abstract (opaque) type declaration for confluent.type.Variant. Same rationale as
-        // Decimal: cel.net has no opaque type, so the runtime value is VariantT, whose type
-        // name matches this.
+        // Abstract type declaration for confluent.type.Variant: the *result* type of
+        // variant(...) and variants.parseJson(...). The variants.* accessors deliberately do
+        // NOT take it as their receiver - they take dyn, as every other client declares them,
+        // and coerce inside (see BuiltinOverload.ReceiverVariantOrNull, which accepts a
+        // VariantT, a raw Variant, a confluent.type.Variant message, or a map). Declaring the
+        // receiver as this abstract type instead would reject every one of those bare shapes:
+        // VariantT.Type() is an object type and a protobuf variant field is declared as an
+        // object type too, so `variants.field(this, 'name')` on a bare variant failed with
+        // "found no matching overload ... applied to '(confluent.type.Variant, string)'".
         private static readonly Type Variant =
             Decls.NewAbstractType(CelTypeLabels.VariantName, new List<Type>());
 
@@ -97,41 +108,41 @@ namespace Confluent.SchemaRegistry.Rules
             // Inspection.
             decls.Add(Decls.NewFunction(
                 "variants.type",
-                Decls.NewOverload("variants_type", new List<Type> { Variant }, Decls.String)));
+                Decls.NewOverload("variants_type", new List<Type> { Decls.Dyn }, Decls.String)));
             decls.Add(Decls.NewFunction(
                 "variants.isNull",
                 Decls.NewOverload("variants_is_null", new List<Type> { Decls.Dyn }, Decls.Bool)));
 
             // Navigation: field/index/path return a Variant, or CEL null on a miss — so the
             // declared result is dyn (so `... == null` type-checks, and the result still feeds
-            // another variants.* call, since dyn is assignable to the abstract Variant param).
+            // another variants.* call).
             decls.Add(Decls.NewFunction(
                 "variants.path",
                 Decls.NewOverload("variants_path",
-                    new List<Type> { Variant, Decls.String }, Decls.Dyn)));
+                    new List<Type> { Decls.Dyn, Decls.String }, Decls.Dyn)));
             decls.Add(Decls.NewFunction(
                 "variants.field",
                 Decls.NewOverload("variants_field",
-                    new List<Type> { Variant, Decls.String }, Decls.Dyn)));
+                    new List<Type> { Decls.Dyn, Decls.String }, Decls.Dyn)));
             decls.Add(Decls.NewFunction(
                 "variants.index",
                 Decls.NewOverload("variants_index",
-                    new List<Type> { Variant, Decls.Int }, Decls.Dyn)));
+                    new List<Type> { Decls.Dyn, Decls.Int }, Decls.Dyn)));
 
             // Typed extraction: as (strict) / tryAs (null on mismatch) -> dyn.
             decls.Add(Decls.NewFunction(
                 "variants.as",
                 Decls.NewOverload("variants_as",
-                    new List<Type> { Variant, Decls.String }, Decls.Dyn)));
+                    new List<Type> { Decls.Dyn, Decls.String }, Decls.Dyn)));
             decls.Add(Decls.NewFunction(
                 "variants.tryAs",
                 Decls.NewOverload("variants_try_as",
-                    new List<Type> { Variant, Decls.String }, Decls.Dyn)));
+                    new List<Type> { Decls.Dyn, Decls.String }, Decls.Dyn)));
 
             // Serialization.
             decls.Add(Decls.NewFunction(
                 "variants.toJson",
-                Decls.NewOverload("variants_to_json", new List<Type> { Variant }, Decls.String)));
+                Decls.NewOverload("variants_to_json", new List<Type> { Decls.Dyn }, Decls.String)));
         }
 
         // ---- Decimal ----

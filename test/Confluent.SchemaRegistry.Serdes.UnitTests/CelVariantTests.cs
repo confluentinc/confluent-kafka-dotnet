@@ -154,5 +154,84 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(true, await Eval(
                 "variants.as(variants.field(variant(this), 'age'), 'int') == 30", msg));
         }
+
+        // ---- Bare: the variants.* accessors with no variant(...) call ----
+
+        /// <summary>
+        ///     The cross-client parity set, identical in all seven clients: a variant value is
+        ///     usable with the <c>variants.*</c> accessors with <b>no <c>variant(...)</c> call</b>,
+        ///     in both formats, and the wrapped form keeps working alongside it. The accessors are
+        ///     declared over dyn and coerce inside, so they take whatever the decoder produced -
+        ///     a <see cref="Variant" /> from the Avro logical type, or a
+        ///     <c>confluent.type.Variant</c> message from protobuf.
+        /// </summary>
+        public static TheoryData<string, bool> BareVariantCases => new TheoryData<string, bool>
+        {
+            // Bare: no constructor call.
+            { "variants.type(this) == 'object'", true },
+            { "variants.as(variants.field(this, 'name'), 'string') == 'alice'", true },
+            { "variants.as(variants.path(this, '$.age'), 'int') == 30", true },
+            // The wrapped form must keep working (variant(...) re-entry).
+            { "variants.as(variants.field(variant(this), 'name'), 'string') == 'alice'", true },
+            // A missing key is CEL null, not an error.
+            { "variants.field(this, 'nope') == null", true },
+            // Negative control.
+            { "variants.as(variants.field(this, 'name'), 'string') == 'bob'", false }
+        };
+
+        /// <summary>
+        ///     <c>variants.isNull</c> must coerce its receiver like every other accessor. It is
+        ///     declared over dyn, so a bare variant field reaches it; a receiver check that only
+        ///     accepts <see cref="VariantT" /> answers false for the shapes a variant-typed field
+        ///     actually decodes to, reporting "not null" for a variant holding an explicit JSON
+        ///     null. The bare cases above cannot catch this — isNull on an object is false either
+        ///     way, so only a variant that *is* null discriminates.
+        /// </summary>
+        [Fact]
+        public async Task VariantIsNullCoercesBareReceiver()
+        {
+            Variant nullVariant = Variant.ParseJson("null");
+            var nullMsg = new Confluent.SchemaRegistry.Serdes.Protobuf.Variant
+            {
+                Metadata = ByteString.CopyFrom(nullVariant.MetadataBytes),
+                Value = ByteString.CopyFrom(nullVariant.ValueBytes)
+            };
+            Assert.Equal(true, await Eval("variants.isNull(this)", nullMsg));
+            // The wrapped form has always worked and must keep working.
+            Assert.Equal(true, await Eval("variants.isNull(variant(this))", nullMsg));
+            // The Avro shape decodes to a Variant directly.
+            Assert.Equal(true, await Eval("variants.isNull(this)", nullVariant));
+
+            // A variant holding 5 is not variant-null.
+            Variant five = Variant.ParseJson("5");
+            var fiveMsg = new Confluent.SchemaRegistry.Serdes.Protobuf.Variant
+            {
+                Metadata = ByteString.CopyFrom(five.MetadataBytes),
+                Value = ByteString.CopyFrom(five.ValueBytes)
+            };
+            Assert.Equal(false, await Eval("variants.isNull(this)", fiveMsg));
+        }
+
+        [Theory]
+        [MemberData(nameof(BareVariantCases))]
+        public async Task AvroVariantNeedsNoConstructor(string expr, bool expected)
+        {
+            // An Avro variant field decodes (via VariantLogicalType) to a Variant.
+            Variant v = Variant.ParseJson(Doc);
+            Assert.Equal(expected, await Eval(expr, v));
+        }
+
+        [Theory]
+        [MemberData(nameof(BareVariantCases))]
+        public async Task ProtoVariantNeedsNoConstructor(string expr, bool expected)
+        {
+            Variant v = Variant.ParseJson(Doc);
+            var msg = new Confluent.SchemaRegistry.Serdes.Protobuf.Variant
+            {
+                Metadata = ByteString.CopyFrom(v.MetadataBytes),
+                Value = ByteString.CopyFrom(v.ValueBytes)
+            };
+            Assert.Equal(expected, await Eval(expr, msg));
+        }
     }
 }

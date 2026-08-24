@@ -209,6 +209,77 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(true, await Eval("decimals.gt(decimal(this), decimal(\"10.00\"))", dec));
         }
 
+        /// <summary>
+        ///     A decimal reached by <b>selection</b> compares numerically, exactly as one bound
+        ///     directly does. A boundary conversion cannot achieve this on its own -
+        ///     <c>this.a</c> is resolved inside cel.net, past any boundary - so the registry
+        ///     carries <c>ProtoValueToCel</c> and a <c>confluent.type.Decimal</c> becomes a
+        ///     <see cref="DecimalT" /> wherever it appears, fields included. Without it cel.net
+        ///     answers <c>==</c> with <c>lhs.Equal(rhs)</c> on the raw message, comparing unscaled
+        ///     bytes and scale field by field, and called 1.50 and 1.5 unequal.
+        /// </summary>
+        [Fact]
+        public async Task NestedProtoDecimalEquality()
+        {
+            // 1.50 and 1.5 - the same number in two encodings.
+            var msg = new Example.NestedDecimals
+            {
+                A = 1.50m.ToProtobufDecimal(),
+                B = 1.5m.ToProtobufDecimal()
+            };
+
+            // Accessors through a selection.
+            Assert.Equal(true, await Eval("decimals.eq(this.a, this.b)", msg));
+            Assert.Equal(true, await Eval("decimals.eq(decimal(this.a), decimal(this.b))", msg));
+            // `==` through a selection.
+            Assert.Equal(true, await Eval("this.a == this.b", msg));
+            Assert.Equal(false, await Eval("this.a != this.b", msg));
+            Assert.Equal(true, await Eval("this.a == this.a", msg));
+            // Mixed with a constructed decimal.
+            Assert.Equal(true, await Eval("this.a == decimal(\"1.500\")", msg));
+            // Containers and membership follow the same equality.
+            Assert.Equal(true, await Eval("[this.a] == [this.b]", msg));
+            Assert.Equal(true, await Eval("{'k': this.a} == {'k': this.b}", msg));
+            Assert.Equal(true, await Eval("this.a in [this.b]", msg));
+            // Negative controls.
+            Assert.Equal(false, await Eval("this.a == decimal(\"9\")", msg));
+            Assert.Equal(false, await Eval("[this.a] == [decimal(\"9\")]", msg));
+            Assert.Equal(false, await Eval("this.a in [decimal(\"9\")]", msg));
+            // Decimal-free comparisons are unaffected.
+            Assert.Equal(true, await Eval("[1, 2] == [1, 2]", msg));
+            Assert.Equal(false, await Eval("[1, 2] == [2, 1]", msg));
+            Assert.Equal(true, await Eval("2 in [1, 2]", msg));
+            Assert.Equal(false, await Eval("3 in [1, 2]", msg));
+        }
+
+        /// <summary>
+        ///     Cross-client parity: a bare <c>confluent.type.Decimal</c> field is usable with
+        ///     <c>decimals.*</c>, <c>==</c>, <c>string()</c> and <c>double()</c> with <b>no
+        ///     <c>decimal(...)</c> call</b> on it. The discriminating case is the scale-differing
+        ///     equality: a client comparing decimals by their protobuf encoding (unscaled bytes
+        ///     plus scale, field by field) answers false for <c>decimal("12.340")</c>, because
+        ///     12.34 and 12.340 are the same number in two different encodings.
+        /// </summary>
+        [Fact]
+        public async Task ProtoDecimalNeedsNoConstructor()
+        {
+            Confluent.SchemaRegistry.Serdes.Protobuf.Decimal dec = 12.34m.ToProtobufDecimal();
+
+            // Bare: no constructor call on the field.
+            Assert.Equal(true, await Eval("decimals.eq(this, decimal(\"12.34\"))", dec));
+            Assert.Equal(true, await Eval("decimals.gt(this, decimal(\"10.00\"))", dec));
+            // The wrapped form must keep working (decimal(...) re-entry).
+            Assert.Equal(true, await Eval("decimals.eq(decimal(this), decimal(\"12.34\"))", dec));
+            // `==` is numeric on it: 12.34 equals 12.340 despite the differing scale.
+            Assert.Equal(true, await Eval("this == decimal(\"12.340\")", dec));
+            Assert.Equal(false, await Eval("this != decimal(\"12.340\")", dec));
+            Assert.Equal(true, await Eval("decimals.lt(this, decimal(\"100\"))", dec));
+            // Negative control: a false comparison must still be false.
+            Assert.Equal(false, await Eval("decimals.gt(this, decimal(\"100\"))", dec));
+            Assert.Equal(true, await Eval("string(this) == \"12.34\"", dec));
+            Assert.Equal(true, await Eval("double(this) == 12.34", dec));
+        }
+
         [Fact]
         public async Task ProtoWktTimestampIntoCel()
         {

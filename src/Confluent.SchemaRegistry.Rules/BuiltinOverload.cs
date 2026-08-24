@@ -175,7 +175,28 @@ namespace Confluent.SchemaRegistry.Rules
         // input is simply false), matching the Python/JS isNull.
         private static IVal VariantIsNull(IVal v)
         {
-            SrVariant variant = v is VariantT vt ? vt.Variant : v.Value() as SrVariant;
+            // Coerces like every other accessor. `v.Value() as SrVariant` answered null for the
+            // shapes a variant-typed field decodes to - a confluent.type.Variant message, or the
+            // map an Avro variant record yields - which the dyn declaration admits, so a bare
+            // variant holding an explicit JSON null reported "not null". A non-variant stays
+            // false rather than throwing: this predicate never errors.
+            SrVariant variant;
+            if (v is VariantT vt)
+            {
+                variant = vt.Variant;
+            }
+            else
+            {
+                try
+                {
+                    variant = ReceiverVariantOrNull(v);
+                }
+                catch (Exception)
+                {
+                    return Types.BoolOf(false);
+                }
+            }
+
             return Types.BoolOf(variant != null && variant.GetVariantType() == VariantType.Null);
         }
 
@@ -338,7 +359,14 @@ namespace Confluent.SchemaRegistry.Rules
 
         // ---- Decimal / timestamp helpers ----
 
-        private static BigDecimal ToDecimal(IVal v) => v is DecimalT d ? d.Decimal : (BigDecimal)v.Value();
+        // Coerces rather than casting. A decimals.* receiver is a DecimalT when it came from
+        // decimal(...) or another decimals.* result, but a bare confluent.type.Decimal message
+        // when it came from protobuf field selection - which the dyn/object-typed declarations
+        // now admit. A hard (BigDecimal) cast threw "Unable to cast object of type
+        // 'Confluent.SchemaRegistry.Serdes.Protobuf.Decimal' to type 'BigDecimal'" on exactly
+        // that shape; DecimalUtils.ToBigDecimal accepts it, and every other numeric shape too.
+        private static BigDecimal ToDecimal(IVal v) =>
+            v is DecimalT d ? d.Decimal : DecimalUtils.ToBigDecimal(v.Value());
 
         private static long ToLong(IVal v) => Convert.ToInt64(v.Value(), CultureInfo.InvariantCulture);
 
