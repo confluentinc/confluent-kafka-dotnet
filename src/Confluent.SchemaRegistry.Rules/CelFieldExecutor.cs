@@ -60,9 +60,12 @@ namespace Confluent.SchemaRegistry.Rules
                     return fieldValue;
                 }
                 object message = fieldCtx.ContainingMessage;
-                object result = await celExecutor.Execute(ctx, fieldValue, new Dictionary<string, object>
+                // Convert before the executor reads it: the value determines the declared
+                // type as well as the binding, and Cel.NET rejects a CLR enum in either.
+                object celValue = CelExecutor.ToCelValue(fieldValue);
+                object result = await celExecutor.Execute(ctx, celValue, new Dictionary<string, object>
                     {
-                        { "value", fieldValue ?? NullValue.NullValue},
+                        { "value", celValue ?? NullValue.NullValue},
                         { "fullName", fieldCtx.FullName },
                         { "name", fieldCtx.Name },
                         { "typeName", fieldCtx.Type.ToString().ToUpper() },
