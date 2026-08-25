@@ -16,6 +16,7 @@
 
 using Xunit;
 using System;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 
@@ -30,7 +31,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     i.e. multi-byte varint value.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void ProduceConsumeSchemaManyMessagesProtobuf(string bootstrapServers, string schemaRegistryServers)
+        public static async Task ProduceConsumeSchemaManyMessagesProtobuf(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
@@ -44,7 +45,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             {
                 var u = new Msg230();
                 u.Value = 41;
-                producer.ProduceAsync(topic.Name, new Message<string, Msg230> { Key = "test1", Value = u }).Wait();
+                await producer.ProduceAsync(topic.Name, new Message<string, Msg230> { Key = "test1", Value = u }, TestContext.Current.CancellationToken);
 
                 var consumerConfig = new ConsumerConfig
                 {
@@ -60,7 +61,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     consumer.Subscribe(topic.Name);
-                    var cr = consumer.Consume();
+                    var cr = consumer.Consume(TestContext.Current.CancellationToken);
                     Assert.Equal(u.Value, cr.Message.Value.Value);
                 }
             }

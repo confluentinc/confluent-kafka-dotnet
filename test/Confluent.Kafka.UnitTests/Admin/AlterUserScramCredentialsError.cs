@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using Xunit;
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -134,7 +135,7 @@ namespace Confluent.Kafka.UnitTests
         };
 
         [Fact]
-        public async void LocalTimeout()
+        public async Task LocalTimeout()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -151,7 +152,7 @@ namespace Confluent.Kafka.UnitTests
         }
         
         [Fact]
-        public async void NullAlterations()
+        public async Task NullAlterations()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -168,7 +169,7 @@ namespace Confluent.Kafka.UnitTests
         }
         
         [Fact]
-        public async void InvalidSubclass()
+        public async Task InvalidSubclass()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {

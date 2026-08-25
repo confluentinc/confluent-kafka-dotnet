@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -31,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.DeleteRecords.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_DeleteRecords(string bootstrapServers)
+        public async Task AdminClient_DeleteRecords(string bootstrapServers)
         {
             LogToFile("start AdminClient_DeleteRecords");
 
@@ -48,11 +49,11 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 producer.Flush(TimeSpan.FromSeconds(10));
 
-                var r = adminClient.DeleteRecordsAsync(new List<TopicPartitionOffset>
+                var r = await adminClient.DeleteRecordsAsync(new List<TopicPartitionOffset>
                     {
                         new TopicPartitionOffset(topic1.Name, 0, 4),
                         new TopicPartitionOffset(topic2.Name, 0, 0) // no modification.
-                    }).Result;
+                    });
                 var t1r = r.Where(a => a.Topic == topic1.Name).ToList()[0];
                 var t2r = r.Where(a => a.Topic == topic2.Name).ToList()[0];
                 Assert.Equal(4, (int)t1r.Offset);
@@ -63,25 +64,22 @@ namespace Confluent.Kafka.IntegrationTests
                 var wm2 = consumer.QueryWatermarkOffsets(new TopicPartition(topic2.Name, 0), TimeSpan.FromSeconds(10));
                 Assert.Equal(0, (int)wm2.Low);
 
-                r = adminClient.DeleteRecordsAsync(new List<TopicPartitionOffset>
+                r = await adminClient.DeleteRecordsAsync(new List<TopicPartitionOffset>
                     {
                         new TopicPartitionOffset(topic1.Name, 0, 3)
-                    }).Result;
+                    });
                 Assert.Equal(4, (int)r.First().Offset);
 
                 try
                 {
-                    r = adminClient.DeleteRecordsAsync(new List<TopicPartitionOffset>
+                    r = await adminClient.DeleteRecordsAsync(new List<TopicPartitionOffset>
                         {
                             new TopicPartitionOffset(topic1.Name, 0, 12)
-                        }).Result;
+                        });
                     Assert.True(false); // expecting exception.
                 }
-                catch (Exception e)
+                catch (Admin.DeleteRecordsException dre)
                 {
-                    var ie = e.InnerException;
-                    Assert.IsType<Admin.DeleteRecordsException>(ie);
-                    var dre = (Admin.DeleteRecordsException)ie;
                     Assert.Single(dre.Results);
                     Assert.Equal(ErrorCode.OffsetOutOfRange, dre.Results[0].Error.Code);
                 }

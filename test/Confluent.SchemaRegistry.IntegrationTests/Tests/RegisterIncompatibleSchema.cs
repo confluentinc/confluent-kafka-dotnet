@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -24,7 +25,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void RegisterIncompatibleSchema(Config config)
+        public static async Task RegisterIncompatibleSchema(Config config)
         {
             var topicName = Guid.NewGuid().ToString();
 
@@ -36,18 +37,18 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
             var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, "Confluent.Kafka.Examples.AvroSpecific.User");
-            var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
+            var id = await sr.RegisterSchemaAsync(subject, testSchema1);
 
             var testSchema2 = // incompatible with testSchema1
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_shape\",\"type\":[\"string\",\"null\"]}]}";
 
-            Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
+            Assert.False(await sr.IsCompatibleAsync(subject, testSchema2));
 
-            Assert.Throws<AggregateException>(() => sr.RegisterSchemaAsync(subject, testSchema2).Result);
+            await Assert.ThrowsAnyAsync<Exception>(() => sr.RegisterSchemaAsync(subject, testSchema2));
 
-            Assert.True(sr.GetAllSubjectsAsync().Result.Contains(subject));
+            Assert.Contains(subject, await sr.GetAllSubjectsAsync());
         }
     }
 }

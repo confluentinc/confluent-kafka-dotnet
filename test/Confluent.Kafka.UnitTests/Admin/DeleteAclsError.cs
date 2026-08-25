@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using Xunit;
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
@@ -68,7 +69,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void NullAclBindingFilters()
+        public async Task NullAclBindingFilters()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -79,7 +80,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void EmptyAclBindingFilters()
+        public async Task EmptyAclBindingFilters()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -90,7 +91,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void NullResourcePattern()
+        public async Task NullResourcePattern()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -107,7 +108,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void NullAccessControlEntry()
+        public async Task NullAccessControlEntry()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -124,7 +125,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void LocalTimeout()
+        public async Task LocalTimeout()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -137,7 +138,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void InvalidAclBindingFilters()
+        public async Task InvalidAclBindingFilters()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {

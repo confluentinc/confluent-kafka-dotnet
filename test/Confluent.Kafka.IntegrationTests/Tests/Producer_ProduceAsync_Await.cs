@@ -42,14 +42,19 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     var dr = await producer.ProduceAsync(
                         singlePartitionTopic,
-                        new Message<Null, string> { Value = "test string" });
+                        new Message<Null, string> { Value = "test string" },
+                        TestContext.Current.CancellationToken);
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                     Assert.NotEqual(Offset.Unset, dr.Offset);
                 }
             };
 
+            // deliberately blocks the calling thread via Task.Wait (rather than await) to test that
+            // awaiting ProduceAsync and then blocking synchronously does not deadlock.
+#pragma warning disable xUnit1031, xUnit1051
             mthd().Wait();
-            
+#pragma warning restore xUnit1031, xUnit1051
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Await_Serializing");
         }
@@ -67,7 +72,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
+                    new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") },
+                    TestContext.Current.CancellationToken);
                 Assert.NotEqual(Offset.Unset, dr.Offset);
             }
 
@@ -92,7 +98,8 @@ namespace Confluent.Kafka.IntegrationTests
                     {
                         await producer.ProduceAsync(
                             new TopicPartition(singlePartitionTopic, 42),
-                            new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
+                            new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") },
+                            TestContext.Current.CancellationToken);
                         throw new Exception("unexpected exception");
                     });
             }
@@ -105,12 +112,16 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     var dr = await producer.ProduceAsync(
                         new TopicPartition(singlePartitionTopic, 1001),
-                        new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
+                        new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") },
+                        TestContext.Current.CancellationToken);
                     throw new Exception("unexpected exception.");
                 }
             };
 
+            // deliberately tests that blocking Wait() on a faulted task throws AggregateException.
+#pragma warning disable xUnit1031, xUnit1051
             Assert.Throws<AggregateException>(() => { mthd().Wait(); });
+#pragma warning restore xUnit1031, xUnit1051
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Await_Throws");

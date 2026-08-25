@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -24,7 +25,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void GetSubjectVersions(Config config)
+        public static async Task GetSubjectVersions(Config config)
         {
             var topicName = Guid.NewGuid().ToString();
 
@@ -42,12 +43,12 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
             var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
-            var id1 = sr.RegisterSchemaAsync(subject, testSchema1).Result;
-            var id2 = sr.RegisterSchemaAsync(subject, testSchema2).Result;
+            var id1 = await sr.RegisterSchemaAsync(subject, testSchema1);
+            var id2 = await sr.RegisterSchemaAsync(subject, testSchema2);
 
-            var versions = sr.GetSubjectVersionsAsync(subject).Result;
+            var versions = await sr.GetSubjectVersionsAsync(subject);
 
-            Assert.Equal(versions.Count, 2);
+            Assert.Equal(2, versions.Count);
         }
     }
 }

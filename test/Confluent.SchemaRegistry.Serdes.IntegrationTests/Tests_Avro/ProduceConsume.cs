@@ -96,7 +96,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 new ConsumerBuilder<string, ProduceConsumeUser>(consumerConfig)
                     .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
                     .SetValueDeserializer(new AvroDeserializer<ProduceConsumeUser>(schemaRegistry).AsSyncOverAsync())
-                    .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
+                    .SetErrorHandler((_, e) => Assert.Fail(e.Reason))
                     .Build())
             {
                 consumer.Subscribe(topic);
@@ -128,22 +128,22 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 if (nameStrategy == SubjectNameStrategy.TopicRecord)
                 {
                     Assert.Equal(2, (int)subjects.Where(s => s.Contains(topic)).Count());
-                    Assert.Single(subjects.Where(s => s == $"{topic}-key"));
-                    Assert.Single(subjects.Where(s => s == $"{topic}-{((Avro.RecordSchema)ProduceConsumeUser._SCHEMA).Fullname}"));
+                    Assert.Single(subjects, s => s == $"{topic}-key");
+                    Assert.Single(subjects, s => s == $"{topic}-{((Avro.RecordSchema)ProduceConsumeUser._SCHEMA).Fullname}");
                 }
 
                 if (nameStrategy == SubjectNameStrategy.Topic)
                 {
                     Assert.Equal(2, (int)subjects.Where(s => s.Contains(topic)).Count());
-                    Assert.Single(subjects.Where(s => s == $"{topic}-key"));
-                    Assert.Single(subjects.Where(s => s == $"{topic}-value"));
+                    Assert.Single(subjects, s => s == $"{topic}-key");
+                    Assert.Single(subjects, s => s == $"{topic}-value");
                 }
 
                 if (nameStrategy == SubjectNameStrategy.Record)
                 {
-                    Assert.Single(subjects.Where(s => s.Contains(topic))); // the string key.
-                    Assert.Single(subjects.Where(s => s == $"{topic}-key"));
-                    Assert.Single(subjects.Where(s => s == $"{((Avro.RecordSchema)ProduceConsumeUser._SCHEMA).Fullname}"));
+                    Assert.Single(subjects, s => s.Contains(topic)); // the string key.
+                    Assert.Single(subjects, s => s == $"{topic}-key");
+                    Assert.Single(subjects, s => s == $"{((Avro.RecordSchema)ProduceConsumeUser._SCHEMA).Fullname}");
                 }
             }
         }
