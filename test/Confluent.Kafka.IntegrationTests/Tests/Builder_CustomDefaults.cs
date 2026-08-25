@@ -19,6 +19,7 @@
 using System;
 using System.Text;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -101,7 +102,7 @@ namespace Confluent.Kafka.IntegrationTests
         }
 
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void ProducerBuilder(string bootstrapServers)
+        public async Task ProducerBuilder(string bootstrapServers)
         {
             LogToFile("start Builder_CustomDefaults");
 
@@ -110,7 +111,7 @@ namespace Confluent.Kafka.IntegrationTests
             var dr = new DeliveryResult<string, string>();
             using (var p = new MyProducerBuilder<string, string>(producerConfig).Build())
             {
-                dr = p.ProduceAsync(singlePartitionTopic, new Message<string, string> { Key = "abc", Value = "123" }).Result;
+                dr = await p.ProduceAsync(singlePartitionTopic, new Message<string, string> { Key = "abc", Value = "123" }, TestContext.Current.CancellationToken);
             }
             
             var consumerConfig = new ConsumerConfig

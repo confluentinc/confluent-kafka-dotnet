@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -30,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Simple Consumer Pause / Resume test.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Consumer_Pause_Resume(string bootstrapServers)
+        public async Task Consumer_Pause_Resume(string bootstrapServers)
         {
             LogToFile("start Consumer_Pause_Resume");
 
@@ -62,13 +63,13 @@ namespace Confluent.Kafka.IntegrationTests
                 ConsumeResult<byte[], byte[]> record = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
 
-                producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value", SerializationContext.Empty) }).Wait();
+                await producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value", SerializationContext.Empty) }, TestContext.Current.CancellationToken);
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
                 Assert.Equal(0, record?.Offset);
 
                 consumer.Pause(assignment);
-                producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value 2", SerializationContext.Empty) }).Wait();
+                await producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value 2", SerializationContext.Empty) }, TestContext.Current.CancellationToken);
                 record = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
                 consumer.Resume(assignment);

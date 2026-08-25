@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
@@ -32,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.CreateTopics.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_CreateTopics(string bootstrapServers)
+        public async Task AdminClient_CreateTopics(string bootstrapServers)
         {
             LogToFile("start AdminClient_CreateTopics");
 
@@ -47,13 +48,13 @@ namespace Confluent.Kafka.IntegrationTests
             //  - creation of more than one topic.
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                adminClient.CreateTopicsAsync(
+                await adminClient.CreateTopicsAsync(
                     new TopicSpecification[]
-                    { 
+                    {
                         new TopicSpecification { Name = topicName1, NumPartitions = 2, ReplicationFactor = 1 },
                         new TopicSpecification { Name = topicName2, NumPartitions = 12, ReplicationFactor = 1 }
                     }
-                ).Wait();
+                );
             }
 
             // test 
@@ -63,12 +64,12 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new TestProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient2 = new DependentAdminClientBuilder(producer.Handle).Build())
             {
-                adminClient2.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName3, NumPartitions = 24, ReplicationFactor = 1 } }).Wait();
+                await adminClient2.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName3, NumPartitions = 24, ReplicationFactor = 1 } });
 
-                var deliveryReport1 = producer.ProduceAsync(topicName1, new Message<Null, Null>()).Result;
-                var deliveryReport2 = producer.ProduceAsync(topicName2, new Message<Null, Null>()).Result;
-                var deliveryReport3 = producer.ProduceAsync(topicName3, new Message<Null, Null>()).Result;
+                var deliveryReport1 = await producer.ProduceAsync(topicName1, new Message<Null, Null>(), TestContext.Current.CancellationToken);
+                var deliveryReport2 = await producer.ProduceAsync(topicName2, new Message<Null, Null>(), TestContext.Current.CancellationToken);
+                var deliveryReport3 = await producer.ProduceAsync(topicName3, new Message<Null, Null>(), TestContext.Current.CancellationToken);
                 
                 Assert.Equal(topicName1, deliveryReport1.Topic);
                 Assert.Equal(topicName2, deliveryReport2.Topic);
@@ -82,24 +83,19 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 try
                 {
-                    adminClient.CreateTopicsAsync(new List<TopicSpecification> 
-                        { 
+                    await adminClient.CreateTopicsAsync(new List<TopicSpecification>
+                        {
                             new TopicSpecification { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 },
                             new TopicSpecification { Name = topicName4, NumPartitions = 1, ReplicationFactor = 1 }
                         }
-                    ).Wait();
-                    Assert.True(false, "Expect CreateTopics request to throw an exception.");
+                    );
+                    Assert.Fail("Expect CreateTopics request to throw an exception.");
                 }
-
-                // if awaited, the CreateTopicsException is not wrapped. 
-                // this is an annoyance if used synchronously, but not atypical.
-                catch (AggregateException ex)
+                catch (CreateTopicsException cte)
                 {
-                    Assert.True(ex.InnerException.GetType() == typeof(CreateTopicsException));
-                    var cte = (CreateTopicsException) ex.InnerException;
                     Assert.Equal(2, cte.Results.Count);
-                    Assert.Single(cte.Results.Where(r => r.Error.IsError));
-                    Assert.Single(cte.Results.Where(r => !r.Error.IsError));
+                    Assert.Single(cte.Results, r => r.Error.IsError);
+                    Assert.Single(cte.Results, r => !r.Error.IsError);
                     Assert.Equal(topicName3, cte.Results.Where(r => r.Error.IsError).First().Topic);
                     Assert.Equal(topicName4, cte.Results.Where(r => !r.Error.IsError).First().Topic);
                 }
@@ -109,15 +105,15 @@ namespace Confluent.Kafka.IntegrationTests
             //  - validate only
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } }, 
+                await adminClient.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } },
                     new CreateTopicsOptions { ValidateOnly = true, RequestTimeout = TimeSpan.FromSeconds(30) }
-                ).Wait();
+                );
 
                 // creating for real shouldn't throw exception.
-                adminClient.CreateTopicsAsync(
+                await adminClient.CreateTopicsAsync(
                     new List<TopicSpecification> { new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } }
-                ).Wait();
+                );
             }
 
             Assert.Equal(0, Library.HandleCount);

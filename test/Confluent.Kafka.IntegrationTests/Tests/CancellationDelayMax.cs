@@ -19,6 +19,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.TestsCommon;
@@ -31,8 +32,8 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Test internal poll time is effective.
         /// </summary>
-        [SkippableTheory, MemberData(nameof(KafkaParameters))]
-        public void CancellationDelayMax(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public async Task CancellationDelayMax(string bootstrapServers)
         {
             LogToFile("start CancellationDelayMax");
 
@@ -71,7 +72,11 @@ namespace Confluent.Kafka.IntegrationTests
                     var sw = Stopwatch.StartNew();
                     try
                     {
+                        // Intentionally using a short-lived, purpose-built token here (not
+                        // TestContext.Current.CancellationToken) - this is what's under test.
+#pragma warning disable xUnit1051
                         var record = consumer.Consume(cts.Token);
+#pragma warning restore xUnit1051
                     }
                     catch (OperationCanceledException)
                     {
@@ -83,17 +88,17 @@ namespace Confluent.Kafka.IntegrationTests
                     // should 4 almost all of the time. A higher value is apparently required on
                     // Windows (but still less than 50).
                     var elapsed = sw.ElapsedMilliseconds;
-                    Skip.If(elapsed > 20);
+                    Assert.SkipWhen(elapsed > 20, "elapsed time exceeded expected CancellationDelayMaxMs bound");
                 }
 
                 consumer.Close();
 
                 // for the producer, make do with just a simple check that this does not throw or hang.
-                var dr = producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 42 }, Value = new byte[] { 255 } }).Result;
-                
+                var dr = await producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 42 }, Value = new byte[] { 255 } }, TestContext.Current.CancellationToken);
+
                 // for the admin client, make do with just simple check that this does not throw or hang.
                 var cr = new Confluent.Kafka.Admin.ConfigResource { Type = ResourceType.Topic, Name = topic.Name };
-                var configs = adminClient.DescribeConfigsAsync(new ConfigResource[] { cr }).Result;
+                var configs = await adminClient.DescribeConfigsAsync(new ConfigResource[] { cr });
             }
 
             Assert.Equal(0, Library.HandleCount);

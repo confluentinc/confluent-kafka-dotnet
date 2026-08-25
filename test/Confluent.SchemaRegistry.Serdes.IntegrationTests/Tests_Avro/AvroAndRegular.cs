@@ -17,6 +17,7 @@
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -28,7 +29,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     Test producing/consuming using both regular and Avro serializers.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void AvoAndRegular(string bootstrapServers, string schemaRegistryServers)
+        public static async Task AvoAndRegular(string bootstrapServers, string schemaRegistryServers)
         {
             using (var topic1 = new TemporaryTopic(bootstrapServers, 1))
             using (var topic2 = new TemporaryTopic(bootstrapServers, 1))
@@ -59,21 +60,14 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     // implicit check that this does not fail.
-                    producer.ProduceAsync(topic1.Name, new Message<string, string> { Key = "hello", Value = "world" }).Wait();
+                    await producer.ProduceAsync(topic1.Name, new Message<string, string> { Key = "hello", Value = "world" }, TestContext.Current.CancellationToken);
 
                     // check that the value type was registered with SR, and the key was not.
-                    Assert.Throws<SchemaRegistryException>(() =>
+                    await Assert.ThrowsAsync<SchemaRegistryException>(async () =>
                         {
-                            try
-                            {
-                                schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructKeySubjectName(topic1.Name, null)).Wait();
-                            }
-                            catch (AggregateException e)
-                            {
-                                throw e.InnerException;
-                            }
+                            await schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructKeySubjectName(topic1.Name, null));
                         });
-                    var s2 = schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructValueSubjectName(topic1.Name, null)).Result;
+                    var s2 = await schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructValueSubjectName(topic1.Name, null));
                 }
 
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
@@ -84,21 +78,14 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     // implicit check that this does not fail.
-                    producer.ProduceAsync(topic2.Name, new Message<string, string> { Key = "hello", Value = "world" }).Wait();
+                    await producer.ProduceAsync(topic2.Name, new Message<string, string> { Key = "hello", Value = "world" }, TestContext.Current.CancellationToken);
 
                     // check that the key type was registered with SR, and the value was not.
-                    Assert.Throws<SchemaRegistryException>(() =>
+                    await Assert.ThrowsAsync<SchemaRegistryException>(async () =>
                         {
-                            try
-                            {
-                                schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructValueSubjectName(topic2.Name, null)).Wait();
-                            }
-                            catch (AggregateException e)
-                            {
-                                throw e.InnerException;
-                            }
+                            await schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructValueSubjectName(topic2.Name, null));
                         });
-                    var s2 = schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructKeySubjectName(topic2.Name, null)).Result;
+                    var s2 = await schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructKeySubjectName(topic2.Name, null));
                 }
 
                 // check the above can be consumed (using regular / Avro serializers as appropriate)
@@ -111,7 +98,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic1.Name, 0, 0));
-                        var cr = consumer.Consume();
+                        var cr = consumer.Consume(TestContext.Current.CancellationToken);
                         Assert.Equal("hello", cr.Message.Key);
                         Assert.Equal("world", cr.Message.Value);
                     }
@@ -122,7 +109,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             .SetValueDeserializer(Deserializers.Utf8).Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic2.Name, 0, 0));
-                        var cr = consumer.Consume();
+                        var cr = consumer.Consume(TestContext.Current.CancellationToken);
                         Assert.Equal("hello", cr.Message.Key);
                         Assert.Equal("world", cr.Message.Value);
                     }
@@ -138,7 +125,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             {
                                 try
                                 {
-                                    consumer.Consume();
+                                    consumer.Consume(TestContext.Current.CancellationToken);
                                 }
                                 catch (AggregateException e)
                                 {
@@ -158,7 +145,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             {
                                 try
                                 {
-                                    consumer.Consume();
+                                    consumer.Consume(TestContext.Current.CancellationToken);
                                 }
                                 catch (AggregateException e)
                                 {

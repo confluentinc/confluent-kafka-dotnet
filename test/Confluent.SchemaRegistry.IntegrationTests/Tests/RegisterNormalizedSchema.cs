@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -24,7 +25,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void RegisterNormalizedSchema(Config config)
+        public static async Task RegisterNormalizedSchema(Config config)
         {
             var topicName = Guid.NewGuid().ToString();
 
@@ -42,9 +43,9 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, "Confluent.Kafka.Examples.AvroSpecific.User");
             Assert.Equal(topicName + "-key", subject);
 
-            var id1 = sr.RegisterSchemaAsync(subject, testSchema1, true).Result;
-            var id2 = sr.GetSchemaIdAsync(subject, testSchema1, true).Result;
-            var schema = sr.GetSchemaAsync(id2).Result;
+            var id1 = await sr.RegisterSchemaAsync(subject, testSchema1, true);
+            var id2 = await sr.GetSchemaIdAsync(subject, testSchema1, true);
+            var schema = await sr.GetSchemaAsync(id2);
             Assert.Equal(id1, id2);
             Assert.Equal(normalized, schema);
         }

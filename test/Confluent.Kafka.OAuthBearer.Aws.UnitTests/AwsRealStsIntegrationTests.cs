@@ -37,10 +37,10 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
     /// </remarks>
     public class AwsRealStsIntegrationTests
     {
-        [SkippableFact]
+        [Fact]
         public void RoundTrip_ProducesValidJwtWithExpectedClaims()
         {
-            Skip.IfNot(
+            Assert.SkipUnless(
                 Environment.GetEnvironmentVariable("RUN_AWS_STS_REAL") == "1",
                 "Set RUN_AWS_STS_REAL=1 to enable. Requires EC2/Lambda with the right IAM role.");
 

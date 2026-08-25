@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -31,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Basic test of Consumer.Seek.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Consumer_Seek(string bootstrapServers)
+        public async Task Consumer_Seek(string bootstrapServers)
         {
             LogToFile("start Consumer_Seek");
 
@@ -46,13 +47,13 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var consumer =
                 new TestConsumerBuilder<Null, string>(consumerConfig)
-                    .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
+                    .SetErrorHandler((_, e) => Assert.Fail(e.Reason))
                     .Build())
             {
                 const string checkValue = "check value";
-                var dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize(checkValue, SerializationContext.Empty) }).Result;
-                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("second value", SerializationContext.Empty) }).Result;
-                var dr3 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("third value", SerializationContext.Empty) }).Result;
+                var dr = await producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize(checkValue, SerializationContext.Empty) }, TestContext.Current.CancellationToken);
+                var dr2 = await producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("second value", SerializationContext.Empty) }, TestContext.Current.CancellationToken);
+                var dr3 = await producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("third value", SerializationContext.Empty) }, TestContext.Current.CancellationToken);
 
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
