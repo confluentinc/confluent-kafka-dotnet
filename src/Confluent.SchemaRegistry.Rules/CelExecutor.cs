@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 using Avro;
 using Avro.Generic;
 using Avro.Specific;
@@ -9,9 +12,11 @@ using Cel.Common.Types.Json;
 using Cel.Common.Types.Pb;
 using Cel.Extension;
 using Cel.Tools;
+using IVal = Cel.Common.Types.Ref.IVal;
 using Duration = Google.Protobuf.WellKnownTypes.Duration;
 using Google.Api.Expr.V1Alpha1;
 using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using Google.Protobuf.WellKnownTypes;
 using Newtonsoft.Json.Linq;
 using NodaTime;
@@ -134,7 +139,7 @@ namespace Confluent.SchemaRegistry.Rules
             }
         }
 
-        private Script BuildScript(RuleWithArgs ruleWithArgs, object msg)
+        internal Script BuildScript(RuleWithArgs ruleWithArgs, object msg)
         {
             // Build the script factory
             ScriptHost.Builder scriptHostBuilder = ScriptHost.NewBuilder();
@@ -142,7 +147,8 @@ namespace Confluent.SchemaRegistry.Rules
             switch (ruleWithArgs.ScriptType)
             {
                 case ScriptType.Avro:
-                    scriptHostBuilder = scriptHostBuilder.Registry(AvroRegistry.NewRegistry());
+                    scriptHostBuilder =
+                        scriptHostBuilder.Registry(AvroRegistry.NewRegistry(AvroValueToCel));
                     if (msg is ISpecificRecord)
                     {
                         type = ((ISpecificRecord)msg).Schema;
@@ -159,6 +165,22 @@ namespace Confluent.SchemaRegistry.Rules
                     type = msg.GetType();
                     break;
                 case ScriptType.Protobuf:
+                    // A registry carrying ProtoValueToCel, so a confluent.type.Decimal is a
+                    // DecimalT wherever it appears - including a field reached by selection, which
+                    // no boundary conversion can see. Without it cel.net answers `==` with
+                    // lhs.Equal(rhs) on the raw message, comparing unscaled bytes and scale field
+                    // by field, and `this.subtotal == this.total` was false for 1.50 against 1.5.
+                    //
+                    // Deliberately the registry hook rather than ScriptHost.Adapter /
+                    // EnvOptions.CustomTypeAdapter: an environment-level adapter is consulted for
+                    // the bound value only. cel.net's attribute layer adapts the *container* first
+                    // and then reads fields off the resulting PbObjectT using the registry that
+                    // object was built with, so an environment adapter never sees a nested field.
+                    // See ProtoTypeRegistry.NewRegistry(customAdapter) for the full comparison
+                    // with cel-go, which adapts field values natively and so does not have this
+                    // limitation.
+                    scriptHostBuilder = scriptHostBuilder.Registry(
+                        ProtoTypeRegistry.NewRegistry(ProtoValueToCel));
                     type = msg;
                     break;
                 default:
@@ -172,7 +194,7 @@ namespace Confluent.SchemaRegistry.Rules
                 .WithDeclarations(ToDecls(ruleWithArgs.DeclTypes))
                 .WithTypes(type);
 
-            scriptBuilder = scriptBuilder.WithLibraries(new StringsLib(), new BuiltinLibrary());
+            scriptBuilder = scriptBuilder.WithLibraries(new StringsLib(), new MathLib(), new BuiltinLibrary());
             return scriptBuilder.Build();
         }
 
@@ -188,7 +210,7 @@ namespace Confluent.SchemaRegistry.Rules
                 .ToList();
         }
 
-        private static Google.Api.Expr.V1Alpha1.Type FindType(Object arg)
+        internal static Google.Api.Expr.V1Alpha1.Type FindType(Object arg)
         {
             if (arg == null)
             {
@@ -205,12 +227,82 @@ namespace Confluent.SchemaRegistry.Rules
                 return FindTypeForAvroType(((GenericRecord)arg).Schema);
             }
 
+            if (arg is DecimalT)
+            {
+                // Matches DecimalT.Type() and the declaration in BuiltinDeclarations, so a
+                // converted decimal and decimal(...) are one type.
+                return Decls.NewObjectType(CelTypeLabels.DecimalName);
+            }
+
             if (arg is IMessage)
             {
                 return Decls.NewObjectType(((IMessage)arg).Descriptor.FullName);
             }
 
             return FindTypeForClass(arg.GetType());
+        }
+
+        /// <summary>
+        ///     Presents an Avro value the way this client's CEL surface expects, for the shapes
+        ///     whose logical representation differs from cel.net's default mapping. A
+        ///     <c>decimal</c> logical type decodes to an <see cref="AvroDecimal" />, which cel.net
+        ///     would otherwise carry as its own <c>avro.decimal</c> value — a different CEL type
+        ///     from the <see cref="DecimalT" /> that <c>decimal(...)</c> produces, so
+        ///     <c>decimals.*</c> would not accept it and <c>==</c> against a decimal literal
+        ///     would answer false. Carrying it as a DecimalT makes a decimal field usable with no
+        ///     <c>decimal(...)</c> call, and keeps equality numeric. Returning null leaves the
+        ///     value to cel.net's standard mapping.
+        /// </summary>
+        private static IVal AvroValueToCel(object value)
+        {
+            if (value is AvroDecimal dec)
+            {
+                return DecimalT.Of(DecimalUtils.ToBigDecimal(dec.UnscaledValue, dec.Scale));
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        ///     A <c>confluent.type.Decimal</c> message as a <see cref="DecimalT" />, or null for
+        ///     anything else. The protobuf counterpart of <c>AvroValueToCel</c>'s AvroDecimal arm,
+        ///     and needed for the same reason: cel.net intercepts <c>==</c> in the planner and
+        ///     answers it with <c>lhs.Equal(rhs)</c>, so a decimal left as a protobuf message
+        ///     compares structurally - field by field over unscaled bytes and scale - and calls
+        ///     12.34 and 12.340 unequal even though they are the same number. Carried as a
+        ///     DecimalT it compares numerically, and <c>string()</c> / <c>double()</c> resolve.
+        ///     <para>
+        ///         Only reaches a value bound directly. A decimal reached by selection instead
+        ///         (<c>this.amount</c>) is resolved inside cel.net, past any boundary.
+        ///     </para>
+        /// </summary>
+        internal static object ToCelDecimalOrNull(object value)
+        {
+            if (value is DecimalT)
+            {
+                return value;
+            }
+
+            if (value is IMessage msg
+                && msg.Descriptor?.FullName == CelTypeLabels.DecimalName)
+            {
+                return DecimalT.Of(DecimalUtils.ToBigDecimal(msg));
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        ///     Presents a protobuf value the way this client's CEL surface expects. The protobuf
+        ///     counterpart of <see cref="AvroValueToCel" />: a <c>confluent.type.Decimal</c>
+        ///     message is carried as a <see cref="DecimalT" /> so it compares numerically rather
+        ///     than by its encoding. Returning null leaves the value to cel.net's standard
+        ///     mapping. Reaches message fields as well as top-level values, because the registry
+        ///     adapts its fields through this same hook.
+        /// </summary>
+        private static IVal ProtoValueToCel(object value)
+        {
+            return ToCelDecimalOrNull(value) as IVal;
         }
 
         private static Google.Api.Expr.V1Alpha1.Type FindTypeForAvroType(Avro.Schema schema)
@@ -257,9 +349,220 @@ namespace Confluent.SchemaRegistry.Rules
 
                     throw new ArgumentException("Unsupported union type");
                 case Avro.Schema.Type.Logical:
-                    return FindTypeForAvroType((schema as LogicalSchema).BaseSchema);
+                    // A logical-typed value is the logical representation, not the underlying
+                    // primitive: timestamp-* decodes to DateTime, decimal to AvroDecimal, uuid
+                    // to Guid. Declaring the base type (Int for a timestamp-millis long, say)
+                    // would be a check/runtime mismatch, so defer to the runtime value —
+                    // matching the JVM client's findCelTypeForAvroSchema. Field types inside a
+                    // record come from cel.net's AvroTypeDescription, which does the same;
+                    // this path covers a schema handed in for a value directly.
+                    return Checked.CheckedDyn;
                 default:
                     throw new ArgumentException("Unsupported type " + type);
+            }
+        }
+
+        /// <summary>
+        ///     Presents a value the way its declared type implies. A protobuf enum arrives as
+        ///     the generated CLR enum, which CEL has no type for; its number is what
+        ///     <see cref="FindTypeForClass" /> declares and so what has to be bound. A
+        ///     repeated or map field of enums needs the same for its elements, which is why
+        ///     this descends.
+        ///     <para>
+        ///         A collection is rebuilt only if something inside it actually changed, so a
+        ///         byte[] - which is an IList of bytes - and a list of messages are handed
+        ///         back exactly as they came in.
+        ///     </para>
+        /// </summary>
+        internal static object ToCelValue(object value)
+        {
+            if (value is System.Enum)
+            {
+                return Convert.ToInt64(value, CultureInfo.InvariantCulture);
+            }
+
+            // A protobuf repeated or map field is homogeneous, so a collection of enums is
+            // all enums. Converting it to a typed collection keeps the declared element type
+            // an int; rebuilding it as object would type it dyn and the comparison would not
+            // resolve. Anything else - a byte[], a list of messages - is left alone.
+            if (value is IDictionary dictionary)
+            {
+                var converted = new Dictionary<object, long>(dictionary.Count);
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    if (!(entry.Value is System.Enum))
+                    {
+                        return value;
+                    }
+
+                    converted[entry.Key] = Convert.ToInt64(entry.Value, CultureInfo.InvariantCulture);
+                }
+
+                return converted.Count > 0 ? converted : value;
+            }
+
+            if (value is IList list && !(value is byte[]))
+            {
+                var converted = new List<long>(list.Count);
+                foreach (object element in list)
+                {
+                    if (!(element is System.Enum))
+                    {
+                        return value;
+                    }
+
+                    converted.Add(Convert.ToInt64(element, CultureInfo.InvariantCulture));
+                }
+
+                return converted.Count > 0 ? (object)converted : value;
+            }
+
+            return value;
+        }
+
+        /// <summary>
+        ///     Presents a field's value the way its declared type implies, so that the value
+        ///     and the type <see cref="FindTypeForField" /> declares always agree. Without
+        ///     this the two could disagree - a uint64 field declared uint while its value is
+        ///     bound as an int - and the rule would fail at evaluation instead of answering.
+        /// </summary>
+        internal static object ToCelValueForField(FieldDescriptor field, object value)
+        {
+            if (value == null || field.IsMap)
+            {
+                return ToCelValue(value);
+            }
+
+            if (field.IsRepeated)
+            {
+                if (!(value is IList list))
+                {
+                    return ToCelValue(value);
+                }
+
+                var converted = new List<object>(list.Count);
+                foreach (object element in list)
+                {
+                    converted.Add(ToCelScalar(field.FieldType, element));
+                }
+
+                return converted;
+            }
+
+            return ToCelScalar(field.FieldType, value);
+        }
+
+        private static object ToCelScalar(FieldType fieldType, object value)
+        {
+            switch (fieldType)
+            {
+                case FieldType.Float:
+                case FieldType.Double:
+                    return value is double ? value : Convert.ToDouble(value, CultureInfo.InvariantCulture);
+                case FieldType.Int32:
+                case FieldType.Int64:
+                case FieldType.SInt32:
+                case FieldType.SInt64:
+                case FieldType.SFixed32:
+                case FieldType.SFixed64:
+                case FieldType.Enum:
+                    return value is long ? value : Convert.ToInt64(value, CultureInfo.InvariantCulture);
+                case FieldType.UInt32:
+                case FieldType.UInt64:
+                case FieldType.Fixed32:
+                case FieldType.Fixed64:
+                    return ToUnsigned(value);
+                case FieldType.Bool:
+                    return value is bool ? value : Convert.ToBoolean(value, CultureInfo.InvariantCulture);
+                default:
+                    // string, bytes, message, group: already what CEL expects.
+                    return value;
+            }
+        }
+
+        /// <summary>
+        ///     An unsigned field's value as a ulong. A signed input is reinterpreted bit for
+        ///     bit rather than rejected: that is the same value on the wire, and it is what
+        ///     the Java client does with Long bits for a uint64 field.
+        /// </summary>
+        private static object ToUnsigned(object value)
+        {
+            switch (value)
+            {
+                case ulong u:
+                    return u;
+                case uint u:
+                    return (ulong)u;
+                case long l:
+                    return unchecked((ulong)l);
+                case int i:
+                    return unchecked((ulong)(long)i);
+                default:
+                    return value;
+            }
+        }
+
+        /// <summary>
+        ///     The CEL type of a protobuf field, taken from the field's own declared type.
+        ///     Returns null when the descriptor does not settle it - a message, a map, or an
+        ///     unrecognised type - and the caller should fall back to inferring from the value.
+        ///     <para>
+        ///         Keyed on the descriptor rather than the CLR type of the value, which is what
+        ///         every other client and protovalidate do. C#'s generated types happen to
+        ///         imply the right CEL type for each protobuf scalar, so inferring from the
+        ///         value lands in the same place - but only by coincidence of the type system,
+        ///         and it did not hold for enums, which have no CEL counterpart at all.
+        ///     </para>
+        /// </summary>
+        internal static Google.Api.Expr.V1Alpha1.Type FindTypeForField(FieldDescriptor field)
+        {
+            if (field.IsMap)
+            {
+                // The key and value types live on the entry message; the bound value is a
+                // dictionary and infers correctly from itself.
+                return null;
+            }
+
+            Google.Api.Expr.V1Alpha1.Type singular = FindTypeForFieldType(field.FieldType);
+            if (singular == null)
+            {
+                return null;
+            }
+
+            // A repeated field binds the whole collection.
+            return field.IsRepeated ? Decls.NewListType(singular) : singular;
+        }
+
+        private static Google.Api.Expr.V1Alpha1.Type FindTypeForFieldType(FieldType fieldType)
+        {
+            switch (fieldType)
+            {
+                case FieldType.Float:
+                case FieldType.Double:
+                    return Checked.CheckedDouble;
+                case FieldType.Int32:
+                case FieldType.Int64:
+                case FieldType.SInt32:
+                case FieldType.SInt64:
+                case FieldType.SFixed32:
+                case FieldType.SFixed64:
+                case FieldType.Enum:
+                    return Checked.CheckedInt;
+                case FieldType.UInt32:
+                case FieldType.UInt64:
+                case FieldType.Fixed32:
+                case FieldType.Fixed64:
+                    return Checked.CheckedUint;
+                case FieldType.Bool:
+                    return Checked.CheckedBool;
+                case FieldType.String:
+                    return Checked.CheckedString;
+                case FieldType.Bytes:
+                    return Checked.CheckedBytes;
+                default:
+                    // Message and group bind the message itself, whose type comes from its
+                    // descriptor rather than from here.
+                    return null;
             }
         }
 
@@ -269,6 +572,12 @@ namespace Confluent.SchemaRegistry.Rules
             if (underlyingType != null) type = underlyingType;
 
             if (type == typeof(bool)) return Checked.CheckedBool;
+
+            // A protobuf enum is compared by its number, as in the Java, Go and C++
+            // clients: a rule reads `this == 1`, not the generated symbol. Without this the
+            // generated enum type matches nothing below and the rule fails to compile, so a
+            // rule on an enum field rejected every message.
+            if (type.IsEnum) return Checked.CheckedInt;
 
             if (type == typeof(long) || type == typeof(int) ||
                 type == typeof(short) || type == typeof(sbyte) ||
@@ -301,8 +610,18 @@ namespace Confluent.SchemaRegistry.Rules
 
             if (typeof(IDictionary).IsAssignableFrom(type))
             {
-                var objType = FindTypeForClass(typeof(object));
-                return Decls.NewMapType(objType, objType);
+                // Protobuf's MapField<K,V> implements the non-generic IDictionary without
+                // being a Dictionary<,>, so take the key and value types from whichever
+                // generic dictionary interface it closes over. Falling back to object
+                // would leave the map unusable: an object-keyed map cannot be indexed.
+                var mapArguments = ClosedGenericArguments(type, typeof(IDictionary<,>));
+                if (mapArguments != null)
+                {
+                    return Decls.NewMapType(FindElementTypeForClass(mapArguments[0]),
+                        FindElementTypeForClass(mapArguments[1]));
+                }
+
+                return Decls.NewMapType(Checked.CheckedDyn, Checked.CheckedDyn);
             }
 
             if (type.IsGenericType &&
@@ -315,11 +634,53 @@ namespace Confluent.SchemaRegistry.Rules
 
             if (typeof(IList).IsAssignableFrom(type))
             {
-                var objType = FindTypeForClass(typeof(object));
-                return Decls.NewListType(objType);
+                // As above for protobuf's RepeatedField<T>.
+                var listArguments = ClosedGenericArguments(type, typeof(IList<>));
+                if (listArguments != null)
+                {
+                    return Decls.NewListType(FindElementTypeForClass(listArguments[0]));
+                }
+
+                return Checked.CheckedListDyn;
             }
-            
+
             return Decls.NewObjectType(type.FullName);
+        }
+
+        /// <summary>
+        ///     The type of an element inside a list or a map. A protobuf message or Avro
+        ///     record element stays dynamic: its CLR type name is not the schema type name
+        ///     the checker would need, and the registry resolves its fields at evaluation
+        ///     time anyway.
+        /// </summary>
+        private static Google.Api.Expr.V1Alpha1.Type FindElementTypeForClass(System.Type type)
+        {
+            if (typeof(IMessage).IsAssignableFrom(type) ||
+                typeof(ISpecificRecord).IsAssignableFrom(type) ||
+                typeof(GenericRecord).IsAssignableFrom(type) ||
+                type == typeof(object))
+            {
+                return Checked.CheckedDyn;
+            }
+
+            return FindTypeForClass(type);
+        }
+
+        /// <summary>
+        ///     The type arguments with which <paramref name="type" /> closes over
+        ///     <paramref name="openGeneric" />, or null if it does not implement it.
+        /// </summary>
+        private static System.Type[] ClosedGenericArguments(System.Type type, System.Type openGeneric)
+        {
+            foreach (System.Type candidate in type.GetInterfaces())
+            {
+                if (candidate.IsGenericType && candidate.GetGenericTypeDefinition() == openGeneric)
+                {
+                    return candidate.GetGenericArguments();
+                }
+            }
+
+            return null;
         }
 
         public void Dispose()
@@ -328,14 +689,14 @@ namespace Confluent.SchemaRegistry.Rules
             cache.Clear();
         }
 
-        private enum ScriptType
+        internal enum ScriptType
         {
             Avro,
             Json,
             Protobuf
         }
 
-        private class RuleWithArgs : IEquatable<RuleWithArgs>
+        internal class RuleWithArgs : IEquatable<RuleWithArgs>
         {
             public string Rule { get; }
             public ScriptType ScriptType { get; }
