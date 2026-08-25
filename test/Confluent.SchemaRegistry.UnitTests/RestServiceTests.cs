@@ -170,14 +170,14 @@ namespace Confluent.SchemaRegistry.UnitTests
                 {
                     while (true)
                     {
-                        accepted.Add(await listener.AcceptTcpClientAsync());
+                        accepted.Add(await listener.AcceptTcpClientAsync(TestContext.Current.CancellationToken));
                     }
                 }
                 catch
                 {
                     // listener stopped - expected on cleanup.
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
             try
             {
@@ -202,7 +202,7 @@ namespace Confluent.SchemaRegistry.UnitTests
                 // enumerating the accepted clients, to avoid mutating the list
                 // while it is being read.
                 listener.Stop();
-                await acceptLoop.ConfigureAwait(false);
+                await acceptLoop;
                 foreach (var client in accepted)
                 {
                     client.Dispose();

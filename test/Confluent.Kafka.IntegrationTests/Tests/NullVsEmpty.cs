@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -31,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     as expected.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void NullVsEmpty(string bootstrapServers)
+        public async Task NullVsEmpty(string bootstrapServers)
         {
             LogToFile("start NullVsEmpty");
 
@@ -47,10 +48,10 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = null }).Result;
-                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = new byte[0] {} }).Wait();
-                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[0] {}, Value = null }).Wait();
-                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[0] {}, Value = new byte[0] {} }).Wait();
+                dr = await producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = null }, TestContext.Current.CancellationToken);
+                await producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = new byte[0] {} }, TestContext.Current.CancellationToken);
+                await producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[0] {}, Value = null }, TestContext.Current.CancellationToken);
+                await producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[0] {}, Value = new byte[0] {} }, TestContext.Current.CancellationToken);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

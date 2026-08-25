@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_ProduceAsync_Error(string bootstrapServers)
+        public async Task Producer_ProduceAsync_Error(string bootstrapServers)
         {
             LogToFile("start Producer_ProduceAsync_Error");
 
@@ -44,23 +44,25 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 drt = producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 42),
-                    new Message<string, string> { Key = "test key 0", Value = "test val 0" });
+                    new Message<string, string> { Key = "test key 0", Value = "test val 0" },
+                    TestContext.Current.CancellationToken);
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
+            // deliberately tests that blocking Wait() on a faulted task throws AggregateException.
+#pragma warning disable xUnit1031, xUnit1051
             Assert.Throws<AggregateException>(() => { drt.Wait(); });
+#pragma warning restore xUnit1031, xUnit1051
 
             try
             {
-                var dr = drt.Result;
+                var dr = await drt;
             }
-            catch (AggregateException e)
+            catch (ProduceException<string, string> inner)
             {
-                var inner = e.InnerException;
-                Assert.IsType<ProduceException<string, string>>(inner);
-                var dr = ((ProduceException<string, string>)inner).DeliveryResult;
-                var err = ((ProduceException<string, string>)inner).Error;
-                
+                var dr = inner.DeliveryResult;
+                var err = inner.Error;
+
                 Assert.True(err.IsError);
                 Assert.Equal(PersistenceStatus.NotPersisted, dr.Status);
                 Assert.False(err.IsFatal);
@@ -79,23 +81,26 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 drt2 = producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 42),
-                    new Message<byte[], byte[]> { Key = new byte[] { 100 }, Value = new byte[] { 101 } });
+                    new Message<byte[], byte[]> { Key = new byte[] { 100 }, Value = new byte[] { 101 } },
+                    TestContext.Current.CancellationToken);
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
+            // deliberately tests that blocking Wait() on a faulted task throws AggregateException.
+            // (note: this pre-existing check re-checks 'drt', not 'drt2' -- kept as-is, out of scope for this warning fix)
+#pragma warning disable xUnit1031, xUnit1051
             Assert.Throws<AggregateException>(() => { drt.Wait(); });
+#pragma warning restore xUnit1031, xUnit1051
 
             try
             {
-                var dr = drt2.Result;
+                var dr = await drt2;
             }
-            catch (AggregateException e)
+            catch (ProduceException<byte[], byte[]> inner)
             {
-                var inner = e.InnerException;
-                Assert.IsType<ProduceException<byte[], byte[]>>(inner);
-                var dr = ((ProduceException<byte[], byte[]>)inner).DeliveryResult;
-                var err = ((ProduceException<byte[], byte[]>)inner).Error;
-                
+                var dr = inner.DeliveryResult;
+                var err = inner.Error;
+
                 Assert.True(err.IsError);
                 Assert.False(err.IsFatal);
                 Assert.Equal(partitionedTopic, dr.Topic);

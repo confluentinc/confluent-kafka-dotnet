@@ -17,6 +17,7 @@
 using Xunit;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Newtonsoft.Json;
@@ -141,7 +142,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     Test Use References. 
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void UseReferences(string bootstrapServers, string schemaRegistryServers)
+        public static async Task UseReferences(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
@@ -167,19 +168,19 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
             // Register the reference schemas
             var subject3 = "Customer";
-            var id3 = sr.RegisterSchemaAsync(subject3, new(Schema3, Confluent.SchemaRegistry.SchemaType.Json)).Result;
-            var s3 = sr.GetLatestSchemaAsync(subject3).Result;
+            var id3 = await sr.RegisterSchemaAsync(subject3, new(Schema3, Confluent.SchemaRegistry.SchemaType.Json));
+            var s3 = await sr.GetLatestSchemaAsync(subject3);
 
             var subject1 = "OrderDetails";
             var refs1 = new List<SchemaReference> { new("http://example.com/customer.schema.json", subject3, s3.Version) };
-            var id1 = sr.RegisterSchemaAsync(subject1, new(Schema1, refs1, Confluent.SchemaRegistry.SchemaType.Json)).Result;
-            var s1 = sr.GetLatestSchemaAsync(subject1).Result;
+            var id1 = await sr.RegisterSchemaAsync(subject1, new(Schema1, refs1, Confluent.SchemaRegistry.SchemaType.Json));
+            var s1 = await sr.GetLatestSchemaAsync(subject1);
 
             // Register the top level schema
             var subject2 = "Order";
             var refs2 = new List<SchemaReference> { new("http://example.com/order_details.schema.json", subject1, s1.Version) };
-            var id2 = sr.RegisterSchemaAsync(subject2, new(Schema2, refs2, Confluent.SchemaRegistry.SchemaType.Json)).Result;
-            var s2 = sr.GetLatestSchemaAsync(subject2).Result;
+            var id2 = await sr.RegisterSchemaAsync(subject2, new(Schema2, refs2, Confluent.SchemaRegistry.SchemaType.Json));
+            var s2 = await sr.GetLatestSchemaAsync(subject2);
 
             // Create serialiser and deserialiser along with the Order schema
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
@@ -207,7 +208,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings))
                         .Build())
                 {
-                    producer.ProduceAsync(topic.Name, new Message<string, Order> { Key = "test1", Value = order }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, Order> { Key = "test1", Value = order }, TestContext.Current.CancellationToken);
                 }
                 
                 using (var consumer =
@@ -217,7 +218,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .Build())
                 {
                     consumer.Subscribe(topic.Name);
-                    var cr = consumer.Consume();
+                    var cr = consumer.Consume(TestContext.Current.CancellationToken);
                     var classObj = cr.Message.Value;
                     Assert.Equal<int>(123, classObj.OrderDetails.Id);
                 }
@@ -234,7 +235,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings))
                         .Build())
                 {
-                    producer.ProduceAsync(topic.Name, new Message<string, JObject> { Key = "test1", Value = jsonObject }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, JObject> { Key = "test1", Value = jsonObject }, TestContext.Current.CancellationToken);
                 }
                 
                 using (var consumer =
@@ -244,7 +245,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .Build())
                 {
                     consumer.Subscribe(topic.Name);
-                    var cr = consumer.Consume();
+                    var cr = consumer.Consume(TestContext.Current.CancellationToken);
                     var classObj = cr.Message.Value;
                     Assert.Equal(123, classObj["order_details"]?["id"]?.Value<int>() ?? 0);
                 }
@@ -264,8 +265,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco { StringField = "Test" };
                     // Validation failure when passing TestClasses2.TestPoco
-                    Assert.Throws<AggregateException>(
-                        () => producer.ProduceAsync(topic.Name, new Message<string, TestClasses2.TestPoco> { Key = "test1", Value = c }).Wait());
+                    await Assert.ThrowsAnyAsync<Exception>(
+                        () => producer.ProduceAsync(topic.Name, new Message<string, TestClasses2.TestPoco> { Key = "test1", Value = c }, TestContext.Current.CancellationToken));
                 }
             }
         }

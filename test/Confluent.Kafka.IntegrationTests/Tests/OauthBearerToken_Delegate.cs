@@ -56,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
                     producerCallsCount++;
                 })
                 .Build();
-            producer.Flush();
+            producer.Flush(TestContext.Current.CancellationToken);
             Assert.True(producerCallsCount > 0);
 
             LogToFileEndTest();

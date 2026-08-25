@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -24,7 +25,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void FillTheCache(Config config)
+        public static async Task FillTheCache(Config config)
         {
             const int capacity = 16;
 
@@ -54,7 +55,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
                 subjects.Add(subject);
 
-                var id = sr.RegisterSchemaAsync(subject, testSchema).Result;
+                var id = await sr.RegisterSchemaAsync(subject, testSchema);
                 ids.Add(id);
             }
         }

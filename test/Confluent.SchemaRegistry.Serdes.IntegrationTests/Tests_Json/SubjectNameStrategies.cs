@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using Xunit;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 
 
@@ -32,7 +33,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     strategies works for JSON serializers.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void SubjectNameStrategiesJson(string bootstrapServers, string schemaRegistryServers)
+        public static async Task SubjectNameStrategiesJson(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
@@ -49,9 +50,9 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var u = new SubjectNameStrategyTestPoco();
                     u.Value = testString;
-                    producer.ProduceAsync(topic.Name, new Message<string, SubjectNameStrategyTestPoco> { Key = "test1", Value = u }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, SubjectNameStrategyTestPoco> { Key = "test1", Value = u }, TestContext.Current.CancellationToken);
 
-                    var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
+                    var subjects = await schemaRegistry.GetAllSubjectsAsync();
                     Assert.Contains(topic.Name + "-SubjectNameStrategyTestPoco", subjects);
                     Assert.DoesNotContain(topic.Name + "-value", subjects);
                     // May contain the record name subject from a previous test.
@@ -64,9 +65,9 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var u = new SubjectNameStrategyTestPoco();
                     u.Value = testString;
-                    producer.ProduceAsync(topic.Name, new Message<string, SubjectNameStrategyTestPoco> { Key = "test1", Value = u }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, SubjectNameStrategyTestPoco> { Key = "test1", Value = u }, TestContext.Current.CancellationToken);
 
-                    var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
+                    var subjects = await schemaRegistry.GetAllSubjectsAsync();
                     // Note: If this value is in SR by any means (even if not via this test),
                     // it implies what is being tested here is functional.
                     Assert.Contains("SubjectNameStrategyTestPoco", subjects);
@@ -80,9 +81,9 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var u = new SubjectNameStrategyTestPoco();
                     u.Value = testString;
-                    producer.ProduceAsync(topic.Name, new Message<string, SubjectNameStrategyTestPoco> { Key = "test1", Value = u }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, SubjectNameStrategyTestPoco> { Key = "test1", Value = u }, TestContext.Current.CancellationToken);
 
-                    var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
+                    var subjects = await schemaRegistry.GetAllSubjectsAsync();
                     Assert.Contains(topic.Name + "-value", subjects);
                 }
             }

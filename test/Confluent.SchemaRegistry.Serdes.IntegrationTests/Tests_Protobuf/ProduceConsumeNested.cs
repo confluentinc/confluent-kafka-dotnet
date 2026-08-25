@@ -16,6 +16,7 @@
 
 using Xunit;
 using System;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.Kafka.Examples.Protobuf;
@@ -30,7 +31,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     a nested message type (test of index array generation)
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void ProduceConsumeNestedProtobuf(string bootstrapServers, string schemaRegistryServers)
+        public static async Task ProduceConsumeNestedProtobuf(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
@@ -44,7 +45,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             {
                 var u = new NestedOuter.Types.NestedMid2.Types.NestedLower();
                 u.Field2 = "field_2_value";
-                producer.ProduceAsync(topic.Name, new Message<string, NestedOuter.Types.NestedMid2.Types.NestedLower> { Key = "test1", Value = u }).Wait();
+                await producer.ProduceAsync(topic.Name, new Message<string, NestedOuter.Types.NestedMid2.Types.NestedLower> { Key = "test1", Value = u }, TestContext.Current.CancellationToken);
 
                 var consumerConfig = new ConsumerConfig
                 {
@@ -61,7 +62,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     consumer.Subscribe(topic.Name);
-                    var cr = consumer.Consume();
+                    var cr = consumer.Consume(TestContext.Current.CancellationToken);
                     Assert.Equal(u.Field2, cr.Message.Value.Field2);
                 }
             }
