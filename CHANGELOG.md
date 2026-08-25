@@ -9,7 +9,7 @@
 
 * Fix early return in FindMessageByName (#2644)
 * Preserve HTTP status for retriable SR errors (#2647)
-* Security patch in examples and tests using old NJsonSchema versions, test framework upgrade in `Confluent.Kafka` tests (#)
+* Security patch in examples and tests using old NJsonSchema versions, test framework upgrade in `Confluent.Kafka` tests (#2654)
 
 
 # 2.15.0
