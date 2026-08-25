@@ -16,6 +16,7 @@
 
 using Xunit;
 using System;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 
 namespace Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1
@@ -43,7 +44,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     Test Use Latest Version on when AutoRegister enabled and disabled. 
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void UseLatestVersionCheck(string bootstrapServers, string schemaRegistryServers) 
+        public static async Task UseLatestVersionCheck(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
@@ -57,7 +58,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco { IntField = 1 };
-                    producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco> { Key = "test1", Value = c }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco> { Key = "test1", Value = c }, TestContext.Current.CancellationToken);
                 }
 
                 using (var producer = 
@@ -67,8 +68,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco { StringField = "Test" };
-                    Assert.Throws<AggregateException>(
-                        () => producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco> { Key = "test1", Value = c }).Wait());
+                    await Assert.ThrowsAnyAsync<Exception>(
+                        () => producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco> { Key = "test1", Value = c }, TestContext.Current.CancellationToken));
                 }
             }
         }

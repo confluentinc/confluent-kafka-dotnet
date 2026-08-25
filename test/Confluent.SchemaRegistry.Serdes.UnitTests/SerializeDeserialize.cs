@@ -18,6 +18,7 @@
 #pragma warning disable CS0618
 
 using Xunit;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using Avro.Specific;
 using Confluent.Kafka;
@@ -63,88 +64,88 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void IntSerDe()
+        public async Task IntSerDe()
         {
             var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(1234, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            Assert.Equal(1234, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+            bytes = await avroSerializer.SerializeAsync(1234, new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.Equal(1234, await avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)));
         }
 
         [Fact]
-        public void LongSerDe()
+        public async Task LongSerDe()
         {
             var avroSerializer = new AvroSerializer<long>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<long>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(123, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            Assert.Equal(123, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+            bytes = await avroSerializer.SerializeAsync(123, new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.Equal(123, await avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)));
         }
 
         [Fact]
-        public void BoolSerDe()
+        public async Task BoolSerDe()
         {
             var avroSerializer = new AvroSerializer<bool>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<bool>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(true, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            Assert.Equal(true, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+            bytes = await avroSerializer.SerializeAsync(true, new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.True(await avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)));
         }
 
         [Fact]
-        public void StringSerDe()
+        public async Task StringSerDe()
         {
             var avroSerializer = new AvroSerializer<string>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<string>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync("abc", new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            Assert.Equal("abc", avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+            bytes = await avroSerializer.SerializeAsync("abc", new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.Equal("abc", await avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)));
         }
 
         [Fact]
-        public void DoubleSerDe()
+        public async Task DoubleSerDe()
         {
             var avroSerializer = new AvroSerializer<double>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<double>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(123d, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            Assert.Equal(123d, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+            bytes = await avroSerializer.SerializeAsync(123d, new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.Equal(123d, await avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)));
         }
 
         [Fact]
-        public void FloatSerDe()
+        public async Task FloatSerDe()
         {
             var avroSerializer = new AvroSerializer<float>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<float>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(123f, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            Assert.Equal(123f, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+            bytes = await avroSerializer.SerializeAsync(123f, new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.Equal(123f, await avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)));
         }
 
         [Fact]
-        public void BytesSerDe()
+        public async Task BytesSerDe()
         {
             var avroSerializer = new AvroSerializer<byte[]>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<byte[]>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(new byte[] { 2, 3, 4 }, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = await avroSerializer.SerializeAsync(new byte[] { 2, 3, 4 }, new SerializationContext(MessageComponentType.Value, testTopic));
             Assert.Equal(new byte[] { 0, 0, 0, 0, 1, 2, 3, 4 }, bytes);
-            Assert.Equal(new byte[] { 2, 3, 4 }, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+            Assert.Equal(new byte[] { 2, 3, 4 }, await avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)));
         }
 
         [Fact]
-        public void NullSerDe()
+        public async Task NullSerDe()
         {
             var avroSerializer = new AvroSerializer<Null>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<Null>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            Assert.Equal(null, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+            bytes = await avroSerializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic));
+            Assert.Null(await avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)));
         }
 
         [Fact]
-        public void ISpecificRecord()
+        public async Task ISpecificRecord()
         {
             var serializer = new AvroSerializer<User>(schemaRegistryClient);
             var deserializer = new AvroDeserializer<User>(schemaRegistryClient);
@@ -156,8 +157,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "awesome"
             };
 
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -171,8 +172,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "awesome"
             };
 
-            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+            result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -180,7 +181,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordUseSchemaId()
+        public async Task ISpecificRecordUseSchemaId()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -202,8 +203,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome", result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -211,7 +212,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordStrings()
+        public async Task ISpecificRecordStrings()
         {
             var schemaStr = "{\"type\":\"string\"}";
             var schema = new RegisteredSchema("topic1-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -234,21 +235,21 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var serializer = new AvroSerializer<String>(schemaRegistryClient, config);
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync("hi", new SerializationContext(MessageComponentType.Value, "topic1", headers)).Result;
+            var bytes = await serializer.SerializeAsync("hi", new SerializationContext(MessageComponentType.Value, "topic1", headers));
             Assert.Equal(1, bytes[4]);
 
-            bytes = serializer.SerializeAsync("world", new SerializationContext(MessageComponentType.Value, "topic2", headers)).Result;
+            bytes = await serializer.SerializeAsync("world", new SerializationContext(MessageComponentType.Value, "topic2", headers));
             Assert.Equal(2, bytes[4]);
 
-            bytes = serializer.SerializeAsync("hi", new SerializationContext(MessageComponentType.Value, "topic1", headers)).Result;
+            bytes = await serializer.SerializeAsync("hi", new SerializationContext(MessageComponentType.Value, "topic1", headers));
             Assert.Equal(1, bytes[4]);
 
-            bytes = serializer.SerializeAsync("world", new SerializationContext(MessageComponentType.Value, "topic2", headers)).Result;
+            bytes = await serializer.SerializeAsync("world", new SerializationContext(MessageComponentType.Value, "topic2", headers));
             Assert.Equal(2, bytes[4]);
         }
 
         [Fact]
-        public void ISpecificRecordRecordNameStrategy()
+        public async Task ISpecificRecordRecordNameStrategy()
         {
             var serializerConfig = new AvroSerializerConfig
             {
@@ -268,8 +269,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "awesome"
             };
 
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -283,8 +284,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "awesome"
             };
 
-            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+            result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -292,7 +293,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordAssociatedNameStrategy()
+        public async Task ISpecificRecordAssociatedNameStrategy()
         {
             // Setup association for the topic
             var associatedSubject = "my-associated-subject-value";
@@ -335,8 +336,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "awesome"
             };
 
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -344,7 +345,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordAssociatedNameStrategyWithFallback()
+        public async Task ISpecificRecordAssociatedNameStrategyWithFallback()
         {
             // No association is set up, so it should fall back to TopicNameStrategy
             var schemaStr = User._SCHEMA.ToString();
@@ -372,8 +373,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "fallback"
             };
 
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -381,7 +382,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordAssociatedNameStrategyWithKafkaClusterId()
+        public async Task ISpecificRecordAssociatedNameStrategyWithKafkaClusterId()
         {
             // Setup association for the topic with a specific kafka cluster ID as namespace
             var kafkaClusterId = "lkc-12345";
@@ -431,8 +432,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "cluster-user"
             };
 
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -440,7 +441,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordCELCondition()
+        public async Task ISpecificRecordCELCondition()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -469,8 +470,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome", result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -478,7 +479,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordCELConditionFail()
+        public async Task ISpecificRecordCELConditionFail()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -506,11 +507,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            Assert.Throws<AggregateException>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result);
+            await Assert.ThrowsAnyAsync<Exception>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)));
         }
 
         [Fact]
-        public void ISpecificRecordCELFieldTransform()
+        public async Task ISpecificRecordCELFieldTransform()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -539,8 +540,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome-suffix", result.name);
             Assert.Equal("blue-suffix", result.favorite_color);
@@ -548,7 +549,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordCELFieldTransformMissingProp()
+        public async Task ISpecificRecordCELFieldTransformMissingProp()
         {
             var schemaStr =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific\",\"fields\":[" +
@@ -585,8 +586,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome-suffix-suffix", result.name);
             Assert.Equal("blue-suffix-suffix", result.favorite_color);
@@ -594,7 +595,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordCELFieldTransformDisable()
+        public async Task ISpecificRecordCELFieldTransformDisable()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -626,8 +627,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome", result.name);
             Assert.Equal("blue", result.favorite_color);
@@ -635,7 +636,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordCELFieldTransformComplex()
+        public async Task ISpecificRecordCELFieldTransformComplex()
         {
             var schemaStr = Complex._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -664,8 +665,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("hello-suffix", result.arrayField[0]);
             Assert.Equal("world-suffix", result.mapField["key"]);
@@ -673,7 +674,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordCELFieldCondition()
+        public async Task ISpecificRecordCELFieldCondition()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -702,8 +703,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome", result.name);
             Assert.Equal("blue", result.favorite_color);
@@ -711,7 +712,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordCELFieldConditionFail()
+        public async Task ISpecificRecordCELFieldConditionFail()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -739,11 +740,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            Assert.Throws<AggregateException>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result);
+            await Assert.ThrowsAnyAsync<Exception>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)));
         }
 
         [Fact]
-        public void ISpecificRecordFieldEncryption()
+        public async Task ISpecificRecordFieldEncryption()
         {
             var schemaStr = "{\"type\":\"record\",\"name\":\"UserWithPic\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                     "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\"," +
@@ -796,8 +797,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             // The user name has been modified
             Assert.Equal("awesome", result.name);
@@ -807,7 +808,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordPayloadEncryption()
+        public async Task ISpecificRecordPayloadEncryption()
         {
             var schemaStr = "{\"type\":\"record\",\"name\":\"UserWithPic\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                     "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\"," +
@@ -858,8 +859,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             // The user name has been modified
             Assert.Equal("awesome", result.name);
@@ -869,7 +870,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordEncryptionAlternateKeks()
+        public async Task ISpecificRecordEncryptionAlternateKeks()
         {
             var schemaStr = "{\"type\":\"record\",\"name\":\"UserWithPic\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                     "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\"," +
@@ -921,8 +922,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             // The user name has been modified
             Assert.Equal("awesome", result.name);
@@ -932,7 +933,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void ISpecificRecordFieldEncryptionDekRotation()
+        public async Task ISpecificRecordFieldEncryptionDekRotation()
         {
             var schemaStr =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
@@ -983,16 +984,16 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             // The user name has been modified
             Assert.Equal("awesome", result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
 
-            RegisteredDek dek = dekRegistryClient.GetDekVersionAsync(
-                "kek1", "topic-value", -1, DekFormat.AES256_GCM, false).Result;
+            RegisteredDek dek = await dekRegistryClient.GetDekVersionAsync(
+                "kek1", "topic-value", -1, DekFormat.AES256_GCM, false);
             Assert.Equal(1, dek.Version);
 
             // Advance 2 days
@@ -1005,16 +1006,16 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "awesome"
             };
 
-            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             // The user name has been modified
             Assert.Equal("awesome", result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
 
-            dek = dekRegistryClient.GetDekVersionAsync(
-                "kek1", "topic-value", -1, DekFormat.AES256_GCM, false).Result;
+            dek = await dekRegistryClient.GetDekVersionAsync(
+                "kek1", "topic-value", -1, DekFormat.AES256_GCM, false);
             Assert.Equal(2, dek.Version);
 
             // Advance 2 days
@@ -1027,21 +1028,21 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "awesome"
             };
 
-            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             // The user name has been modified
             Assert.Equal("awesome", result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
 
-            dek = dekRegistryClient.GetDekVersionAsync(
-                "kek1", "topic-value", -1, DekFormat.AES256_GCM, false).Result;
+            dek = await dekRegistryClient.GetDekVersionAsync(
+                "kek1", "topic-value", -1, DekFormat.AES256_GCM, false);
             Assert.Equal(3, dek.Version);
         }
 
         [Fact]
-        public void ISpecificRecordJSONataFullyCompatible()
+        public async Task ISpecificRecordJSONataFullyCompatible()
         {
             var rule1To2 = "$merge([$sift($, function($v, $k) {$k != 'name'}), {'full_name': $.'name'}])";
             var rule2To1 = "$merge([$sift($, function($v, $k) {$k != 'full_name'}), {'name': $.'full_name'}])";
@@ -1160,23 +1161,23 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             subjectStore["topic-value"] = new List<RegisteredSchema> { schema, newSchema, newerSchema }; 
 
             Headers headers = new Headers();
-            var bytes = serializer1.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            ISpecificRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
+            var bytes = await serializer1.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            await ISpecificRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
             
-            bytes = serializer2.SerializeAsync(newUser, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            ISpecificRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
+            bytes = await serializer2.SerializeAsync(newUser, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            await ISpecificRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
             
-            bytes = serializer3.SerializeAsync(newerUser, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            ISpecificRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
+            bytes = await serializer3.SerializeAsync(newerUser, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            await ISpecificRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
         }
 
-        private void ISpecificRecordDeserializeAllVersions(AvroDeserializer<User> deserializer1, 
+        private async Task ISpecificRecordDeserializeAllVersions(AvroDeserializer<User> deserializer1, 
             AvroDeserializer<NewUser> deserializer2, AvroDeserializer<NewerUser> deserializer3, 
             byte[] bytes, Headers headers, User user)
         {
-            var result1 = deserializer1.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result2 = deserializer2.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result3 = deserializer3.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result1 = await deserializer1.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result2 = await deserializer2.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result3 = await deserializer3.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome", result1.name);
             Assert.Equal(user.favorite_color, result1.favorite_color);
@@ -1192,7 +1193,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecord()
+        public async Task GenericRecord()
         {
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, null);
             var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
@@ -1203,8 +1204,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal(user["name"], result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
@@ -1216,8 +1217,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "red");
 
-            bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal(user["name"], result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
@@ -1225,7 +1226,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordWithGuidInHeader()
+        public async Task GenericRecordWithGuidInHeader()
         {
             var config = new AvroSerializerConfig
             {
@@ -1241,10 +1242,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user,
-                new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false,
-                new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user,
+                new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false,
+                new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal(user["name"], result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
@@ -1256,11 +1257,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_number", 100);
             user.Add("favorite_color", "red");
 
-            bytes = serializer.SerializeAsync(user,
-                new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            bytes = await serializer.SerializeAsync(user,
+                new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
-            result = deserializer.DeserializeAsync(bytes, false,
-                new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            result = await deserializer.DeserializeAsync(bytes, false,
+                new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal(user["name"], result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
@@ -1268,7 +1269,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordWithReferences()
+        public async Task GenericRecordWithReferences()
         {
             var subject1 = "topic-value";
             var subject2 = "ref";
@@ -1307,8 +1308,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             obj1.Add("refField", obj2);
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(obj1, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(obj1, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             var refField = (GenericRecord) result["refField"];
             Assert.Equal(obj2["intField"], refField["intField"]);
@@ -1319,7 +1320,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordSchemaEvolution()
+        public async Task GenericRecordSchemaEvolution()
         {
             var schemaStr1 = "{\n"
                              + "  \"name\": \"SchemaEvolution\",\n"
@@ -1363,17 +1364,17 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             obj.Add("fieldToDelete", "bye");
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(obj, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(obj, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             store[schemaStr2] = 2;
             subjectStore["topic-value"] = new List<RegisteredSchema> { schema1, schema2 };
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal(result["newOptionalField"], "optional");
         }
 
         [Fact]
-        public void GenericRecordCELCondition()
+        public async Task GenericRecordCELCondition()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -1400,8 +1401,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome", result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
@@ -1409,7 +1410,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordCELConditionLogicalType()
+        public async Task GenericRecordCELConditionLogicalType()
         {
             var uuid = "550e8400-e29b-41d4-a716-446655440000";
             var schemaStr = "{\"type\":\"record\",\"name\":\"UserWithPic\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
@@ -1441,8 +1442,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal(new Guid(uuid), result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
@@ -1450,7 +1451,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordCELConditionFail()
+        public async Task GenericRecordCELConditionFail()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -1476,11 +1477,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            Assert.Throws<AggregateException>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result);
+            await Assert.ThrowsAnyAsync<Exception>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)));
         }
 
         [Fact]
-        public void GenericRecordCELConditionEmail()
+        public async Task GenericRecordCELConditionEmail()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -1507,8 +1508,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("bob@confluent.com", result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
@@ -1516,7 +1517,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordCELConditionEmailFail()
+        public async Task GenericRecordCELConditionEmailFail()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -1542,11 +1543,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            Assert.Throws<AggregateException>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result);
+            await Assert.ThrowsAnyAsync<Exception>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)));
         }
 
         [Fact]
-        public void GenericRecordCELFieldTransform()
+        public async Task GenericRecordCELFieldTransform()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -1573,8 +1574,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome-suffix", result["name"]);
             Assert.Equal("blue-suffix", result["favorite_color"]);
@@ -1582,7 +1583,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordCELFieldCondition()
+        public async Task GenericRecordCELFieldCondition()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -1609,8 +1610,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome", result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
@@ -1618,7 +1619,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordCELFieldConditionFail()
+        public async Task GenericRecordCELFieldConditionFail()
         {
             var schemaStr = User._SCHEMA.ToString();
             var schema = new RegisteredSchema("topic-value", 1, 1, schemaStr, SchemaType.Avro, null);
@@ -1644,11 +1645,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("favorite_color", "blue");
 
             Headers headers = new Headers();
-            Assert.Throws<AggregateException>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result);
+            await Assert.ThrowsAnyAsync<Exception>(() => serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)));
         }
 
         [Fact]
-        public void GenericRecordFieldEncryption()
+        public async Task GenericRecordFieldEncryption()
         {
             var schemaStr = "{\"type\":\"record\",\"name\":\"UserWithPic\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                     "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\"," +
@@ -1699,8 +1700,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("picture", pic);
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome", result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
@@ -1709,7 +1710,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordPayloadEncryption()
+        public async Task GenericRecordPayloadEncryption()
         {
             var schemaStr = "{\"type\":\"record\",\"name\":\"UserWithPic\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                     "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\"," +
@@ -1760,8 +1761,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             user.Add("picture", pic);
 
             Headers headers = new Headers();
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome", result["name"]);
             Assert.Equal(user["favorite_color"], result["favorite_color"]);
@@ -1770,7 +1771,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordFieldEncryptionF1Preserialized()
+        public async Task GenericRecordFieldEncryptionF1Preserialized()
         {
             var schemaStr = "{\"type\":\"record\",\"name\":\"myrecord\"," +
                             "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
@@ -1825,13 +1826,13 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 };
             Headers headers = new Headers();
             byte[] bytes = new byte[]{0, 0, 0, 0, 1, 104, 122, 103, 121, 47, 106, 70, 78, 77, 86, 47, 101, 70, 105, 108, 97, 72, 114, 77, 121, 101, 66, 103, 100, 97, 86, 122, 114, 82, 48, 117, 100, 71, 101, 111, 116, 87, 56, 99, 65, 47, 74, 97, 108, 55, 117, 107, 114, 43, 77, 47, 121, 122};
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("hello world", result["f1"]);
         }
 
         [Fact]
-        public void GenericRecordFieldEncryptionDeterministicF1Preserialized()
+        public async Task GenericRecordFieldEncryptionDeterministicF1Preserialized()
         {
             var schemaStr = "{\"type\":\"record\",\"name\":\"myrecord\"," +
                             "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
@@ -1887,13 +1888,13 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 };
             Headers headers = new Headers();
             byte[] bytes = new byte[]{0, 0, 0, 0, 1, 72, 68, 54, 89, 116, 120, 114, 108, 66, 110, 107, 84, 87, 87, 57, 78, 54, 86, 98, 107, 51, 73, 73, 110, 106, 87, 72, 56, 49, 120, 109, 89, 104, 51, 107, 52, 100};
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("hello world", result["f1"]);
         }
 
         [Fact]
-        public void GenericRecordFieldEncryptionDekRotationF1Preserialized()
+        public async Task GenericRecordFieldEncryptionDekRotationF1Preserialized()
         {
             var schemaStr = "{\"type\":\"record\",\"name\":\"myrecord\"," +
                             "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
@@ -1949,13 +1950,13 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 };
             Headers headers = new Headers();
             byte[] bytes = new byte[]{0, 0, 0, 0, 1, 120, 65, 65, 65, 65, 65, 65, 71, 52, 72, 73, 54, 98, 49, 110, 88, 80, 88, 113, 76, 121, 71, 56, 99, 73, 73, 51, 53, 78, 72, 81, 115, 101, 113, 113, 85, 67, 100, 43, 73, 101, 76, 101, 70, 86, 65, 101, 78, 112, 83, 83, 51, 102, 120, 80, 110, 74, 51, 50, 65, 61};
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("hello world", result["f1"]);
         }
 
         [Fact]
-        public void GenericRecordJSONataWithCEL()
+        public async Task GenericRecordJSONataWithCEL()
         {
             var rule1To2 = "$merge([$sift($, function($v, $k) {$k != 'name'}), {'full_name': $.'name'}])";
 
@@ -2012,9 +2013,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             subjectStore["topic-value"] = new List<RegisteredSchema> { schema, newSchema };
 
             Headers headers = new Headers();
-            var bytes = serializer1.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var bytes = await serializer1.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
-            var result2 = deserializer2.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result2 = await deserializer2.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome-suffix", result2["full_name"]);
             Assert.Equal(user["favorite_color"], result2["favorite_color"]);
@@ -2022,7 +2023,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void GenericRecordJSONataFullyCompatible()
+        public async Task GenericRecordJSONataFullyCompatible()
         {
             var rule1To2 = "$merge([$sift($, function($v, $k) {$k != 'name'}), {'full_name': $.'name'}])";
             var rule2To1 = "$merge([$sift($, function($v, $k) {$k != 'full_name'}), {'name': $.'full_name'}])";
@@ -2135,23 +2136,23 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             subjectStore["topic-value"] = new List<RegisteredSchema> { schema, newSchema, newerSchema }; 
 
             Headers headers = new Headers();
-            var bytes = serializer1.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            GenericRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
+            var bytes = await serializer1.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            await GenericRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
             
-            bytes = serializer2.SerializeAsync(newUser, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            GenericRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
+            bytes = await serializer2.SerializeAsync(newUser, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            await GenericRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
             
-            bytes = serializer3.SerializeAsync(newerUser, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            GenericRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
+            bytes = await serializer3.SerializeAsync(newerUser, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            await GenericRecordDeserializeAllVersions(deserializer1, deserializer2, deserializer3, bytes, headers, user);
         }
 
-        private void GenericRecordDeserializeAllVersions(AvroDeserializer<GenericRecord> deserializer1, 
+        private async Task GenericRecordDeserializeAllVersions(AvroDeserializer<GenericRecord> deserializer1, 
             AvroDeserializer<GenericRecord> deserializer2, AvroDeserializer<GenericRecord> deserializer3, 
             byte[] bytes, Headers headers, GenericRecord user)
         {
-            var result1 = deserializer1.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result2 = deserializer2.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
-            var result3 = deserializer3.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers)).Result;
+            var result1 = await deserializer1.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result2 = await deserializer2.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
+            var result3 = await deserializer3.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic, headers));
 
             Assert.Equal("awesome", result1["name"]);
             Assert.Equal(user["favorite_color"], result1["favorite_color"]);
@@ -2167,56 +2168,56 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void NullISpecificRecord()
+        public async Task NullISpecificRecord()
         {
             var serializer = new AvroSerializer<User>(schemaRegistryClient);
             var deserializer = new AvroDeserializer<User>(schemaRegistryClient);
 
-            var bytes = serializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var result = deserializer.DeserializeAsync(bytes, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = await serializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic));
+            var result = await deserializer.DeserializeAsync(bytes, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Null(bytes);
             Assert.Null(result);
         }
 
         [Fact]
-        public void NullGenericRecord()
+        public async Task NullGenericRecord()
         {
             var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient);
             var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient);
 
-            var bytes = serializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var result = deserializer.DeserializeAsync(bytes, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = await serializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic));
+            var result = await deserializer.DeserializeAsync(bytes, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Null(bytes);
             Assert.Null(result);
         }
 
         [Fact]
-        public void NullString()
+        public async Task NullString()
         {
             var serializer = new AvroSerializer<string>(schemaRegistryClient);
             var deserializer = new AvroDeserializer<string>(schemaRegistryClient);
 
-            var bytes = serializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var result = deserializer.DeserializeAsync(bytes, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = await serializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic));
+            var result = await deserializer.DeserializeAsync(bytes, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Null(bytes);
             Assert.Null(result);
         }
 
         [Fact]
-        public void NullInt()
+        public async Task NullInt()
         {
             var deserializer = new AvroDeserializer<int>(schemaRegistryClient);
 
-            var exception = Assert.Throws<AggregateException>(() => deserializer.DeserializeAsync(ReadOnlyMemory<byte>.Empty, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => deserializer.DeserializeAsync(ReadOnlyMemory<byte>.Empty, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic)));
 
-            Assert.Equal("Cannot deserialize null to a Value Type", exception.InnerException.Message);
+            Assert.Equal("Cannot deserialize null to a Value Type", exception.Message);
         }
 
         [Fact]
-        public void Multiple_ISpecificRecords()
+        public async Task Multiple_ISpecificRecords()
         {
             var serializer = new AvroSerializer<ISpecificRecord>(schemaRegistryClient);
             var deserializerUser = new AvroDeserializer<User>(schemaRegistryClient);
@@ -2235,16 +2236,16 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "great_brand"
             };
 
-            var bytesUser = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var resultUser = deserializerUser.DeserializeAsync(bytesUser, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as User;
+            var bytesUser = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+            var resultUser = await deserializerUser.DeserializeAsync(bytesUser, false, new SerializationContext(MessageComponentType.Value, testTopic)) as User;
 
             Assert.NotNull(resultUser);
             Assert.Equal(user.name, resultUser.name);
             Assert.Equal(user.favorite_color, resultUser.favorite_color);
             Assert.Equal(user.favorite_number, resultUser.favorite_number);
 
-            var bytesCar = serializer.SerializeAsync(car, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var resultCar = deserializerCar.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as Car;
+            var bytesCar = await serializer.SerializeAsync(car, new SerializationContext(MessageComponentType.Value, testTopic));
+            var resultCar = await deserializerCar.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)) as Car;
 
             Assert.NotNull(resultCar);
             Assert.Equal(car.name, resultCar.name);
@@ -2252,33 +2253,33 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void Poco_Serialize()
+        public async Task Poco_Serialize()
         {
             var serializer = new AvroSerializer<Dictionary<string, string>>(schemaRegistryClient);
-            Assert.Throws<System.InvalidOperationException>(() => serializer.SerializeAsync(new Dictionary<string, string> { { "cat", "dog" } }, new SerializationContext(MessageComponentType.Key, testTopic)).GetAwaiter().GetResult());
+            await Assert.ThrowsAsync<InvalidOperationException>(() => serializer.SerializeAsync(new Dictionary<string, string> { { "cat", "dog" } }, new SerializationContext(MessageComponentType.Key, testTopic)));
         }
 
         [Fact]
-        public void Poco_Deserialize()
+        public async Task Poco_Deserialize()
         {
             var deserializer = new AvroDeserializer<Dictionary<string, string>>(schemaRegistryClient);
-            Assert.Throws<System.InvalidOperationException>(() => deserializer.DeserializeAsync(new System.ReadOnlyMemory<byte>(new byte[] { 1, 2, 3 }), false, new SerializationContext(MessageComponentType.Key, testTopic)).GetAwaiter().GetResult());
+            await Assert.ThrowsAsync<InvalidOperationException>(() => deserializer.DeserializeAsync(new System.ReadOnlyMemory<byte>(new byte[] { 1, 2, 3 }), false, new SerializationContext(MessageComponentType.Key, testTopic)));
         }
 
         [Fact]
-        public void Incompatible()
+        public async Task Incompatible()
         {
             var avroSerializer = new AvroSerializer<string>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
-            var bytes = avroSerializer.SerializeAsync("hello world", new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            Assert.Throws<System.AggregateException>(() => avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+            var bytes = await avroSerializer.SerializeAsync("hello world", new SerializationContext(MessageComponentType.Value, testTopic));
+            await Assert.ThrowsAnyAsync<Exception>(() => avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)));
         }
 
         /// <summary>
         /// Test a case when .NET data class name and / or namespace do not match the schema name and / or namespace.
         /// </summary>
         [Fact]
-        public void ISpecificRecord_SchemaTypeMismatch()
+        public async Task ISpecificRecord_SchemaTypeMismatch()
         {
             var serializer = new AvroSerializer<User2>(schemaRegistryClient);
             var deserializer = new AvroDeserializer<User2>(schemaRegistryClient);
@@ -2290,8 +2291,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "awesome"
             };
 
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = await serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic));
+            var result = await deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
