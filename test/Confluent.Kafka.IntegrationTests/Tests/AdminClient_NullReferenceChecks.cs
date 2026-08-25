@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
@@ -33,7 +34,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Tests the validation of input parameter to guard against uncaught segfaults.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_NullReferenceChecks(string bootstrapServers)
+        public async Task AdminClient_NullReferenceChecks(string bootstrapServers)
         {
             LogToFile("start AdminClient_NullReferenceChecks");
             var topicName1 = Guid.NewGuid().ToString();
@@ -47,8 +48,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 try
                 {
-                    adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = nullTopic, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
-                    Assert.True(false, "Expected exception.");
+                    await adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = nullTopic, NumPartitions = 1, ReplicationFactor = 1 } });
+                    Assert.Fail("Expected exception.");
                 }
                 catch (ArgumentException ex)
                 {
@@ -63,9 +64,9 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 try
                 {
-                    adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
-                    adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = nullTopic, IncreaseTo = 2 } }).Wait();
-                    Assert.True(false, "Expected exception.");
+                    await adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } });
+                    await adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = nullTopic, IncreaseTo = 2 } });
+                    Assert.Fail("Expected exception.");
                 }
                 catch (ArgumentException ex)
                 {
@@ -84,7 +85,7 @@ namespace Confluent.Kafka.IntegrationTests
                 try
                 {
                     adminClient.AddBrokers(null);
-                    Assert.True(false, "Expected exception.");
+                    Assert.Fail("Expected exception.");
                 }
                 catch (ArgumentNullException ex)
                 {
@@ -99,7 +100,7 @@ namespace Confluent.Kafka.IntegrationTests
                 try
                 {
                     adminClient.GetMetadata(null, TimeSpan.FromSeconds(10));
-                    Assert.True(false, "Expected exception.");
+                    Assert.Fail("Expected exception.");
                 }
                 catch (ArgumentNullException ex)
                 {
@@ -113,8 +114,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 try
                 {
-                    adminClient.DeleteTopicsAsync(new List<string> { topicName1, nullTopic });
-                    Assert.True(false, "Expected exception.");
+                    await adminClient.DeleteTopicsAsync(new List<string> { topicName1, nullTopic });
+                    Assert.Fail("Expected exception.");
                 }
                 catch(ArgumentException ex)
                 {
@@ -129,7 +130,7 @@ namespace Confluent.Kafka.IntegrationTests
                 try
                 {
                     adminClient.ListGroup(null, TimeSpan.FromSeconds(10));
-                    Assert.True(false, "Expected exception.");
+                    Assert.Fail("Expected exception.");
                 }
                 catch (ArgumentNullException ex)
                 {

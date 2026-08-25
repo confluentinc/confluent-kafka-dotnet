@@ -59,6 +59,10 @@ namespace Confluent.Kafka.IntegrationTests
                 // will deadlock if N >= workerThreads. Set to max number that 
                 // should not deadlock.
                 int N = workerThreads-1;
+                // deliberately blocks worker threads via Task.Run + Monitor.Wait (rather than an
+                // async-friendly approach) to test that sync-over-async does not deadlock when
+                // blocked threads are one less than available workers.
+#pragma warning disable xUnit1031, xUnit1051
                 for (int i=0; i<N; ++i)
                 {
                     Func<int, Action> actionCreator = (taskNumber) =>
@@ -90,6 +94,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
 
                 Task.WaitAll(tasks.ToArray());
+#pragma warning restore xUnit1031, xUnit1051
             }
 
             ThreadPool.SetMaxThreads(originalWorkerThreads, originalCompletionPortThreads);

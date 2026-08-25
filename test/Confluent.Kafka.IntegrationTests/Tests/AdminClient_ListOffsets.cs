@@ -27,7 +27,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public async void AdminClient_ListOffsets(string bootstrapServers)
+        public async Task AdminClient_ListOffsets(string bootstrapServers)
         {
             LogToFile("start AdminClient_ListOffsets");
             
@@ -36,9 +36,9 @@ namespace Confluent.Kafka.IntegrationTests
             using var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build();
             
             long basetimestamp = 10000000;
-            await producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 100, TimestampType.CreateTime)});
-            await producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 400, TimestampType.CreateTime)});
-            await producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 250, TimestampType.CreateTime)});
+            await producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 100, TimestampType.CreateTime)}, TestContext.Current.CancellationToken);
+            await producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 400, TimestampType.CreateTime)}, TestContext.Current.CancellationToken);
+            await producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "Producer Message", Timestamp = new Timestamp(basetimestamp + 250, TimestampType.CreateTime)}, TestContext.Current.CancellationToken);
             producer.Flush(new TimeSpan(0, 0, 10));
             
             var timeout = TimeSpan.FromSeconds(30);

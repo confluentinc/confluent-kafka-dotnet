@@ -16,6 +16,7 @@
 
 #pragma warning disable xUnit1026
 
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -28,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public async void Producer_OptimizeDeliveryReports(string bootstrapServers)
+        public async Task Producer_OptimizeDeliveryReports(string bootstrapServers)
         {
             LogToFile("start Producer_OptimizeDeliveryReports");
 
@@ -52,8 +53,9 @@ namespace Confluent.Kafka.IntegrationTests
                     { 
                         Key = TestKey, 
                         Value = TestValue, 
-                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) } 
-                    }
+                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
+                    },
+                    TestContext.Current.CancellationToken
                 );
                 Assert.Equal(TimestampType.NotAvailable, dr.Timestamp.Type);
                 Assert.Equal(0, dr.Timestamp.UnixTimestampMs);
@@ -73,8 +75,9 @@ namespace Confluent.Kafka.IntegrationTests
                     { 
                         Key = TestKey, 
                         Value = TestValue, 
-                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) } 
-                    }
+                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
+                    },
+                    TestContext.Current.CancellationToken
                 );
                 Assert.Equal(TimestampType.NotAvailable, dr.Timestamp.Type);
                 Assert.Equal(0, dr.Timestamp.UnixTimestampMs);

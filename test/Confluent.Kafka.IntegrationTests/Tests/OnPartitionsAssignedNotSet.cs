@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -31,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void OnPartitionsAssignedNotSet(string bootstrapServers)
+        public async Task OnPartitionsAssignedNotSet(string bootstrapServers)
         {
             LogToFile("start OnPartitionsAssignedNotSet");
 
@@ -47,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
             // Producing onto the topic to make sure it exists.
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                var dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test string", SerializationContext.Empty) }).Result;
+                var dr = await producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test string", SerializationContext.Empty) }, TestContext.Current.CancellationToken);
                 Assert.NotEqual(Offset.Unset, dr.Offset);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
