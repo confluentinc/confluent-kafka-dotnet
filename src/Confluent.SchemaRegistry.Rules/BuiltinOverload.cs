@@ -43,7 +43,8 @@ namespace Confluent.SchemaRegistry.Rules
                     "decimal", Trait.None,
                     v => Guard(() => DecimalT.Of(DecimalUtils.ToBigDecimal(v.Value()))),
                     (a, b) => Guard(() => DecimalT.Of(DecimalUtils.ToBigDecimal(
-                        ToBytes(a), RequireIntScale(ToLong(b), "decimal(bytes, scale)")))),
+                        ToBytes(a, "decimal(bytes, scale)", "first argument"),
+                        RequireIntScale(ToLong(b), "decimal(bytes, scale)")))),
                     null),
 
                 DecimalsBinaryBool("decimals.eq", (a, b) => a.CompareTo(b) == 0),
@@ -104,7 +105,9 @@ namespace Confluent.SchemaRegistry.Rules
                     v => IsCelNull(v)
                         ? NullT.NullValue
                         : Guard(() => VariantT.Of(VariantUtils.ToVariant(v.Value()))),
-                    (a, b) => Guard(() => (IVal)VariantT.Of(new SrVariant(ToBytes(a), ToBytes(b)))),
+                    (a, b) => Guard(() => (IVal)VariantT.Of(new SrVariant(
+                        ToBytes(a, "variant(value, metadata)", "value"),
+                        ToBytes(b, "variant(value, metadata)", "metadata")))),
                     null),
 
                 Overload.Unary("variants.parseJson", v => Guard(() => VariantParseJson(v))),
@@ -384,7 +387,11 @@ namespace Confluent.SchemaRegistry.Rules
             return (int)scale;
         }
 
-        private static byte[] ToBytes(IVal v)
+        // functionName/argument name the caller, because this helper serves both
+        // decimal(bytes, scale) and variant(bytes, bytes) - a hard-coded "decimal(bytes, scale)"
+        // reported the wrong function for a bad variant argument. Mirrors RequireIntScale, which
+        // already takes the calling function's name.
+        private static byte[] ToBytes(IVal v, string functionName, string argument)
         {
             switch (v.Value())
             {
@@ -393,7 +400,7 @@ namespace Confluent.SchemaRegistry.Rules
                 case ByteString bs:
                     return bs.ToByteArray();
                 default:
-                    throw new ArgumentException("decimal(bytes, scale): first argument must be bytes");
+                    throw new ArgumentException(functionName + ": " + argument + " must be bytes");
             }
         }
 

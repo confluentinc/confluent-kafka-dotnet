@@ -89,9 +89,16 @@ namespace Confluent.SchemaRegistry.Rules
             // variant(...) constructor. (dyn) runtime-dispatches on the actual type (Avro
             // Variant, proto confluent.type.Variant, map); (bytes, bytes) builds directly
             // from (value, metadata) bytes.
+            //
+            // The (dyn) overload's result type is dyn for the same reason tryParseJson's is:
+            // variant(null) yields CEL null (matching the Java reference), and an abstract type
+            // is not comparable to null in the checker - declaring Variant there made
+            // `variant(x) == null` and `type(variant(x))` fail to compile, even though the value
+            // was right and composed correctly through the accessors. The (bytes, bytes) overload
+            // keeps the Variant type because it can never return null.
             decls.Add(Decls.NewFunction(
                 "variant",
-                Decls.NewOverload("dyn_to_variant", new List<Type> { Decls.Dyn }, Variant),
+                Decls.NewOverload("dyn_to_variant", new List<Type> { Decls.Dyn }, Decls.Dyn),
                 Decls.NewOverload("bytes_bytes_to_variant",
                     new List<Type> { Decls.Bytes, Decls.Bytes }, Variant)));
 

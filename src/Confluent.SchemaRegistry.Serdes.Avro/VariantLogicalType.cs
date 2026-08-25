@@ -94,11 +94,25 @@ namespace Confluent.SchemaRegistry.Serdes
         public override bool IsInstanceOfLogicalType(object logicalValue) => logicalValue is Variant;
 
         /// <summary>
-        ///     Validates that the base schema is a record with two <c>bytes</c> fields.
+        ///     Validates that the base schema is a record with exactly the two <c>bytes</c> fields
+        ///     <c>metadata</c> and <c>value</c>.
         /// </summary>
+        /// <remarks>
+        ///     The field names and types are checked, not just the field count, because
+        ///     <see cref="ConvertToBaseValue" /> and <see cref="ConvertToLogicalValue" /> index the
+        ///     record by those names and cast both to <c>byte[]</c>. Without the full check a
+        ///     two-field record of any shape passed validation and then failed later with a
+        ///     KeyNotFoundException or an InvalidCastException. Matches the Java reference, whose
+        ///     VariantLogicalType.isVariantSchema applies exactly these conditions.
+        /// </remarks>
         public override void ValidateSchema(LogicalSchema schema)
         {
-            if (!(schema.BaseSchema is RecordSchema record) || record.Fields.Count != 2)
+            if (!(schema.BaseSchema is RecordSchema record)
+                || record.Fields.Count != 2
+                || !record.TryGetField("metadata", out Field metadataField)
+                || metadataField.Schema.Tag != Avro.Schema.Type.Bytes
+                || !record.TryGetField("value", out Field valueField)
+                || valueField.Schema.Tag != Avro.Schema.Type.Bytes)
             {
                 throw new AvroTypeException(
                     "variant logical type requires a record with 'metadata' and 'value' bytes fields");
