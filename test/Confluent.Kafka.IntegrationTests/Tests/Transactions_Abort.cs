@@ -57,7 +57,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 0));
 
-                    var cr1 = consumer.Consume();
+                    var cr1 = consumer.Consume(TestContext.Current.CancellationToken);
                     var cr2 = consumer.Consume(TimeSpan.FromMilliseconds(100)); // force the consumer to read over the final control message internally.
                     Assert.Equal("test val 1", cr1.Message.Value);
                     Assert.Equal(2, cr1.Offset); // there should be skipped offsets due to the aborted txn and commit marker in the log.
@@ -68,8 +68,8 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 0));
 
-                    var cr1 = consumer.Consume();
-                    var cr2 = consumer.Consume();
+                    var cr1 = consumer.Consume(TestContext.Current.CancellationToken);
+                    var cr2 = consumer.Consume(TestContext.Current.CancellationToken);
                     var cr3 = consumer.Consume(TimeSpan.FromMilliseconds(100)); // force the consumer to read over the final control message internally.
                     Assert.Equal("test val 0", cr1.Message.Value);
                     Assert.Equal(0, cr1.Offset); // the aborted message should not be skipped.

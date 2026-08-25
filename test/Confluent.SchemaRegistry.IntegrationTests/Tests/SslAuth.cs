@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka;
 
@@ -26,7 +27,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void SslAuth(Config config)
+        public static async Task SslAuth(Config config)
         {
             var testSchema1 =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
@@ -52,25 +53,18 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ToDelegate()(new SerializationContext(MessageComponentType.Value, topicName), null);
-                var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
-                var schema = sr.GetLatestSchemaAsync(subject).Result;
+                var id = await sr.RegisterSchemaAsync(subject, testSchema1);
+                var schema = await sr.GetLatestSchemaAsync(subject);
                 Assert.Equal(schema.Id, id);
             }
 
             // try to connect with invalid SSL config. shouldn't work.
-            Assert.Throws<HttpRequestException>(() =>
+            await Assert.ThrowsAsync<HttpRequestException>(async () =>
             {
                 var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.ServerWithSsl });
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
-                try
-                {
-                    var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
-                }
-                catch (Exception e)
-                {
-                    throw e.InnerException;
-                }
+                await sr.RegisterSchemaAsync(subject, testSchema1);
             });
 
         }

@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -30,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Simple test of all Consumer.Assign overloads.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AssignOverloads(string bootstrapServers)
+        public async Task AssignOverloads(string bootstrapServers)
         {
             LogToFile("start AssignOverloads");
 
@@ -51,10 +52,10 @@ namespace Confluent.Kafka.IntegrationTests
             DeliveryResult<Null, string> dr, dr3;
             using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
-                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString2 }).Wait();
-                dr3 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString3 }).Result;
-                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString4 }).Wait();
+                dr = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }, TestContext.Current.CancellationToken);
+                await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString2 }, TestContext.Current.CancellationToken);
+                dr3 = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString3 }, TestContext.Current.CancellationToken);
+                await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString4 }, TestContext.Current.CancellationToken);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

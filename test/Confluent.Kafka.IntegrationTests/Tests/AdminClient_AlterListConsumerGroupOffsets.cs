@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
@@ -33,7 +34,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     AdminClient.AlterConsumerGroupOffsets.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_AlterListConsumerGroupOffsets(string bootstrapServers)
+        public async Task AdminClient_AlterListConsumerGroupOffsets(string bootstrapServers)
         {
             LogToFile("start AdminClient_AlterListConsumerGroupOffsets");
             var numMessages = 5;
@@ -104,15 +105,14 @@ namespace Confluent.Kafka.IntegrationTests
                     {
                         var tpoListInvalid = new List<TopicPartitionOffset>();
                         tpoListInvalid.Add(new TopicPartitionOffset(topic.Name, 0, 2));
-                        var _ = adminClient.AlterConsumerGroupOffsetsAsync(
+                        var _ = await adminClient.AlterConsumerGroupOffsetsAsync(
                             new ConsumerGroupTopicPartitionOffsets[] {
                                 new ConsumerGroupTopicPartitionOffsets(groupID, tpoListInvalid),
-                        }).Result;
+                        });
                     }
-                    catch (Exception e)
+                    catch (AlterConsumerGroupOffsetsException)
                     {
                         errorOccured = true;
-                        Assert.IsType<AlterConsumerGroupOffsetsException>(e.InnerException);
                     }
                     Assert.True(errorOccured);
 
@@ -122,12 +122,12 @@ namespace Confluent.Kafka.IntegrationTests
                 // 3. List, Alter and then again List Consumer Group Offsets
                 var tpList = new List<TopicPartition>();
                 tpList.Add(new TopicPartition(topic.Name, 0));
-                var lcgoResults = adminClient.ListConsumerGroupOffsetsAsync(
+                var lcgoResults = await adminClient.ListConsumerGroupOffsetsAsync(
                     new ConsumerGroupTopicPartitions[] {
                         new ConsumerGroupTopicPartitions(groupID, tpList),
                     },
                     new ListConsumerGroupOffsetsOptions() { RequireStableOffsets = false }
-                ).Result;
+                );
 
                 Assert.Single(lcgoResults);
 
@@ -141,10 +141,10 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var tpoList = new List<TopicPartitionOffset>();
                 tpoList.Add(new TopicPartitionOffset(topic.Name, 0, 2));
-                var acgoResults = adminClient.AlterConsumerGroupOffsetsAsync(
+                var acgoResults = await adminClient.AlterConsumerGroupOffsetsAsync(
                     new ConsumerGroupTopicPartitionOffsets[] {
                         new ConsumerGroupTopicPartitionOffsets(groupID, tpoList),
-                }).Result;
+                });
 
                 Assert.Single(acgoResults);
                 var groupResultAlter = acgoResults[0];
@@ -157,12 +157,12 @@ namespace Confluent.Kafka.IntegrationTests
 
                 tpList = new List<TopicPartition>();
                 tpList.Add(new TopicPartition(topic.Name, 0));
-                lcgoResults = adminClient.ListConsumerGroupOffsetsAsync(
+                lcgoResults = await adminClient.ListConsumerGroupOffsetsAsync(
                     new ConsumerGroupTopicPartitions[] {
                         new ConsumerGroupTopicPartitions(groupID, tpList),
                     },
                     new ListConsumerGroupOffsetsOptions() { RequireStableOffsets = false }
-                ).Result;
+                );
 
                 Assert.Single(lcgoResults);
 

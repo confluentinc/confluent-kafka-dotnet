@@ -33,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_ProduceAsync_Task(string bootstrapServers)
+        public async Task Producer_ProduceAsync_Task(string bootstrapServers)
         {
             LogToFile("start Producer_ProduceAsync_Task");
 
@@ -47,16 +47,18 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 drs.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 1),
-                    new Message<string, string> { Key = "test key 0", Value = "test val 0" }));
+                    new Message<string, string> { Key = "test key 0", Value = "test val 0" },
+                    TestContext.Current.CancellationToken));
                 drs.Add(producer.ProduceAsync(
                     partitionedTopic,
-                    new Message<string, string> { Key = "test key 1", Value = "test val 1" }));
+                    new Message<string, string> { Key = "test key 1", Value = "test val 1" },
+                    TestContext.Current.CancellationToken));
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             for (int i=0; i<2; ++i)
             {
-                var dr = drs[i].Result;
+                var dr = await drs[i];
                 Assert.Equal(PersistenceStatus.Persisted, dr.Status);
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
@@ -67,7 +69,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             }
 
-            Assert.Equal((Partition)1, drs[0].Result.Partition);
+            Assert.Equal((Partition)1, (await drs[0]).Partition);
 
 
             // byte[] case
@@ -77,16 +79,18 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 drs2.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 1),
-                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 2"), Value = Encoding.UTF8.GetBytes("test val 2") }));
+                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 2"), Value = Encoding.UTF8.GetBytes("test val 2") },
+                    TestContext.Current.CancellationToken));
                 drs2.Add(producer.ProduceAsync(
                     partitionedTopic,
-                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 3"), Value = Encoding.UTF8.GetBytes("test val 3") }));
+                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 3"), Value = Encoding.UTF8.GetBytes("test val 3") },
+                    TestContext.Current.CancellationToken));
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             for (int i=0; i<2; ++i)
             {
-                var dr = drs2[i].Result;
+                var dr = await drs2[i];
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
@@ -96,7 +100,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             }
 
-            Assert.Equal((Partition)1, drs2[0].Result.Partition);
+            Assert.Equal((Partition)1, (await drs2[0]).Partition);
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Task");
