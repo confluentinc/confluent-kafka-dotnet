@@ -20,6 +20,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -31,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.DescribeUserScramCredentials and AdminClient.AlterUserScramCredentials.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public async void AdminClient_UserScramCredentials(string bootstrapServers)
+        public async Task AdminClient_UserScramCredentials(string bootstrapServers)
         {
             LogToFile("start AdminClient_UserScramCredentials");
             var timeout = TimeSpan.FromSeconds(10);
@@ -50,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
                 try
                 {
                     await adminClient.DescribeUserScramCredentialsAsync(users, describeOptions);
-                    Assert.True(false, "Describe request shouldn't succeed");
+                    Assert.Fail("Describe request shouldn't succeed");
                 }
                 catch (DescribeUserScramCredentialsException e)
                 {
@@ -100,7 +101,7 @@ namespace Confluent.Kafka.IntegrationTests
                 try
                 {
                     await adminClient.DescribeUserScramCredentialsAsync(users, describeOptions);
-                    Assert.True(false, "Describe request shouldn't succeed");
+                    Assert.Fail("Describe request shouldn't succeed");
                 }
                 catch (DescribeUserScramCredentialsException e)
                 {

@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using Xunit;
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
@@ -58,7 +59,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void NullAclBindings()
+        public async Task NullAclBindings()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -69,7 +70,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void EmptyAclBindings()
+        public async Task EmptyAclBindings()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -80,7 +81,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void NullResourcePattern()
+        public async Task NullResourcePattern()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -97,7 +98,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void NullAccessControlEntry()
+        public async Task NullAccessControlEntry()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -114,7 +115,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void LocalTimeout()
+        public async Task LocalTimeout()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -127,7 +128,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void InvalidAclBindings()
+        public async Task InvalidAclBindings()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {

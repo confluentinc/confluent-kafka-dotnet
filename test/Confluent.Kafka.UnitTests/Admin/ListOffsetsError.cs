@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using Xunit;
+using System.Threading.Tasks;
 using System;
 using Confluent.Kafka.Admin;
 using System.Collections.Generic;
@@ -33,7 +34,7 @@ namespace Confluent.Kafka.UnitTests
         };
 
         [Fact]
-        public async void InvalidRequestTimeout()
+        public async Task InvalidRequestTimeout()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
             { 
@@ -54,7 +55,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void InvalidPartitions()
+        public async Task InvalidPartitions()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
             { 
@@ -100,7 +101,7 @@ namespace Confluent.Kafka.UnitTests
         }
         
         [Fact]
-        public async void EmptyPartitions()
+        public async Task EmptyPartitions()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -116,7 +117,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void SamePartitionDifferentOffsets()
+        public async Task SamePartitionDifferentOffsets()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
             { 
@@ -151,7 +152,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void TwoDifferentPartitions()
+        public async Task TwoDifferentPartitions()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
             { 
@@ -186,7 +187,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void SinglePartition()
+        public async Task SinglePartition()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
             { 

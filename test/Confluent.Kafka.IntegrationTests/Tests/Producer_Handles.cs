@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -30,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_Handles(string bootstrapServers)
+        public async Task Producer_Handles(string bootstrapServers)
         {
             LogToFile("start Producer_Handles");
 
@@ -47,32 +48,32 @@ namespace Confluent.Kafka.IntegrationTests
                 using (var producer7 = new TestProducerBuilder<double, double>(producerConfig).Build())
                 using (var adminClient = new DependentAdminClientBuilder(producer7.Handle).Build())
                 {
-                    var r1 = producer1.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 42 }, Value = new byte[] { 33 } }).Result;
+                    var r1 = await producer1.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 42 }, Value = new byte[] { 33 } }, TestContext.Current.CancellationToken);
                     Assert.Equal(new byte[] { 42 }, r1.Key);
                     Assert.Equal(new byte[] { 33 }, r1.Value);
                     Assert.Equal(0, r1.Offset);
 
-                    var r2 = producer2.ProduceAsync(topic.Name, new Message<string, string> { Key = "hello", Value = "world" }).Result;
+                    var r2 = await producer2.ProduceAsync(topic.Name, new Message<string, string> { Key = "hello", Value = "world" }, TestContext.Current.CancellationToken);
                     Assert.Equal("hello", r2.Key);
                     Assert.Equal("world", r2.Value);
 
-                    var r3 = producer3.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 40 }, Value = new byte[] { 31 } }).Result;
+                    var r3 = await producer3.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 40 }, Value = new byte[] { 31 } }, TestContext.Current.CancellationToken);
                     Assert.Equal(new byte[] { 40 }, r3.Key);
                     Assert.Equal(new byte[] { 31 }, r3.Value);
 
-                    var r4 = producer4.ProduceAsync(topic.Name, new Message<int, string> { Key = 42, Value = "mellow world" }).Result;
+                    var r4 = await producer4.ProduceAsync(topic.Name, new Message<int, string> { Key = 42, Value = "mellow world" }, TestContext.Current.CancellationToken);
                     Assert.Equal(42, r4.Key);
                     Assert.Equal("mellow world", r4.Value);
 
-                    var r5 = producer5.ProduceAsync(topic.Name, new Message<int, int> { Key = int.MaxValue, Value = int.MinValue }).Result;
+                    var r5 = await producer5.ProduceAsync(topic.Name, new Message<int, int> { Key = int.MaxValue, Value = int.MinValue }, TestContext.Current.CancellationToken);
                     Assert.Equal(int.MaxValue, r5.Key);
                     Assert.Equal(int.MinValue, r5.Value);
 
-                    var r6 = producer6.ProduceAsync(topic.Name, new Message<string, byte[]> { Key = "yellow mould", Value = new byte[] { 69 } }).Result;
+                    var r6 = await producer6.ProduceAsync(topic.Name, new Message<string, byte[]> { Key = "yellow mould", Value = new byte[] { 69 } }, TestContext.Current.CancellationToken);
                     Assert.Equal("yellow mould", r6.Key);
                     Assert.Equal(new byte[] { 69 }, r6.Value);
 
-                    var r7 = producer7.ProduceAsync(topic.Name, new Message<double, double> { Key = 44.0, Value = 234.4 }).Result;
+                    var r7 = await producer7.ProduceAsync(topic.Name, new Message<double, double> { Key = 44.0, Value = 234.4 }, TestContext.Current.CancellationToken);
                     Assert.Equal(44.0, r7.Key);
                     Assert.Equal(234.4, r7.Value);
 
