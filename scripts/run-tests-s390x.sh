@@ -147,8 +147,13 @@ export OPENSSL_CONF=/tmp/openssl-allow-sha1.cnf
 echo "--- dotnet --info ---"
 dotnet --info | head -20
 
-dotnet restore
-
+# Build and test each unit project on its own rather than restoring the whole
+# solution. A solution-wide restore drags in the Exe helper projects (Benchmark,
+# VerifiableClient, SyncOverAsync, Transactions, ConfigGen), which resolve the
+# portable linux-s390x app host pack that Microsoft does not publish (only Red
+# Hat's rhel.9-s390x exists), so restore fails with NU1101. The four unit projects
+# don't reference any of them, so building them individually avoids it.
+#
 # The test projects multi-target net8.0;net10.0 (test/Directory.Build.props); select
 # net10.0 with -f, as the main CI does. Don't override it with -p:TargetFramework:
 # a global single-TFM property confuses xunit.v3's Microsoft.Testing.Platform test
