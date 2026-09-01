@@ -165,20 +165,20 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 if (nameStrategy == SubjectNameStrategy.TopicRecord)
                 {
-                    Assert.Single(subjects.Where(s => s.Contains(topic)));
-                    Assert.Single(subjects.Where(s => s == $"{topic}-{((Avro.RecordSchema)ProduceConsumeUser2._SCHEMA).Fullname}"));
+                    Assert.Single(subjects, s => s.Contains(topic));
+                    Assert.Single(subjects, s => s == $"{topic}-{((Avro.RecordSchema)ProduceConsumeUser2._SCHEMA).Fullname}");
                 }
 
                 if (nameStrategy == SubjectNameStrategy.Topic)
                 {
-                    Assert.Single(subjects.Where(s => s.Contains(topic)));
-                    Assert.Single(subjects.Where(s => s == $"{topic}-key"));
+                    Assert.Single(subjects, s => s.Contains(topic));
+                    Assert.Single(subjects, s => s == $"{topic}-key");
                 }
 
                 if (nameStrategy == SubjectNameStrategy.Record)
                 {
-                    Assert.Single(subjects.Where(s => s.Contains(topic))); // the string key.
-                    Assert.Single(subjects.Where(s => s == $"{((Avro.RecordSchema)ProduceConsumeUser2._SCHEMA).Fullname}"));
+                    Assert.Single(subjects, s => s.Contains(topic)); // the string key.
+                    Assert.Single(subjects, s => s == $"{((Avro.RecordSchema)ProduceConsumeUser2._SCHEMA).Fullname}");
                 }
             }
         }

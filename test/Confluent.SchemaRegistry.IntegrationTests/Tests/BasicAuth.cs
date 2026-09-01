@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka;
 
@@ -26,7 +27,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void BasicAuth(Config config)
+        public static async Task BasicAuth(Config config)
         {
             var testSchema1 = 
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
@@ -52,8 +53,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ToDelegate()(new SerializationContext(MessageComponentType.Value, topicName), null);
-                var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
-                var schema = sr.GetLatestSchemaAsync(subject).Result;
+                var id = await sr.RegisterSchemaAsync(subject, testSchema1);
+                var schema = await sr.GetLatestSchemaAsync(subject);
                 Assert.Equal(schema.Id, id);
             }
 
@@ -67,8 +68,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
-                var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
-                var schema = sr.GetLatestSchemaAsync(subject).Result;
+                var id = await sr.RegisterSchemaAsync(subject, testSchema1);
+                var schema = await sr.GetLatestSchemaAsync(subject);
                 Assert.Equal(schema.Id, id);
             }
 
@@ -84,8 +85,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
-                var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
-                var schema = sr.GetLatestSchemaAsync(subject).Result;
+                var id = await sr.RegisterSchemaAsync(subject, testSchema1);
+                var schema = await sr.GetLatestSchemaAsync(subject);
                 Assert.Equal(schema.Id, id);
             }
 
@@ -98,8 +99,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
-                var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
-                var schema = sr.GetLatestSchemaAsync(subject).Result;
+                var id = await sr.RegisterSchemaAsync(subject, testSchema1);
+                var schema = await sr.GetLatestSchemaAsync(subject);
                 Assert.Equal(schema.Id, id);
             }
 
@@ -139,19 +140,12 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             // SR <= 5.3.4 returns Unauthorized with empty Content (HttpRequestException)
             // 5.3.4 < SR <= 5.3.8 returns Unauthorized with message but without error_code (SchemaRegistryException)
             // SR >= 5.40 returns Unauthorized with message and error_code (SchemaRegistryException)
-            var schemaRegistryException = Assert.Throws<SchemaRegistryException>(() => 
-            { 
+            var schemaRegistryException = await Assert.ThrowsAsync<SchemaRegistryException>(async () =>
+            {
                 var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.ServerWithAuth });
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
-                try
-                {
-                    var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
-                }
-                catch (Exception e)
-                {
-                    throw e.InnerException;
-                }
+                await sr.RegisterSchemaAsync(subject, testSchema1);
             });
             Assert.Equal(401, schemaRegistryException.ErrorCode);
             Assert.Equal("Unauthorized; error code: 401", schemaRegistryException.Message);

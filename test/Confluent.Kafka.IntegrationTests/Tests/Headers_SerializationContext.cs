@@ -79,9 +79,9 @@ namespace Confluent.Kafka.IntegrationTests
                 .SetValueDeserializer(new TestDeserializer())
                 .Build())
             {
-                producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "aaa" });
+                producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = "aaa" }, TestContext.Current.CancellationToken);
                 consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 0));
-                var cr = consumer.Consume();
+                var cr = consumer.Consume(TestContext.Current.CancellationToken);
                 Assert.NotNull(cr.Message);
                 Assert.Single(cr.Message.Headers);
                 cr.Message.Headers.TryGetLastBytes("test_header", out byte[] testHeader);
@@ -100,9 +100,9 @@ namespace Confluent.Kafka.IntegrationTests
                 .SetValueDeserializer(new TestDeserializer())
                 .Build())
             {
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Value = "aaa", Headers = new Headers { new Header("original", new byte[] { 32 }) } });
+                producer.ProduceAsync(topic.Name, new Message<string, string> { Value = "aaa", Headers = new Headers { new Header("original", new byte[] { 32 }) } }, TestContext.Current.CancellationToken);
                 consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 0));
-                var cr = consumer.Consume();
+                var cr = consumer.Consume(TestContext.Current.CancellationToken);
                 Assert.NotNull(cr.Message);
                 Assert.Equal(3, cr.Message.Headers.Count);
                 cr.Message.Headers.TryGetLastBytes("test_header", out byte[] testHeader);

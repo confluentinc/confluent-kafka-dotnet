@@ -16,6 +16,7 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Xunit;
@@ -30,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.IncrementalAlterConfigs.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_IncrementalAlterConfigs(string bootstrapServers)
+        public async Task AdminClient_IncrementalAlterConfigs(string bootstrapServers)
         {
             LogToFile("start AdminClient_IncrementalAlterConfigs");
 
@@ -38,8 +39,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 // 1. create new topics to play with.
                 string topicName = Guid.NewGuid().ToString(), topicName2 = Guid.NewGuid().ToString();
-                adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 }, new TopicSpecification { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
+                await adminClient.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 }, new TopicSpecification { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } });
                 Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throws unknown topic/partition error.
 
                 // 2. do an invalid alter configs call to change it.
@@ -57,21 +58,19 @@ namespace Confluent.Kafka.IntegrationTests
                 };
                 try
                 {
-                    adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
-                    Assert.True(false);
+                    await adminClient.IncrementalAlterConfigsAsync(toUpdate);
+                    Assert.Fail("expecting exception");
                 }
-                catch (Exception e)
+                catch (IncrementalAlterConfigsException ace)
                 {
-                    Assert.True(e.InnerException.GetType() == typeof(IncrementalAlterConfigsException));
-                    var ace = (IncrementalAlterConfigsException)e.InnerException;
                     Assert.Single(ace.Results);
                     Assert.True(ace.Results[0].Error.Reason.Contains("not allowed") ||
                         ace.Results[0].Error.Reason.Contains("Can't APPEND"));
                 }
 
-                // 3. test that in the failed alter configs call for the specified config resource, the 
+                // 3. test that in the failed alter configs call for the specified config resource, the
                 // config that was specified correctly isn't updated.
-                List<DescribeConfigsResult> describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
+                List<DescribeConfigsResult> describeConfigsResult = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource });
                 Assert.NotEqual("delete,compact", describeConfigsResult[0].Entries["cleanup.policy"].Value);
 
                 // 4. do a valid call, and check that the alteration did correctly happen.
@@ -85,9 +84,9 @@ namespace Confluent.Kafka.IntegrationTests
                         } 
                     } 
                 };
-                adminClient.IncrementalAlterConfigsAsync(toUpdate);
+                await adminClient.IncrementalAlterConfigsAsync(toUpdate);
                 Thread.Sleep(TimeSpan.FromMilliseconds(200));
-                describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
+                describeConfigsResult = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource });
                 Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
                 Assert.Equal("delete,compact", describeConfigsResult[0].Entries["cleanup.policy"].Value);
 
@@ -96,9 +95,9 @@ namespace Confluent.Kafka.IntegrationTests
                 { 
                     { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "20002" , IncrementalOperation = AlterConfigOpType.Set } } } 
                 };
-                adminClient.IncrementalAlterConfigsAsync(toUpdate, new IncrementalAlterConfigsOptions { ValidateOnly = true }).Wait();
+                await adminClient.IncrementalAlterConfigsAsync(toUpdate, new IncrementalAlterConfigsOptions { ValidateOnly = true });
                 Thread.Sleep(TimeSpan.FromMilliseconds(200));
-                describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
+                describeConfigsResult = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource });
                 Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 6. test updating broker resource. 
@@ -109,8 +108,8 @@ namespace Confluent.Kafka.IntegrationTests
                         new List<ConfigEntry> { new ConfigEntry { Name = "num.network.threads", Value = "6" , IncrementalOperation = AlterConfigOpType.Set } }
                     }
                 };
-                adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
-                
+                await adminClient.IncrementalAlterConfigsAsync(toUpdate);
+
                 // 7. test updating more than one resource.
                 var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
@@ -118,9 +117,9 @@ namespace Confluent.Kafka.IntegrationTests
                     { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "222" , IncrementalOperation = AlterConfigOpType.Set } } },
                     { configResource2, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value = "333" , IncrementalOperation = AlterConfigOpType.Set } } }
                 };
-                adminClient.IncrementalAlterConfigsAsync(toUpdate).Wait();
+                await adminClient.IncrementalAlterConfigsAsync(toUpdate);
                 Thread.Sleep(TimeSpan.FromMilliseconds(200));
-                describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource, configResource2 }).Result;
+                describeConfigsResult = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource, configResource2 });
                 Assert.Equal(2, describeConfigsResult.Count);
                 Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
                 Assert.Equal("333", describeConfigsResult[1].Entries["flush.ms"].Value);
@@ -141,9 +140,9 @@ namespace Confluent.Kafka.IntegrationTests
                             }
                         }
                     };
-                    adminClient.IncrementalAlterConfigsAsync(groupToUpdate).Wait();
+                    await adminClient.IncrementalAlterConfigsAsync(groupToUpdate);
                     Thread.Sleep(TimeSpan.FromMilliseconds(200));
-                    var describeGroupConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { groupConfigResource }).Result;
+                    var describeGroupConfigsResult = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { groupConfigResource });
                     Assert.Single(describeGroupConfigsResult);
                     Assert.Equal("50000", describeGroupConfigsResult[0].Entries["consumer.session.timeout.ms"].Value);
                     LogToFile($"Successfully updated consumer.group {groupName} config");

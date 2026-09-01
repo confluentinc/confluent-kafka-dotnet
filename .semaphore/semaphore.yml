@@ -89,10 +89,10 @@ blocks:
             - powershell -ExecutionPolicy ByPass -File dotnet-install.ps1 -Channel 10.0 -Quality GA -InstallDir C:\dotnet
             - $Env:Path += ";C:\dotnet"
             - dotnet restore
-            - dotnet test -f net10.0 -c ${CONFIGURATION} --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
-            - dotnet test -f net10.0 -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj
-            - dotnet test -f net10.0 -c ${CONFIGURATION} --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj
-            - dotnet test -f net10.0 -c ${CONFIGURATION} --no-build test/Confluent.Kafka.OAuthBearer.Aws.UnitTests/Confluent.Kafka.OAuthBearer.Aws.UnitTests.csproj
+            - dotnet test --project test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj -f net10.0 -c ${CONFIGURATION} --no-build
+            - dotnet test --project test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj -f net10.0 -c ${CONFIGURATION} --no-build
+            - dotnet test --project test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj -f net10.0 -c ${CONFIGURATION} --no-build
+            - dotnet test --project test/Confluent.Kafka.OAuthBearer.Aws.UnitTests/Confluent.Kafka.OAuthBearer.Aws.UnitTests.csproj -f net10.0 -c ${CONFIGURATION} --no-build
   - name: 'Windows Artifacts on untagged commits'
     run:
       when: "tag !~ '.*'"
@@ -118,6 +118,7 @@ blocks:
             - dotnet pack src/Confluent.SchemaRegistry.Encryption.Azure/Confluent.SchemaRegistry.Encryption.Azure.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Encryption.Gcp/Confluent.SchemaRegistry.Encryption.Gcp.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Encryption.HcVault/Confluent.SchemaRegistry.Encryption.HcVault.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.AliCloud/Confluent.SchemaRegistry.Encryption.AliCloud.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Rules/Confluent.SchemaRegistry.Rules.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
@@ -149,6 +150,7 @@ blocks:
             - dotnet pack src/Confluent.SchemaRegistry.Encryption.Azure/Confluent.SchemaRegistry.Encryption.Azure.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Encryption.Gcp/Confluent.SchemaRegistry.Encryption.Gcp.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Encryption.HcVault/Confluent.SchemaRegistry.Encryption.HcVault.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.SchemaRegistry.Encryption.AliCloud/Confluent.SchemaRegistry.Encryption.AliCloud.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Rules/Confluent.SchemaRegistry.Rules.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c ${Env:CONFIGURATION} --output artifacts
@@ -177,7 +179,7 @@ blocks:
             - cd test/docker && docker-compose up -d && sleep 30 && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - dotnet restore -p:TargetFramework=net10.0
-            - cd test/Confluent.Kafka.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net10.0 -l "console;verbosity=normal"' -f xml -o ../../classic-coverage.xml && cd ../..
+            - cd test/Confluent.Kafka.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net10.0 --output Normal' -f xml -o ../../classic-coverage.xml && cd ../..
             - artifact push workflow classic-coverage.xml || true
         - name: 'Build and test with "consumer" protocol'
           commands:
@@ -186,15 +188,15 @@ blocks:
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - export TEST_CONSUMER_GROUP_PROTOCOL=consumer
             - dotnet restore -p:TargetFramework=net10.0
-            - cd test/Confluent.Kafka.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net10.0 -l "console;verbosity=normal"' -f xml -o ../../consumer-coverage.xml && cd ../..
+            - cd test/Confluent.Kafka.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net10.0 --output Normal' -f xml -o ../../consumer-coverage.xml && cd ../..
             - artifact push workflow consumer-coverage.xml || true
         - name: 'Schema registry and serdes integration tests'
           commands:
             - cd test/docker && docker-compose up -d && cd ../..
             - export SEMAPHORE_SKIP_FLAKY_TESTS='true'
             - dotnet restore -p:TargetFramework=net10.0
-            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net10.0 -l "console;verbosity=normal"' -f xml -o ../../sr-target/serdes-coverage.xml && cd ../..
-            - cd test/Confluent.SchemaRegistry.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net10.0 -l "console;verbosity=normal"' -f xml -o ../../sr-target/coverage.xml && cd ../..
+            - cd test/Confluent.SchemaRegistry.Serdes.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net10.0 --output Normal' -f xml -o ../../sr-target/serdes-coverage.xml && cd ../..
+            - cd test/Confluent.SchemaRegistry.IntegrationTests && $DOTNET_COVERAGE_TOOL collect 'dotnet test -f net10.0 --output Normal' -f xml -o ../../sr-target/coverage.xml && cd ../..
             - artifact push workflow sr-target || true
 
 after_pipeline:

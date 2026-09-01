@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -101,7 +102,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
 
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void JsonWithReferences(Config config)
+        public static async Task JsonWithReferences(Config config)
         {
             var srInitial = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
@@ -111,14 +112,14 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var subject2 = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName + "2", null);
 
             // Test there are no errors (exceptions) registering a schema that references another.
-            var id1 = srInitial.RegisterSchemaAsync(subject1, new Schema(S1, SchemaType.Json)).Result;
-            var s1 = srInitial.GetLatestSchemaAsync(subject1).Result;
+            var id1 = await srInitial.RegisterSchemaAsync(subject1, new Schema(S1, SchemaType.Json));
+            var s1 = await srInitial.GetLatestSchemaAsync(subject1);
             var refs = new List<SchemaReference> { new SchemaReference("https://example.com/geographical-location.schema.json", subject1, s1.Version) };
-            var id2 = srInitial.RegisterSchemaAsync(subject2, new Schema(S2, refs, SchemaType.Json)).Result;
+            var id2 = await srInitial.RegisterSchemaAsync(subject2, new Schema(S2, refs, SchemaType.Json));
 
             // In fact, it seems references are not checked server side.
 
-            var latestSchema = sr.GetLatestSchemaAsync(subject2).Result;
+            var latestSchema = await sr.GetLatestSchemaAsync(subject2);
         }
     }
 }

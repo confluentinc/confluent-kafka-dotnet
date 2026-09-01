@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
 using Xunit;
 
@@ -31,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.DescribeConfigs.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_DescribeConfigs(string bootstrapServers)
+        public async Task AdminClient_DescribeConfigs(string bootstrapServers)
         {
             LogToFile("start AdminClient_DescribeConfigs");
 
@@ -40,33 +41,33 @@ namespace Confluent.Kafka.IntegrationTests
                 // broker configs
                 // ---
                 var configResource = new ConfigResource { Name = "0", Type = ResourceType.Broker };
-                var results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
+                var results = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource });
 
                 Assert.Single(results);
                 Assert.True(results[0].Entries.Count > 50);
                 // note: unlike other parts of the api, Entries is kept as a dictionary since it's convenient for
                 // the most typical use case.
-                Assert.Single(results[0].Entries.Where(e => e.Key == "advertised.listeners"));
-                Assert.Single(results[0].Entries.Where(e => e.Key == "num.network.threads"));
+                Assert.Single(results[0].Entries, e => e.Key == "advertised.listeners");
+                Assert.Single(results[0].Entries, e => e.Key == "num.network.threads");
 
                 var a = results.Select(aa => aa.Entries.Where(b => b.Value.Synonyms.Count > 0).ToList()).ToList();
 
                 // topic configs, more than one.
                 // ---
-                results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { 
+                results = await adminClient.DescribeConfigsAsync(new List<ConfigResource> {
                     new ConfigResource { Name = singlePartitionTopic, Type = ResourceType.Topic },
                     new ConfigResource { Name = partitionedTopic, Type = ResourceType.Topic }
-                }).Result;
+                });
 
                 Assert.Equal(2, results.Count);
                 Assert.True(results[0].Entries.Count > 20);
                 Assert.True(results[1].Entries.Count > 20);
-                Assert.Single(results[0].Entries.Where(e => e.Key == "compression.type"));
-                Assert.Single(results[0].Entries.Where(e => e.Key == "flush.ms"));
+                Assert.Single(results[0].Entries, e => e.Key == "compression.type");
+                Assert.Single(results[0].Entries, e => e.Key == "flush.ms");
 
                 // options are specified.
                 // ---
-                results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }, new DescribeConfigsOptions { RequestTimeout = TimeSpan.FromSeconds(10) }).Result;
+                results = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }, new DescribeConfigsOptions { RequestTimeout = TimeSpan.FromSeconds(10) });
                 Assert.Single(results);
                 Assert.True(results[0].Entries.Count > 20);
 
@@ -74,7 +75,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // --- 
                 try
                 {
-                    results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { new ConfigResource() }).Result;
+                    results = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { new ConfigResource() });
                     Assert.True(false);
                 }
                 catch (ArgumentException)
@@ -86,18 +87,16 @@ namespace Confluent.Kafka.IntegrationTests
                 // ---
                 try
                 {
-                    results = adminClient.DescribeConfigsAsync(
-                        new List<ConfigResource> 
+                    results = await adminClient.DescribeConfigsAsync(
+                        new List<ConfigResource>
                         {
                             new ConfigResource { Name="invalid.name.for.resource", Type = ResourceType.Broker }
                         }
-                    ).Result;
+                    );
                     Assert.True(false);
                 }
-                catch (AggregateException ex)
+                catch (KafkaException ace)
                 {
-                    Assert.True(ex.InnerException.GetType() == typeof(KafkaException));
-                    var ace = (KafkaException)ex.InnerException;
                     Assert.Contains("Expected an int32", ace.Message);
                 }
 

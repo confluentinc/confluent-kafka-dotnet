@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.Kafka.Examples.AvroSpecific;
@@ -32,7 +33,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     consume error event.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void ConsumeIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
+        public static async Task ConsumeIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
         {
             string topic = Guid.NewGuid().ToString();
 
@@ -68,9 +69,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     favorite_color = "orange"
                 };
 
-                producer
-                    .ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user })
-                    .Wait();
+                await producer
+                    .ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user }, TestContext.Current.CancellationToken);
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
