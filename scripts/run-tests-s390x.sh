@@ -144,22 +144,28 @@ sed 's/^\[ evp_properties \]/[ evp_properties ]\nrh-allow-sha1-signatures = yes/
     /etc/pki/tls/openssl.cnf > /tmp/openssl-allow-sha1.cnf
 export OPENSSL_CONF=/tmp/openssl-allow-sha1.cnf
 
-# UseAppHost:      Microsoft publishes no Microsoft.NETCore.App.Host.linux-s390x.
-# TargetFramework: single TFM, as the OSX x64 block does. Must match between
-#                  restore and test or the global properties disagree.
-PROPS="-p:TargetFramework=net10.0 -p:UseAppHost=false"
-
 echo "--- dotnet --info ---"
 dotnet --info | head -20
 
-dotnet restore $PROPS
+dotnet restore
 
+# The test projects multi-target net8.0;net10.0 (test/Directory.Build.props); select
+# net10.0 with -f, as the main CI does. Don't override it with -p:TargetFramework:
+# a global single-TFM property confuses xunit.v3's Microsoft.Testing.Platform test
+# discovery and it reports "Zero tests ran". UseAppHost is left at its default (true):
+# xunit.v3 test projects must build an app host, and Red Hat's s390x SDK ships the
+# rhel.9-s390x app host pack, so it builds natively here.
 for p in Confluent.Kafka.UnitTests \
          Confluent.SchemaRegistry.UnitTests \
          Confluent.SchemaRegistry.Serdes.UnitTests \
          Confluent.Kafka.OAuthBearer.Aws.UnitTests; do
-    echo "--- dotnet test $p ---"
-    dotnet test -f net10.0 $PROPS -l "console;verbosity=normal" "test/$p/$p.csproj"
+    echo "--- build + test $p ---"
+    # xunit.v3 runs on Microsoft.Testing.Platform, invoked through --project rather
+    # than a positional argument. Build explicitly first and run with --no-build:
+    # letting dotnet test build implicitly makes the platform report "Zero tests ran",
+    # so the main CI runs --no-build too.
+    dotnet build "test/$p/$p.csproj" -f net10.0
+    dotnet test --project "test/$p/$p.csproj" -f net10.0 --no-build
 done
 INNER
 chmod +x run-unit-tests.sh
