@@ -75,10 +75,14 @@ platform. A few environment constraints are specific to s390x:
 - **No GSSAPI/Kerberos.** The s390x `librdkafka` build is configured with `--disable-gssapi`. Other SASL
   mechanisms are unaffected.
 
-Building this repository from source on s390x additionally requires `-p:UseAppHost=false` (Microsoft
-publishes no `Microsoft.NETCore.App.Host.linux-s390x`), and, when building on RHEL/UBI, allowing SHA-1
-signatures so that strong naming can run — see `scripts/run-tests-s390x.sh`. Neither affects consumers of
-the published packages.
+Building this repository from source on s390x has two wrinkles, neither of which affects consumers of the
+published packages (see `scripts/run-tests-s390x.sh`):
+
+- Build the libraries and test projects individually rather than restoring the whole solution. The
+  executable helper projects reference the portable `Microsoft.NETCore.App.Host.linux-s390x` app host,
+  which Microsoft does not publish, so a solution-wide restore fails on it. Red Hat's SDK ships a
+  `rhel.9-s390x` app host, so the libraries and test projects themselves build and run natively.
+- When building on RHEL/UBI, allow SHA-1 signatures so that strong naming can run.
 
 ### Branch builds
 
