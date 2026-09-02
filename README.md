@@ -61,6 +61,29 @@ dotnet add package -v 2.15.0 Confluent.Kafka
 
 Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provides a number of different builds of `librdkafka` that are compatible with [common platforms](https://github.com/edenhill/librdkafka/wiki/librdkafka.redist-NuGet-package-runtime-libraries). If you are on one of these platforms this will all work seamlessly (and you don't need to explicitly reference `librdkafka.redist`). If you are on a different platform, you may need to [build librdkafka](https://github.com/edenhill/librdkafka#building) manually (or acquire it via other means) and load it using the [Library.Load](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.Library.html#Confluent_Kafka_Library_Load_System_String_) method.
 
+### s390x (IBM Z)
+
+`linux-s390x` is supported: the managed assemblies are architecture independent, and `librdkafka.redist`
+ships an s390x native library. The APIs, configuration and wire behaviour are identical to any other
+platform. A few environment constraints are specific to s390x:
+
+- **Use a Red Hat distributed .NET runtime.** Microsoft does not publish a .NET runtime for s390x. Red Hat
+  does, for .NET 8/9/10, via RHEL/UBI RPMs and the `registry.access.redhat.com/ubi9/dotnet-*` container images.
+- **glibc only.** There is no Alpine/musl build of `librdkafka` for s390x.
+- **No NativeAOT, single file apps, or ReadyToRun (R2R)**, per Red Hat's documented .NET limitations on s390x.
+  None of these affect normal `Confluent.Kafka` usage.
+- **No GSSAPI/Kerberos.** The s390x `librdkafka` build is configured with `--disable-gssapi`. Other SASL
+  mechanisms are unaffected.
+
+Building this repository from source on s390x has two wrinkles, neither of which affects consumers of the
+published packages (see `scripts/run-tests-s390x.sh`):
+
+- Build the libraries and test projects individually rather than restoring the whole solution. The
+  executable helper projects reference the portable `Microsoft.NETCore.App.Host.linux-s390x` app host,
+  which Microsoft does not publish, so a solution-wide restore fails on it. Red Hat's SDK ships a
+  `rhel.9-s390x` app host, so the libraries and test projects themselves build and run natively.
+- When building on RHEL/UBI, allow SHA-1 signatures so that strong naming can run.
+
 ### Branch builds
 
 Nuget packages corresponding to commits to branches are produced as CI artifacts by [Semaphore](.semaphore/semaphore.yml), with a version suffix of the
