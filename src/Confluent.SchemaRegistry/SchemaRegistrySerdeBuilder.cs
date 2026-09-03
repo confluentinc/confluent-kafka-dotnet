@@ -15,7 +15,6 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Net;
 
 
 namespace Confluent.SchemaRegistry
@@ -24,23 +23,28 @@ namespace Confluent.SchemaRegistry
     ///     Common configuration for the builders of Schema Registry serializers and
     ///     deserializers - how the Schema Registry client itself is obtained.
     ///
-    ///     There are two ways to supply the client:
+    ///     There are three ways to supply the client, exactly one of which must be
+    ///     used:
     ///
     ///     - <see cref="SetSchemaRegistryClient" />, to use a client the application
     ///       constructed. Necessary when the application needs the client for
     ///       something else too, such as registering encryption keys or creating
     ///       associations before producing, and allows a single client to be shared
-    ///       across serializers and clients. The application retains ownership: the
-    ///       client is not disposed along with the serde.
+    ///       across serdes and clients. The application retains ownership: the client
+    ///       is not disposed along with the serde.
     ///
-    ///     - <see cref="SetSchemaRegistryConfig" />, optionally combined with
-    ///       <see cref="SetAuthenticationHeaderValueProvider" /> and
-    ///       <see cref="SetWebProxy" />, to have the builder construct a
-    ///       <see cref="CachedSchemaRegistryClient" />. The resulting client is owned
-    ///       by the serde, which is in turn owned by the producer or consumer that
-    ///       built it, and is disposed along with it.
+    ///     - <see cref="SetSchemaRegistryConfig" />, to have the builder construct a
+    ///       <see cref="CachedSchemaRegistryClient" /> from configuration. The
+    ///       shortest form, and enough for most applications.
     ///
-    ///     Exactly one of the two must be used.
+    ///     - <see cref="SetSchemaRegistryClientBuilder" />, to have the builder
+    ///       construct a client that needs more than configuration alone - an
+    ///       authentication header value provider or a proxy, neither of which can be
+    ///       expressed in a string-to-string <see cref="SchemaRegistryConfig" />.
+    ///
+    ///     In the latter two cases the resulting client is owned by the serde, which
+    ///     is in turn owned by the producer or consumer that built it, and is
+    ///     disposed along with it.
     /// </summary>
     /// <typeparam name="TBuilder">
     ///     The concrete builder type, returned by the setters so that calls can be
@@ -60,15 +64,9 @@ namespace Confluent.SchemaRegistry
         protected SchemaRegistryConfig schemaRegistryConfig;
 
         /// <summary>
-        ///     The authentication header value provider to construct the Schema
-        ///     Registry client with, if any.
+        ///     The builder to construct a Schema Registry client with, if any.
         /// </summary>
-        protected IAuthenticationHeaderValueProvider authenticationHeaderValueProvider;
-
-        /// <summary>
-        ///     The proxy to construct the Schema Registry client with, if any.
-        /// </summary>
-        protected IWebProxy proxy;
+        protected ISchemaRegistryClientBuilder schemaRegistryClientBuilder;
 
         /// <summary>
         ///     The rule registry to construct the serde with, if any.
@@ -90,7 +88,9 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Construct the Schema Registry client from the given configuration.
         ///
-        ///     The client is owned by the serde, and is disposed along with it.
+        ///     The client is owned by the serde, and is disposed along with it. Use
+        ///     <see cref="SetSchemaRegistryClientBuilder" /> instead when the client
+        ///     also needs an authentication header value provider or a proxy.
         /// </summary>
         public TBuilder SetSchemaRegistryConfig(SchemaRegistryConfig schemaRegistryConfig)
         {
@@ -99,35 +99,17 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Construct the Schema Registry client with the given authentication
-        ///     header value provider.
+        ///     Construct the Schema Registry client with the given builder.
         ///
-        ///     Use this for an authentication scheme that cannot be expressed in
-        ///     configuration alone, or for credentials that change over the lifetime
-        ///     of the client - configuration selects among the built-in providers,
-        ///     but only a provider instance can be supplied directly.
-        ///
-        ///     Only valid alongside <see cref="SetSchemaRegistryConfig" />: a client
-        ///     supplied via <see cref="SetSchemaRegistryClient" /> already has its own
-        ///     provider.
+        ///     Use this when the client needs more than configuration alone, such as
+        ///     an authentication header value provider or a proxy - refer to
+        ///     <see cref="CachedSchemaRegistryClientBuilder" />. The client is owned
+        ///     by the serde, and is disposed along with it.
         /// </summary>
-        public TBuilder SetAuthenticationHeaderValueProvider(
-            IAuthenticationHeaderValueProvider authenticationHeaderValueProvider)
+        public TBuilder SetSchemaRegistryClientBuilder(
+            ISchemaRegistryClientBuilder schemaRegistryClientBuilder)
         {
-            this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
-            return (TBuilder)this;
-        }
-
-        /// <summary>
-        ///     Construct the Schema Registry client with the given proxy.
-        ///
-        ///     Only valid alongside <see cref="SetSchemaRegistryConfig" />: a client
-        ///     supplied via <see cref="SetSchemaRegistryClient" /> is already
-        ///     constructed.
-        /// </summary>
-        public TBuilder SetWebProxy(IWebProxy proxy)
-        {
-            this.proxy = proxy;
+            this.schemaRegistryClientBuilder = schemaRegistryClientBuilder;
             return (TBuilder)this;
         }
 
@@ -154,8 +136,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Resolve the Schema Registry client to construct the serde with,
-        ///     constructing one from configuration if the application did not supply
-        ///     one.
+        ///     constructing one if the application did not supply one.
         /// </summary>
         /// <param name="owned">
         ///     Whether the returned client was constructed here, and must therefore
@@ -163,6 +144,12 @@ namespace Confluent.SchemaRegistry
         /// </param>
         protected ISchemaRegistryClient ResolveSchemaRegistryClient(out bool owned)
         {
+            if (schemaRegistryConfig != null && schemaRegistryClientBuilder != null)
+            {
+                throw new ArgumentException(
+                    "Cannot specify both a schema registry configuration and a schema registry client builder; use one or the other.");
+            }
+
             if (schemaRegistryClient != null)
             {
                 if (schemaRegistryConfig != null)
@@ -171,34 +158,28 @@ namespace Confluent.SchemaRegistry
                         "Cannot specify both a schema registry client and a schema registry configuration; use one or the other.");
                 }
 
-                if (authenticationHeaderValueProvider != null)
+                if (schemaRegistryClientBuilder != null)
                 {
                     throw new ArgumentException(
-                        "Cannot specify an authentication header value provider alongside a schema registry client; the client already has one.");
-                }
-
-                if (proxy != null)
-                {
-                    throw new ArgumentException(
-                        "Cannot specify a proxy alongside a schema registry client; the client is already constructed.");
+                        "Cannot specify both a schema registry client and a schema registry client builder; use one or the other.");
                 }
 
                 owned = false;
                 return schemaRegistryClient;
             }
 
+            if (schemaRegistryClientBuilder != null)
+            {
+                owned = true;
+                return schemaRegistryClientBuilder.Build();
+            }
+
             if (schemaRegistryConfig == null)
             {
-                if (authenticationHeaderValueProvider != null || proxy != null)
-                {
-                    throw new ArgumentException(
-                        "An authentication header value provider or proxy was specified, but no schema registry configuration to construct a client from.");
-                }
-
                 if (RequiresSchemaRegistryClient)
                 {
                     throw new ArgumentException(
-                        "A schema registry client or a schema registry configuration must be specified.");
+                        "A schema registry client, configuration or client builder must be specified.");
                 }
 
                 owned = false;
@@ -206,8 +187,7 @@ namespace Confluent.SchemaRegistry
             }
 
             owned = true;
-            return new CachedSchemaRegistryClient(
-                schemaRegistryConfig, authenticationHeaderValueProvider, proxy);
+            return new CachedSchemaRegistryClient(schemaRegistryConfig);
         }
     }
 }
