@@ -68,7 +68,9 @@ namespace Confluent.Kafka.Examples.Protobuf
             {
                 using (var consumer =
                     new ConsumerBuilder<string, User>(consumerConfig)
-                        .SetValueDeserializer(new ProtobufDeserializer<User>().AsSyncOverAsync())
+                        // Protobuf messages deserialize into the generated type, so
+                        // no schema registry client is needed here.
+                        .SetValueDeserializerBuilder(new ProtobufDeserializerBuilder<User>())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -97,10 +99,10 @@ namespace Confluent.Kafka.Examples.Protobuf
                 }
             });
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetValueSerializer(new ProtobufSerializer<User>(schemaRegistry))
+                    .SetValueSerializerBuilder(new ProtobufSerializerBuilder<User>()
+                        .SetSchemaRegistryConfig(schemaRegistryConfig))
                     .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");

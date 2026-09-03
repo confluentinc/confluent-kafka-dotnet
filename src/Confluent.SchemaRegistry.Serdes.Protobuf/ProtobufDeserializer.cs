@@ -70,7 +70,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             this.parser = new MessageParser<T>(() => new T());
 
-            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config, out this.associatedNameStrategy);
 
             if (config == null) { return; }
 
@@ -177,5 +177,14 @@ namespace Confluent.SchemaRegistry.Serdes
                 .ConfigureAwait(continueOnCapturedContext: false);
             return ProtobufUtils.Parse(schema.SchemaString, references);
         }
+
+        /// <summary>
+        ///     Take ownership of the schema registry client, so that it is disposed
+        ///     along with this deserializer. Used by
+        ///     <see cref="ProtobufDeserializerBuilder{T}" /> when it constructed the
+        ///     client itself.
+        /// </summary>
+        internal void OwnSchemaRegistryClient()
+            => ownsSchemaRegistryClient = true;
     }
 }

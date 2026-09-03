@@ -16,7 +16,6 @@
 
 using Avro;
 using Avro.Generic;
-using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using Schema = Confluent.SchemaRegistry.Schema;
@@ -121,10 +120,13 @@ namespace Confluent.Kafka.Examples.AvroGenericMigration
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
             {
-                using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
+                // This consumer needs the schema registry only for its
+                // deserializer, so the consumer builds and owns the client.
                 using (var consumer =
                     new ConsumerBuilder<string, GenericRecord>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName })
-                        .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry, avroDeserializerConfig).AsSyncOverAsync())
+                        .SetValueDeserializerBuilder(new AvroDeserializerBuilder<GenericRecord>()
+                            .SetSchemaRegistryConfig(new SchemaRegistryConfig { Url = schemaRegistryUrl })
+                            .SetDeserializerConfig(avroDeserializerConfig))
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -157,7 +159,9 @@ namespace Confluent.Kafka.Examples.AvroGenericMigration
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var producer =
                 new ProducerBuilder<string, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry, avroSerializerConfig))
+                    .SetValueSerializerBuilder(new AvroSerializerBuilder<GenericRecord>()
+                        .SetSchemaRegistryClient(schemaRegistry)
+                        .SetSerializerConfig(avroSerializerConfig))
                     .Build())
             {
                 var c = schemaRegistry.UpdateCompatibilityAsync(Compatibility.None, null).Result;

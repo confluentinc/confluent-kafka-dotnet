@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Encryption;
 using Confluent.SchemaRegistry.Encryption.Aws;
@@ -108,10 +107,12 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
             {
-                using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+                // This consumer needs the schema registry only for its
+                // deserializer, so the consumer builds and owns the client.
                 using (var consumer =
                     new ConsumerBuilder<string, User>(consumerConfig)
-                        .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializerBuilder(new AvroDeserializerBuilder<User>()
+                            .SetSchemaRegistryConfig(schemaRegistryConfig))
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -144,7 +145,9 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry, avroSerializerConfig))
+                    .SetValueSerializerBuilder(new AvroSerializerBuilder<User>()
+                        .SetSchemaRegistryClient(schemaRegistry)
+                        .SetSerializerConfig(avroSerializerConfig))
                     .Build())
             {
                 schemaRegistry.RegisterSchemaAsync(subjectName, schema, true);

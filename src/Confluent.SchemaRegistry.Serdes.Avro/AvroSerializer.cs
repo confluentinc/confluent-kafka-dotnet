@@ -35,13 +35,20 @@ namespace Confluent.SchemaRegistry.Serdes
     ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AvroSerializer<T> : IAsyncSerializer<T>
+    public class AvroSerializer<T> : IAsyncSerializer<T>, IClusterIdAware, ISerdeOwnedResources
     {
         private ISchemaRegistryClient schemaRegistryClient;
         private AvroSerializerConfig config;
         private RuleRegistry ruleRegistry;
 
         private IAsyncSerializer<T> serializerImpl;
+
+        // The underlying implementation is not constructed until the first
+        // serialize call, which is after the cluster id is propagated, so the
+        // value is held here and applied when the implementation is created.
+        private string clusterId;
+        private bool clusterIdSet;
+        private bool ownsSchemaRegistryClient;
 
         /// <summary>
         ///     The default initial size (in bytes) of buffers used for message 
@@ -153,6 +160,11 @@ namespace Confluent.SchemaRegistry.Serdes
                         ? (IAsyncSerializer<T>)new GenericSerializerImpl(
                             schemaRegistryClient, config, ruleRegistry)
                         : new SpecificSerializerImpl<T>(schemaRegistryClient, config, ruleRegistry);
+
+                    if (clusterIdSet)
+                    {
+                        serializerImpl.SetClusterId(clusterId);
+                    }
                 }
 
                 return await serializerImpl.SerializeAsync(value, context)
@@ -164,5 +176,51 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+
+        /// <inheritdoc />
+        public bool NeedsClusterId
+            => serializerImpl != null
+                ? serializerImpl.NeedsClusterId()
+                : !clusterIdSet && AssociatedNameStrategy.NeedsClusterIdFor(
+                    config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated, config);
+
+
+        /// <inheritdoc />
+        public void SetClusterId(string clusterId)
+        {
+            if (!NeedsClusterId)
+            {
+                return;
+            }
+
+            if (serializerImpl != null)
+            {
+                serializerImpl.SetClusterId(clusterId);
+                return;
+            }
+
+            this.clusterId = clusterId;
+            this.clusterIdSet = true;
+        }
+
+
+        /// <inheritdoc />
+        public void DisposeOwnedResources()
+        {
+            if (ownsSchemaRegistryClient)
+            {
+                schemaRegistryClient?.Dispose();
+                ownsSchemaRegistryClient = false;
+            }
+        }
+
+
+        /// <summary>
+        ///     Take ownership of the schema registry client, so that it is disposed
+        ///     along with this serializer. Used by <see cref="AvroSerializerBuilder{T}" />
+        ///     when it constructed the client itself.
+        /// </summary>
+        internal void OwnSchemaRegistryClient()
+            => ownsSchemaRegistryClient = true;
     }
 }

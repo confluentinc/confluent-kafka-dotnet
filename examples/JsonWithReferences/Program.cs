@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using System;
@@ -167,7 +166,12 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
             {
                 using (var consumer =
                     new ConsumerBuilder<long, Product>(consumerConfig)
-                        .SetValueDeserializer(new JsonDeserializer<Product>(sr, latestSchema2Unreg, null, jsonSchemaGeneratorSettings).AsSyncOverAsync())
+                        // Reuses the schema registry client already created above
+                        // to register the referenced schemas.
+                        .SetValueDeserializerBuilder(new JsonDeserializerBuilder<Product>()
+                            .SetSchemaRegistryClient(sr)
+                            .SetSchema(latestSchema2Unreg)
+                            .SetJsonSchemaGeneratorSettings(jsonSchemaGeneratorSettings))
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -201,11 +205,13 @@ namespace Confluent.Kafka.Examples.JsonWithReferences
                 }
             });
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<long, Product>(producerConfig)
-                    .SetValueSerializer(new JsonSerializer<Product>(schemaRegistry, latestSchema2Unreg,
-                        jsonSerializerConfig, jsonSchemaGeneratorSettings))
+                    .SetValueSerializerBuilder(new JsonSerializerBuilder<Product>()
+                        .SetSchemaRegistryConfig(schemaRegistryConfig)
+                        .SetSchema(latestSchema2Unreg)
+                        .SetSerializerConfig(jsonSerializerConfig)
+                        .SetJsonSchemaGeneratorSettings(jsonSchemaGeneratorSettings))
                     .Build())
             {
                 Console.WriteLine($"PRODUCER: {producer.Name} producing on {topicName}. Enter product name, q to exit.");

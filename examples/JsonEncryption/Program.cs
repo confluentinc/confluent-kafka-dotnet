@@ -15,7 +15,6 @@
 // Refer to LICENSE for more information.
 
 using Confluent.Kafka;
-using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Encryption;
 using Confluent.SchemaRegistry.Encryption.Aws;
@@ -161,11 +160,13 @@ namespace Confluent.Kafka.Examples.JsonSerialization
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
             {
-                using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+                // This consumer needs the schema registry only for its
+                // deserializer, so the consumer builds and owns the client.
                 using (var consumer =
                     new ConsumerBuilder<string, User>(consumerConfig)
                         .SetKeyDeserializer(Deserializers.Utf8)
-                        .SetValueDeserializer(new JsonDeserializer<User>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializerBuilder(new JsonDeserializerBuilder<User>()
+                            .SetSchemaRegistryConfig(schemaRegistryConfig))
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -197,7 +198,9 @@ namespace Confluent.Kafka.Examples.JsonSerialization
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetValueSerializer(new JsonSerializer<User>(schemaRegistry, jsonSerializerConfig))
+                    .SetValueSerializerBuilder(new JsonSerializerBuilder<User>()
+                        .SetSchemaRegistryClient(schemaRegistry)
+                        .SetSerializerConfig(jsonSerializerConfig))
                     .Build())
             {
                 await schemaRegistry.RegisterSchemaAsync(subjectName, schema, true);

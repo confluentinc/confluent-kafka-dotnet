@@ -16,7 +16,6 @@
 
 using Avro.Generic;
 using Confluent.Kafka;
-using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using System;
@@ -36,10 +35,10 @@ namespace AvroBlogExample
     {
         async static Task ProduceGeneric(string bootstrapServers, string schemaRegistryUrl)
         {
-            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var producer =
                 new ProducerBuilder<Null, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
+                    .SetValueSerializerBuilder(new AvroSerializerBuilder<GenericRecord>()
+                        .SetSchemaRegistryConfig(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
                     .Build())
             {   
                 var logLevelSchema = (Avro.EnumSchema)Avro.Schema.Parse(
@@ -68,10 +67,10 @@ namespace AvroBlogExample
 
         async static Task ProduceSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
-            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var producer =
                 new ProducerBuilder<Null, MessageTypes.LogMessage>(new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetValueSerializer(new AvroSerializer<MessageTypes.LogMessage>(schemaRegistry))
+                    .SetValueSerializerBuilder(new AvroSerializerBuilder<MessageTypes.LogMessage>()
+                        .SetSchemaRegistryConfig(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
                     .Build())
             {
                 await producer.ProduceAsync("log-messages",
@@ -105,10 +104,10 @@ namespace AvroBlogExample
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var consumer =
                 new ConsumerBuilder<Null, MessageTypes.LogMessage>(consumerConfig)
-                    .SetValueDeserializer(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry).AsSyncOverAsync())
+                    .SetValueDeserializerBuilder(new AvroDeserializerBuilder<MessageTypes.LogMessage>()
+                        .SetSchemaRegistryConfig(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
                     .Build())
             {
                 consumer.Subscribe("log-messages");

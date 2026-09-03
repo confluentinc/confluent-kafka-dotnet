@@ -1,3 +1,38 @@
+# 2.16.0 (not released)
+
+## New features
+
+* Serializers and deserializers can now be supplied to a producer or consumer as
+  a *builder*, via `ProducerBuilder.SetKeySerializerBuilder` /
+  `SetValueSerializerBuilder` and `ConsumerBuilder.SetKeyDeserializerBuilder` /
+  `SetValueDeserializerBuilder`, accepting the new `ISerializerBuilder<T>`,
+  `IAsyncSerializerBuilder<T>`, `IDeserializerBuilder<T>` and
+  `IAsyncDeserializerBuilder<T>` interfaces. The client calls
+  `Build(config, isKey)` during its own construction, passing its configuration
+  and whether the serde is for the key or the value, and owns the result -
+  disposing it, and any Schema Registry client the builder created, when the
+  client itself is disposed. `ConsumerBuilder` accepts an async deserializer
+  builder directly, so `AsSyncOverAsync()` is no longer needed in that case.
+* Schema Registry serde builders for each format: `AvroSerializerBuilder<T>` /
+  `AvroDeserializerBuilder<T>`, `JsonSerializerBuilder<T>` /
+  `JsonDeserializerBuilder<T>`, and `ProtobufSerializerBuilder<T>` /
+  `ProtobufDeserializerBuilder<T>`. Each takes either a Schema Registry client
+  you own (`SetSchemaRegistryClient`) or the configuration to build one from
+  (`SetSchemaRegistryConfig`, optionally with
+  `SetAuthenticationHeaderValueProvider` and `SetWebProxy`).
+* `IClient.ClusterId(TimeSpan)` returns the id of the Kafka cluster a producer,
+  consumer or admin client is connected to.
+* The Kafka cluster id is now propagated to Schema Registry serializers and
+  deserializers automatically. The `Associated` subject name strategy resolves
+  subjects against the cluster the client is actually connected to, without
+  `subject.name.strategy.kafka.cluster.id` having to be configured by hand; a
+  configured value still takes precedence. The cluster id is resolved once per
+  client, and only when a serde actually needs it, so clients using other
+  subject name strategies are unaffected. Serdes signal this through the new
+  `IClusterIdAware` interface, and the `NeedsClusterId` / `SetClusterId`
+  extension methods work on any serializer or deserializer.
+
+
 # 2.15.1 (not released)
 
 ## Enhancements
@@ -5,6 +40,7 @@
 * Add support for saving Azure key version with DEK (#2641)
 * Pass context when clients make KEK calls to DEK Registry (#2642)
 * Add support for inline validation rules (#2651)
+* Schema Registry examples now use the serde builder API.
 
 ## Fixes
 
