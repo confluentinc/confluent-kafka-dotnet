@@ -51,8 +51,31 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Gets the id of the Kafka cluster this client
+        ///     is connected to.
+        ///
+        ///     The cluster id is retrieved from the broker
+        ///     metadata, so this call blocks until the
+        ///     metadata has been received, or until
+        ///     <paramref name="timeout" /> elapses.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time to block waiting
+        ///     for the cluster id.
+        /// </param>
+        /// <returns>
+        ///     The Kafka cluster id, or null if it could not
+        ///     be retrieved within <paramref name="timeout" />.
+        /// </returns>
+        /// <remarks>
+        ///     Requires broker version &gt;= 0.10.0.
+        /// </remarks>
+        string ClusterId(TimeSpan timeout);
+
+
+        /// <summary>
         ///     Adds one or more brokers to the Client's list
-        ///     of initial bootstrap brokers. 
+        ///     of initial bootstrap brokers.
         ///
         ///     Note: Additional brokers are discovered
         ///     automatically as soon as the Client connects

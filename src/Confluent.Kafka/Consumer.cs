@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Internal.OAuthBearer;
+using Confluent.Kafka.SyncOverAsync;
 
 
 namespace Confluent.Kafka
@@ -51,6 +52,17 @@ namespace Confluent.Kafka
 
         private IDeserializer<TKey> keyDeserializer;
         private IDeserializer<TValue> valueDeserializer;
+
+        /// <summary>
+        ///     The maximum period of time to wait for the Kafka cluster id, when a
+        ///     deserializer requires it. Matches the default max.block.ms.
+        /// </summary>
+        private const int ClusterIdTimeoutMs = 60000;
+
+        // Whether the key/value deserializer was constructed by this consumer from a
+        // builder, and is therefore disposed along with it.
+        private bool ownsKeyDeserializer;
+        private bool ownsValueDeserializer;
 
         private Dictionary<Type, object> defaultDeserializers = new Dictionary<Type, object>
         {
@@ -579,6 +591,11 @@ namespace Confluent.Kafka
 
 
         /// <inheritdoc/>
+        public string ClusterId(TimeSpan timeout)
+            => kafkaHandle.ClusterId(timeout.TotalMillisecondsAsInt());
+
+
+        /// <inheritdoc/>
         public Handle Handle
             => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
 
@@ -638,6 +655,11 @@ namespace Confluent.Kafka
 
             if (disposing)
             {
+                // Deserializers this consumer constructed from a builder are owned
+                // by it, so they are released here. Deserializers supplied by the
+                // application remain the application's responsibility.
+                DisposeOwnedDeserializers();
+
                 // calls to rd_kafka_destroy may result in callbacks
                 // as a side-effect. however the callbacks this class
                 // registers with librdkafka ensure that any registered
@@ -757,8 +779,20 @@ namespace Confluent.Kafka
                     $"Failed to redirect the poll queue to consumer_poll queue: {ErrorCodeExtensions.GetReason(pollSetConsumerError)}"));
             }
 
-            // setup key deserializer.
-            if (builder.KeyDeserializer == null)
+            // setup key deserializer. A deserializer constructed from a builder is
+            // owned by this consumer, and is disposed along with it.
+            if (builder.KeyDeserializerBuilder != null)
+            {
+                this.keyDeserializer = builder.KeyDeserializerBuilder.Build(builder.Config, true);
+                this.ownsKeyDeserializer = true;
+            }
+            else if (builder.AsyncKeyDeserializerBuilder != null)
+            {
+                this.keyDeserializer = builder.AsyncKeyDeserializerBuilder
+                    .Build(builder.Config, true).AsSyncOverAsync();
+                this.ownsKeyDeserializer = true;
+            }
+            else if (builder.KeyDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TKey), out object deserializer))
                 {
@@ -773,7 +807,18 @@ namespace Confluent.Kafka
             }
 
             // setup value deserializer.
-            if (builder.ValueDeserializer == null)
+            if (builder.ValueDeserializerBuilder != null)
+            {
+                this.valueDeserializer = builder.ValueDeserializerBuilder.Build(builder.Config, false);
+                this.ownsValueDeserializer = true;
+            }
+            else if (builder.AsyncValueDeserializerBuilder != null)
+            {
+                this.valueDeserializer = builder.AsyncValueDeserializerBuilder
+                    .Build(builder.Config, false).AsSyncOverAsync();
+                this.ownsValueDeserializer = true;
+            }
+            else if (builder.ValueDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
                 {
@@ -785,6 +830,57 @@ namespace Confluent.Kafka
             else
             {
                 this.valueDeserializer = builder.ValueDeserializer;
+            }
+
+            PropagateClusterId();
+        }
+
+
+        /// <summary>
+        ///     Supply the id of the Kafka cluster this consumer is connected to, to
+        ///     any deserializer that makes use of it.
+        ///
+        ///     The cluster id is resolved at most once, and only when a deserializer
+        ///     actually needs it, so that consumers whose deserializers do not use it
+        ///     incur no additional broker round trip.
+        /// </summary>
+        private void PropagateClusterId()
+        {
+            bool keyNeedsClusterId = keyDeserializer != null && keyDeserializer.NeedsClusterId();
+            bool valueNeedsClusterId = valueDeserializer != null && valueDeserializer.NeedsClusterId();
+
+            if (!keyNeedsClusterId && !valueNeedsClusterId)
+            {
+                return;
+            }
+
+            string clusterId = kafkaHandle.ClusterId(ClusterIdTimeoutMs);
+            if (clusterId == null)
+            {
+                return;
+            }
+
+            if (keyNeedsClusterId) { keyDeserializer.SetClusterId(clusterId); }
+            if (valueNeedsClusterId) { valueDeserializer.SetClusterId(clusterId); }
+        }
+
+
+        /// <summary>
+        ///     Dispose the deserializers this consumer constructed from a builder.
+        ///     Deserializers supplied by the application are left alone.
+        /// </summary>
+        private void DisposeOwnedDeserializers()
+        {
+            if (ownsKeyDeserializer)
+            {
+                ownsKeyDeserializer = false;
+                if (keyDeserializer != null) { keyDeserializer.Dispose(); }
+            }
+
+            if (ownsValueDeserializer)
+            {
+                ownsValueDeserializer = false;
+                if (valueDeserializer != null) { valueDeserializer.Dispose(); }
             }
         }
 

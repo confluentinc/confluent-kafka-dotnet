@@ -123,7 +123,8 @@ namespace Confluent.SchemaRegistry
         private const int DefaultCacheCapacity = 1000;
 
         private readonly ISchemaRegistryClient schemaRegistryClient;
-        private readonly string kafkaClusterId;
+        private string kafkaClusterId;
+        private bool kafkaClusterIdSet;
         private readonly SubjectNameStrategy fallbackSubjectNameStrategy;
         private readonly ConcurrentDictionary<CacheKey, string> subjectNameCache;
 
@@ -149,6 +150,10 @@ namespace Confluent.SchemaRegistry
                     if (kvp.Key == KafkaClusterIdConfig)
                     {
                         this.kafkaClusterId = kvp.Value;
+                        // Track this separately: the default is the namespace
+                        // wildcard rather than null, so the field alone cannot
+                        // distinguish "not configured" from "configured".
+                        this.kafkaClusterIdSet = true;
                     }
                     else if (kvp.Key == FallbackTypeConfig)
                     {
@@ -173,6 +178,73 @@ namespace Confluent.SchemaRegistry
                     }
                 }
             }
+        }
+
+        /// <summary>
+        ///     Whether a serde configured with the given subject name strategy and
+        ///     configuration would need the Kafka cluster id to be supplied.
+        ///
+        ///     Only the <see cref="SubjectNameStrategy.Associated" /> strategy uses
+        ///     the cluster id, and only when it was not configured explicitly via
+        ///     <see cref="KafkaClusterIdConfig" />.
+        ///
+        ///     This allows the answer to be determined from configuration alone,
+        ///     before a strategy instance has been constructed.
+        /// </summary>
+        /// <param name="strategy">The subject name strategy.</param>
+        /// <param name="config">The configuration, which may be null.</param>
+        public static bool NeedsClusterIdFor(
+            SubjectNameStrategy strategy,
+            IEnumerable<KeyValuePair<string, string>> config)
+        {
+            if (strategy != SubjectNameStrategy.Associated)
+            {
+                return false;
+            }
+
+            if (config == null)
+            {
+                return true;
+            }
+
+            foreach (var kvp in config)
+            {
+                if (kvp.Key == KafkaClusterIdConfig)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        ///     Whether the Kafka cluster id still needs to be supplied.
+        ///
+        ///     False once the cluster id has been configured via
+        ///     <see cref="KafkaClusterIdConfig" />, or supplied by an earlier call to
+        ///     <see cref="SetClusterId" />.
+        /// </summary>
+        public bool NeedsClusterId
+            => !kafkaClusterIdSet;
+
+        /// <summary>
+        ///     Supply the id of the Kafka cluster the client is connected to, to be
+        ///     used as the resource namespace when looking up associations.
+        ///
+        ///     A cluster id specified via <see cref="KafkaClusterIdConfig" /> always
+        ///     wins, and the value is only ever set once.
+        /// </summary>
+        /// <param name="clusterId">The Kafka cluster id.</param>
+        public void SetClusterId(string clusterId)
+        {
+            if (!NeedsClusterId)
+            {
+                return;
+            }
+
+            this.kafkaClusterId = clusterId;
+            this.kafkaClusterIdSet = true;
         }
 
         /// <summary>
@@ -355,7 +427,39 @@ namespace Confluent.SchemaRegistry
             this SubjectNameStrategy strategy,
             ISchemaRegistryClient schemaRegistryClient = null,
             IEnumerable<KeyValuePair<string, string>> config = null)
+            => strategy.ToAsyncDelegate(schemaRegistryClient, config, out _);
+
+        /// <summary>
+        ///     Provide an async functional implementation corresponding to the enum value,
+        ///     additionally exposing the <see cref="AssociatedNameStrategy" /> instance
+        ///     backing it, if any.
+        ///
+        ///     The instance is needed to supply the Kafka cluster id after construction -
+        ///     refer to <see cref="AssociatedNameStrategy.SetClusterId" />.
+        /// </summary>
+        /// <param name="strategy">The subject name strategy.</param>
+        /// <param name="schemaRegistryClient">
+        ///     Optional. Required when strategy is <see cref="SubjectNameStrategy.Associated"/>.
+        ///     The schema registry client to use for lookups.
+        /// </param>
+        /// <param name="config">
+        ///     Optional. Used when strategy is <see cref="SubjectNameStrategy.Associated"/>.
+        ///     The configuration.
+        /// </param>
+        /// <param name="associatedNameStrategy">
+        ///     The strategy instance backing the returned delegate when
+        ///     <paramref name="strategy" /> is <see cref="SubjectNameStrategy.Associated"/>,
+        ///     otherwise null.
+        /// </param>
+        /// <returns>An AsyncSubjectNameStrategyDelegate.</returns>
+        public static AsyncSubjectNameStrategyDelegate ToAsyncDelegate(
+            this SubjectNameStrategy strategy,
+            ISchemaRegistryClient schemaRegistryClient,
+            IEnumerable<KeyValuePair<string, string>> config,
+            out AssociatedNameStrategy associatedNameStrategy)
         {
+            associatedNameStrategy = null;
+
             switch (strategy)
             {
                 case SubjectNameStrategy.Topic:
@@ -367,6 +471,7 @@ namespace Confluent.SchemaRegistry
                     return (context, recordType) => Task.FromResult(recordType != null ? $"{context.Topic}-{recordType}" : null);
                 case SubjectNameStrategy.Associated:
                     var associatedStrategy = new AssociatedNameStrategy(schemaRegistryClient, config);
+                    associatedNameStrategy = associatedStrategy;
                     return (context, recordType) => associatedStrategy.GetSubjectNameAsync(context, recordType);
                 case SubjectNameStrategy.None:
                     return (context, recordType) => Task.FromResult<string>(null);

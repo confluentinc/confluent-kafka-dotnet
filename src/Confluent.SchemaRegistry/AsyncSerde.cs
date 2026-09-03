@@ -30,10 +30,25 @@ using Confluent.Kafka;
 
 namespace Confluent.SchemaRegistry
 {
-    public abstract class AsyncSerde<TParsedSchema>
+    public abstract class AsyncSerde<TParsedSchema> : IClusterIdAware, ISerdeOwnedResources
     {
         protected ISchemaRegistryClient schemaRegistryClient;
         protected RuleRegistry ruleRegistry;
+
+        /// <summary>
+        ///     The associated subject name strategy backing
+        ///     <see cref="subjectNameStrategy" />, when that strategy is
+        ///     <see cref="SubjectNameStrategy.Associated" />. Retained so that the
+        ///     Kafka cluster id can be supplied after construction.
+        /// </summary>
+        protected AssociatedNameStrategy associatedNameStrategy = null;
+
+        /// <summary>
+        ///     Whether <see cref="schemaRegistryClient" /> was constructed by a serde
+        ///     builder rather than supplied by the application, and is therefore
+        ///     disposed along with this instance.
+        /// </summary>
+        protected bool ownsSchemaRegistryClient = false;
 
         protected int useSchemaId = -1;
         protected bool useLatestVersion = false;
@@ -68,6 +83,24 @@ namespace Confluent.SchemaRegistry
 
             this.validationRulesExecution = config.ValidationRulesExecution;
             this.validationRulesFailFast = config.ValidationRulesFailFast;
+        }
+
+        /// <inheritdoc />
+        public bool NeedsClusterId
+            => associatedNameStrategy?.NeedsClusterId ?? false;
+
+        /// <inheritdoc />
+        public void SetClusterId(string clusterId)
+            => associatedNameStrategy?.SetClusterId(clusterId);
+
+        /// <inheritdoc />
+        public virtual void DisposeOwnedResources()
+        {
+            if (ownsSchemaRegistryClient)
+            {
+                schemaRegistryClient?.Dispose();
+                ownsSchemaRegistryClient = false;
+            }
         }
 
         /// <summary>
