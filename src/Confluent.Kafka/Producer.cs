@@ -72,6 +72,17 @@ namespace Confluent.Kafka
         private bool enableDeliveryReportPersistedStatus = true;
 
         private SafeKafkaHandle ownedKafkaHandle;
+
+        /// <summary>
+        ///     The maximum period of time to wait for the Kafka cluster id, when a
+        ///     serializer requires it. Matches the default max.block.ms.
+        /// </summary>
+        private const int ClusterIdTimeoutMs = 60000;
+
+        // Whether the key/value serializer was constructed by this producer from a
+        // builder, and is therefore disposed along with it.
+        private bool ownsKeySerializer;
+        private bool ownsValueSerializer;
         private Handle borrowedHandle;
 
         private SafeKafkaHandle KafkaHandle
@@ -434,6 +445,11 @@ namespace Confluent.Kafka
 
             if (disposing)
             {
+                // Serializers this producer constructed from a builder are owned by
+                // it, so they are released here. Serializers supplied by the
+                // application remain the application's responsibility.
+                DisposeOwnedSerializers();
+
                 // Unpin partitioner functions
                 foreach (var ph in this.partitionerHandles)
                 {
@@ -478,6 +494,11 @@ namespace Confluent.Kafka
 
 
         /// <inheritdoc/>
+        public string ClusterId(TimeSpan timeout)
+            => KafkaHandle.ClusterId(timeout.TotalMillisecondsAsInt());
+
+
+        /// <inheritdoc/>
         public int AddBrokers(string brokers)
             => KafkaHandle.AddBrokers(brokers);
 
@@ -504,8 +525,37 @@ namespace Confluent.Kafka
             ISerializer<TKey> keySerializer,
             ISerializer<TValue> valueSerializer,
             IAsyncSerializer<TKey> asyncKeySerializer,
-            IAsyncSerializer<TValue> asyncValueSerializer)
+            IAsyncSerializer<TValue> asyncValueSerializer,
+            ISerializerBuilder<TKey> keySerializerBuilder = null,
+            ISerializerBuilder<TValue> valueSerializerBuilder = null,
+            IAsyncSerializerBuilder<TKey> asyncKeySerializerBuilder = null,
+            IAsyncSerializerBuilder<TValue> asyncValueSerializerBuilder = null,
+            IEnumerable<KeyValuePair<string, string>> config = null)
         {
+            // A serializer constructed from a builder is owned by this producer,
+            // and is disposed along with it.
+            if (keySerializerBuilder != null)
+            {
+                keySerializer = keySerializerBuilder.Build(config, true);
+                this.ownsKeySerializer = true;
+            }
+            else if (asyncKeySerializerBuilder != null)
+            {
+                asyncKeySerializer = asyncKeySerializerBuilder.Build(config, true);
+                this.ownsKeySerializer = true;
+            }
+
+            if (valueSerializerBuilder != null)
+            {
+                valueSerializer = valueSerializerBuilder.Build(config, false);
+                this.ownsValueSerializer = true;
+            }
+            else if (asyncValueSerializerBuilder != null)
+            {
+                asyncValueSerializer = asyncValueSerializerBuilder.Build(config, false);
+                this.ownsValueSerializer = true;
+            }
+
             // setup key serializer.
             if (keySerializer == null && asyncKeySerializer == null)
             {
@@ -550,6 +600,69 @@ namespace Confluent.Kafka
             else
             {
                 throw new InvalidOperationException("FATAL: Both async and sync value serializers were set.");
+            }
+        }
+
+        /// <summary>
+        ///     Supply the id of the Kafka cluster this producer is connected to, to
+        ///     any serializer that makes use of it.
+        ///
+        ///     The cluster id is resolved at most once, and only when a serializer
+        ///     actually needs it, so that producers whose serializers do not use it
+        ///     incur no additional broker round trip.
+        /// </summary>
+        private void PropagateClusterId()
+        {
+            bool keyNeedsClusterId = keySerializer != null
+                ? keySerializer.NeedsClusterId()
+                : asyncKeySerializer != null && asyncKeySerializer.NeedsClusterId();
+
+            bool valueNeedsClusterId = valueSerializer != null
+                ? valueSerializer.NeedsClusterId()
+                : asyncValueSerializer != null && asyncValueSerializer.NeedsClusterId();
+
+            if (!keyNeedsClusterId && !valueNeedsClusterId)
+            {
+                return;
+            }
+
+            string clusterId = KafkaHandle.ClusterId(ClusterIdTimeoutMs);
+            if (clusterId == null)
+            {
+                return;
+            }
+
+            if (keyNeedsClusterId)
+            {
+                if (keySerializer != null) { keySerializer.SetClusterId(clusterId); }
+                else { asyncKeySerializer.SetClusterId(clusterId); }
+            }
+
+            if (valueNeedsClusterId)
+            {
+                if (valueSerializer != null) { valueSerializer.SetClusterId(clusterId); }
+                else { asyncValueSerializer.SetClusterId(clusterId); }
+            }
+        }
+
+        /// <summary>
+        ///     Dispose the serializers this producer constructed from a builder.
+        ///     Serializers supplied by the application are left alone.
+        /// </summary>
+        private void DisposeOwnedSerializers()
+        {
+            if (ownsKeySerializer)
+            {
+                ownsKeySerializer = false;
+                if (keySerializer != null) { keySerializer.Dispose(); }
+                else if (asyncKeySerializer != null) { asyncKeySerializer.Dispose(); }
+            }
+
+            if (ownsValueSerializer)
+            {
+                ownsValueSerializer = false;
+                if (valueSerializer != null) { valueSerializer.Dispose(); }
+                else if (asyncValueSerializer != null) { asyncValueSerializer.Dispose(); }
             }
         }
 
@@ -743,7 +856,12 @@ namespace Confluent.Kafka
 
             InitializeSerializers(
                 builder.KeySerializer, builder.ValueSerializer,
-                builder.AsyncKeySerializer, builder.AsyncValueSerializer);
+                builder.AsyncKeySerializer, builder.AsyncValueSerializer,
+                builder.KeySerializerBuilder, builder.ValueSerializerBuilder,
+                builder.AsyncKeySerializerBuilder, builder.AsyncValueSerializerBuilder,
+                builder.Config);
+
+            PropagateClusterId();
         }
 
 

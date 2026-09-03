@@ -1,10 +1,29 @@
 # 2.16.0 (unreleased)
 
+## New features
+
+* Serializers and deserializers can now be supplied to a producer or consumer
+  as a *builder*, which the client invokes during its own construction and
+  then owns, disposing it (and any Schema Registry client it created) when
+  the client itself is disposed. See the [AvroGeneric](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/AvroGeneric) example.
+* Schema Registry serde builders are now available for each supported format,
+  each configurable with a Schema Registry client you own or the
+  configuration to build one from. See the [AvroGeneric](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/AvroGeneric),
+  [JsonSerialization](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/JsonSerialization) and [Protobuf](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/Protobuf) examples.
+* Producers, consumers and admin clients can now report the id of the Kafka
+  cluster they're connected to.
+* The Kafka cluster id is now propagated to Schema Registry serializers and
+  deserializers automatically, so subject name strategies based on the
+  cluster no longer need it configured by hand. See the [AvroGenericAssociation](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/AvroGenericAssociation)
+  example.
+
+
 ## Enhancements
 
 * Add support for saving Azure key version with DEK (#2641)
 * Pass context when clients make KEK calls to DEK Registry (#2642)
 * Add support for inline validation rules (#2651)
+* Schema Registry examples now use the serde builder API.
 
 
 # 2.15.1

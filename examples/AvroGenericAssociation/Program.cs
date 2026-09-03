@@ -16,7 +16,6 @@
 
 using Avro;
 using Avro.Generic;
-using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using System;
@@ -65,6 +64,19 @@ namespace Confluent.Kafka.Examples.AvroGenericAssociation
                   }"
             );
 
+            // The Associated strategy looks the subject up under the id of the
+            // cluster the client is connected to, so the association must be
+            // created under that same id. The serializer and deserializer below
+            // resolve it automatically; here it is needed up front to create the
+            // association, so ask the cluster directly.
+            string kafkaClusterId;
+            using (var adminClient = new AdminClientBuilder(
+                new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                kafkaClusterId = adminClient.ClusterId(TimeSpan.FromSeconds(30));
+                Console.WriteLine($"Connected to Kafka cluster '{kafkaClusterId}'");
+            }
+
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             {
                 // Step 1: Register the schema under a custom subject name.
@@ -75,8 +87,8 @@ namespace Confluent.Kafka.Examples.AvroGenericAssociation
                 // Step 2: Create a STRONG association between the topic and the subject.
                 var associationRequest = new AssociationCreateOrUpdateRequest(
                     resourceName: topicName,
-                    resourceNamespace: "lkc-123",
-                    resourceId: "lkc-123:" + topicName,
+                    resourceNamespace: kafkaClusterId,
+                    resourceId: kafkaClusterId + ":" + topicName,
                     resourceType: "topic",
                     associations: new List<AssociationCreateOrUpdateInfo>
                     {
@@ -99,7 +111,11 @@ namespace Confluent.Kafka.Examples.AvroGenericAssociation
                 {
                     using (var consumer =
                         new ConsumerBuilder<string, GenericRecord>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName, AutoOffsetReset = AutoOffsetReset.Earliest })
-                            .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
+                            // No subject.name.strategy.kafka.cluster.id is configured:
+                            // the consumer resolves the cluster id and supplies it to
+                            // the deserializer, so the association above is found.
+                            .SetValueDeserializerBuilder(new AvroDeserializerBuilder<GenericRecord>()
+                                .SetSchemaRegistryClient(schemaRegistry))
                             .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                             .Build())
                     {
@@ -129,11 +145,13 @@ namespace Confluent.Kafka.Examples.AvroGenericAssociation
 
                 using (var producer =
                     new ProducerBuilder<string, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
-                        .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry, new AvroSerializerConfig
-                        {
-                            AutoRegisterSchemas = false,
-                            UseLatestVersion = true
-                        }))
+                        .SetValueSerializerBuilder(new AvroSerializerBuilder<GenericRecord>()
+                            .SetSchemaRegistryClient(schemaRegistry)
+                            .SetSerializerConfig(new AvroSerializerConfig
+                            {
+                                AutoRegisterSchemas = false,
+                                UseLatestVersion = true
+                            }))
                         .Build())
                 {
                     Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
@@ -164,7 +182,7 @@ namespace Confluent.Kafka.Examples.AvroGenericAssociation
 
                 // Step 4: Delete the association.
                 var associations = await schemaRegistry.GetAssociationsByResourceNameAsync(
-                    topicName, "-", "topic", null, null, 0, -1);
+                    topicName, kafkaClusterId, "topic", null, null, 0, -1);
                 if (associations.Count > 0)
                 {
                     await schemaRegistry.DeleteAssociationsAsync(
