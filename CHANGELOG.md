@@ -16,10 +16,16 @@
 * Schema Registry serde builders for each format: `AvroSerializerBuilder<T>` /
   `AvroDeserializerBuilder<T>`, `JsonSerializerBuilder<T>` /
   `JsonDeserializerBuilder<T>`, and `ProtobufSerializerBuilder<T>` /
-  `ProtobufDeserializerBuilder<T>`. Each takes either a Schema Registry client
-  you own (`SetSchemaRegistryClient`) or the configuration to build one from
-  (`SetSchemaRegistryConfig`, optionally with
-  `SetAuthenticationHeaderValueProvider` and `SetWebProxy`).
+  `ProtobufDeserializerBuilder<T>`. Each takes the Schema Registry client in one
+  of three ways: a client you own (`SetSchemaRegistryClient`), the configuration
+  to build one from (`SetSchemaRegistryConfig`), or an
+  `ISchemaRegistryClientBuilder` (`SetSchemaRegistryClientBuilder`) for a client
+  that needs more than configuration alone.
+* `ISchemaRegistryClientBuilder` and `CachedSchemaRegistryClientBuilder`, which
+  gather everything needed to construct a Schema Registry client - its
+  configuration plus an optional authentication header value provider and proxy,
+  neither of which can be expressed in a string-to-string
+  `SchemaRegistryConfig` - into a single reusable value.
 * `IClient.ClusterId(TimeSpan)` returns the id of the Kafka cluster a producer,
   consumer or admin client is connected to.
 * The Kafka cluster id is now propagated to Schema Registry serializers and
