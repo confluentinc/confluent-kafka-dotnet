@@ -35,6 +35,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         private static SchemaRegistryConfig Config()
             => new SchemaRegistryConfig { Url = "http://localhost:8081" };
 
+        private static CachedSchemaRegistryClientBuilder ClientBuilder()
+            => new CachedSchemaRegistryClientBuilder().SetConfig(Config());
+
         private static readonly IEnumerable<KeyValuePair<string, string>> ClientConfig =
             new List<KeyValuePair<string, string>>
             {
@@ -111,7 +114,6 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             var chained = builder
                 .SetSchemaRegistryConfig(Config())
-                .SetWebProxy(new WebProxy("http://localhost:3128"))
                 .SetRuleRegistry(new RuleRegistry())
                 .SetSerializerConfig(new AvroSerializerConfig());
 
@@ -141,25 +143,35 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void Reject_AuthenticationProviderAlongsideAClient()
+        public void Reject_ClientBuilderAlongsideAClient()
         {
             var builder = new AvroSerializerBuilder<int>()
                 .SetSchemaRegistryClient(schemaRegistryClient)
-                .SetAuthenticationHeaderValueProvider(new StubAuthenticationHeaderValueProvider());
+                .SetSchemaRegistryClientBuilder(ClientBuilder());
 
             var ex = Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
-            Assert.Contains("authentication header value provider", ex.Message);
+            Assert.Contains("client builder", ex.Message);
         }
 
         [Fact]
-        public void Reject_ProxyAlongsideAClient()
+        public void Reject_ClientBuilderAlongsideAConfig()
         {
             var builder = new AvroSerializerBuilder<int>()
-                .SetSchemaRegistryClient(schemaRegistryClient)
-                .SetWebProxy(new WebProxy("http://localhost:3128"));
+                .SetSchemaRegistryConfig(Config())
+                .SetSchemaRegistryClientBuilder(ClientBuilder());
 
             var ex = Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
-            Assert.Contains("proxy", ex.Message);
+            Assert.Contains("one or the other", ex.Message);
+        }
+
+        [Fact]
+        public void Reject_AClientBuilderWithNoConfig()
+        {
+            var builder = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClientBuilder(new CachedSchemaRegistryClientBuilder());
+
+            var ex = Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+            Assert.Contains("configuration must be specified", ex.Message);
         }
 
         [Fact]
@@ -180,8 +192,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var provider = new StubAuthenticationHeaderValueProvider();
 
             var serializer = new AvroSerializerBuilder<int>()
-                .SetSchemaRegistryConfig(Config())
-                .SetAuthenticationHeaderValueProvider(provider)
+                .SetSchemaRegistryClientBuilder(new CachedSchemaRegistryClientBuilder()
+                    .SetConfig(Config())
+                    .SetAuthenticationHeaderValueProvider(provider))
                 .Build(ClientConfig, false);
 
             Assert.Same(provider, ResolvedClient(serializer).AuthHeaderProvider);
@@ -193,8 +206,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var proxy = new WebProxy("http://localhost:3128");
 
             var serializer = new AvroSerializerBuilder<int>()
-                .SetSchemaRegistryConfig(Config())
-                .SetWebProxy(proxy)
+                .SetSchemaRegistryClientBuilder(new CachedSchemaRegistryClientBuilder()
+                    .SetConfig(Config())
+                    .SetWebProxy(proxy))
                 .Build(ClientConfig, false);
 
             Assert.Same(proxy, ResolvedClient(serializer).Proxy);
@@ -209,8 +223,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var provider = new StubAuthenticationHeaderValueProvider();
 
             var serializer = new AvroSerializerBuilder<int>()
-                .SetSchemaRegistryConfig(Config())
-                .SetAuthenticationHeaderValueProvider(provider)
+                .SetSchemaRegistryClientBuilder(new CachedSchemaRegistryClientBuilder()
+                    .SetConfig(Config())
+                    .SetAuthenticationHeaderValueProvider(provider))
                 .Build(ClientConfig, false);
 
             var resolved = ResolvedClient(serializer).AuthHeaderProvider;
