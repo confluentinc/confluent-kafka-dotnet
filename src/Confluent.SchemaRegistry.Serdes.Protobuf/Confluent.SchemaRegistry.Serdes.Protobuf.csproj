@@ -61,6 +61,8 @@
   <ItemGroup>
     <None Remove="proto\confluent\type\decimal.proto" />
     <EmbeddedResource Include="proto\confluent\type\decimal.proto" />
+    <None Remove="proto\confluent\type\variant.proto" />
+    <EmbeddedResource Include="proto\confluent\type\variant.proto" />
     <None Remove="proto\confluent\meta.proto" />
     <EmbeddedResource Include="proto\confluent\meta.proto" />
     <None Remove="proto\google\protobuf\any.proto" />

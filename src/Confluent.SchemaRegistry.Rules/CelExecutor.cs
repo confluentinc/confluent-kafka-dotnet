@@ -7,11 +7,13 @@ using Avro.Generic;
 using Avro.Specific;
 using Confluent.Shared.CollectionUtils;
 using Cel.Checker;
+using Cel.Common.Types;
 using Cel.Common.Types.Avro;
 using Cel.Common.Types.Json;
 using Cel.Common.Types.Pb;
 using Cel.Extension;
 using Cel.Tools;
+using IVal = Cel.Common.Types.Ref.IVal;
 using Duration = Google.Protobuf.WellKnownTypes.Duration;
 using Google.Api.Expr.V1Alpha1;
 using Google.Protobuf;
@@ -50,8 +52,45 @@ namespace Confluent.SchemaRegistry.Rules
 
         public async Task<object> Transform(RuleContext ctx, object message)
         {
-            return await Execute(ctx, message, new Dictionary<string, object>() { { "message", message } })
+            object result = await Execute(ctx, message, new Dictionary<string, object>() { { "message", message } })
                 .ConfigureAwait(false);
+            return ShapeResult(ctx, message, result);
+        }
+
+        /// <summary>
+        ///     Converts a message-level transform's result back to the form the serializer writes.
+        ///     A rule that rebuilds a message returns a plain map, which neither the protobuf nor
+        ///     the Avro writer can take; see <see cref="ProtobufResultWriter" /> and
+        ///     <see cref="AvroResultWriter" /> for the replace semantics that implies.
+        ///
+        ///     Dispatches on the value rather than on <c>ctx.Target.SchemaType</c>, matching how
+        ///     <see cref="Execute(RuleContext, string, object, IDictionary{string, object})" />
+        ///     already picks its <c>ScriptType</c> a few lines below.
+        ///
+        ///     Only <see cref="Transform" /> calls this, and <c>CelFieldExecutor</c> goes through
+        ///     <see cref="Execute(RuleContext, object, IDictionary{string, object})" /> instead - so
+        ///     a <c>CEL_FIELD</c> result never reaches here and cannot be encoded twice. Several
+        ///     clients had to add a guard for exactly that; here the two entry points already
+        ///     separate them.
+        /// </summary>
+        private static object ShapeResult(RuleContext ctx, object original, object result)
+        {
+            if (ctx.Rule.Kind == RuleKind.Condition)
+            {
+                // A bool is a pass/fail signal to the framework, not data to coerce.
+                return result;
+            }
+
+            switch (original)
+            {
+                case IMessage _:
+                    return ProtobufResultWriter.Convert(original, result);
+                case GenericRecord _:
+                    return AvroResultWriter.Convert(original, result);
+                default:
+                    // JSON Schema, and Avro's ISpecificRecord: unchanged, as before this moved.
+                    return result;
+            }
         }
 
         public async Task<object> Execute(RuleContext ctx, object obj, IDictionary<string, object> args)
@@ -146,7 +185,8 @@ namespace Confluent.SchemaRegistry.Rules
             switch (ruleWithArgs.ScriptType)
             {
                 case ScriptType.Avro:
-                    scriptHostBuilder = scriptHostBuilder.Registry(AvroRegistry.NewRegistry());
+                    scriptHostBuilder =
+                        scriptHostBuilder.Registry(AvroRegistry.NewRegistry(AvroValueToCel));
                     if (msg is ISpecificRecord)
                     {
                         type = ((ISpecificRecord)msg).Schema;
@@ -163,6 +203,22 @@ namespace Confluent.SchemaRegistry.Rules
                     type = msg.GetType();
                     break;
                 case ScriptType.Protobuf:
+                    // A registry carrying ProtoValueToCel, so a confluent.type.Decimal is a
+                    // DecimalT wherever it appears - including a field reached by selection, which
+                    // no boundary conversion can see. Without it cel.net answers `==` with
+                    // lhs.Equal(rhs) on the raw message, comparing unscaled bytes and scale field
+                    // by field, and `this.subtotal == this.total` was false for 1.50 against 1.5.
+                    //
+                    // Deliberately the registry hook rather than ScriptHost.Adapter /
+                    // EnvOptions.CustomTypeAdapter: an environment-level adapter is consulted for
+                    // the bound value only. cel.net's attribute layer adapts the *container* first
+                    // and then reads fields off the resulting PbObjectT using the registry that
+                    // object was built with, so an environment adapter never sees a nested field.
+                    // See ProtoTypeRegistry.NewRegistry(customAdapter) for the full comparison
+                    // with cel-go, which adapts field values natively and so does not have this
+                    // limitation.
+                    scriptHostBuilder = scriptHostBuilder.Registry(
+                        ProtoTypeRegistry.NewRegistry(ProtoValueToCel));
                     type = msg;
                     break;
                 default:
@@ -209,12 +265,115 @@ namespace Confluent.SchemaRegistry.Rules
                 return FindTypeForAvroType(((GenericRecord)arg).Schema);
             }
 
+            if (arg is NullValue)
+            {
+                // An absent value is bound as NullValue.NullValue rather than a CLR null,
+                // because Cel.NET needs a non-null binding. NullValue is a protobuf *enum*,
+                // so without this arm FindTypeForClass declared it as `int` and a guard like
+                // `value == null` failed at check time with "no matching overload for '_==_'
+                // applied to '(int, null)'" - before the rule ever ran.
+                return Checked.CheckedNull;
+            }
+
+            if (arg is DecimalT)
+            {
+                // Matches DecimalT.Type() and the declaration in BuiltinDeclarations, so a
+                // converted decimal and decimal(...) are one type.
+                return Decls.NewObjectType(CelTypeLabels.DecimalName);
+            }
+
             if (arg is IMessage)
             {
                 return Decls.NewObjectType(((IMessage)arg).Descriptor.FullName);
             }
 
             return FindTypeForClass(arg.GetType());
+        }
+
+        /// <summary>
+        ///     Presents an Avro value the way this client's CEL surface expects, for the shapes
+        ///     whose logical representation differs from cel.net's default mapping. A
+        ///     <c>decimal</c> logical type decodes to an <see cref="AvroDecimal" />, which cel.net
+        ///     would otherwise carry as its own <c>avro.decimal</c> value — a different CEL type
+        ///     from the <see cref="DecimalT" /> that <c>decimal(...)</c> produces, so
+        ///     <c>decimals.*</c> would not accept it and <c>==</c> against a decimal literal
+        ///     would answer false. Carrying it as a DecimalT makes a decimal field usable with no
+        ///     <c>decimal(...)</c> call, and keeps equality numeric. Returning null leaves the
+        ///     value to cel.net's standard mapping.
+        /// </summary>
+        private static IVal AvroValueToCel(object value)
+        {
+            if (value is AvroDecimal dec)
+            {
+                return DecimalT.Of(DecimalUtils.ToBigDecimal(dec.UnscaledValue, dec.Scale));
+            }
+
+            if (value is Variant variant)
+            {
+                // An Avro confluent.type.Variant record surfaces as a Variant (see
+                // VariantLogicalType), which CEL knows nothing about. Carried opaquely it
+                // reaches the variants.* functions unchanged - VariantUtils.ToVariant takes a
+                // Variant directly. Without this arm it fell through to the registry's object
+                // fallback, which needs an Avro schema for the CLR type and threw
+                // "Cannot get schema for Confluent.SchemaRegistry.Variant", so every rule that
+                // read a variant field failed.
+                return OpaqueT.Of(variant, CelTypeLabels.VariantName);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        ///     A <c>confluent.type.Decimal</c> message as a <see cref="DecimalT" />, or null for
+        ///     anything else. The protobuf counterpart of <c>AvroValueToCel</c>'s AvroDecimal arm,
+        ///     and needed for the same reason: cel.net intercepts <c>==</c> in the planner and
+        ///     answers it with <c>lhs.Equal(rhs)</c>, so a decimal left as a protobuf message
+        ///     compares structurally - field by field over unscaled bytes and scale - and calls
+        ///     12.34 and 12.340 unequal even though they are the same number. Carried as a
+        ///     DecimalT it compares numerically, and <c>string()</c> / <c>double()</c> resolve.
+        ///     <para>
+        ///         Only reaches a value bound directly. A decimal reached by selection instead
+        ///         (<c>this.amount</c>) is resolved inside cel.net, past any boundary.
+        ///     </para>
+        /// </summary>
+        internal static object ToCelDecimalOrNull(object value)
+        {
+            if (value is DecimalT)
+            {
+                return value;
+            }
+
+            if (value is IMessage msg
+                && msg.Descriptor?.FullName == CelTypeLabels.DecimalName)
+            {
+                return DecimalT.Of(DecimalUtils.ToBigDecimal(msg));
+            }
+
+            // The Avro counterpart. A message-level rule reaches a decimal field through the Avro
+            // registry adapter, which converts it (see AvroValueToCel); a *field*-level rule binds
+            // the value straight to `this` and misses that adapter, so without this arm the checker
+            // was told the type was Avro.AvroDecimal and no decimals.* overload matched - the rule
+            // failed before it ran.
+            if (value is AvroDecimal avroDecimal)
+            {
+                return DecimalT.Of(
+                    DecimalUtils.ToBigDecimal(avroDecimal.UnscaledValue, avroDecimal.Scale));
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        ///     Presents a protobuf value the way this client's CEL surface expects. The protobuf
+        ///     counterpart of <see cref="AvroValueToCel" />: a <c>confluent.type.Decimal</c>
+        ///     message is carried as a <see cref="DecimalT" /> so it compares numerically rather
+        ///     than by its encoding. Returning null leaves the value to cel.net's standard
+        ///     mapping. Reaches message fields as well as top-level values, because the registry
+        ///     adapts its fields through this same hook.
+        /// </summary>
+        private static IVal ProtoValueToCel(object value)
+        {
+            return ToCelDecimalOrNull(value) as IVal;
         }
 
         private static Google.Api.Expr.V1Alpha1.Type FindTypeForAvroType(Avro.Schema schema)
@@ -261,7 +420,14 @@ namespace Confluent.SchemaRegistry.Rules
 
                     throw new ArgumentException("Unsupported union type");
                 case Avro.Schema.Type.Logical:
-                    return FindTypeForAvroType((schema as LogicalSchema).BaseSchema);
+                    // A logical-typed value is the logical representation, not the underlying
+                    // primitive: timestamp-* decodes to DateTime, decimal to AvroDecimal, uuid
+                    // to Guid. Declaring the base type (Int for a timestamp-millis long, say)
+                    // would be a check/runtime mismatch, so defer to the runtime value —
+                    // matching the JVM client's findCelTypeForAvroSchema. Field types inside a
+                    // record come from cel.net's AvroTypeDescription, which does the same;
+                    // this path covers a schema handed in for a value directly.
+                    return Checked.CheckedDyn;
                 default:
                     throw new ArgumentException("Unsupported type " + type);
             }
@@ -284,6 +450,27 @@ namespace Confluent.SchemaRegistry.Rules
             if (value is System.Enum)
             {
                 return Convert.ToInt64(value, CultureInfo.InvariantCulture);
+            }
+
+            // An Avro timestamp logical type decodes to a DateTime, which CEL knows nothing about:
+            // FindTypeForClass maps Timestamp, Instant and ZonedDateTime to a CEL timestamp and a
+            // DateTime to none of them, so `this > timestamp(...)` was rejected at *check* time
+            // with "found no matching overload for '_>_' applied to '(System.DateTime, timestamp)'".
+            // The runtime value was always right; only the declaration was wrong.
+            //
+            // Converted here rather than in AvroValueToCel because the declared type is derived
+            // from the value as it is bound, and the registry adapter runs after that - too late to
+            // affect the check. This is the one conversion both the inline and the CEL_FIELD path
+            // need, and both go through here.
+            if (value is DateTime dateTime)
+            {
+                // Avro decodes a timestamp logical type as UTC; an unspecified kind is treated as
+                // UTC rather than local, which is Avro's own reading and avoids a silent shift.
+                DateTime utc =
+                    dateTime.Kind == DateTimeKind.Utc ? dateTime
+                    : dateTime.Kind == DateTimeKind.Local ? dateTime.ToUniversalTime()
+                    : DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+                return Instant.FromDateTimeUtc(utc);
             }
 
             // A protobuf repeated or map field is homogeneous, so a collection of enums is
@@ -323,6 +510,60 @@ namespace Confluent.SchemaRegistry.Rules
             }
 
             return value;
+        }
+
+        /// <summary>
+        ///     The inverse of <see cref="ToCelValue" />'s DateTime arm: whatever CEL hands back for
+        ///     a timestamp, as the <c>DateTime</c> Avro's writer encodes from. Returns null when the
+        ///     value is not a timestamp at all, so the caller can leave it alone.
+        ///
+        ///     Needed because the read side has to convert: an Avro timestamp field arrives as a
+        ///     DateTime and must be declared to the checker as a CEL timestamp, so a rule that
+        ///     returns one - <c>value + duration('60s')</c> - returns CEL's shape, not Avro's, and
+        ///     the writer fails with "Unable to cast Timestamp to System.DateTime".
+        /// </summary>
+        internal static object ToAvroDateTimeOrNull(object value)
+        {
+            switch (value)
+            {
+                case DateTime dateTime:
+                    return dateTime;
+                case Instant instant:
+                    return instant.ToDateTimeUtc();
+                case ZonedDateTime zoned:
+                    return zoned.ToInstant().ToDateTimeUtc();
+                case DateTimeOffset offset:
+                    return offset.UtcDateTime;
+                case Google.Protobuf.WellKnownTypes.Timestamp timestamp:
+                    return timestamp.ToDateTime();
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>
+        ///     The inverse of the AvroDecimal arm of <see cref="ToCelDecimalOrNull" />: an Avro
+        ///     decimal field is presented to CEL as a decimal, so whatever the rule hands back has
+        ///     to become an <c>AvroDecimal</c> again before Avro's writer sees it. Returns null
+        ///     when the value is not a decimal in any recognised form, so the caller can leave it
+        ///     alone.
+        ///
+        ///     Symmetric with <see cref="ToAvroDateTimeOrNull" />, and needed for the same reason:
+        ///     without it a rule computing a decimal for an Avro decimal field failed with
+        ///     "Unable to cast object of type 'BigDecimal' to type 'Avro.AvroDecimal'" - on a
+        ///     repeated field, where the rule is applied per element, and on a scalar one alike.
+        /// </summary>
+        internal static object ToAvroDecimalOrNull(object value)
+        {
+            switch (value)
+            {
+                case AvroDecimal avroDecimal:
+                    return avroDecimal;
+                case BigDecimal bigDecimal:
+                    return new AvroDecimal(bigDecimal.Unscaled, bigDecimal.Scale);
+                default:
+                    return null;
+            }
         }
 
         /// <summary>
