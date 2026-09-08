@@ -51,6 +51,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [InlineData("!variants.isNull(variants.field(variants.parseJson(this), 'missing'))", true)]
         [InlineData("variants.as(variants.path(variants.parseJson(this), '$.nested.x'), 'int') == 1", true)]
         [InlineData("variants.as(variants.index(variants.field(variants.parseJson(this), 'scores'), 2), 'int') == 30", true)]
+        // CEL int is i64 while the index is i32, so 2^32 must read as out of bounds rather than
+        // wrapping to 0 and returning the first element.
+        [InlineData("variants.index(variants.field(variants.parseJson(this), 'scores'), 4294967296) == null", true)]
+        [InlineData("variants.index(variants.field(variants.parseJson(this), 'scores'), -1) == null", true)]
+        [InlineData("variants.index(variants.field(variants.parseJson(this), 'scores'), 3) == null", true)]
         // tryAs returns CEL null on a type mismatch (age is an int, not a string).
         [InlineData("variants.tryAs(variants.field(variants.parseJson(this), 'age'), 'string') == null", true)]
         [InlineData("variants.toJson(variants.field(variants.parseJson(this), 'nested')) == '{\"x\":1}'", true)]

@@ -250,7 +250,16 @@ namespace Confluent.SchemaRegistry.Rules
                 return NullT.NullValue;
             }
 
-            SrVariant r = v.GetElementAtIndex((int)ToLong(b));
+            // CEL int is i64 but the index is i32. A raw cast would take the low 32 bits and
+            // alias a large index onto a valid position (2^32 -> 0), so treat anything outside
+            // int range as out of bounds. Mirrors the Java/Go/C++/Python/JS/Rust guard.
+            long index = ToLong(b);
+            if (index < 0 || index > int.MaxValue)
+            {
+                return NullT.NullValue;
+            }
+
+            SrVariant r = v.GetElementAtIndex((int)index);
             return r == null ? (IVal)NullT.NullValue : VariantT.Of(r);
         }
 
