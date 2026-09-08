@@ -352,14 +352,29 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw ValueTypeError(ctx, desc, value.GetType().Name, "a decimal");
             }
 
-            // NodaTime is not a dependency of this assembly - it arrives transitively through
-            // the CEL runtime - so a timestamp is converted through its ToDateTimeOffset()
-            // shape rather than by naming the type.
-            var toOffset = value.GetType().GetMethod("ToDateTimeOffset", System.Type.EmptyTypes);
-            if (toOffset != null && toOffset.ReturnType == typeof(DateTimeOffset))
+            // The CEL runtime hands timestamps back as NodaTime values. Naming the type keeps
+            // every digit: ToUnixTimeSecondsAndNanoseconds truncates the seconds towards the
+            // start of time so the nanoseconds are non-negative, which is protobuf's own
+            // contract. Converting through DateTimeOffset instead rounded to its 100-nanosecond
+            // tick, turning a Nanos of 123456789 into 123456700.
+            if (value is NodaTime.ZonedDateTime zoned)
             {
-                return Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(
-                    (DateTimeOffset)toOffset.Invoke(value, null));
+                var (seconds, nanoseconds) = zoned.ToInstant().ToUnixTimeSecondsAndNanoseconds();
+                return new Google.Protobuf.WellKnownTypes.Timestamp
+                {
+                    Seconds = seconds,
+                    Nanos = (int)nanoseconds,
+                };
+            }
+
+            if (value is NodaTime.Instant instant)
+            {
+                var (seconds, nanoseconds) = instant.ToUnixTimeSecondsAndNanoseconds();
+                return new Google.Protobuf.WellKnownTypes.Timestamp
+                {
+                    Seconds = seconds,
+                    Nanos = (int)nanoseconds,
+                };
             }
 
             if (value is DateTimeOffset offset)

@@ -251,13 +251,18 @@ namespace Confluent.SchemaRegistry.Rules
                 return value;
             }
 
-            // NodaTime is not a dependency of this assembly - it arrives transitively through
-            // the CEL runtime - so a timestamp is converted through its ToDateTimeOffset()
-            // shape rather than by naming the type.
-            var toOffset = value.GetType().GetMethod("ToDateTimeOffset", System.Type.EmptyTypes);
-            if (toOffset != null && toOffset.ReturnType == typeof(DateTimeOffset))
+            // The CEL runtime hands timestamps back as NodaTime values. Unlike the protobuf
+            // writer there is no precision to preserve here: Avro's temporal logical types are
+            // carried as DateTime, whose tick is 100 nanoseconds, so the instant is rounded to
+            // it either way. Naming the type is simply checked at compile time.
+            if (value is NodaTime.ZonedDateTime zoned)
             {
-                return ((DateTimeOffset)toOffset.Invoke(value, null)).UtcDateTime;
+                return zoned.ToDateTimeUtc();
+            }
+
+            if (value is NodaTime.Instant instant)
+            {
+                return instant.ToDateTimeUtc();
             }
 
             if (value is DateTimeOffset offset)

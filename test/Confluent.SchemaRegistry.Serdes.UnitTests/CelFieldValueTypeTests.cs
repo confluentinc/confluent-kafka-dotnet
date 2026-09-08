@@ -123,7 +123,7 @@ message ParityPlain {
                 },
                 Ts = new Google.Protobuf.WellKnownTypes.Timestamp
                 {
-                    Seconds = 1700000000, Nanos = 123000000
+                    Seconds = 1700000000, Nanos = 123456789
                 },
                 Data = new PbVariant
                 {
@@ -219,7 +219,7 @@ message ParityPlain {
             var result = await Run("value + duration('60s')", RuleKind.Transform, "TS");
 
             Assert.Equal(1700000060, result.Ts.Seconds);
-            Assert.Equal(123000000, result.Ts.Nanos);
+            Assert.Equal(123456789, result.Ts.Nanos);
         }
 
         /// <summary>The pass-through: the encode must invert the decode exactly.</summary>

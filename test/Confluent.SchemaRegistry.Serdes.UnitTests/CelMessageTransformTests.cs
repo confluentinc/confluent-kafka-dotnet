@@ -72,7 +72,7 @@ message ValueTypes {
                 },
                 Ts = new Google.Protobuf.WellKnownTypes.Timestamp
                 {
-                    Seconds = 1700000000, Nanos = 123000000
+                    Seconds = 1700000000, Nanos = 123456789
                 },
                 Data = new PbVariant
                 {
@@ -119,7 +119,7 @@ message ValueTypes {
             Assert.Equal(1234, (int)Unscaled(result.Amount));
             Assert.Equal(2, result.Amount.Scale);
             Assert.Equal(1700000000, result.Ts.Seconds);
-            Assert.Equal(123000000, result.Ts.Nanos);
+            Assert.Equal(123456789, result.Ts.Nanos);
             Assert.Equal("{\"name\":\"alice\"}",
                 new SrVariant(result.Data.Value.ToByteArray(),
                     result.Data.Metadata.ToByteArray()).ToJson());
@@ -145,7 +145,7 @@ message ValueTypes {
                 "'data': message.data, 'plain': message.plain}");
 
             Assert.Equal(1700000060, result.Ts.Seconds);
-            Assert.Equal(123000000, result.Ts.Nanos);
+            Assert.Equal(123456789, result.Ts.Nanos);
         }
 
         /// <summary>
@@ -235,7 +235,7 @@ message ValueTypes {
             var result = await Transform("{" + AllFields + "}");
 
             Assert.Equal(1700000000, result.Ts.Seconds);
-            Assert.Equal(123000000, result.Ts.Nanos);
+            Assert.Equal(123456789, result.Ts.Nanos);
         }
 
         /// <summary>A CONDITION answers with a bool, which must never reach the rebuild.</summary>

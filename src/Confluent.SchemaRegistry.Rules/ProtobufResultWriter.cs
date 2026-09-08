@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Google.Protobuf.WellKnownTypes;
+using NodaTime;
 using System.Numerics;
 using System.Reflection;
 using SrVariant = Confluent.SchemaRegistry.Variant;
@@ -248,17 +249,17 @@ namespace Confluent.SchemaRegistry.Rules
                 return BuildDecimal(desc, BigDecimal.FromDecimal(dec));
             }
 
-            // The CEL runtime hands timestamps back as a NodaTime ZonedDateTime, but NodaTime
-            // arrives here transitively through that runtime and is not a dependency of this
-            // assembly - so the value is converted through its ToDateTimeOffset() shape rather
-            // than by naming the type.
-            MethodInfo toOffset = value.GetType().GetMethod(
-                "ToDateTimeOffset", System.Type.EmptyTypes);
-            if (toOffset != null && toOffset.ReturnType == typeof(DateTimeOffset))
+            // The CEL runtime hands timestamps back as NodaTime values.
+            if (value is ZonedDateTime zoned)
             {
                 Require(fullName == TimestampTypeName, "a timestamp", fullName);
-                return Timestamp.FromDateTimeOffset(
-                    (DateTimeOffset)toOffset.Invoke(value, null));
+                return FromInstant(zoned.ToInstant());
+            }
+
+            if (value is Instant instant)
+            {
+                Require(fullName == TimestampTypeName, "a timestamp", fullName);
+                return FromInstant(instant);
             }
 
             if (value is DateTimeOffset offset)
@@ -349,6 +350,19 @@ namespace Confluent.SchemaRegistry.Rules
         ///     integer to <c>long</c> and every float to <c>double</c>, so a narrower field needs
         ///     converting back rather than rejecting.
         /// </summary>
+        /// <summary>
+        ///     A protobuf timestamp from a NodaTime instant, keeping every digit.
+        ///     <c>ToUnixTimeSecondsAndNanoseconds</c> truncates the seconds towards the start of
+        ///     time so the nanoseconds are non-negative, which is exactly protobuf's contract.
+        ///     Converting through <see cref="DateTimeOffset" /> instead rounded to its
+        ///     100-nanosecond tick, turning a <c>Nanos</c> of 123456789 into 123456700.
+        /// </summary>
+        private static Timestamp FromInstant(Instant instant)
+        {
+            var (seconds, nanoseconds) = instant.ToUnixTimeSecondsAndNanoseconds();
+            return new Timestamp { Seconds = seconds, Nanos = (int)nanoseconds };
+        }
+
         private static object Scalar(FieldDescriptor fd, object value)
         {
             switch (fd.FieldType)

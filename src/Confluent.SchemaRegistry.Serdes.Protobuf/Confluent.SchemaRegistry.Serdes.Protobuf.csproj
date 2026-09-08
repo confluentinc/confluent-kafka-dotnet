@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.26.1" />
+    <PackageReference Include="NodaTime" Version="3.3.3" />
     <!--
     Exclude protobuf-net.Reflection from being a compile-time transitive dependency to avoid error CS0433.
     Set PrivateAssets per https://learn.microsoft.com/en-us/nuget/create-packages/select-assemblies-referenced-by-projects
