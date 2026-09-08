@@ -33,7 +33,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Cel.NET" Version="2.0.0" />
+      <PackageReference Include="Cel.NET" Version="2.3.0" />
+      <PackageReference Include="NodaTime" Version="3.3.3" />
     </ItemGroup>
 
     <ItemGroup>

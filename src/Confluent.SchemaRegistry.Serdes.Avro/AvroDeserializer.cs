@@ -66,10 +66,11 @@ namespace Confluent.SchemaRegistry.Serdes
 
         public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig config = null, RuleRegistry ruleRegistry = null)
         {
+            VariantLogicalType.EnsureRegistered();
             this.schemaRegistryClient = schemaRegistryClient;
             this.config = config;
             this.ruleRegistry = ruleRegistry ?? RuleRegistry.GlobalInstance;
-            
+
             if (config == null) { return; }
 
             var nonAvroConfig = config
