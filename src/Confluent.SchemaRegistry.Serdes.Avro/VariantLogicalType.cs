@@ -49,15 +49,42 @@ namespace Confluent.SchemaRegistry.Serdes
         private static readonly Lazy<bool> registration = new Lazy<bool>(
             () =>
             {
-                // Apache.Avro's Register "registers or replaces", and the registry is keyed by
-                // logical type name. The reference registers only if absent, so that a library
-                // which claimed "variant" first keeps it - Apache Iceberg registers the same
-                // name. Apache.Avro exposes no way to ask whether a name is taken, so that
-                // guard cannot be reproduced here.
-                LogicalTypeFactory.Instance.Register(new VariantLogicalType());
+                // Only if the name is free, matching the reference's
+                // AvroSchemaUtils.registerLogicalTypeIfAbsent. Apache.Avro's Register
+                // "registers or replaces" a process-wide slot keyed by logical type name, and
+                // another library may legitimately own "variant" - Apache Iceberg registers the
+                // same name, unconditionally. Leaving ours conditional means whichever library
+                // claimed it first keeps it, rather than construction of a serializer silently
+                // replacing someone else's implementation.
+                if (!IsVariantRegistered())
+                {
+                    LogicalTypeFactory.Instance.Register(new VariantLogicalType());
+                }
+
                 return true;
             },
             LazyThreadSafetyMode.ExecutionAndPublication);
+
+        /// <summary>
+        ///     Whether something already owns the <c>variant</c> logical type name.
+        ///
+        ///     <para>
+        ///         A logical type parses to a <see cref="LogicalSchema" /> whether or not its name
+        ///         is registered - registration only supplies the implementation - so a probe
+        ///         schema can be handed to the factory and the answer read off what comes back:
+        ///         an <c>UnknownLogicalType</c> means the name is free.
+        ///     </para>
+        /// </summary>
+        private static bool IsVariantRegistered()
+        {
+            var probe = (LogicalSchema)Avro.Schema.Parse(
+                @"{""type"":""record"",""name"":""confluent.type.Variant"","
+                + @"""logicalType"":""" + LogicalTypeName + @""",""fields"":["
+                + @"{""name"":""metadata"",""type"":""bytes""},"
+                + @"{""name"":""value"",""type"":""bytes""}]}");
+            return !(LogicalTypeFactory.Instance.GetFromLogicalSchema(probe, true)
+                is UnknownLogicalType);
+        }
 
         /// <summary>
         ///     Registers the variant logical type with the process-wide
