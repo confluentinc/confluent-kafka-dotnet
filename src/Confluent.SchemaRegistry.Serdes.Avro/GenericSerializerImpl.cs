@@ -36,6 +36,14 @@ namespace Confluent.SchemaRegistry.Serdes
         private Dictionary<KeyValuePair<string, string>, SchemaId> registeredSchemas =
             new Dictionary<KeyValuePair<string, string>, SchemaId>();
 
+        /// <summary>
+        ///     Registry schemas parsed for the *encoder*: the same text <see cref="ParseSchema" />
+        ///     handles, but without the variant rebinding. Separate from the inherited parsed
+        ///     schema cache, which holds the rebound parse the rules need.
+        /// </summary>
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<Schema, Avro.Schema>
+            encodeSchemas = new System.Collections.Concurrent.ConcurrentDictionary<Schema, Avro.Schema>();
+
         public GenericSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             AvroSerializerConfig config,
@@ -164,14 +172,29 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 if (latestSchema != null)
                 {
-                    writerSchema = await GetParsedSchema(latestSchema).ConfigureAwait(false);
+                    // Two roles, and they need different parses of the same registered schema.
+                    //
+                    // Rules get the rebound one, so a by-name reference to
+                    // confluent.type.Variant still presents the field as a Variant - the same
+                    // parse the deserializer reads with.
+                    //
+                    // The encoder gets the unrebound one, because it has to match the record it
+                    // is handed. Rebinding makes a by-name site a LogicalSchema where the
+                    // caller's own parse has a plain RecordSchema, and Apache.Avro's generic
+                    // writer asserts record.Schema.Equals(writerSchema) - so it refused the
+                    // record outright ("GenericRecord required to write against record schema").
+                    // Any schema naming the variant more than once hit this, because Avro
+                    // rejects a duplicate definition and the second use must be by name.
+                    Avro.Schema rulesSchema = await GetParsedSchema(latestSchema)
+                        .ConfigureAwait(false);
+                    writerSchema = await GetEncodeSchema(latestSchema).ConfigureAwait(false);
                     FieldTransformer fieldTransformer = async (ctx, transform, message) => 
                     {
-                        return await AvroUtils.Transform(ctx, writerSchema, message, transform).ConfigureAwait(false);
+                        return await AvroUtils.Transform(ctx, rulesSchema, message, transform).ConfigureAwait(false);
                     };
                     if (ValidationEnabled(ValidationRulesExecution.BeforeDomainRules))
                     {
-                        await ValidateInlineRules(writerSchema, data).ConfigureAwait(false);
+                        await ValidateInlineRules(rulesSchema, data).ConfigureAwait(false);
                     }
 
                     data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Write,
@@ -181,7 +204,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (ValidationEnabled(ValidationRulesExecution.AfterDomainRules))
                     {
-                        await ValidateInlineRules(writerSchema, data).ConfigureAwait(false);
+                        await ValidateInlineRules(rulesSchema, data).ConfigureAwait(false);
                     }
                 }
                 else if (ValidationEnabled())
@@ -225,6 +248,31 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
         
+        /// <summary>
+        ///     The registered schema parsed for the encoder - the same text as
+        ///     <see cref="ParseSchema" /> but with no rebinding, so it stays structurally equal
+        ///     to the caller's own parse of that text. <c>BindVariantsForWriter</c> is what makes
+        ///     a variant writable against it, exactly as on the auto-register path.
+        /// </summary>
+        private async Task<Avro.Schema> GetEncodeSchema(Schema schema)
+        {
+            if (encodeSchemas.TryGetValue(schema, out Avro.Schema cached))
+            {
+                return cached;
+            }
+
+            SchemaNames namedSchemas = await AvroUtils.ResolveNamedSchema(schema, schemaRegistryClient)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            Avro.Schema parsed = Avro.Schema.Parse(schema.SchemaString, namedSchemas);
+            if (encodeSchemas.Count > schemaRegistryClient.MaxCachedSchemas)
+            {
+                encodeSchemas.Clear();
+            }
+
+            encodeSchemas[schema] = parsed;
+            return parsed;
+        }
+
         protected override async Task<Avro.Schema> ParseSchema(Schema schema)
         {
             SchemaNames namedSchemas = await AvroUtils.ResolveNamedSchema(schema, schemaRegistryClient)

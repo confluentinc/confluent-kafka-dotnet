@@ -99,6 +99,102 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         /// <summary>
+        ///     The likeliest way to meet this: two variant fields on one record, no references
+        ///     anywhere. Avro rejects a duplicate definition of confluent.type.Variant, so the
+        ///     second field has to be the by-name form - it is not a style choice. Combined with
+        ///     a registry-sourced writer schema, that used to fail.
+        /// </summary>
+        [Fact]
+        public async Task TwoVariantFieldsRoundTripWithALatestSchema()
+        {
+            VariantLogicalType.EnsureRegistered();
+            var schema = (RecordSchema)Avro.Schema.Parse(
+                @"{""type"":""record"",""name"":""TwoVariants"",""fields"":[" +
+                @"{""name"":""a"",""type"":" + VariantDef + @"}," +
+                @"{""name"":""b"",""type"":""confluent.type.Variant""}]}");
+            var registered = new RegisteredSchema(
+                "twofields-value", 1, 1, schema.ToString(), SchemaType.Avro, null);
+            store[schema.ToString()] = 1;
+            subjectStore["twofields-value"] = new List<RegisteredSchema> { registered };
+
+            var v = Variant.ParseJson("{\"name\":\"alice\"}");
+            var record = new GenericRecord(schema);
+            record.Add("a", v);
+            record.Add("b", v);
+
+            var ser = new AvroSerializer<GenericRecord>(schemaRegistryClient,
+                new AvroSerializerConfig
+                {
+                    UseLatestVersion = true,
+                    AutoRegisterSchemas = false,
+                    SubjectNameStrategy = SubjectNameStrategy.Topic,
+                });
+            var deser = new AvroDeserializer<GenericRecord>(schemaRegistryClient);
+            var ctx = new SerializationContext(
+                MessageComponentType.Value, "twofields", new Headers());
+
+            var back = await deser.DeserializeAsync(
+                await ser.SerializeAsync(record, ctx), false, ctx);
+
+            Assert.Equal("{\"name\":\"alice\"}", Assert.IsType<Variant>(back["a"]).ToJson());
+            Assert.Equal("{\"name\":\"alice\"}", Assert.IsType<Variant>(back["b"]).ToJson());
+        }
+
+        /// <summary>
+        ///     The full round trip with the writer schema coming from the registry rather than
+        ///     from the record. The registry parse is rebound so that rules see a Variant, which
+        ///     made it structurally unequal to the caller's own parse - and Apache.Avro's writer
+        ///     asserts <c>record.Schema.Equals(writerSchema)</c>, so it refused the record. The
+        ///     encoder now gets an unrebound parse of the same text.
+        /// </summary>
+        [Fact]
+        public async Task AVariantImportedThroughAReferenceRoundTrips()
+        {
+            VariantLogicalType.EnsureRegistered();
+            var refSchema = new RegisteredSchema(
+                "variant-value", 1, 1, VariantDef, SchemaType.Avro, null);
+            store[VariantDef] = 1;
+            subjectStore["variant-value"] = new List<RegisteredSchema> { refSchema };
+
+            const string rootText =
+                @"{""type"":""record"",""name"":""ViaReference"",""fields"":[" +
+                @"{""name"":""b"",""type"":""confluent.type.Variant""}]}";
+            var refs = new List<SchemaReference>
+            {
+                new SchemaReference("confluent.type.Variant", "variant-value", 1),
+            };
+            var rootRegistered = new RegisteredSchema(
+                "viaref-value", 1, 2, rootText, SchemaType.Avro, refs);
+            store[rootText] = 2;
+            subjectStore["viaref-value"] = new List<RegisteredSchema> { rootRegistered };
+
+            // Resolve the reference the way the client does, rather than hand-building the
+            // name table, so the caller's schema is the one a caller would actually hold.
+            SchemaNames names = await AvroUtils.ResolveNamedSchema(
+                new Schema(rootText, refs, SchemaType.Avro), schemaRegistryClient);
+            var callerSchema = (RecordSchema)Avro.Schema.Parse(rootText, names);
+
+            var record = new GenericRecord(callerSchema);
+            record.Add("b", Variant.ParseJson("{\"name\":\"alice\"}"));
+
+            var ser = new AvroSerializer<GenericRecord>(schemaRegistryClient,
+                new AvroSerializerConfig
+                {
+                    UseLatestVersion = true,
+                    AutoRegisterSchemas = false,
+                    SubjectNameStrategy = SubjectNameStrategy.Topic,
+                });
+            var deser = new AvroDeserializer<GenericRecord>(schemaRegistryClient);
+            var ctx = new SerializationContext(
+                MessageComponentType.Value, "viaref", new Headers());
+
+            var back = await deser.DeserializeAsync(
+                await ser.SerializeAsync(record, ctx), false, ctx);
+
+            Assert.Equal("{\"name\":\"alice\"}", Assert.IsType<Variant>(back["b"]).ToJson());
+        }
+
+        /// <summary>
         ///     A referenced schema may define the variant once and reference it by name
         ///     elsewhere within itself. Only the root schema used to be rebound, so that nested
         ///     site stayed a bare record however the root was parsed, and a field behind it did
