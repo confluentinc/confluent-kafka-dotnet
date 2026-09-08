@@ -36,7 +36,9 @@ namespace Confluent.SchemaRegistry.Rules
     ///         Resolution failures (missing field, out-of-bounds index, type mismatch) return
     ///         <c>null</c> from <see cref="Walk" />; malformed paths throw
     ///         <see cref="System.ArgumentException" /> at parse time. Identifier names follow
-    ///         <c>[A-Za-z_][A-Za-z0-9_]*</c>; use the quoted form for any other key. Negative
+    ///         <c>[letter_][letter digit _]*</c>, where letter and digit are Unicode-aware
+    ///         (<c>char.IsLetter</c> / <c>char.IsLetterOrDigit</c>), so accented and non-Latin
+    ///         names are identifiers too; use the quoted form for any other key. Negative
     ///         indices are rejected (no RFC 9535 <c>len + i</c> semantics). Quoted-key escapes
     ///         recognize only <c>\\</c> (a literal backslash) and backslash + the enclosing
     ///         quote; any other escape is a parse error rather than being silently decoded
