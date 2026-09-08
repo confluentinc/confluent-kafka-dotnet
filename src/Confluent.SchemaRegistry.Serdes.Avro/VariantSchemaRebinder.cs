@@ -127,6 +127,15 @@ namespace Confluent.SchemaRegistry.Serdes
             // A named type establishes the namespace its children resolve against.
             string scope = NamespaceOf(obj, enclosingNamespace);
 
+            // An object that already carries the variant logical type is the exact form this
+            // rebinder produces. Rewriting its `type` again would nest one inside the other -
+            // {"type":{"type":...},"logicalType":"variant"} - corrupting a schema a user wrote
+            // correctly by hand, and making Rebind non-idempotent.
+            bool alreadyVariant =
+                obj.Property("logicalType")?.Value?.Type == JTokenType.String
+                && (string)obj.Property("logicalType").Value
+                    == VariantLogicalType.LogicalTypeName;
+
             foreach (string position in new[] { "type", "items", "values" })
             {
                 JProperty property = obj.Property(position);
@@ -135,7 +144,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     continue;
                 }
 
-                JToken replacement = RewriteIfVariantReference(property.Value, scope);
+                JToken replacement = position == "type" && alreadyVariant
+                    ? null
+                    : RewriteIfVariantReference(property.Value, scope);
                 if (replacement != null)
                 {
                     property.Value = replacement;

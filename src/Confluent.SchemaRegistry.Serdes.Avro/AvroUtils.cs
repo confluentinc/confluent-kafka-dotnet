@@ -82,23 +82,12 @@ namespace Confluent.SchemaRegistry.Serdes
             switch (schema.Tag)
             {
                 case Avro.Schema.Type.Union:
-                    // The branch that can carry the value: a variant is a record, so only a
-                    // record branch is a candidate, and the null branch never is.
+                    // Resolve the branch this value takes. A variant can hide inside any
+                    // container branch, not only a record one, so an optional array or map of
+                    // variants has to be descended into as well.
                     foreach (Avro.Schema branch in ((UnionSchema)schema).Schemas)
                     {
-                        if (branch.Tag == Avro.Schema.Type.Null)
-                        {
-                            continue;
-                        }
-
-                        if (value is Variant && IsVariantRecord(branch))
-                        {
-                            return BindVariants(branch, value);
-                        }
-
-                        if (!(value is Variant) && branch.Tag == Avro.Schema.Type.Record
-                            && value is GenericRecord rec
-                            && rec.Schema.Fullname == ((RecordSchema)branch).Fullname)
+                        if (branch.Tag != Avro.Schema.Type.Null && BranchAccepts(branch, value))
                         {
                             return BindVariants(branch, value);
                         }
@@ -114,13 +103,17 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
 
                     Avro.Schema items = ((ArraySchema)schema).ItemSchema;
-                    var bound = new object[list.Count];
+                    var boundItems = new object[list.Count];
+                    bool itemChanged = false;
                     for (int i = 0; i < list.Count; i++)
                     {
-                        bound[i] = BindVariants(items, list[i]);
+                        boundItems[i] = BindVariants(items, list[i]);
+                        itemChanged |= !ReferenceEquals(boundItems[i], list[i]);
                     }
 
-                    return bound;
+                    // Only hand back a new collection when something in it actually changed, so
+                    // the record arm below can tell an untouched field from a rebound one.
+                    return itemChanged ? boundItems : value;
                 }
 
                 case Avro.Schema.Type.Map:
@@ -131,13 +124,16 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
 
                     Avro.Schema values = ((MapSchema)schema).ValueSchema;
-                    var bound = new Dictionary<string, object>(map.Count);
+                    var boundValues = new Dictionary<string, object>(map.Count);
+                    bool valueChanged = false;
                     foreach (DictionaryEntry entry in map)
                     {
-                        bound[System.Convert.ToString(entry.Key)] = BindVariants(values, entry.Value);
+                        object bound = BindVariants(values, entry.Value);
+                        valueChanged |= !ReferenceEquals(bound, entry.Value);
+                        boundValues[System.Convert.ToString(entry.Key)] = bound;
                     }
 
-                    return bound;
+                    return valueChanged ? (object)boundValues : value;
                 }
 
                 case Avro.Schema.Type.Record:
@@ -153,6 +149,12 @@ namespace Confluent.SchemaRegistry.Serdes
                         return value;
                     }
 
+                    // Copy on the first change, and only then: the record belongs to the caller
+                    // and the serializer hands it here immediately before encoding, so writing
+                    // into it would both alter the caller's own object and race with a
+                    // concurrent serialization of the same record. A field that needs no
+                    // rebinding is shared with the original rather than copied.
+                    GenericRecord copy = null;
                     foreach (Field field in recordSchema.Fields)
                     {
                         if (!record.TryGetValue(field.Name, out object fieldValue))
@@ -161,17 +163,66 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
 
                         object bound = BindVariants(field.Schema, fieldValue);
-                        if (!ReferenceEquals(bound, fieldValue))
+                        if (ReferenceEquals(bound, fieldValue))
                         {
-                            record.Add(field.Pos, bound);
+                            continue;
                         }
+
+                        if (copy == null)
+                        {
+                            copy = ShallowCopy(record, recordSchema);
+                        }
+
+                        copy.Add(field.Pos, bound);
                     }
 
-                    return record;
+                    return copy ?? (object)record;
                 }
 
                 default:
                     return value;
+            }
+        }
+
+        /// <summary>
+        ///     A copy carrying the same schema instance and field values, so the generic writer's
+        ///     <c>record.Schema.Equals(writerSchema)</c> check still holds for the copy.
+        /// </summary>
+        private static GenericRecord ShallowCopy(GenericRecord source, RecordSchema schema)
+        {
+            var copy = new GenericRecord(source.Schema);
+            foreach (Field field in schema.Fields)
+            {
+                if (source.TryGetValue(field.Name, out object existing))
+                {
+                    copy.Add(field.Pos, existing);
+                }
+            }
+
+            return copy;
+        }
+
+        /// <summary>
+        ///     Whether a union branch is the one this value takes. A union may hold several
+        ///     non-null branches, so the branch cannot simply be the first that is not null:
+        ///     with <c>["null", array, map]</c> a map value tested against the array branch would
+        ///     never be descended into.
+        /// </summary>
+        private static bool BranchAccepts(Avro.Schema branch, object value)
+        {
+            switch (branch.Tag)
+            {
+                case Avro.Schema.Type.Record:
+                    return value is Variant
+                        ? IsVariantRecord(branch)
+                        : value is GenericRecord rec
+                          && rec.Schema.Fullname == ((RecordSchema)branch).Fullname;
+                case Avro.Schema.Type.Map:
+                    return value is IDictionary;
+                case Avro.Schema.Type.Array:
+                    return value is IList;
+                default:
+                    return false;
             }
         }
 
@@ -243,7 +294,16 @@ namespace Confluent.SchemaRegistry.Serdes
                     var refNamedSchemas = await ResolveNamedSchema(referencedSchema, schemaRegistryClient)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
-                    var parsedSchema = (NamedSchema) Avro.Schema.Parse(referencedSchema.SchemaString, refNamedSchemas);
+                    // Not a cast: a referenced schema whose top level declares a logical type
+                    // parses to a LogicalSchema, which is not a NamedSchema, and casting threw
+                    // before the root schema was ever parsed. Registering the wrapper's base
+                    // schema under its name is what Avro Java gets for free - there a logical
+                    // type is an attribute of the Schema rather than a wrapper around it, so one
+                    // object is both named and logical.
+                    Avro.Schema parsed = Avro.Schema.Parse(
+                        referencedSchema.SchemaString, refNamedSchemas);
+                    var parsedSchema = parsed as NamedSchema
+                        ?? (parsed as LogicalSchema)?.BaseSchema as NamedSchema;
 
                     // Add all schemas from refNamedSchemas to namedSchemas
                     foreach (var kvp in refNamedSchemas.Names)
@@ -254,8 +314,9 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
                     }
 
-                    // Add the current parsed schema
-                    if (!namedSchemas.Contains(parsedSchema.SchemaName))
+                    // Add the current parsed schema. A top-level array, map or union has no
+                    // name to register under, so there is nothing to add for one.
+                    if (parsedSchema != null && !namedSchemas.Contains(parsedSchema.SchemaName))
                     {
                         namedSchemas.Add(parsedSchema.SchemaName, parsedSchema);
                     }
@@ -275,16 +336,75 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     value is assigned into a GenericRecord, and nowhere earlier. Converting in the walk
         ///     instead broke specific records with an <c>IList&lt;string&gt;</c> field.
         /// </summary>
-        private static object ForGenericWriter(object value)
+        private static object ForGenericWriter(Avro.Schema schema, object value)
         {
-            if (value is IList list && !(value is Array))
+            if (schema == null || value == null)
             {
-                var array = new object[list.Count];
-                list.CopyTo(array, 0);
-                return array;
+                return value;
             }
 
-            return value;
+            switch (schema.Tag)
+            {
+                case Avro.Schema.Type.Union:
+                    // Resolve the branch the value takes, so a container inside a nullable union
+                    // is normalised too.
+                    foreach (Avro.Schema branch in ((UnionSchema)schema).Schemas)
+                    {
+                        if (branch.Tag != Avro.Schema.Type.Null && BranchAccepts(branch, value))
+                        {
+                            return ForGenericWriter(branch, value);
+                        }
+                    }
+
+                    return value;
+
+                case Avro.Schema.Type.Array:
+                {
+                    if (!(value is IList list))
+                    {
+                        return value;
+                    }
+
+                    // Recurse before converting: a nested array schema needs its inner
+                    // collections to be arrays as well, and only the outermost one used to be
+                    // converted.
+                    Avro.Schema items = ((ArraySchema)schema).ItemSchema;
+                    var array = new object[list.Count];
+                    bool changed = !(value is Array);
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        array[i] = ForGenericWriter(items, list[i]);
+                        changed |= !ReferenceEquals(array[i], list[i]);
+                    }
+
+                    return changed ? array : value;
+                }
+
+                case Avro.Schema.Type.Map:
+                {
+                    if (!(value is IDictionary map))
+                    {
+                        return value;
+                    }
+
+                    // A map itself is accepted as an IDictionary; its values still have to be
+                    // walked, because an array behind a map value has the same requirement.
+                    Avro.Schema values = ((MapSchema)schema).ValueSchema;
+                    var converted = new Dictionary<string, object>(map.Count);
+                    bool valueChanged = false;
+                    foreach (DictionaryEntry entry in map)
+                    {
+                        object item = ForGenericWriter(values, entry.Value);
+                        valueChanged |= !ReferenceEquals(item, entry.Value);
+                        converted[System.Convert.ToString(entry.Key)] = item;
+                    }
+
+                    return valueChanged ? (object)converted : value;
+                }
+
+                default:
+                    return value;
+            }
         }
 
         public static async Task<object> Transform(RuleContext ctx, Avro.Schema schema, object message,
@@ -392,7 +512,8 @@ namespace Confluent.SchemaRegistry.Serdes
                                 }
                                 else
                                 {
-                                    genericRecord.Add(f.Pos, ForGenericWriter(newValue));
+                                    genericRecord.Add(
+                                        f.Pos, ForGenericWriter(originalField.Schema, newValue));
                                 }
                             }
                             else

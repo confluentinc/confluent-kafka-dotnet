@@ -47,6 +47,8 @@ namespace Confluent.SchemaRegistry.Rules
     {
         // Bounded cache of parsed paths: rules usually pass a literal path that recurs per
         // record. Only successful parses are cached, so a malformed path throws every call.
+        private const int MaxCachedPaths = 1000;
+
         private static readonly ConcurrentDictionary<string, IReadOnlyList<Segment>> ParseCache =
             new ConcurrentDictionary<string, IReadOnlyList<Segment>>();
 
@@ -89,7 +91,23 @@ namespace Confluent.SchemaRegistry.Rules
                 throw new System.ArgumentException("variant path must start with '$'");
             }
 
-            return ParseCache.GetOrAdd(path, ParseInternal);
+            if (ParseCache.TryGetValue(path, out var cached))
+            {
+                return cached;
+            }
+
+            IReadOnlyList<Segment> parsed = ParseInternal(path);
+            // Bounded like the reference's Guava cache (maximumSize(1000)): variants.path takes
+            // a runtime string, so a rule building paths by interpolation would otherwise retain
+            // one entry per distinct path forever. Clearing on overflow is cruder than Guava's
+            // eviction but keeps the ceiling; the paths that matter are re-parsed once.
+            if (ParseCache.Count >= MaxCachedPaths)
+            {
+                ParseCache.Clear();
+            }
+
+            ParseCache[path] = parsed;
+            return parsed;
         }
 
         private static IReadOnlyList<Segment> ParseInternal(string path)

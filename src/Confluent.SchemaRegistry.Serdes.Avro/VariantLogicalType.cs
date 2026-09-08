@@ -80,7 +80,11 @@ namespace Confluent.SchemaRegistry.Serdes
             var record = (GenericRecord)baseValue;
             var metadata = (byte[])record["metadata"];
             var value = (byte[])record["value"];
-            return new Variant(value, metadata);
+            // No metadata bytes means an absent variant, which the reference reports as null
+            // (VariantUtils.toVariant: "the Variant, or null when there are no metadata bytes").
+            // Constructing one here would index metadata[0] and throw before the CEL layer could
+            // ever see the absence.
+            return metadata == null || metadata.Length == 0 ? null : new Variant(value, metadata);
         }
 
         /// <summary>

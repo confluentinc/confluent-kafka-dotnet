@@ -179,6 +179,7 @@ namespace Confluent.SchemaRegistry.Rules
             }
 
             var target = (IDictionary)fd.Accessor.GetValue(output);
+            FieldDescriptor keyFd = fd.MessageType.FindFieldByName("key");
             FieldDescriptor valueFd = fd.MessageType.FindFieldByName("value");
             foreach (DictionaryEntry entry in entries)
             {
@@ -187,7 +188,9 @@ namespace Confluent.SchemaRegistry.Rules
                     continue;
                 }
 
-                target[entry.Key] = valueFd.FieldType == FieldType.Message
+                // The key needs narrowing just as the value does: CEL carries an integer key as
+                // a long, and MapField<int, ...> rejects a boxed long.
+                target[Scalar(keyFd, entry.Key)] = valueFd.FieldType == FieldType.Message
                     ? (object)BuildMessage(valueFd.MessageType, entry.Value)
                     : Scalar(valueFd, entry.Value);
             }
@@ -361,6 +364,10 @@ namespace Confluent.SchemaRegistry.Rules
                 case FieldType.Double:
                     return System.Convert.ToDouble(value);
                 case FieldType.Enum:
+                    // CEL carries an enum as its number, but the reflection accessor assigns to
+                    // the generated enum-typed property, so a boxed int is an invalid cast.
+                    return System.Enum.ToObject(
+                        fd.EnumType.ClrType, System.Convert.ToInt32(value));
                 case FieldType.Int32:
                 case FieldType.SInt32:
                 case FieldType.SFixed32:

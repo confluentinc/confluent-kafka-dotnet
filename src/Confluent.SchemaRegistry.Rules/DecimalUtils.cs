@@ -120,6 +120,10 @@ namespace Confluent.SchemaRegistry.Rules
                     return BigDecimal.FromBigInteger(new BigInteger(u));
                 case BigInteger bi:
                     return BigDecimal.FromBigInteger(bi);
+                case decimal dec:
+                    // A CLR decimal converts losslessly, so take it before the floating-point
+                    // branches rather than falling through to "cannot convert".
+                    return BigDecimal.FromDecimal(dec);
                 case double dbl:
                     return BigDecimal.FromDouble(dbl);
                 case float f:

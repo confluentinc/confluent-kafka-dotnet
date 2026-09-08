@@ -98,6 +98,138 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         /// <summary>
+        ///     Resolving a reference to a schema whose top level declares the variant logical
+        ///     type. Once the logical type is registered, that parse yields a LogicalSchema,
+        ///     which is not a NamedSchema - so hard-casting it threw before the root schema was
+        ///     ever parsed. Avro Java has no such split: a logical type is an attribute of the
+        ///     Schema there, so one object is both named and logical.
+        /// </summary>
+        [Fact]
+        public async Task AReferenceToAnAnnotatedSchemaResolves()
+        {
+            VariantLogicalType.EnsureRegistered();
+            var refSchema = new RegisteredSchema(
+                "variant-value", 1, 1, VariantDef, SchemaType.Avro, null);
+            store[VariantDef] = 1;
+            subjectStore["variant-value"] = new List<RegisteredSchema> { refSchema };
+
+            const string rootText =
+                @"{""type"":""record"",""name"":""ViaReference"",""fields"":[" +
+                @"{""name"":""b"",""type"":""confluent.type.Variant""}]}";
+            var refs = new List<SchemaReference>
+            {
+                new SchemaReference("confluent.type.Variant", "variant-value", 1),
+            };
+
+            SchemaNames names = await AvroUtils.ResolveNamedSchema(
+                new Schema(rootText, refs, SchemaType.Avro), schemaRegistryClient);
+
+            // The referenced variant is registered under its name, so the root schema's by-name
+            // reference resolves - which is the property the cast used to destroy.
+            Avro.Schema root = Avro.Schema.Parse(rootText, names);
+            Assert.Equal("ViaReference", ((RecordSchema)root).Fullname);
+        }
+
+        /// <summary>
+        ///     A schema already written in the annotated object form - the exact shape the
+        ///     rebinder produces - must be left alone. Its `type` property holds the variant's
+        ///     name, so rewriting it again nested one form inside the other and corrupted a
+        ///     schema the user had written correctly by hand.
+        /// </summary>
+        [Fact]
+        public async Task AnAlreadyAnnotatedReferenceRoundTrips()
+        {
+            VariantLogicalType.EnsureRegistered();
+            var schema = (RecordSchema)Avro.Schema.Parse(
+                @"{""type"":""record"",""name"":""AlreadyAnnotated"",""fields"":[" +
+                @"{""name"":""a"",""type"":" + VariantDef + @"}," +
+                @"{""name"":""b"",""type"":{""type"":""confluent.type.Variant""," +
+                @"""logicalType"":""variant""}}]}");
+            var v = Variant.ParseJson("{\"name\":\"alice\"}");
+            var record = new GenericRecord(schema);
+            record.Add("a", v);
+            record.Add("b", v);
+
+            var ser = new AvroSerializer<GenericRecord>(schemaRegistryClient,
+                new AvroSerializerConfig { AutoRegisterSchemas = true });
+            var deser = new AvroDeserializer<GenericRecord>(schemaRegistryClient);
+            var ctx = new SerializationContext(
+                MessageComponentType.Value, "annotated", new Headers());
+
+            var back = await deser.DeserializeAsync(
+                await ser.SerializeAsync(record, ctx), false, ctx);
+
+            Assert.Equal("{\"name\":\"alice\"}", Assert.IsType<Variant>(back["a"]).ToJson());
+            Assert.Equal("{\"name\":\"alice\"}", Assert.IsType<Variant>(back["b"]).ToJson());
+        }
+
+        /// <summary>
+        ///     Serializing must leave the caller's record alone. The rebinding walk turns a
+        ///     Variant into its base record at every by-name site, and it used to write those
+        ///     back into the record it was handed - so a successful serialize silently changed
+        ///     the caller's object, and two threads serializing one record could race over it.
+        /// </summary>
+        [Fact]
+        public async Task SerializingDoesNotMutateTheCallersRecord()
+        {
+            RecordSchema schema = CallerSchema();
+            GenericRecord record = Message(schema);
+            var ser = new AvroSerializer<GenericRecord>(schemaRegistryClient,
+                new AvroSerializerConfig { AutoRegisterSchemas = true });
+            var ctx = new SerializationContext(
+                MessageComponentType.Value, "no-mutation", new Headers());
+
+            await ser.SerializeAsync(record, ctx);
+
+            // Every by-name site still holds what the caller put there.
+            Assert.IsType<Variant>(record["a"]);
+            Assert.IsType<Variant>(record["b"]);
+            Assert.IsType<Variant>(((object[])record["arr"])[0]);
+            Assert.IsType<Variant>(((Dictionary<string, object>)record["m"])["k"]);
+            Assert.IsType<Variant>(((GenericRecord)record["nested"])["deep"]);
+            Assert.IsType<Variant>(record["maybe"]);
+        }
+
+        /// <summary>
+        ///     A union may carry a container branch rather than the variant record directly. The
+        ///     branch was previously chosen as the first non-null one and only tested for a
+        ///     record, so an optional array or map of variants was never descended into and the
+        ///     generic writer then rejected the Variant inside it.
+        /// </summary>
+        [Fact]
+        public async Task AVariantInsideAUnionContainerRoundTrips()
+        {
+            VariantLogicalType.EnsureRegistered();
+            var schema = (RecordSchema)Avro.Schema.Parse(
+                @"{""type"":""record"",""name"":""UnionContainer"",""fields"":[" +
+                @"{""name"":""a"",""type"":" + VariantDef + @"}," +
+                @"{""name"":""arr"",""type"":[""null"",{""type"":""array""," +
+                @"""items"":""confluent.type.Variant""}]}," +
+                @"{""name"":""m"",""type"":[""null"",{""type"":""map""," +
+                @"""values"":""confluent.type.Variant""}]}]}");
+            var v = Variant.ParseJson("{\"name\":\"alice\"}");
+            var record = new GenericRecord(schema);
+            record.Add("a", v);
+            record.Add("arr", new object[] { v });
+            record.Add("m", new Dictionary<string, object> { ["k"] = v });
+
+            var ser = new AvroSerializer<GenericRecord>(schemaRegistryClient,
+                new AvroSerializerConfig { AutoRegisterSchemas = true });
+            var deser = new AvroDeserializer<GenericRecord>(schemaRegistryClient);
+            var ctx = new SerializationContext(
+                MessageComponentType.Value, "unioncontainer", new Headers());
+
+            var back = await deser.DeserializeAsync(
+                await ser.SerializeAsync(record, ctx), false, ctx);
+
+            Assert.Equal("{\"name\":\"alice\"}",
+                Assert.IsType<Variant>(((object[])back["arr"])[0]).ToJson());
+            Assert.Equal("{\"name\":\"alice\"}",
+                Assert.IsType<Variant>(
+                    ((IDictionary<string, object>)back["m"])["k"]).ToJson());
+        }
+
+        /// <summary>
         ///     The definition site alone, as a control: it worked before and must still work, so a
         ///     failure here says the fix broke the case that was already fine.
         /// </summary>

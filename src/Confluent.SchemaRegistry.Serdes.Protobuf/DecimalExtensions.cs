@@ -58,7 +58,9 @@ namespace Confluent.SchemaRegistry.Serdes
 #else
             var buffer = value.Value.ToByteArray();
             Array.Reverse(buffer);
-            var unscaled = new BigInteger(buffer);
+            // An unset protobuf decimal carries ByteString.Empty, and BigInteger(byte[]) rejects
+            // an empty array on these targets. DecimalUtils.FromUnscaledBytes maps it to zero.
+            var unscaled = buffer.Length == 0 ? BigInteger.Zero : new BigInteger(buffer);
 #endif
             return new BigDecimal(unscaled, value.Scale);
         }
