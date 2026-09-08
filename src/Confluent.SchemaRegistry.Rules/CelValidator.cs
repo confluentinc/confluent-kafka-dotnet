@@ -92,6 +92,18 @@ namespace Confluent.SchemaRegistry.Rules
             // and Cel.NET rejects a CLR enum outright ("enum not allowed here").
             message = CelExecutor.ToCelValue(message);
 
+            // The script type, and so the registry the script is built with, is derived from the
+            // value as it arrived: a confluent.type.Decimal is converted to a DecimalT just below,
+            // which is not an IMessage and would otherwise select the JSON registry and leave the
+            // object type confluent.type.Decimal unresolvable.
+            object scriptTypeSource = message;
+
+            object celDecimal = CelExecutor.ToCelDecimalOrNull(message);
+            if (celDecimal != null)
+            {
+                message = celDecimal;
+            }
+
             // Prefer the field's declared type over the CLR type of the value: the
             // descriptor is what the rule was written against, and it distinguishes cases the
             // value cannot - an enum from an int, a uint64 from an int64. Falls back to the
@@ -117,7 +129,7 @@ namespace Confluent.SchemaRegistry.Rules
             // A rule on a repeated or map field binds a collection to `this`, and the
             // registry has to be chosen from what the collection holds - otherwise the
             // elements' fields cannot be resolved at evaluation time.
-            object typeSample = TypeSample(message);
+            object typeSample = TypeSample(scriptTypeSource);
             var ruleWithArgs = new CelExecutor.RuleWithArgs(
                 rule.Expr, DetermineScriptType(typeSample), declTypes, schema?.ToString());
 

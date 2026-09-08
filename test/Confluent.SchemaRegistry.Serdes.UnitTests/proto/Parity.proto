@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package parity;
+
+import "confluent/meta.proto";
+import "confluent/type/decimal.proto";
+import "confluent/type/variant.proto";
+import "google/protobuf/timestamp.proto";
+
+// C1/C2: inline rules at message and field level, all expected to PASS.
+message ParityRecord {
+  option (.confluent.message_meta) = {
+    rules: [
+      {name: "msgDec", expr: "decimals.gt(this.amount, decimal('10.00'))"},
+      {name: "msgTs",  expr: "this.ts > timestamp('2000-01-01T00:00:00Z')"},
+      {name: "msgVar", expr: "variants.type(this.data) == 'object'"}
+    ]
+  };
+  .confluent.type.Decimal amount = 1 [(.confluent.field_meta) = {
+    rules: [{name: "fldDec", expr: "decimals.gt(decimal(this), decimal('10.00'))"}]
+  }];
+  google.protobuf.Timestamp ts = 2 [(.confluent.field_meta) = {
+    rules: [{name: "fldTs", expr: "this > timestamp('2000-01-01T00:00:00Z')"}]
+  }];
+  .confluent.type.Variant data = 3 [(.confluent.field_meta) = {
+    rules: [{name: "fldVar", expr: "variants.type(this) == 'object'"}]
+  }];
+  string plain = 4;
+}
+
+// The must-fail twin: every rule inverted. A correct client reports 6 violations.
+message ParityRecordN {
+  option (.confluent.message_meta) = {
+    rules: [
+      {name: "msgDecN", expr: "decimals.gt(this.amount, decimal('1000.00'))"},
+      {name: "msgTsN",  expr: "this.ts > timestamp('2050-01-01T00:00:00Z')"},
+      {name: "msgVarN", expr: "variants.type(this.data) == 'array'"}
+    ]
+  };
+  .confluent.type.Decimal amount = 1 [(.confluent.field_meta) = {
+    rules: [{name: "fldDecN", expr: "decimals.gt(decimal(this), decimal('1000.00'))"}]
+  }];
+  google.protobuf.Timestamp ts = 2 [(.confluent.field_meta) = {
+    rules: [{name: "fldTsN", expr: "this > timestamp('2050-01-01T00:00:00Z')"}]
+  }];
+  .confluent.type.Variant data = 3 [(.confluent.field_meta) = {
+    rules: [{name: "fldVarN", expr: "variants.type(this) == 'array'"}]
+  }];
+  string plain = 4;
+}
+
+// No inline rules: used for the domain rules.
+message ParityPlain {
+  .confluent.type.Decimal amount = 1 [(.confluent.field_meta) = { tags: ["AMOUNT"] }];
+  google.protobuf.Timestamp ts = 2 [(.confluent.field_meta) = { tags: ["TS"] }];
+  .confluent.type.Variant data = 3 [(.confluent.field_meta) = { tags: ["DATA"] }];
+  string plain = 4 [(.confluent.field_meta) = { tags: ["PLAIN"] }];
+}
+
+// A container message carrying BOTH inline rules and tags, so one fixture serves every C9
+// capability: C1/C2 from the inline rules, C3 from message-level selection, C4/C5 from a tagged
+// CEL_FIELD rule, and C6/C7 from a message-level transform. Mirrors Java's C9Inline exactly.
+message ValueTypeContainers {
+  option (.confluent.message_meta) = {
+    rules: [
+      {name: "msgArr", expr: "decimals.gt(this.amounts[0], decimal('1.00'))"},
+      {name: "msgNested", expr: "decimals.gt(this.nested.inner, decimal('1.00'))"}
+    ]
+  };
+
+  repeated .confluent.type.Decimal amounts = 1 [(.confluent.field_meta) = {
+    tags: ["AMOUNTS"],
+    rules: [{name: "fldArr", expr: "decimals.gt(this[0], decimal('1.00'))"}]
+  }];
+  map<string, .confluent.type.Decimal> amount_map = 2 [(.confluent.field_meta) = {
+    tags: ["AMOUNTMAP"]
+  }];
+  ValueTypeNested nested = 3;
+  string label = 4;
+}
+
+message ValueTypeNested {
+  .confluent.type.Decimal inner = 1 [(.confluent.field_meta) = {
+    tags: ["INNER"],
+    rules: [{name: "fldInner", expr: "decimals.gt(this, decimal('1.00'))"}]
+  }];
+}
