@@ -37,7 +37,27 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </summary>
         public const string LogicalTypeName = "variant";
 
-        private static int registered;
+        /// <summary>
+        ///     Runs the registration once. <see cref="LazyThreadSafetyMode.ExecutionAndPublication" />
+        ///     is the point: a competing caller blocks until registration has completed rather
+        ///     than proceeding as soon as the attempt has started. An <c>Interlocked</c> flag set
+        ///     up front let a second thread parse a variant schema while the first was still
+        ///     inside <c>Register</c>, so the logical type was not yet there to be found. This is
+        ///     what the reference gets from a JVM static initializer, which runs exactly once and
+        ///     blocks other threads until it returns (AvroSchemaUtils' static block).
+        /// </summary>
+        private static readonly Lazy<bool> registration = new Lazy<bool>(
+            () =>
+            {
+                // Apache.Avro's Register "registers or replaces", and the registry is keyed by
+                // logical type name. The reference registers only if absent, so that a library
+                // which claimed "variant" first keeps it - Apache Iceberg registers the same
+                // name. Apache.Avro exposes no way to ask whether a name is taken, so that
+                // guard cannot be reproduced here.
+                LogicalTypeFactory.Instance.Register(new VariantLogicalType());
+                return true;
+            },
+            LazyThreadSafetyMode.ExecutionAndPublication);
 
         /// <summary>
         ///     Registers the variant logical type with the process-wide
@@ -47,10 +67,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </summary>
         public static void EnsureRegistered()
         {
-            if (Interlocked.Exchange(ref registered, 1) == 0)
-            {
-                LogicalTypeFactory.Instance.Register(new VariantLogicalType());
-            }
+            _ = registration.Value;
         }
 
         /// <summary>

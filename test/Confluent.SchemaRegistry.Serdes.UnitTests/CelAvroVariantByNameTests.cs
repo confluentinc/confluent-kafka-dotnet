@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Avro;
 using Avro.Generic;
@@ -95,6 +96,44 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             byte[] bytes = await ser.SerializeAsync(Message(schema), ctx);
             return await deser.DeserializeAsync(bytes, false, ctx);
+        }
+
+        /// <summary>
+        ///     A referenced schema may define the variant once and reference it by name
+        ///     elsewhere within itself. Only the root schema used to be rebound, so that nested
+        ///     site stayed a bare record however the root was parsed, and a field behind it did
+        ///     not surface as a Variant.
+        /// </summary>
+        [Fact]
+        public async Task AByNameReferenceInsideAReferencedSchemaIsRebound()
+        {
+            VariantLogicalType.EnsureRegistered();
+            const string wrapperText =
+                @"{""type"":""record"",""name"":""Wrapper"",""fields"":[" +
+                @"{""name"":""defined"",""type"":" + VariantDef + @"}," +
+                @"{""name"":""byname"",""type"":""confluent.type.Variant""}]}";
+            var refSchema = new RegisteredSchema(
+                "wrapper-value", 1, 1, wrapperText, SchemaType.Avro, null);
+            store[wrapperText] = 1;
+            subjectStore["wrapper-value"] = new List<RegisteredSchema> { refSchema };
+
+            const string rootText =
+                @"{""type"":""record"",""name"":""Root"",""fields"":[" +
+                @"{""name"":""w"",""type"":""Wrapper""}]}";
+            var refs = new List<SchemaReference>
+            {
+                new SchemaReference("Wrapper", "wrapper-value", 1),
+            };
+
+            SchemaNames names = await AvroUtils.ResolveNamedSchema(
+                new Schema(rootText, refs, SchemaType.Avro), schemaRegistryClient);
+
+            var wrapper = (RecordSchema)names.Names.Values
+                .First(x => x.Fullname == "Wrapper");
+
+            // The definition site was always a LogicalSchema; the by-name site now is too.
+            Assert.IsType<LogicalSchema>(wrapper["defined"].Schema);
+            Assert.IsType<LogicalSchema>(wrapper["byname"].Schema);
         }
 
         /// <summary>

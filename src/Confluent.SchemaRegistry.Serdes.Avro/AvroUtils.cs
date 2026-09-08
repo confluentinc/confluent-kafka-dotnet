@@ -39,6 +39,8 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     property of the schema and the walk below is skipped entirely when it is false -
         ///     which it is for every schema that does not use a variant twice.
         /// </summary>
+        private const int MaxCachedSchemas = 1000;
+
         private static readonly ConcurrentDictionary<Avro.Schema, bool> hasBareVariant =
             new ConcurrentDictionary<Avro.Schema, bool>();
 
@@ -63,13 +65,39 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </summary>
         internal static object BindVariantsForWriter(Avro.Schema schema, object value)
         {
-            if (!hasBareVariant.GetOrAdd(schema,
-                    s => HasBareVariantRecord(s, new HashSet<string>())))
+            if (!HasBareVariantCached(schema))
             {
                 return value;
             }
 
             return BindVariants(schema, value);
+        }
+
+        /// <summary>
+        ///     Whether the schema reaches a bare variant, remembering the answer.
+        ///
+        ///     <para>
+        ///         Bounded, because the key is a schema the caller created: a producer building
+        ///         schemas dynamically would otherwise retain every schema graph it had ever
+        ///         serialized, including the ones the answer was <c>false</c> for. The same
+        ///         ceiling the reference puts on its parse cache.
+        ///     </para>
+        /// </summary>
+        private static bool HasBareVariantCached(Avro.Schema schema)
+        {
+            if (hasBareVariant.TryGetValue(schema, out bool cached))
+            {
+                return cached;
+            }
+
+            bool answer = HasBareVariantRecord(schema, new HashSet<string>());
+            if (hasBareVariant.Count >= MaxCachedSchemas)
+            {
+                hasBareVariant.Clear();
+            }
+
+            hasBareVariant[schema] = answer;
+            return answer;
         }
 
         private static object BindVariants(Avro.Schema schema, object value)
@@ -300,8 +328,13 @@ namespace Confluent.SchemaRegistry.Serdes
                     // schema under its name is what Avro Java gets for free - there a logical
                     // type is an attribute of the Schema rather than a wrapper around it, so one
                     // object is both named and logical.
+                    // Rebound like the root schema is: a referenced schema may define the
+                    // variant once and reference it by name elsewhere within itself, and that
+                    // nested reference would otherwise stay a bare record no matter how the
+                    // root is parsed - so a field behind it would not surface as a Variant.
                     Avro.Schema parsed = Avro.Schema.Parse(
-                        referencedSchema.SchemaString, refNamedSchemas);
+                        VariantSchemaRebinder.Rebind(referencedSchema.SchemaString),
+                        refNamedSchemas);
                     var parsedSchema = parsed as NamedSchema
                         ?? (parsed as LogicalSchema)?.BaseSchema as NamedSchema;
 
