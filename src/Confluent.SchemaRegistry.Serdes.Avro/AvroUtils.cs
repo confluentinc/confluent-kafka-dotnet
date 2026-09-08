@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -32,6 +33,189 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </summary>
     public static class AvroUtils
     {
+        /// <summary>
+        ///     Whether a schema has a <c>confluent.type.Variant</c> record that is *not* wrapped
+        ///     in a logical type, i.e. a by-name reference site. Cached, because the answer is a
+        ///     property of the schema and the walk below is skipped entirely when it is false -
+        ///     which it is for every schema that does not use a variant twice.
+        /// </summary>
+        private static readonly ConcurrentDictionary<Avro.Schema, bool> hasBareVariant =
+            new ConcurrentDictionary<Avro.Schema, bool>();
+
+        /// <summary>
+        ///     Converts a <see cref="Variant" /> into its base record wherever the schema carries
+        ///     a bare <c>confluent.type.Variant</c> record, so the generic writer accepts it.
+        ///
+        ///     <para>
+        ///         Apache.Avro applies the <c>variant</c> logical
+        ///         type only where the schema *defines* the record; a by-name reference resolves to
+        ///         a plain <see cref="RecordSchema" />, and the writer then rejects the
+        ///         <see cref="Variant" /> with "GenericRecord required to write against record
+        ///         schema". <see cref="VariantSchemaRebinder" /> fixes this for every schema the
+        ///         client parses itself, but on the generic write path the writer schema is
+        ///         <c>data.Schema</c> - the caller's own parse - so the value is what has to give.
+        ///     </para>
+        ///     <para>
+        ///         Re-parsing the caller's schema instead is not available: the writer asserts
+        ///         <c>record.Schema.Equals(writerSchema)</c>, so a rebound schema would be refused
+        ///         by the very records it was meant to help.
+        ///     </para>
+        /// </summary>
+        internal static object BindVariantsForWriter(Avro.Schema schema, object value)
+        {
+            if (!hasBareVariant.GetOrAdd(schema,
+                    s => HasBareVariantRecord(s, new HashSet<string>())))
+            {
+                return value;
+            }
+
+            return BindVariants(schema, value);
+        }
+
+        private static object BindVariants(Avro.Schema schema, object value)
+        {
+            if (value == null)
+            {
+                return value;
+            }
+
+            switch (schema.Tag)
+            {
+                case Avro.Schema.Type.Union:
+                    // The branch that can carry the value: a variant is a record, so only a
+                    // record branch is a candidate, and the null branch never is.
+                    foreach (Avro.Schema branch in ((UnionSchema)schema).Schemas)
+                    {
+                        if (branch.Tag == Avro.Schema.Type.Null)
+                        {
+                            continue;
+                        }
+
+                        if (value is Variant && IsVariantRecord(branch))
+                        {
+                            return BindVariants(branch, value);
+                        }
+
+                        if (!(value is Variant) && branch.Tag == Avro.Schema.Type.Record
+                            && value is GenericRecord rec
+                            && rec.Schema.Fullname == ((RecordSchema)branch).Fullname)
+                        {
+                            return BindVariants(branch, value);
+                        }
+                    }
+
+                    return value;
+
+                case Avro.Schema.Type.Array:
+                {
+                    if (!(value is IList list))
+                    {
+                        return value;
+                    }
+
+                    Avro.Schema items = ((ArraySchema)schema).ItemSchema;
+                    var bound = new object[list.Count];
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        bound[i] = BindVariants(items, list[i]);
+                    }
+
+                    return bound;
+                }
+
+                case Avro.Schema.Type.Map:
+                {
+                    if (!(value is IDictionary map))
+                    {
+                        return value;
+                    }
+
+                    Avro.Schema values = ((MapSchema)schema).ValueSchema;
+                    var bound = new Dictionary<string, object>(map.Count);
+                    foreach (DictionaryEntry entry in map)
+                    {
+                        bound[System.Convert.ToString(entry.Key)] = BindVariants(values, entry.Value);
+                    }
+
+                    return bound;
+                }
+
+                case Avro.Schema.Type.Record:
+                {
+                    var recordSchema = (RecordSchema)schema;
+                    if (value is Variant variant && IsVariantRecord(recordSchema))
+                    {
+                        return VariantLogicalType.ToBaseRecord(variant, recordSchema);
+                    }
+
+                    if (!(value is GenericRecord record))
+                    {
+                        return value;
+                    }
+
+                    foreach (Field field in recordSchema.Fields)
+                    {
+                        if (!record.TryGetValue(field.Name, out object fieldValue))
+                        {
+                            continue;
+                        }
+
+                        object bound = BindVariants(field.Schema, fieldValue);
+                        if (!ReferenceEquals(bound, fieldValue))
+                        {
+                            record.Add(field.Pos, bound);
+                        }
+                    }
+
+                    return record;
+                }
+
+                default:
+                    return value;
+            }
+        }
+
+        /// <summary>
+        ///     A <c>confluent.type.Variant</c> record with no logical type on it. A definition site
+        ///     is a <c>LogicalSchema</c> and never reaches here, which is what keeps this to the
+        ///     reference sites.
+        /// </summary>
+        private static bool IsVariantRecord(Avro.Schema schema) =>
+            schema.Tag == Avro.Schema.Type.Record
+            && ((RecordSchema)schema).Fullname == VariantSchemaRebinder.VariantFullName;
+
+        /// <summary>
+        ///     Whether the schema reaches a bare variant record. <paramref name="seen" /> guards
+        ///     the recursive-schema case, which would otherwise not terminate.
+        /// </summary>
+        private static bool HasBareVariantRecord(Avro.Schema schema, HashSet<string> seen)
+        {
+            switch (schema.Tag)
+            {
+                case Avro.Schema.Type.Union:
+                    return ((UnionSchema)schema).Schemas.Any(b => HasBareVariantRecord(b, seen));
+                case Avro.Schema.Type.Array:
+                    return HasBareVariantRecord(((ArraySchema)schema).ItemSchema, seen);
+                case Avro.Schema.Type.Map:
+                    return HasBareVariantRecord(((MapSchema)schema).ValueSchema, seen);
+                case Avro.Schema.Type.Record:
+                    var recordSchema = (RecordSchema)schema;
+                    if (IsVariantRecord(recordSchema))
+                    {
+                        return true;
+                    }
+
+                    if (!seen.Add(recordSchema.Fullname))
+                    {
+                        return false;
+                    }
+
+                    return recordSchema.Fields.Any(f => HasBareVariantRecord(f.Schema, seen));
+                default:
+                    return false;
+            }
+        }
+
         /// <summary>
         ///     Resolves named schemas referenced by the provided schema recursively.
         /// </summary>
@@ -81,10 +265,38 @@ namespace Confluent.SchemaRegistry.Serdes
             return namedSchemas;
         }
 
+        /// <summary>
+        ///     Apache.Avro's *generic* writer type-checks a value against the schema and rejects
+        ///     anything that is not a <see cref="Array" /> for an array schema ("Array required to
+        ///     write against array schema but found ...List`1"). The shared
+        ///     <c>Utils.TransformEnumerableAsync</c> builds a <c>List&lt;T&gt;</c>, which is what
+        ///     the protobuf and JSON walks want and what an <c>ISpecificRecord</c> field typed
+        ///     <c>IList&lt;T&gt;</c> requires - so the conversion belongs here, at the point the
+        ///     value is assigned into a GenericRecord, and nowhere earlier. Converting in the walk
+        ///     instead broke specific records with an <c>IList&lt;string&gt;</c> field.
+        /// </summary>
+        private static object ForGenericWriter(object value)
+        {
+            if (value is IList list && !(value is Array))
+            {
+                var array = new object[list.Count];
+                list.CopyTo(array, 0);
+                return array;
+            }
+
+            return value;
+        }
+
         public static async Task<object> Transform(RuleContext ctx, Avro.Schema schema, object message,
             IFieldTransform fieldTransform)
         {
-            if (schema == null || message == null)
+            // Only an absent schema stops the walk. A `null` *value* is the null branch of a
+            // ["null", T] union and has to reach the rule: the reference binds it as CEL null so
+            // a rule can guard with `value == null`, and returning early here skipped the rule
+            // entirely - indistinguishable, to the caller, from a rule that ran and passed. The
+            // reference guards a null only where there is nothing to walk, which is why the
+            // array, map and record cases below each carry their own guard.
+            if (schema == null)
             {
                 return message;
             }
@@ -104,16 +316,29 @@ namespace Confluent.SchemaRegistry.Serdes
                     int unionIndex = writer.Resolve(us, message);
                     return await Transform(ctx, us[unionIndex], message, fieldTransform).ConfigureAwait(false);
                 case Avro.Schema.Type.Array:
+                    if (message == null)
+                    {
+                        return message;
+                    }
                     ArraySchema a = (ArraySchema)schema;
                     var arrayTransformer = (int index, object elem) =>
                         Transform(ctx, a.ItemSchema, elem, fieldTransform);
                     return await Utils.TransformEnumerableAsync(message, arrayTransformer).ConfigureAwait(false);
                 case Avro.Schema.Type.Map:
+                    if (message == null)
+                    {
+                        return message;
+                    }
                     MapSchema ms = (MapSchema)schema;
                     var mapTransformer = (object key, object value) =>
                         Transform(ctx, ms.ValueSchema, value, fieldTransform);
                     return await Utils.TransformDictionaryAsync(message, mapTransformer).ConfigureAwait(false);
                 case Avro.Schema.Type.Record:
+                    if (message == null)
+                    {
+                        // A null record has no fields to walk.
+                        return message;
+                    }
                     RecordSchema rs = (RecordSchema)schema;
                     if (message is ISpecificRecord)
                     {
@@ -167,7 +392,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 }
                                 else
                                 {
-                                    genericRecord.Add(f.Pos, newValue);
+                                    genericRecord.Add(f.Pos, ForGenericWriter(newValue));
                                 }
                             }
                             else

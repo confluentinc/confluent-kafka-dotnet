@@ -196,8 +196,13 @@ namespace Confluent.SchemaRegistry.Serdes
 
                 using (var stream = new MemoryStream(initialBufferSize))
                 {
+                    // A Variant sitting at a by-name reference to confluent.type.Variant has to
+                    // be turned into its base record first: the reference lost the logical type
+                    // at parse time, so the writer would refuse the Variant. See
+                    // AvroUtils.BindVariantsForWriter. A no-op for every other schema.
+                    var writable = (GenericRecord)AvroUtils.BindVariantsForWriter(writerSchema, data);
                     new GenericWriter<GenericRecord>(writerSchema)
-                        .Write(data, new BinaryEncoder(stream));
+                        .Write(writable, new BinaryEncoder(stream));
                     
                     var buffer = await ExecuteRules(isKey, subject, topic, headers, RulePhase.Encoding, RuleMode.Write,
                             null, latestSchema, stream.ToArray(), null)
@@ -224,7 +229,11 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             SchemaNames namedSchemas = await AvroUtils.ResolveNamedSchema(schema, schemaRegistryClient)
                 .ConfigureAwait(continueOnCapturedContext: false);
-            return Avro.Schema.Parse(schema.SchemaString, namedSchemas);
+            // A by-name reference to confluent.type.Variant loses the variant logical type in
+            // Apache.Avro; rebinding the reference before the parse restores it. See
+            // VariantSchemaRebinder. A no-op for every schema without one.
+            return Avro.Schema.Parse(
+                VariantSchemaRebinder.Rebind(schema.SchemaString), namedSchemas);
         }
 
         /// <summary>
