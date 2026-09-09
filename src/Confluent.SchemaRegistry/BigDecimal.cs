@@ -412,12 +412,27 @@ namespace Confluent.SchemaRegistry
             // Pow10 is built whichever way the scale moves - it is the multiplier when
             // expanding and the divisor when coarsening - so unlike libmpdec's rescale, both
             // directions cost `|newScale - scale|` digits here, and an expanding one also costs
-            // the resulting coefficient. Zero is not exempt for that reason: the power of ten
-            // is materialised even when the value it scales is zero.
-            RequireSaneWidth(
-                Math.Max((long)Math.Abs((long)newScale - scale),
-                         (long)Digits(unscaled) + ((long)newScale - scale)),
-                "decimal", $"a scale of {newScale}");
+            // the resulting coefficient. Zero *is* exempt, matching the reference
+            // (`new BigDecimal(BigInteger.ZERO, 2147483647)` is precision 1): the widening
+            // branch below multiplies, which Rescale-style short-circuits on zero, and the
+            // narrowing branch divides zero by the divisor it would otherwise build.
+            if (!unscaled.IsZero)
+            {
+                RequireSaneWidth(
+                    Math.Max((long)Math.Abs((long)newScale - scale),
+                             (long)Digits(unscaled) + ((long)newScale - scale)),
+                    "decimal", $"a scale of {newScale}");
+            }
+            // Zero moves to any scale for free, and this is what makes the exemption above
+            // honest: both branches below build a Pow10 unconditionally, so without this a
+            // zero would still pay for the power of ten it is multiplied by or divided into.
+            // The reference agrees - `new BigDecimal(BigInteger.ZERO, 2147483647)` is
+            // precision 1, and `setScale` on a zero is exact at any target.
+            if (unscaled.IsZero)
+            {
+                return new BigDecimal(BigInteger.Zero, newScale);
+            }
+
             if (newScale >= scale)
             {
                 return new BigDecimal(unscaled * Pow10(newScale - scale), newScale);
@@ -677,16 +692,40 @@ namespace Confluent.SchemaRegistry
         private static void RequireAlignable(BigDecimal a, BigDecimal b, string fn)
         {
             long target = Math.Max(a.scale, b.scale);
-            long widest = Math.Max(
-                (long)Digits(a.unscaled) + (target - a.scale),
-                (long)Digits(b.unscaled) + (target - b.scale));
-            RequireSaneWidth(widest + 1, fn, "aligning the operands");
+            RequireSaneWidth(Math.Max(OperandWidth(target, a), OperandWidth(target, b)) + 1,
+                fn, "aligning the operands");
         }
+
+        /// <summary>
+        ///     Digits <paramref name="d" /> needs once expanded to <paramref name="targetScale" />.
+        /// </summary>
+        /// <remarks>
+        ///     A zero contributes one digit whatever the distance, because expanding a zero
+        ///     appends none - see the short-circuit in <see cref="Rescale" />, which is what
+        ///     makes that true here. It decides several cases outright, since alignment expands
+        ///     only the operand whose scale is coarser. Measured on libmpdec, with the JDK
+        ///     agreeing on every row: <c>0E+2e9 + 0E-2e9</c>, <c>0E+2e9 + 1</c> and
+        ///     <c>0E+2e9 mod 1E-2e9</c> are free at one digit, while <c>0E-2e9 + 1</c> is
+        ///     1601 MB and 2e9+1 digits (<c>ArithmeticException</c> there). Only the last must
+        ///     be refused, and the difference is purely which operand expands.
+        /// </remarks>
+        private static long OperandWidth(long targetScale, BigDecimal d)
+            => d.unscaled.IsZero ? 1 : (long)Digits(d.unscaled) + (targetScale - d.scale);
 
         private static BigInteger Rescale(BigInteger value, int fromScale, int toScale)
         {
             // toScale >= fromScale for every caller here (they align to the max scale).
-            return toScale == fromScale ? value : value * Pow10(toScale - fromScale);
+            //
+            // Zero short-circuits, and that is load-bearing rather than an optimisation: the
+            // width guards treat expanding a zero as free, because the reference does. Without
+            // this, `Pow10` would still be built just to multiply it by zero - so the guard
+            // would be telling the truth about the JVM and a lie about this code.
+            if (value.IsZero || toScale == fromScale)
+            {
+                return value;
+            }
+
+            return value * Pow10(toScale - fromScale);
         }
 
         private static int Digits(BigInteger absValue)

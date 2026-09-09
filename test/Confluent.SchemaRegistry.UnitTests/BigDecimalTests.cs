@@ -197,6 +197,29 @@ namespace Confluent.SchemaRegistry.UnitTests
                 .Remainder(new BigDecimal(new BigInteger(3), 0)).ToPlainString());
         }
 
+        // Expanding a *zero* is free, so the frame is set by the operands that actually have
+        // digits - which means several of these turn on which operand expands, not on how far
+        // apart the scales are. Every row measured on the JDK:
+        //   0E+2e9 + 0E-2e9  -> precision 1          (both zero)
+        //   0E+2e9 + 1       -> precision 1, scale 0 (aligns to 0, so the *zero* expands)
+        //   1 + 0E-2e9       -> ArithmeticException  (aligns to 2e9, so the *one* expands)
+        //   0E+2e9 mod 1E-2e9 -> precision 1
+        [Fact]
+        public void ExpandingAZeroOperandIsFree()
+        {
+            var zeroCoarse = new BigDecimal(BigInteger.Zero, -2000000000); // 0E+2e9
+            var zeroFine = new BigDecimal(BigInteger.Zero, 2000000000);    // 0E-2e9
+            var one = new BigDecimal(BigInteger.One, 0);
+
+            Assert.Equal(0, zeroCoarse.Add(zeroFine).Signum);
+            Assert.Equal(0, zeroCoarse.Subtract(zeroFine).Signum);
+            Assert.Equal("1", zeroCoarse.Add(one).ToPlainString());
+            Assert.Equal(0, zeroCoarse.Remainder(new BigDecimal(BigInteger.One, 2000000000)).Signum);
+
+            // The row that must still be refused: here the *one* is what expands.
+            Assert.Throws<ArithmeticException>(() => one.Add(zeroFine));
+        }
+
         // The must-fail twin: Multiply does not align, so it is unbounded at any width, and
         // alignment that stays narrow is fine however extreme both operands are.
         [Fact]
@@ -228,8 +251,14 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.Throws<ArithmeticException>(() => d.SetScale(100000000, BigDecimal.Rounding.HalfUp));
             Assert.Throws<ArithmeticException>(() => d.SetScale(-100000000, BigDecimal.Rounding.HalfUp));
             Assert.Throws<ArithmeticException>(() => d.SetScale(2147483647, BigDecimal.Rounding.Down));
-            Assert.Throws<ArithmeticException>(
-                () => BigDecimal.Zero.SetScale(2147483647, BigDecimal.Rounding.Floor));
+            // Zero is exempt, and this line asserted the opposite until it was measured: the
+            // reference moves a zero to any scale exactly - `new BigDecimal(BigInteger.ZERO,
+            // 2147483647)` is precision 1 - and SetScale now short-circuits rather than
+            // building a Pow10 to multiply by zero.
+            Assert.Equal(2147483647, BigDecimal.Zero.SetScale(2147483647, BigDecimal.Rounding.Floor).Scale);
+            Assert.Equal(0, BigDecimal.Zero.SetScale(2147483647, BigDecimal.Rounding.Floor).Signum);
+            Assert.Equal(int.MinValue,
+                BigDecimal.Zero.SetScale(int.MinValue, BigDecimal.Rounding.Down).Scale);
         }
 
         [Fact]
