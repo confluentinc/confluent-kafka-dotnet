@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Apache.Avro" Version="1.12.1" />
+    <PackageReference Include="Apache.Avro" Version="1.12.2" />
   </ItemGroup>
 
   <ItemGroup>

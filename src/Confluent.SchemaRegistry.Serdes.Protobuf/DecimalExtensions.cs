@@ -15,9 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Buffers.Binary;
+using System.Globalization;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Decimal = Confluent.SchemaRegistry.Serdes.Protobuf.Decimal;
 
@@ -35,39 +34,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <returns>Protobuf decimal value</returns>
         public static Decimal ToProtobufDecimal(this decimal value)
         {
-            Span<byte> bytes = stackalloc byte[16];
-            WriteBytesFromDecimal(value, bytes);
-
-            // Copy the 12 bytes into an array of size 13 so that the last byte is 0,
-            // which will ensure that the unscaled value is positive.
-            Span<byte> unscaledValueBytes = stackalloc byte[13];
-            bytes.Slice(0, 12).CopyTo(unscaledValueBytes);
-
-#if NET6_0_OR_GREATER
-            var unscaledValue = new BigInteger(unscaledValueBytes);
-#else
-            var unscaledValue = new BigInteger(unscaledValueBytes.ToArray());
-#endif
-            
-            if (bytes[15] == 128)
-            {
-                unscaledValue *= BigInteger.MinusOne;
-            }
-            var scale = bytes[14];
-            
-#if NET6_0_OR_GREATER
-            Span<byte> buffer = stackalloc byte[16];
-            unscaledValue.TryWriteBytes(buffer, out var bytesWritten, isBigEndian: true);
-            buffer = buffer.Slice(0, bytesWritten);
-#else
-            var buffer = unscaledValue.ToByteArray();
-            Array.Reverse(buffer);
-#endif
-            
-            return new Decimal {
-                Value = ByteString.CopyFrom(buffer),
-                Scale = scale,
-            };
+            return BigDecimal.FromDecimal(value).ToProtobufDecimal();
         }
 
         /// <summary>
@@ -77,42 +44,48 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <returns>Decimal value</returns>
         public static decimal ToSystemDecimal(this Decimal value)
         {
+            return value.ToBigDecimal().ToDecimal();
+        }
+
+        /// <summary>
+        ///   Converts a Protobuf decimal to a <see cref="BigDecimal" /> (lossless)
+        /// </summary>
+        /// <param name="value">Protobuf decimal value</param>
+        /// <returns>BigDecimal value</returns>
+        public static BigDecimal ToBigDecimal(this Decimal value)
+        {
 #if NET6_0_OR_GREATER
-            var unscaledValue = new BigInteger(value.Value.Span, isBigEndian: true);
+            var unscaled = new BigInteger(value.Value.Span, isBigEndian: true);
 #else
             var buffer = value.Value.ToByteArray();
             Array.Reverse(buffer);
-            var unscaledValue = new BigInteger(buffer);
+            // An unset protobuf decimal carries ByteString.Empty, and BigInteger(byte[]) rejects
+            // an empty array on these targets. DecimalUtils.FromUnscaledBytes maps it to zero.
+            var unscaled = buffer.Length == 0 ? BigInteger.Zero : new BigInteger(buffer);
 #endif
-
-            var scaleDivisor = BigInteger.Pow(new BigInteger(10), value.Scale);
-            var quotient = BigInteger.DivRem(unscaledValue, scaleDivisor, out var remainder);
-
-            if (quotient > new BigInteger(decimal.MaxValue))
-            {
-                throw new OverflowException($"The value {unscaledValue} cannot fit into decimal.");
-            }
-
-            var leftOfDecimal = (decimal)quotient;
-            var rightOfDecimal = (decimal)remainder / (decimal)scaleDivisor;
-
-            return leftOfDecimal + rightOfDecimal;
+            return new BigDecimal(unscaled, value.Scale);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteBytesFromDecimal(decimal value, Span<byte> destination)
+        /// <summary>
+        ///   Converts a <see cref="BigDecimal" /> to a Protobuf decimal (lossless)
+        /// </summary>
+        /// <param name="value">BigDecimal value</param>
+        /// <returns>Protobuf decimal value</returns>
+        public static Decimal ToProtobufDecimal(this BigDecimal value)
         {
-#if NET6_0_OR_GREATER
-            Span<int> bits = stackalloc int[4];
-            _ = decimal.GetBits(value, bits);
-#else
-            var bits = decimal.GetBits(value);
-#endif 
-            
-            BinaryPrimitives.WriteInt32LittleEndian(destination, bits[0]);
-            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(4), bits[1]);
-            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(8), bits[2]);
-            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(12), bits[3]);
+            var buffer = value.Unscaled.ToByteArray(); // little-endian two's-complement, minimal
+            Array.Reverse(buffer);                      // big-endian wire form
+            // Precision is the unscaled value's digit count, as Java's
+            // DecimalUtils.fromBigDecimal sets it (BigDecimal.precision()). Zero has precision 1.
+            var precision = value.Unscaled.IsZero
+                ? 1u
+                : (uint)BigInteger.Abs(value.Unscaled).ToString(CultureInfo.InvariantCulture).Length;
+            return new Decimal
+            {
+                Value = ByteString.CopyFrom(buffer),
+                Precision = precision,
+                Scale = value.Scale
+            };
         }
     }
 }
