@@ -137,6 +137,25 @@ message ValueTypes {
             Assert.Equal(2, result.Amount.Scale);
         }
 
+        /// <summary>
+        ///     Precision is the unscaled value's digit count, which is what
+        ///     <c>BigDecimal.precision()</c> reports and what the JVM's ProtobufResultWriter
+        ///     writes (<c>m.put("precision", dec.precision())</c>). It was left unset here, so the
+        ///     same computed decimal serialized differently than it does on the JVM.
+        /// </summary>
+        [Fact]
+        public async Task ComputedDecimalCarriesItsPrecision()
+        {
+            var result = await Transform(
+                "{'amount': decimals.add(decimal(message.amount), decimal('1.00')), " +
+                "'ts': message.ts, 'data': message.data, 'plain': message.plain}");
+
+            // 12.34 + 1.00 = 13.34 -> unscaled 1334, four digits.
+            Assert.Equal(1334, (int)Unscaled(result.Amount));
+            Assert.Equal(2, result.Amount.Scale);
+            Assert.Equal(4u, result.Amount.Precision);
+        }
+
         [Fact]
         public async Task ComputedTimestampIsWrittenBack()
         {

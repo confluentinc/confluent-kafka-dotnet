@@ -17,6 +17,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Google.Protobuf.WellKnownTypes;
@@ -294,9 +295,11 @@ namespace Confluent.SchemaRegistry.Rules
         /// <summary>
         ///     Builds <c>confluent.type.Decimal</c> the way
         ///     <c>DecimalExtensions.ToProtobufDecimal</c> does, but through the descriptor: the
-        ///     unscaled magnitude as big-endian two's complement, plus the scale. Precision is left
-        ///     unset, as it is there - the wire form carries the scale, and the field's declared
-        ///     precision is a schema property rather than a property of this value.
+        ///     unscaled magnitude as big-endian two's complement, plus the scale and the
+        ///     precision. Precision is the unscaled value's digit count, which is what
+        ///     <c>BigDecimal.precision()</c> reports and what the JVM's ProtobufResultWriter
+        ///     writes; leaving it unset made the same computed decimal serialize differently
+        ///     here than on the JVM.
         /// </summary>
         private static IMessage BuildDecimal(MessageDescriptor desc, BigDecimal value)
         {
@@ -304,8 +307,23 @@ namespace Confluent.SchemaRegistry.Rules
             Array.Reverse(buffer);                          // big-endian wire form
             IMessage output = BuildValueType(desc);
             SetByName(output, "value", ByteString.CopyFrom(buffer));
+            SetByName(output, "precision", UnscaledPrecision(value.Unscaled));
             SetByName(output, "scale", value.Scale);
             return output;
+        }
+
+        /// <summary>
+        ///     The digit count of an unscaled value, which is what <c>BigDecimal.precision()</c>
+        ///     reports. Zero has precision 1 there.
+        /// </summary>
+        internal static uint UnscaledPrecision(BigInteger unscaled)
+        {
+            if (unscaled.IsZero)
+            {
+                return 1;
+            }
+
+            return (uint)BigInteger.Abs(unscaled).ToString(CultureInfo.InvariantCulture).Length;
         }
 
         /// <summary>

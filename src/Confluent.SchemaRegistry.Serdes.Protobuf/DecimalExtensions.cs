@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Globalization;
 using System.Numerics;
 using Google.Protobuf;
 using Decimal = Confluent.SchemaRegistry.Serdes.Protobuf.Decimal;
@@ -74,7 +75,17 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             var buffer = value.Unscaled.ToByteArray(); // little-endian two's-complement, minimal
             Array.Reverse(buffer);                      // big-endian wire form
-            return new Decimal { Value = ByteString.CopyFrom(buffer), Scale = value.Scale };
+            // Precision is the unscaled value's digit count, as Java's
+            // DecimalUtils.fromBigDecimal sets it (BigDecimal.precision()). Zero has precision 1.
+            var precision = value.Unscaled.IsZero
+                ? 1u
+                : (uint)BigInteger.Abs(value.Unscaled).ToString(CultureInfo.InvariantCulture).Length;
+            return new Decimal
+            {
+                Value = ByteString.CopyFrom(buffer),
+                Precision = precision,
+                Scale = value.Scale
+            };
         }
     }
 }
