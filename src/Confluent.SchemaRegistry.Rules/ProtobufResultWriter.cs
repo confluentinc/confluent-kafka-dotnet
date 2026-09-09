@@ -175,9 +175,17 @@ namespace Confluent.SchemaRegistry.Rules
 
         private static void SetMap(IMessage output, FieldDescriptor fd, object value)
         {
+            // A shape mismatch is an error, not a no-op. The message is rebuilt field by field,
+            // so returning here left the map *empty* - a rule that answered with a scalar or a
+            // list silently discarded the data instead of reporting anything, which is the one
+            // outcome the rest of this writer is careful to avoid (every Scalar arm throws).
+            // Measured against protobuf-java 4.34.0's JsonFormat, which is the reference for
+            // this path - the JVM renders the CEL result map to protobuf JSON and parses it:
+            //   {"m": "notamap"} -> Expect a map object but found: "notamap"
+            //   {"m": [1,2]}     -> Expect a map object but found: [1,2]
             if (!(value is IDictionary entries))
             {
-                return;
+                throw Mismatch(fd, value, "map");
             }
 
             var target = (IDictionary)fd.Accessor.GetValue(output);
@@ -200,9 +208,15 @@ namespace Confluent.SchemaRegistry.Rules
 
         private static void SetRepeated(IMessage output, FieldDescriptor fd, object value)
         {
+            // Same as SetMap: silently leaving the list empty is the one outcome to avoid. The
+            // `value is string` test comes first because a string *is* IEnumerable in .NET, so
+            // it would otherwise be spread into one element per character. JsonFormat refuses
+            // both shapes, measured:
+            //   {"r": "notalist"} -> Expected an array for r but found "notalist"
+            //   {"r": {"a":1}}    -> Expected an array for r but found {"a":1}
             if (value is string || !(value is IEnumerable items))
             {
-                return;
+                throw Mismatch(fd, value, "list");
             }
 
             var target = (IList)fd.Accessor.GetValue(output);
@@ -316,15 +330,15 @@ namespace Confluent.SchemaRegistry.Rules
         ///     The digit count of an unscaled value, which is what <c>BigDecimal.precision()</c>
         ///     reports. Zero has precision 1 there.
         /// </summary>
+        /// <remarks>
+        ///     Delegates to <see cref="BigDecimal.UnscaledPrecision" />, which carries the
+        ///     coefficient-width guard. This path had its own unguarded copy, so a decimal a
+        ///     rule *computed* could drive an unbounded quadratic <c>BigInteger.ToString()</c>
+        ///     here while the identical value was refused by the serde's write-back - the same
+        ///     client accepting and rejecting one decimal depending on which path produced it.
+        /// </remarks>
         internal static uint UnscaledPrecision(BigInteger unscaled)
-        {
-            if (unscaled.IsZero)
-            {
-                return 1;
-            }
-
-            return (uint)BigInteger.Abs(unscaled).ToString(CultureInfo.InvariantCulture).Length;
-        }
+            => BigDecimal.UnscaledPrecision(unscaled);
 
         /// <summary>
         ///     A fresh instance of a generated message, obtained from its descriptor. The generated

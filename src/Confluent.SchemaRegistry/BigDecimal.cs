@@ -234,7 +234,13 @@ namespace Confluent.SchemaRegistry
 
         public BigDecimal Multiply(BigDecimal other)
         {
-            return new BigDecimal(unscaled * other.unscaled, scale + other.scale);
+            // Multiplication adds the scales, and `int + int` wraps: int.MaxValue + 1 becomes
+            // int.MinValue, turning a vanishingly small number into an enormous one rather
+            // than reporting anything. The reference refuses it - measured on the JDK,
+            // `new BigDecimal(TEN, Integer.MAX_VALUE).multiply(new BigDecimal(TEN, 1))` is
+            // `ArithmeticException: Underflow`, and the min-scale pair is `Overflow`.
+            return new BigDecimal(unscaled * other.unscaled,
+                CheckScale((long)scale + other.scale, "decimals.mul"));
         }
 
         public BigDecimal Negate() => new BigDecimal(-unscaled, scale);
@@ -268,7 +274,10 @@ namespace Confluent.SchemaRegistry
             BigInteger b = BigInteger.Abs(divisor.unscaled);
 
             // The pure positive quotient P = a / b; the real value is P × 10^baseShift.
-            int baseShift = divisor.scale - scale;
+            // Subtracting the scales wraps the same way multiplication's addition does, and
+            // the JDK refuses the same pair: dividing at scale int.MaxValue by one at
+            // int.MinValue is `ArithmeticException: Underflow` there.
+            int baseShift = CheckScale((long)divisor.scale - scale, "decimals.div");
 
             // e = floor(log10(P)); P is in [10^(dA-dB-1), 10^(dA-dB+1)).
             int g = Digits(a) - Digits(b);
@@ -606,6 +615,49 @@ namespace Confluent.SchemaRegistry
 
         // ---- Helpers -----------------------------------------------------------------
 
+        /// <summary>
+        ///     Narrows a derived scale to <c>int</c>, or throws - the counterpart of the JVM's
+        ///     <c>BigDecimal.checkScale</c>, which reports <c>Underflow</c>/<c>Overflow</c>.
+        ///     Computed in <c>long</c> by the caller so the wrap is detectable at all.
+        /// </summary>
+        private static int CheckScale(long scale, string fn)
+        {
+            if (scale < int.MinValue || scale > int.MaxValue)
+            {
+                throw new ArithmeticException(
+                    $"{fn}: the result needs a scale of {scale}, which is out of int range");
+            }
+
+            return (int)scale;
+        }
+
+        /// <summary>
+        ///     The digit count of an unscaled value, which is what <c>BigDecimal.precision()</c>
+        ///     reports and what <c>confluent.type.Decimal.precision</c> carries. Zero is 1
+        ///     there, never 0.
+        /// </summary>
+        /// <remarks>
+        ///     Guarded, and the single definition for every write path in this client:
+        ///     <c>BigInteger.ToString()</c> is a quadratic radix conversion, so counting the
+        ///     digits of an unbounded coefficient is the cost <see cref="SaneCoefficient" />
+        ///     exists to bound. The estimate comes from the two's-complement byte length -
+        ///     `ToByteArray()` is needed to write the value anyway - because
+        ///     <c>GetBitLength()</c> does not exist on this project's netstandard2.0 and
+        ///     net462 targets.
+        /// </remarks>
+        public static uint UnscaledPrecision(BigInteger unscaled)
+        {
+            if (unscaled.IsZero)
+            {
+                return 1;
+            }
+
+            byte[] bytes = unscaled.ToByteArray();
+            RequireSaneWidth((long)bytes.Length * 8 * 302 / 1000 + 1, "confluent.type.Decimal",
+                "the coefficient", SaneCoefficient);
+            return (uint)BigInteger.Abs(unscaled).ToString(CultureInfo.InvariantCulture).Length;
+        }
+
         private static BigInteger Pow10(int n) => BigInteger.Pow(10, n);
 
         /// <summary>Refuses a positional form too wide to build.</summary>
@@ -644,7 +696,16 @@ namespace Confluent.SchemaRegistry
 
         private static void StripTrailingZeros(ref BigInteger value, ref int scale)
         {
-            while (scale > 0 && !value.IsZero && value % 10 == 0)
+            // Not `scale > 0`: equality here is numeric (CompareTo == 0), and that includes
+            // values at negative scales, so the canonical form has to reach them too.
+            // (1, -1) and (10, 0) are both 10 and compare equal, but stopping at scale zero
+            // left them hashing differently - a broken Equals/GetHashCode contract, so one of
+            // them went missing from a dictionary or set keyed on the other. Stripping without
+            // the bound sends both to (1, -1). The reference does not face this: Java's
+            // BigDecimal.equals compares unscaled *and* scale, so its hash is trivially
+            // consistent; making equality numeric to match `decimals.eq` is what creates the
+            // obligation.
+            while (!value.IsZero && value % 10 == 0)
             {
                 value /= 10;
                 scale--;

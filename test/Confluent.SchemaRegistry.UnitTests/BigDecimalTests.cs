@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Xunit;
 
@@ -175,6 +176,27 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.Throws<ArithmeticException>(() => wide.Add(tiny));
         }
 
+        // Remainder is the one operation where this client's bound is *tighter* than the
+        // reference's, and it is worth pinning rather than discovering. Java computes
+        // `this.subtract(this.divideToIntegralValue(divisor).multiply(divisor))`, so its cost
+        // follows the integral quotient - `1e-2147483647 mod 1e2147483647` is the dividend
+        // itself at precision 1, scale 2147483647, which the JVM returns and libmpdec produces
+        // in microseconds. This implementation instead aligns both operands through Rescale,
+        // so that same call really would build a 4.3-billion-digit frame and is refused. The
+        // guard is correct for the code as written; the divergence is the code, not the guard.
+        [Fact]
+        public void Remainder_IsBoundedByAlignment_NotByTheQuotient()
+        {
+            var tiny = new BigDecimal(BigInteger.One, 2000000000);   // 1e-2000000000
+            var wide = new BigDecimal(BigInteger.One, -2000000000);  // 1e2000000000
+            // Java accepts this and returns the dividend; this client refuses it.
+            Assert.Throws<ArithmeticException>(() => tiny.Remainder(wide));
+            // Operands whose magnitudes are close stay narrow and are accepted, as everywhere.
+            Assert.Equal(0, wide.Remainder(wide).Signum);
+            Assert.Equal("1", new BigDecimal(BigInteger.Parse("10000000000000000000000000000000000000000"), 0)
+                .Remainder(new BigDecimal(new BigInteger(3), 0)).ToPlainString());
+        }
+
         // The must-fail twin: Multiply does not align, so it is unbounded at any width, and
         // alignment that stays narrow is fine however extreme both operands are.
         [Fact]
@@ -218,6 +240,86 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.Equal("1.230", d.SetScale(3, BigDecimal.Rounding.HalfUp).ToPlainString());
             // "1." followed by 4000 fractional digits.
             Assert.Equal(4002, d.SetScale(4000, BigDecimal.Rounding.HalfUp).ToPlainString().Length);
+        }
+
+        // Multiplication adds the scales and division subtracts them, both in `int`, which
+        // wraps: int.MaxValue + 1 is int.MinValue, so a vanishingly small number silently
+        // became an enormous one. The reference refuses these - measured on the JDK:
+        //   new BigDecimal(TEN, Integer.MAX_VALUE).multiply(new BigDecimal(TEN, 1)) -> Underflow
+        //   new BigDecimal(TEN, Integer.MIN_VALUE) squared                           -> Overflow
+        //   divide at MAX_VALUE by one at MIN_VALUE                                  -> Underflow
+        [Fact]
+        public void Multiply_ScaleOutOfIntRange_IsRefused()
+        {
+            var maxScale = new BigDecimal(new BigInteger(10), int.MaxValue);
+            var minScale = new BigDecimal(new BigInteger(10), int.MinValue);
+            var one = new BigDecimal(new BigInteger(10), 1);
+
+            Assert.Throws<ArithmeticException>(() => maxScale.Multiply(one));
+            Assert.Throws<ArithmeticException>(() => maxScale.Multiply(maxScale));
+            Assert.Throws<ArithmeticException>(() => minScale.Multiply(minScale));
+            Assert.Throws<ArithmeticException>(() => maxScale.Divide(minScale));
+
+            // The must-fail twin: a scale sum that fits is unaffected.
+            Assert.Equal(4, new BigDecimal(new BigInteger(15), 2)
+                .Multiply(new BigDecimal(new BigInteger(15), 2)).Scale);
+            Assert.Equal("2.25", new BigDecimal(new BigInteger(15), 1)
+                .Multiply(new BigDecimal(new BigInteger(15), 1)).ToPlainString());
+        }
+
+        // Equality here is *numeric* (CompareTo == 0) to match `decimals.eq`, and that makes the
+        // hash an obligation: two representations of one number must hash alike. Normalisation
+        // stopped at scale zero, so (1, -1) and (10, 0) - both 10, and Equals says so - hashed
+        // differently, and one went missing from any dictionary or set keyed on the other.
+        // Java does not face this: its BigDecimal.equals compares unscaled *and* scale.
+        [Fact]
+        public void GetHashCode_AgreesWithNumericEquality_AtNegativeScales()
+        {
+            var a = new BigDecimal(BigInteger.One, -1);            // 1e1  = 10
+            var b = new BigDecimal(new BigInteger(10), 0);         // 10
+            var c = new BigDecimal(new BigInteger(1000), 2);       // 10.00
+
+            Assert.True(a.Equals(b));
+            Assert.Equal(a.GetHashCode(), b.GetHashCode());
+            Assert.True(a.Equals(c));
+            Assert.Equal(a.GetHashCode(), c.GetHashCode());
+
+            // The property that was actually broken, stated as the caller sees it.
+            var set = new HashSet<BigDecimal> { a };
+            Assert.Contains(b, set);
+            Assert.Contains(c, set);
+
+            // Further out, where more than one strip is needed: 100 as (1,-2) and (100,0).
+            var d = new BigDecimal(BigInteger.One, -2);
+            var e = new BigDecimal(new BigInteger(100), 0);
+            Assert.True(d.Equals(e));
+            Assert.Equal(d.GetHashCode(), e.GetHashCode());
+
+            // Every zero is value-equal whatever its scale, which already held.
+            Assert.Equal(new BigDecimal(BigInteger.Zero, 0).GetHashCode(),
+                new BigDecimal(BigInteger.Zero, 7).GetHashCode());
+            Assert.Equal(new BigDecimal(BigInteger.Zero, 0).GetHashCode(),
+                new BigDecimal(BigInteger.Zero, -7).GetHashCode());
+
+            // And unequal values still differ, so the normalisation has not collapsed them.
+            Assert.NotEqual(a.GetHashCode(), new BigDecimal(BigInteger.One, 0).GetHashCode());
+        }
+
+        // The coefficient-width guard now lives in one place and every write path goes through
+        // it, so a decimal a rule computed and one the serde converts are accepted or refused
+        // alike. The message-level CEL writer had its own unguarded copy of this count.
+        [Fact]
+        public void UnscaledPrecision_IsGuardedAndCountsDigits()
+        {
+            Assert.Equal(1u, BigDecimal.UnscaledPrecision(BigInteger.Zero));
+            Assert.Equal(1u, BigDecimal.UnscaledPrecision(BigInteger.One));
+            Assert.Equal(4u, BigDecimal.UnscaledPrecision(new BigInteger(1234)));
+            Assert.Equal(4u, BigDecimal.UnscaledPrecision(new BigInteger(-1234)));
+            Assert.Equal(38u, BigDecimal.UnscaledPrecision(BigInteger.Parse(new string('9', 38))));
+            // Just inside the ceiling, then past it.
+            Assert.Equal(4000u, BigDecimal.UnscaledPrecision(BigInteger.Parse(new string('9', 4000))));
+            Assert.Throws<ArithmeticException>(
+                () => BigDecimal.UnscaledPrecision(BigInteger.Parse(new string('9', 20000))));
         }
 
         // Rendering is a third site, reachable with no rescale at all: Divide holds its
