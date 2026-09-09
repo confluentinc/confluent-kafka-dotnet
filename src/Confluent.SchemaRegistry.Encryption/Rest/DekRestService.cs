@@ -45,25 +45,20 @@ namespace Confluent.SchemaRegistry.Encryption
                     HttpMethod.Get)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
-        public async Task<RegisteredKek> GetKekAsync(string name, bool ignoreDeletedKeks, string context = null)
+        public async Task<RegisteredKek> GetKekAsync(string name, bool ignoreDeletedKeks)
             => await RequestAsync<RegisteredKek>(
-                    $"dek-registry/v1/keks/{Uri.EscapeDataString(name)}?deleted={!ignoreDeletedKeks}"
-                    + (context != null ? $"&context={Uri.EscapeDataString(context)}" : ""),
+                    $"dek-registry/v1/keks/{Uri.EscapeDataString(name)}?deleted={!ignoreDeletedKeks}",
                     HttpMethod.Get)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
-        public async Task<RegisteredKek> CreateKekAsync(Kek kek, string context = null)
-            => await RequestAsync<RegisteredKek>(
-                    $"dek-registry/v1/keks"
-                    + (context != null ? $"?context={Uri.EscapeDataString(context)}" : ""),
+        public async Task<RegisteredKek> CreateKekAsync(Kek kek)
+            => await RequestAsync<RegisteredKek>($"dek-registry/v1/keks",
                     HttpMethod.Post, kek)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
 
-        public async Task<RegisteredKek> UpdateKekAsync(string name, UpdateKek kek, string context = null)
-            => await RequestAsync<RegisteredKek>(
-                    $"dek-registry/v1/keks/{Uri.EscapeDataString(name)}"
-                    + (context != null ? $"?context={Uri.EscapeDataString(context)}" : ""),
+        public async Task<RegisteredKek> UpdateKekAsync(string name, UpdateKek kek)
+            => await RequestAsync<RegisteredKek>($"dek-registry/v1/keks/{Uri.EscapeDataString(name)}",
                     HttpMethod.Put, kek)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
