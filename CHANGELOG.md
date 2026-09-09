@@ -1,4 +1,9 @@
-# 2.15.1 (not released)
+# 2.15.1 (RC1)
+
+## Enhancements
+
+* References librdkafka.redist 2.15.1-RC1. Refer to the [librdkafka v2.15.1-RC1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.15.1-RC1) for more information.
+
 
 ## Fixes
 
