@@ -364,11 +364,6 @@ namespace Confluent.SchemaRegistry.Rules
         }
 
         /// <summary>
-        ///     Narrows a CEL value to what the field's type accepts. The CEL runtime widens every
-        ///     integer to <c>long</c> and every float to <c>double</c>, so a narrower field needs
-        ///     converting back rather than rejecting.
-        /// </summary>
-        /// <summary>
         ///     A protobuf timestamp from a NodaTime instant, keeping every digit.
         ///     <c>ToUnixTimeSecondsAndNanoseconds</c> truncates the seconds towards the start of
         ///     time so the nanoseconds are non-negative, which is exactly protobuf's contract.
@@ -381,38 +376,206 @@ namespace Confluent.SchemaRegistry.Rules
             return new Timestamp { Seconds = seconds, Nanos = (int)nanoseconds };
         }
 
+        /// <summary>
+        ///     Narrows a CEL value to what the field's type accepts. The CEL runtime widens every
+        ///     integer to <c>long</c> and every float to <c>double</c>, so a narrower field needs
+        ///     converting back - but only where the conversion is exact, and only from a value of
+        ///     the field's own kind.
+        ///
+        ///     <para>Every arm was a bare <c>System.Convert.To*</c>, which coerces rather than
+        ///     checks, so a wrong-typed or inexact result was accepted and silently changed:
+        ///     <c>ToInt32(1.9)</c> gave <b>2</b> (and half-to-even, so 2.5 also gave 2),
+        ///     <c>ToBoolean(0)</c> gave false, <c>ToBoolean("TRUE")</c> gave true,
+        ///     <c>ToSingle(true)</c> gave 1, <c>ToSingle(1e40)</c> gave +Infinity, and
+        ///     <c>ToString()</c> wrote any value at all into a string field as its .NET text.</para>
+        ///
+        ///     <para>The contract is protobuf's own JSON parser, which is what the JVM's
+        ///     write-back parses the result map with. Measured against protobuf-java 4.35.1:
+        ///     <c>int32 &lt;- 1.9</c> and <c>&lt;- true</c> are refused ("Not an int32 value"),
+        ///     <c>int32 &lt;- 2.0</c> gives 2, <c>bool &lt;- 0</c> and <c>&lt;- "TRUE"</c> are
+        ///     refused ("Invalid bool value"), <c>float &lt;- 1.0e40</c> is refused ("Out of range
+        ///     float value"), and <c>double &lt;- 3</c> gives 3.0.</para>
+        ///
+        ///     <para>That parser is also lenient the other way - it stringifies a number into a
+        ///     string field, reads "true"/"false" as a bool and a numeric string as a number - and
+        ///     none of that is followed here. Those coercions exist only because its input crossed
+        ///     a JSON transport, which this writer does not cross, and each one turns a
+        ///     rule-authoring mistake into silently wrong data.</para>
+        /// </summary>
         private static object Scalar(FieldDescriptor fd, object value)
         {
             switch (fd.FieldType)
             {
                 case FieldType.Bool:
-                    return System.Convert.ToBoolean(value);
+                    if (!(value is bool flag))
+                    {
+                        throw Mismatch(fd, value, "bool");
+                    }
+
+                    return flag;
                 case FieldType.String:
-                    return value.ToString();
+                    if (!(value is string text))
+                    {
+                        throw Mismatch(fd, value, "string");
+                    }
+
+                    return text;
                 case FieldType.Bytes:
-                    return value is ByteString bs ? bs : ByteString.CopyFrom((byte[])value);
+                    if (value is ByteString bs)
+                    {
+                        return bs;
+                    }
+
+                    if (value is byte[] raw)
+                    {
+                        return ByteString.CopyFrom(raw);
+                    }
+
+                    throw Mismatch(fd, value, "bytes");
                 case FieldType.Float:
-                    return System.Convert.ToSingle(value);
+                    return NarrowToFloat(fd, Floating(fd, value));
                 case FieldType.Double:
-                    return System.Convert.ToDouble(value);
+                    return Floating(fd, value);
                 case FieldType.Enum:
                     // CEL carries an enum as its number, but the reflection accessor assigns to
                     // the generated enum-typed property, so a boxed int is an invalid cast.
-                    return System.Enum.ToObject(
-                        fd.EnumType.ClrType, System.Convert.ToInt32(value));
+                    return System.Enum.ToObject(fd.EnumType.ClrType,
+                        (int)Bounded(fd, Integral(fd, value), int.MinValue, int.MaxValue));
                 case FieldType.Int32:
                 case FieldType.SInt32:
                 case FieldType.SFixed32:
-                    return System.Convert.ToInt32(value);
+                    return (int)Bounded(fd, Integral(fd, value), int.MinValue, int.MaxValue);
                 case FieldType.UInt32:
                 case FieldType.Fixed32:
-                    return System.Convert.ToUInt32(value);
+                    return (uint)Bounded(fd, Integral(fd, value), uint.MinValue, uint.MaxValue);
                 case FieldType.UInt64:
                 case FieldType.Fixed64:
-                    return System.Convert.ToUInt64(value);
+                    return (ulong)Bounded(fd, Integral(fd, value), ulong.MinValue, ulong.MaxValue);
                 default:
-                    return System.Convert.ToInt64(value);
+                    return (long)Bounded(fd, Integral(fd, value), long.MinValue, long.MaxValue);
             }
+        }
+
+        /// <summary>
+        ///     The CEL value as an exact integer. Carried as a <see cref="decimal" /> because it
+        ///     has to hold the whole signed <em>and</em> unsigned 64-bit domain, which neither
+        ///     <c>long</c> nor <c>ulong</c> does; the caller's <c>Convert.To*</c> then range-checks
+        ///     it for the field's own width and throws <see cref="OverflowException" />.
+        /// </summary>
+        private static decimal Integral(FieldDescriptor fd, object value)
+        {
+            switch (value)
+            {
+                case bool _:
+                    // protobuf JSON refuses true for an integer field, and .NET would write 1.
+                    throw new RuleException("cannot write bool to integer field " + fd.FullName);
+                case sbyte _:
+                case byte _:
+                case short _:
+                case ushort _:
+                case int _:
+                case uint _:
+                case long _:
+                case ulong _:
+                    return System.Convert.ToDecimal(value, CultureInfo.InvariantCulture);
+                case float f:
+                    return ExactlyIntegral(fd, f);
+                case double d:
+                    return ExactlyIntegral(fd, d);
+                default:
+                    throw Mismatch(fd, value, "integer");
+            }
+        }
+
+        /// <summary>
+        ///     A floating value as an integer, only when it is exactly integral. A fractional
+        ///     value is a rule-authoring mistake rather than something to round: rounding writes a
+        ///     different number than the rule computed. An integral one is accepted, as protobuf
+        ///     JSON accepts 2.0 for an int32.
+        /// </summary>
+        private static decimal ExactlyIntegral(FieldDescriptor fd, double d)
+        {
+            if (double.IsNaN(d) || double.IsInfinity(d) || Math.Truncate(d) != d)
+            {
+                throw new RuleException("cannot write non-integral "
+                    + d.ToString(CultureInfo.InvariantCulture)
+                    + " to integer field " + fd.FullName);
+            }
+
+            // Outside the decimal range is outside every protobuf integer range too, and the
+            // cast reports it as an OverflowException the same way the narrowing below does.
+            return (decimal)d;
+        }
+
+        /// <summary>
+        ///     The CEL value as a double. A bool is refused rather than written as 1, matching
+        ///     protobuf JSON ("Not a double value: true") and the integer arm above.
+        /// </summary>
+        private static double Floating(FieldDescriptor fd, object value)
+        {
+            switch (value)
+            {
+                case bool _:
+                    throw new RuleException("cannot write bool to float field " + fd.FullName);
+                case double d:
+                    return d;
+                case float f:
+                    return f;
+                case sbyte _:
+                case byte _:
+                case short _:
+                case ushort _:
+                case int _:
+                case uint _:
+                case long _:
+                case ulong _:
+                    return System.Convert.ToDouble(value, CultureInfo.InvariantCulture);
+                default:
+                    throw Mismatch(fd, value, "float");
+            }
+        }
+
+        /// <summary>
+        ///     Narrows a double the way <c>JsonFormat.parseFloat</c> does: a finite value outside
+        ///     the float range is an error rather than an infinity, with the same 1e-6 slack that
+        ///     method allows. NaN and the infinities pass through - it accepts those explicitly.
+        /// </summary>
+        private static float NarrowToFloat(FieldDescriptor fd, double d)
+        {
+            const double epsilon = 1e-6;
+            double limit = float.MaxValue * (1 + epsilon);
+            if (!double.IsNaN(d) && !double.IsInfinity(d) && (d > limit || d < -limit))
+            {
+                throw new RuleException("out of range float value for " + fd.FullName + ": "
+                    + d.ToString(CultureInfo.InvariantCulture));
+            }
+
+            return (float)d;
+        }
+
+        /// <summary>
+        ///     Range-checks an integer for the field's own width. Reported as a
+        ///     <see cref="RuleException" /> naming the field and the value, rather than as the
+        ///     bare <see cref="OverflowException" /> the narrowing conversion would raise, which
+        ///     names neither. The decimal carrier is exact over both 64-bit domains, so the cast
+        ///     that follows a passing check cannot itself overflow.
+        /// </summary>
+        private static decimal Bounded(FieldDescriptor fd, decimal i, decimal min, decimal max)
+        {
+            if (i < min || i > max)
+            {
+                throw new RuleException("value " + i.ToString(CultureInfo.InvariantCulture)
+                    + " is out of range for field " + fd.FullName);
+            }
+
+            return i;
+        }
+
+        private static RuleException Mismatch(FieldDescriptor fd, object value, string kind)
+        {
+            return new RuleException("cannot write "
+                + (value == null ? "null" : value.GetType().Name)
+                + " to " + kind + " field " + fd.FullName);
         }
     }
 }
