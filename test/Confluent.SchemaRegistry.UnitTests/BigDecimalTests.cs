@@ -147,5 +147,95 @@ namespace Confluent.SchemaRegistry.UnitTests
             BigDecimal d = new BigDecimal(BigInteger.Parse("123456789012345678901234567890"), 0);
             Assert.Throws<OverflowException>(() => d.ToDecimal());
         }
+
+        // ---- width ceiling -----------------------------------------------------------
+        //
+        // BigInteger here is unbounded until the process dies, where Java raises an
+        // ArithmeticException at 646456993 digits. The ceiling stands in for that, as a bound
+        // rather than as a model of BigDecimal's domain - so it is deliberately tighter than
+        // the JVM's, and the split below is this client's.
+        //
+        // The dividing line is not arithmetic vs. rescale, it is whether the operation has to
+        // build a positional form. Add/Subtract/Remainder align their operands through
+        // Rescale, which materialises a power of ten; Multiply does not, and neither does
+        // comparison, negation or Abs. Measured on the shared libmpdec in the Python client,
+        // peak RSS on operands 1e2147483647 and 3: mul, div, comparison, neg and abs all
+        // 13 MB; add 1738 MB, sub 1738 MB, remainder 1733 MB.
+
+        [Fact]
+        public void Add_AligningTwoDistantScales_IsRefused()
+        {
+            var wide = new BigDecimal(BigInteger.One, -2000000000);   // 1e2000000000
+            var one = new BigDecimal(BigInteger.One, 0);
+            Assert.Throws<ArithmeticException>(() => wide.Add(one));
+            Assert.Throws<ArithmeticException>(() => wide.Subtract(one));
+            Assert.Throws<ArithmeticException>(() => wide.Remainder(one));
+            var tiny = new BigDecimal(BigInteger.One, 2000000000);    // 1e-2000000000
+            Assert.Throws<ArithmeticException>(() => tiny.Add(one));
+            Assert.Throws<ArithmeticException>(() => wide.Add(tiny));
+        }
+
+        // The must-fail twin: Multiply does not align, so it is unbounded at any width, and
+        // alignment that stays narrow is fine however extreme both operands are.
+        [Fact]
+        public void Multiply_AndNarrowAlignment_StayUnbounded()
+        {
+            var wide = new BigDecimal(BigInteger.One, -2000000000);
+            var tiny = new BigDecimal(BigInteger.One, 2000000000);
+            Assert.Equal(0, wide.Multiply(tiny).CompareTo(new BigDecimal(BigInteger.One, 0)));
+            // Comparison short-circuits on sign and then on adjusted exponent, so it never
+            // aligns for operands this far apart - it used to, and cost as much as Add.
+            Assert.True(tiny.CompareTo(wide) < 0);
+            Assert.True(wide.CompareTo(tiny) > 0);
+            Assert.True(tiny.Negate().CompareTo(wide) < 0);
+            Assert.True(wide.Negate().CompareTo(tiny.Negate()) < 0);
+            Assert.False(tiny.Equals(wide));
+            Assert.Equal(0, wide.Subtract(wide).Signum);
+            Assert.Equal("13.84",
+                new BigDecimal(new BigInteger(1234), 2)
+                    .Add(new BigDecimal(new BigInteger(15), 1)).ToPlainString());
+        }
+
+        // SetScale pays for Pow10 whichever way the scale moves - multiplier when expanding,
+        // divisor when coarsening - so unlike libmpdec's rescale both directions are bounded
+        // here. Zero is not exempt for the same reason: the power of ten is built regardless.
+        [Fact]
+        public void SetScale_PastTheCeiling_IsRefused()
+        {
+            var d = new BigDecimal(new BigInteger(123), 2);
+            Assert.Throws<ArithmeticException>(() => d.SetScale(100000000, BigDecimal.Rounding.HalfUp));
+            Assert.Throws<ArithmeticException>(() => d.SetScale(-100000000, BigDecimal.Rounding.HalfUp));
+            Assert.Throws<ArithmeticException>(() => d.SetScale(2147483647, BigDecimal.Rounding.Down));
+            Assert.Throws<ArithmeticException>(
+                () => BigDecimal.Zero.SetScale(2147483647, BigDecimal.Rounding.Floor));
+        }
+
+        [Fact]
+        public void SetScale_WithinTheCeiling_StillAnswers()
+        {
+            var d = new BigDecimal(new BigInteger(123), 2);
+            Assert.Equal("1", d.SetScale(0, BigDecimal.Rounding.HalfUp).ToPlainString());
+            Assert.Equal("1.230", d.SetScale(3, BigDecimal.Rounding.HalfUp).ToPlainString());
+            // "1." followed by 4000 fractional digits.
+            Assert.Equal(4002, d.SetScale(4000, BigDecimal.Rounding.HalfUp).ToPlainString().Length);
+        }
+
+        // Rendering is a third site, reachable with no rescale at all: Divide holds its
+        // coefficient to 38 digits while the scale runs free, so the value is cheap to hold
+        // and enormous to print. The plain form pays for the scale in both directions.
+        [Fact]
+        public void ToPlainString_PastTheCeiling_IsRefused()
+        {
+            Assert.Throws<ArithmeticException>(
+                () => new BigDecimal(BigInteger.One, 2000000000).ToPlainString());
+            Assert.Throws<ArithmeticException>(
+                () => new BigDecimal(BigInteger.One, -2000000000).ToPlainString());
+            // No zero shortcut: a zero at an extreme scale renders as that many zeros.
+            Assert.Throws<ArithmeticException>(
+                () => new BigDecimal(BigInteger.Zero, -2000000000).ToPlainString());
+            // Still renders below the ceiling, coefficient and scale independently.
+            Assert.Equal("12.34", new BigDecimal(new BigInteger(1234), 2).ToPlainString());
+            Assert.Equal(1000002, new BigDecimal(BigInteger.One, 1000000).ToPlainString().Length);
+        }
     }
 }

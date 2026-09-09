@@ -39,6 +39,40 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         private const int DivisionPrecision = 38;
 
+        /// <summary>
+        ///     The width ceiling for a computation, in decimal digits.
+        /// </summary>
+        /// <remarks>
+        ///     Deliberately <b>not</b> Java's - <c>BigInteger</c> tops out at
+        ///     <c>Integer.MAX_VALUE</c> bits, which is 646456993 digits, and reproducing that
+        ///     bound across six decimal libraries is neither achievable nor the point. This is a
+        ///     round number chosen so no single rule evaluation can exhaust memory. Width
+        ///     failure is the one thing that cannot be turned into a rule error after the fact:
+        ///     <c>BigInteger</c> here is unbounded until the process dies, where Java raises an
+        ///     <c>ArithmeticException</c>. Measured on the shared libmpdec in the Python client,
+        ///     peak RSS on operands 1e2147483647 and 3: <c>mul</c>, <c>div</c>, comparison,
+        ///     negation and <c>abs</c> all 13 MB; <c>add</c> 1738 MB, <c>sub</c> 1738 MB,
+        ///     <c>remainder</c> 1733 MB. So the guards follow <i>exponent alignment</i>, not
+        ///     arithmetic - the operations that have to build a positional form.
+        /// </remarks>
+        public const int SaneWidth = 10_000_000;
+
+        /// <summary>
+        ///     A far tighter ceiling on what can be <i>encoded</i>, which bounds a different
+        ///     resource.
+        /// </summary>
+        /// <remarks>
+        ///     <c>confluent.type.Decimal.value</c> is the unscaled integer in base 256, and
+        ///     decimal to binary radix conversion is quadratic in every client - here it is
+        ///     <c>BigInteger.ToString()</c>, which <see cref="Digits" /> and the wire encoder
+        ///     both call. 4300 is CPython's own <c>int_max_str_digits</c>, the cap it puts on
+        ///     string/integer conversion for exactly this reason; the Python, C++ and JS clients
+        ///     all adopt it, so every client agrees on which decimals can be written. CEL's
+        ///     documented decimal precision is 38 digits, so this leaves two orders of headroom
+        ///     over anything a rule is meant to produce.
+        /// </remarks>
+        public const int SaneCoefficient = 4300;
+
         private static readonly BigInteger MaxDecimalValue = new BigInteger(decimal.MaxValue);
         private static readonly BigInteger MinDecimalValue = new BigInteger(decimal.MinValue);
 
@@ -186,12 +220,14 @@ namespace Confluent.SchemaRegistry
 
         public BigDecimal Add(BigDecimal other)
         {
+            RequireAlignable(this, other, "decimals.add");
             int s = Math.Max(scale, other.scale);
             return new BigDecimal(Rescale(unscaled, scale, s) + Rescale(other.unscaled, other.scale, s), s);
         }
 
         public BigDecimal Subtract(BigDecimal other)
         {
+            RequireAlignable(this, other, "decimals.sub");
             int s = Math.Max(scale, other.scale);
             return new BigDecimal(Rescale(unscaled, scale, s) - Rescale(other.unscaled, other.scale, s), s);
         }
@@ -282,6 +318,7 @@ namespace Confluent.SchemaRegistry
                 throw new DivideByZeroException("division by zero");
             }
 
+            RequireAlignable(this, divisor, "decimals.mod");
             int s = Math.Max(scale, divisor.scale);
             BigInteger a = Rescale(unscaled, scale, s);
             BigInteger b = Rescale(divisor.unscaled, divisor.scale, s);
@@ -363,6 +400,15 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public BigDecimal SetScale(int newScale, Rounding mode)
         {
+            // Pow10 is built whichever way the scale moves - it is the multiplier when
+            // expanding and the divisor when coarsening - so unlike libmpdec's rescale, both
+            // directions cost `|newScale - scale|` digits here, and an expanding one also costs
+            // the resulting coefficient. Zero is not exempt for that reason: the power of ten
+            // is materialised even when the value it scales is zero.
+            RequireSaneWidth(
+                Math.Max((long)Math.Abs((long)newScale - scale),
+                         (long)Digits(unscaled) + ((long)newScale - scale)),
+                "decimal", $"a scale of {newScale}");
             if (newScale >= scale)
             {
                 return new BigDecimal(unscaled * Pow10(newScale - scale), newScale);
@@ -407,6 +453,34 @@ namespace Confluent.SchemaRegistry
 
         public int CompareTo(BigDecimal other)
         {
+            // Sign first, then magnitude, and only then the aligned comparison. Going straight
+            // to Rescale made comparison as expensive as addition - `1e-2000000000 < 1` had to
+            // build a two-billion-digit power of ten - where libmpdec short-circuits on the
+            // adjusted exponent and Java's compareTo does the same. Comparison is the one
+            // operation that must not fail on width: it is how a rule inspects a field, and a
+            // guard here would break the ordinary case of comparing values of different scales.
+            int signA = unscaled.Sign;
+            int signB = other.unscaled.Sign;
+            if (signA != signB)
+            {
+                return signA < signB ? -1 : 1;
+            }
+
+            if (signA == 0)
+            {
+                return 0;
+            }
+
+            // The adjusted exponent - the power of ten of the leading digit. Where they differ
+            // the larger magnitude wins outright, with the sign deciding the direction.
+            long adjustedA = (long)Digits(unscaled) - 1 - scale;
+            long adjustedB = (long)Digits(other.unscaled) - 1 - other.scale;
+            if (adjustedA != adjustedB)
+            {
+                bool aBigger = adjustedA > adjustedB;
+                return (aBigger == (signA > 0)) ? 1 : -1;
+            }
+
             int s = Math.Max(scale, other.scale);
             return Rescale(unscaled, scale, s).CompareTo(Rescale(other.unscaled, other.scale, s));
         }
@@ -439,6 +513,13 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public string ToPlainString()
         {
+            // The plain form pays for the scale in *both* directions: a negative scale appends
+            // that many trailing zeros and a scale wider than the coefficient prepends that
+            // many leading ones. So a one-digit coefficient at an extreme scale still renders
+            // enormous, which is reachable without any rescale at all - Divide holds its
+            // coefficient to 38 digits while the scale runs free.
+            RequireSaneWidth((long)Digits(unscaled) + Math.Abs((long)scale), "string",
+                "the plain form");
             bool negative = unscaled.Sign < 0;
             string digits = BigInteger.Abs(unscaled).ToString(CultureInfo.InvariantCulture);
 
@@ -526,6 +607,29 @@ namespace Confluent.SchemaRegistry
         // ---- Helpers -----------------------------------------------------------------
 
         private static BigInteger Pow10(int n) => BigInteger.Pow(10, n);
+
+        /// <summary>Refuses a positional form too wide to build.</summary>
+        public static void RequireSaneWidth(long needed, string fn, string what, int limit = SaneWidth)
+        {
+            if (needed > limit)
+            {
+                throw new ArithmeticException(
+                    $"{fn}: {what} needs {needed} digits, past this client's {limit}-digit limit");
+            }
+        }
+
+        /// <summary>
+        ///     The exponent gap two operands are aligned across, which is what
+        ///     <see cref="Rescale" /> has to build a power of ten for.
+        /// </summary>
+        private static void RequireAlignable(BigDecimal a, BigDecimal b, string fn)
+        {
+            long target = Math.Max(a.scale, b.scale);
+            long widest = Math.Max(
+                (long)Digits(a.unscaled) + (target - a.scale),
+                (long)Digits(b.unscaled) + (target - b.scale));
+            RequireSaneWidth(widest + 1, fn, "aligning the operands");
+        }
 
         private static BigInteger Rescale(BigInteger value, int fromScale, int toScale)
         {

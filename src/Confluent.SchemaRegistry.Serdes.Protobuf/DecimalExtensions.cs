@@ -73,6 +73,13 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <returns>Protobuf decimal value</returns>
         public static Decimal ToProtobufDecimal(this BigDecimal value)
         {
+            // The coefficient goes out in base 256, and BigInteger.ToString() below - which is
+            // how the digit count is taken - is a quadratic radix conversion. 4300 is the cap
+            // every client in the family adopts for it (CPython's own int_max_str_digits), so
+            // this is the ceiling on what can be written rather than merely computed.
+            BigDecimal.RequireSaneWidth(
+                BigInteger.Abs(value.Unscaled).GetBitLength() * 302 / 1000 + 1,
+                "confluent.type.Decimal", "the coefficient", BigDecimal.SaneCoefficient);
             var buffer = value.Unscaled.ToByteArray(); // little-endian two's-complement, minimal
             Array.Reverse(buffer);                      // big-endian wire form
             // Precision is the unscaled value's digit count, as Java's
