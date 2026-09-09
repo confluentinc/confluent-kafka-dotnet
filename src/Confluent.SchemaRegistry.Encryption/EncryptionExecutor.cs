@@ -150,32 +150,7 @@ namespace Confluent.SchemaRegistry.Encryption
                     return null;
             }
         }
-
-        private const string ContextDelimiter = ":";
-        private const string ContextPrefix = ContextDelimiter + ".";
-
-        /// <summary>
-        ///     Returns the context parsed from the given qualified subject (of the form
-        ///     ":.context:subject"), or null if the subject has no context prefix or is
-        ///     explicitly qualified with the default (".") context.
-        ///     Tenant is not handled here as it is a server-side-only concept.
-        /// </summary>
-        internal static string ContextFor(string qualifiedSubject)
-        {
-            if (qualifiedSubject != null
-                && qualifiedSubject.StartsWith(ContextPrefix, StringComparison.Ordinal))
-            {
-                string rest = qualifiedSubject.Substring(ContextPrefix.Length);
-                int ix = rest.IndexOf(ContextDelimiter, StringComparison.Ordinal);
-                string context = ix >= 0
-                    ? qualifiedSubject.Substring(1, ix + ContextPrefix.Length - 1)
-                    : qualifiedSubject.Substring(1);
-                return context == "." ? null : context;
-            }
-
-            return null;
-        }
-
+        
         public void Dispose()
         {
             if (Client != null)
@@ -244,8 +219,7 @@ namespace Confluent.SchemaRegistry.Encryption
         private async Task<RegisteredKek> GetOrCreateKek(RuleContext ctx)
         {
             bool isRead = ctx.RuleMode == RuleMode.Read;
-            string context = EncryptionExecutor.ContextFor(ctx.Subject);
-            KekId kekId = new KekId(kekName, isRead, context);
+            KekId kekId = new KekId(kekName, isRead);
 
             string kmsType = ctx.GetParameter(EncryptionExecutor.EncryptKmsType);
             string kmsKeyId = ctx.GetParameter(EncryptionExecutor.EncryptKmsKeyid);
@@ -318,7 +292,7 @@ namespace Confluent.SchemaRegistry.Encryption
             }
             try
             {
-                return await executor.Client.GetKekAsync(key.Name, !key.LookupDeletedKeks, key.Context)
+                return await executor.Client.GetKekAsync(key.Name, !key.LookupDeletedKeks)
                     .ConfigureAwait(continueOnCapturedContext: false);
             }
             catch (SchemaRegistryException e)
@@ -347,7 +321,7 @@ namespace Confluent.SchemaRegistry.Encryption
             };
             try
             {
-                return await executor.Client.CreateKekAsync(kek, key.Context)
+                return await executor.Client.CreateKekAsync(kek)
                     .ConfigureAwait(continueOnCapturedContext: false);
             }
             catch (SchemaRegistryException e)
