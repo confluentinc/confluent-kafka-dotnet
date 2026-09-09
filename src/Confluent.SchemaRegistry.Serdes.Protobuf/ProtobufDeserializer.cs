@@ -76,8 +76,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             var nonProtobufConfig = config
                 .Where(item => !item.Key.StartsWith("protobuf.") && !item.Key.StartsWith("rules.")
-                    && !item.Key.StartsWith("subject.name.strategy.")
-                    && !item.Key.StartsWith("validation.rules."));
+                    && !item.Key.StartsWith("subject.name.strategy."));
             if (nonProtobufConfig.Count() > 0)
             {
                 throw new ArgumentException($"ProtobufDeserializer: unknown configuration parameter {nonProtobufConfig.First().Key}");
