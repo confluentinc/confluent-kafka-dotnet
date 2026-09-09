@@ -1,9 +1,5 @@
 # 2.15.1 (not released)
 
-## Enhancements
-
-* Add support for inline validation rules (#2651)
-
 ## Fixes
 
 * Fix early return in FindMessageByName (#2644)
