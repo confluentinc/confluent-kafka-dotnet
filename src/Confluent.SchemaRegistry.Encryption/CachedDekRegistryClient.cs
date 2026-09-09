@@ -24,7 +24,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Confluent.SchemaRegistry.Encryption
 {
-    public record KekId(string Name, bool LookupDeletedKeks, string Context = null);
+    public record KekId(string Name, bool LookupDeletedKeks);
 
     public record DekId(string KekName, string Subject, int? Version, DekFormat? DekFormat, bool LookupDeletedDeks);
 
@@ -317,16 +317,16 @@ namespace Confluent.SchemaRegistry.Encryption
             => restService.GetKeksAsync(ignoreDeletedKeks);
 
         /// <inheritdoc/>
-        public async Task<RegisteredKek> GetKekAsync(string name, bool ignoreDeletedKeks, string context = null)
+        public async Task<RegisteredKek> GetKekAsync(string name, bool ignoreDeletedKeks)
         {
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                KekId kekId = new KekId(name, ignoreDeletedKeks, context);
+                KekId kekId = new KekId(name, ignoreDeletedKeks);
                 if (!this.keks.TryGetValue(kekId, out RegisteredKek kek))
                 {
                     CleanCacheIfFull();
-                    kek = await restService.GetKekAsync(name, ignoreDeletedKeks, context)
+                    kek = await restService.GetKekAsync(name, ignoreDeletedKeks)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     this.keks[kekId] = kek;
                 }
@@ -340,12 +340,12 @@ namespace Confluent.SchemaRegistry.Encryption
         }
 
         /// <inheritdoc/>
-        public Task<RegisteredKek> CreateKekAsync(Kek kek, string context = null)
-            => restService.CreateKekAsync(kek, context);
+        public Task<RegisteredKek> CreateKekAsync(Kek kek)
+            => restService.CreateKekAsync(kek);
 
         /// <inheritdoc/>
-        public Task<RegisteredKek> UpdateKekAsync(string name, UpdateKek kek, string context = null)
-            => restService.UpdateKekAsync(name, kek, context);
+        public Task<RegisteredKek> UpdateKekAsync(string name, UpdateKek kek)
+            => restService.UpdateKekAsync(name, kek);
 
         /// <inheritdoc/>
         public Task<List<string>> GetDeksAsync(string kekName, bool ignoreDeletedDeks)

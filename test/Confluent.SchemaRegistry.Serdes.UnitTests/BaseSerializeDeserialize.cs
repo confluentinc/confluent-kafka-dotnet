@@ -162,11 +162,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             );
             schemaRegistryClient = schemaRegistryMock.Object;
             
-            dekRegistryMock = new Mock<IDekRegistryClient>();
-            dekRegistryMock.Setup(x => x.CreateKekAsync(It.IsAny<Kek>(), It.IsAny<string>())).ReturnsAsync(
-                (Kek kek, string context) =>
+            var dekRegistryMock = new Mock<IDekRegistryClient>();
+            dekRegistryMock.Setup(x => x.CreateKekAsync(It.IsAny<Kek>())).ReturnsAsync(
+                (Kek kek) =>
                 {
-                    var kekId = new KekId(kek.Name, false, context);
+                    var kekId = new KekId(kek.Name, false);
                     return kekStore.TryGetValue(kekId, out RegisteredKek registeredKek)
                         ? registeredKek
                         : kekStore[kekId] = new RegisteredKek
@@ -181,13 +181,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                             Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
                         };
                 });
-            dekRegistryMock.Setup(x => x.GetKekAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).ReturnsAsync(
-                (string name, bool ignoreDeletedKeks, string context) =>
+            dekRegistryMock.Setup(x => x.GetKekAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(
+                (string name, bool ignoreDeletedKeks) =>
                 {
-                    var kekId = new KekId(name, false, context);
-                    return kekStore.TryGetValue(kekId, out RegisteredKek registeredKek)
-                        ? registeredKek
-                        : throw KeyNotFound(name);
+                    var kekId = new KekId(name, false);
+                    return kekStore.TryGetValue(kekId, out RegisteredKek registeredKek) ? registeredKek : null;
                 });
             dekRegistryMock.Setup(x => x.CreateDekAsync(It.IsAny<string>(), It.IsAny<Dek>())).ReturnsAsync(
                 (string kekName, Dek dek) =>

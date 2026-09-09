@@ -2,7 +2,6 @@
 
 ## Enhancements
 
-* Pass context when clients make KEK calls to DEK Registry (#2642)
 * Add support for inline validation rules (#2651)
 
 ## Fixes
