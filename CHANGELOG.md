@@ -1,10 +1,17 @@
-# 2.15.1 (not released)
+# 2.16.0 (unreleased)
 
 ## Enhancements
 
 * Add support for saving Azure key version with DEK (#2641)
 * Pass context when clients make KEK calls to DEK Registry (#2642)
 * Add support for inline validation rules (#2651)
+
+
+# 2.15.1
+
+## Enhancements
+
+* References librdkafka.redist 2.15.1. Refer to the [librdkafka v2.15.1 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.15.1) for more information.
 
 ## Fixes
 

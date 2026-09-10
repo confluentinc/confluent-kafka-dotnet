@@ -6,7 +6,7 @@
   </PropertyGroup>
 
     <ItemGroup>
-      <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry" Version="2.15.0" /> -->
+      <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry" Version="2.15.1" /> -->
       <ProjectReference Include="..\..\src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
     </ItemGroup>
 
