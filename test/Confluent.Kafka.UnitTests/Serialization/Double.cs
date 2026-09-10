@@ -36,6 +36,13 @@ namespace Confluent.Kafka.UnitTests.Serialization
         public void IsBigEndian()
         {
             var buffer = new byte[] { 23, 0, 0, 0, 0, 0, 0, 0 };
+            if (!BitConverter.IsLittleEndian)
+            {
+                // BitConverter.ToDouble reads in host byte order, so on a big endian
+                // host the unreversed buffer would yield a different value entirely.
+                // Reverse it so that `value` has the same bit pattern on every host.
+                Array.Reverse(buffer);
+            }
             var value = BitConverter.ToDouble(buffer, 0);
             var data = Serializers.Double.Serialize(value, SerializationContext.Empty);
             Assert.Equal(23, data[7]);
