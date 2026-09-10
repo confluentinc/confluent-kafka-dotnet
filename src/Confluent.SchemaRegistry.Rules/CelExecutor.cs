@@ -177,30 +177,41 @@ namespace Confluent.SchemaRegistry.Rules
             }
         }
 
-        internal Script BuildScript(RuleWithArgs ruleWithArgs, object msg)
+        /// <param name="schemaHint">
+        ///     The walker's schema, when there is one. Only the Avro arm uses it, to find the
+        ///     record whose fields the checker must resolve — a field rule binds a bare value
+        ///     that carries no schema of its own.
+        /// </param>
+        internal Script BuildScript(RuleWithArgs ruleWithArgs, object msg, object schemaHint = null)
         {
             // Build the script factory
             ScriptHost.Builder scriptHostBuilder = ScriptHost.NewBuilder();
-            object type;
+            object[] types;
             switch (ruleWithArgs.ScriptType)
             {
                 case ScriptType.Avro:
-                    scriptHostBuilder =
-                        scriptHostBuilder.Registry(AvroRegistry.NewRegistry(AvroValueToCel));
-                    if (msg is ISpecificRecord)
-                    {
-                        type = ((ISpecificRecord)msg).Schema;
-                        
-                    }
-                    else
-                    {
-                        type = ((GenericRecord)msg).Schema;
-                        
-                    }
+                    var avroRegistry = AvroRegistry.NewRegistry(AvroValueToCel);
+                    // The decimal type by name, so a rule can say it. The name is this client's,
+                    // not any Avro schema's, so the registry has to be told; ProtoTypeRegistry
+                    // resolves it from the descriptor pool for free. Needs Cel.NET >= 2.3.1,
+                    // where AvroRegistry.RegisterType stopped throwing.
+                    avroRegistry.RegisterType(TypeT.NewObjectTypeValue(CelTypeLabels.DecimalName));
+                    scriptHostBuilder = scriptHostBuilder.Registry(avroRegistry);
+                    // Only a record has fields to resolve: the walker's hint when it names one,
+                    // else the value's own schema, else nothing. A bare field value used to be
+                    // cast to GenericRecord here and throw.
+                    RecordSchema avroRecord = schemaHint as RecordSchema
+                        ?? (msg as ISpecificRecord)?.Schema as RecordSchema
+                        ?? (msg as GenericRecord)?.Schema;
+                    types = avroRecord != null
+                        ? new object[] { avroRecord }
+                        : new object[0];
                     break;
                 case ScriptType.Json:
                     scriptHostBuilder = scriptHostBuilder.Registry(JsonRegistry.NewRegistry());
-                    type = msg.GetType();
+                    // JsonRegistry keys its type descriptions by CLR type, so the value is the
+                    // right source here, unlike the Avro arm above.
+                    types = new object[] { msg.GetType() };
                     break;
                 case ScriptType.Protobuf:
                     // A registry carrying ProtoValueToCel, so a confluent.type.Decimal is a
@@ -219,7 +230,14 @@ namespace Confluent.SchemaRegistry.Rules
                     // limitation.
                     scriptHostBuilder = scriptHostBuilder.Registry(
                         ProtoTypeRegistry.NewRegistry(ProtoValueToCel));
-                    type = msg;
+                    // As on the Avro arm, only a message has fields to resolve. A rule on a
+                    // scalar field binds a primitive, which the registry cannot register and does
+                    // not need to. The reference registers the field's containing type instead;
+                    // nothing is equivalent here, and avoids a descriptor the registry may not
+                    // unify with the runtime one.
+                    types = msg is IMessage
+                        ? new object[] { msg }
+                        : new object[0];
                     break;
                 default:
                     throw new ArgumentException("Unsupported type " + ruleWithArgs.ScriptType);
@@ -230,7 +248,7 @@ namespace Confluent.SchemaRegistry.Rules
             ScriptHost.ScriptBuilder scriptBuilder = scriptHost
                 .BuildScript(ruleWithArgs.Rule)
                 .WithDeclarations(ToDecls(ruleWithArgs.DeclTypes))
-                .WithTypes(type);
+                .WithTypes(types);
 
             scriptBuilder = scriptBuilder.WithLibraries(new StringsLib(), new MathLib(), new BuiltinLibrary());
             return scriptBuilder.Build();
@@ -275,10 +293,14 @@ namespace Confluent.SchemaRegistry.Rules
                 return Checked.CheckedNull;
             }
 
-            if (arg is DecimalT)
+            if (arg is DecimalT || arg is AvroDecimal)
             {
                 // Matches DecimalT.Type() and the declaration in BuiltinDeclarations, so a
-                // converted decimal and decimal(...) are one type.
+                // converted decimal and decimal(...) are one type. An AvroDecimal is declared
+                // the same way rather than converted: only the declaration was ever missing,
+                // since AvroValueToCel adapts the value and DecimalUtils.ToBigDecimal coerces
+                // it. The reference splits it the same way - declare by name, coerce in
+                // DecimalUtils.
                 return Decls.NewObjectType(CelTypeLabels.DecimalName);
             }
 
@@ -473,22 +495,10 @@ namespace Confluent.SchemaRegistry.Rules
                 return Instant.FromDateTimeUtc(utc);
             }
 
-            // The decimal counterpart, for the same reason and at the same point: an Avro decimal
-            // logical type decodes to an AvroDecimal, and the checker was told that CLR type, so
-            // `decimals.add(value, ...)` failed with "found no matching overload" before the rule
-            // ran - measured, while `decimals.add(decimal(value), ...)` worked, which is why the
-            // wrapper appears in tests. The reference needs no wrapper: CelFieldExecutor binds
-            // through CelUtils.toCelValue, whose normalizeAvroDecimal returns a CelDecimal, and
-            // Python, JavaScript and C++ all accept a bare `value` too.
-            //
-            // ToCelDecimalOrNull already carries the AvroDecimal arm for exactly this case; only
-            // this path never reached it. The write-back in CelFieldExecutor keys off the field's
-            // original value rather than this converted one, so it still turns the result back.
-            object celDecimal = ToCelDecimalOrNull(value);
-            if (celDecimal != null)
-            {
-                return celDecimal;
-            }
+            // No decimal arm here, deliberately. `decimals.add(value, ...)` on an Avro decimal
+            // failed the check because the declared type was the CLR AvroDecimal - a declaration
+            // problem, fixed in FindType above rather than by converting the value. Converting
+            // it here also erased what the registry choice reads (see CelValidator).
 
             // A protobuf repeated or map field is homogeneous, so a collection of enums is
             // all enums. Converting it to a typed collection keeps the declared element type

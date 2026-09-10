@@ -79,6 +79,26 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 .Result;
         }
 
+        /// <summary>
+        ///     The decimal type is nameable in a rule, which needs the registry to know the name.
+        /// </summary>
+        /// <remarks>
+        ///     The name is this client's, not any Avro schema's, so it used to fail the check with
+        ///     "undeclared reference to 'confluent'" while compiling fine against a protobuf
+        ///     message. Closed by registering the type, which <c>AvroRegistry</c> could not do
+        ///     before Cel.NET 2.3.1. The second case is the same assertion without naming the
+        ///     type and passed all along, so the pair locates the gap in the name.
+        /// </remarks>
+        [Theory]
+        [InlineData("name-decl", "type(value) == confluent.type.Decimal")]
+        [InlineData("name-same", "type(value) == type(decimal(\"1.00\"))")]
+        public void TheDecimalTypeIsNameableInARule(string subject, string expr)
+        {
+            // A condition that holds round-trips the record unchanged.
+            GenericRecord got = RoundTrip(subject, expr, RuleKind.Condition);
+            Assert.Equal("12.34", ((AvroDecimal)got["amount"]).ToString());
+        }
+
         /// <summary>A bare <c>value</c>, the form the reference and three other clients accept.</summary>
         [Theory]
         [InlineData("bare-t", "decimals.add(value, decimal(\"1.00\"))", "13.34")]

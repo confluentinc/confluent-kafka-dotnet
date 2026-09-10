@@ -87,6 +87,51 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 }";
         }
 
+        /// <summary>
+        ///     A field-level rule on an Avro schema is evaluated against the Avro registry, the
+        ///     same as a record-level one.
+        /// </summary>
+        /// <remarks>
+        ///     The registry used to be chosen from the bound <i>value</i>, so a field-level rule
+        ///     binding a bare <c>AvroDecimal</c> fell through to JSON while a record-level rule on
+        ///     the same schema got Avro. Naming the decimal type is the discriminator, since that
+        ///     name only resolves on the registry this client registers it with.
+        /// </remarks>
+        [Theory]
+        [InlineData("fl-field", true)]
+        [InlineData("fl-record", false)]
+        public void AnAvroSchemaUsesTheAvroRegistryAtEitherLevel(string subject, bool fieldLevel)
+        {
+            string rule = @"{ ""name"": ""z"", ""expr"": ""type(" +
+                (fieldLevel ? "this" : "this.amount") + @") == confluent.type.Decimal"" }";
+            string schemaText = @"
+{
+  ""type"": ""record"", ""name"": ""FL"",
+  " + (fieldLevel ? "" : @"""confluent:rules"": [ " + rule + " ],") + @"
+  ""fields"": [
+    { ""name"": ""amount"",
+      ""type"": { ""type"": ""bytes"", ""logicalType"": ""decimal"", ""precision"": 8, ""scale"": 2 }"
+      + (fieldLevel ? @", ""confluent:rules"": [ " + rule + " ]" : "") + @" }
+  ]
+}";
+            var rec = new GenericRecord((RecordSchema)Avro.Schema.Parse(schemaText));
+            rec.Add("amount", new AvroDecimal(1234, 2));
+            var schema = new RegisteredSchema(subject + "-value", 1, 1, schemaText,
+                SchemaType.Avro, null);
+            store[schemaText] = 1;
+            subjectStore[subject + "-value"] = new List<RegisteredSchema> { schema };
+            var ser = new AvroSerializer<GenericRecord>(schemaRegistryClient,
+                new AvroSerializerConfig
+                {
+                    AutoRegisterSchemas = false, UseLatestVersion = true,
+                    ValidationRulesExecution = ValidationRulesExecution.AfterDomainRules
+                });
+
+            // A condition that holds serializes without violations.
+            ser.SerializeAsync(rec,
+                new SerializationContext(MessageComponentType.Value, subject)).Wait();
+        }
+
         private static GenericRecord Record(string schemaText)
         {
             var record = new GenericRecord((RecordSchema)Avro.Schema.Parse(schemaText));
