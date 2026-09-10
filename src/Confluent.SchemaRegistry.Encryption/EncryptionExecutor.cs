@@ -582,13 +582,13 @@ namespace Confluent.SchemaRegistry.Encryption
         }
 
         /// <remarks>
-        ///     See <see cref="ToBigEndian" />.
+        ///     See <see cref="ToBigEndian" />. The caller always passes a fresh buffer from
+        ///     BinaryReader.ReadBytes, so this reverses in place rather than cloning.
         /// </remarks>
         private static int FromBigEndian(byte[] bytes)
         {
             if (BitConverter.IsLittleEndian)
             {
-                bytes = (byte[])bytes.Clone();
                 Array.Reverse(bytes);
             }
             return BitConverter.ToInt32(bytes, 0);
