@@ -483,11 +483,87 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Theory]
-        [InlineData("4.00", "2.0")]
-        [InlineData("100.0000", "10.00")]
-        public void SqrtKeepsThePreferredScale(string input, string expected)
+        [InlineData("4.00", "2.0", 1)]
+        [InlineData("100.0000", "10.00", 2)]
+        [InlineData("9.0", "3", 0)]
+        [InlineData("16.000", "4.0", 1)]
+        [InlineData("0.0001", "0.01", 2)]
+        public void SqrtKeepsThePreferredScale(string input, string expected, int scale)
         {
-            Assert.Equal(expected, BigDecimal.Parse(input).Sqrt().ToString());
+            BigDecimal r = BigDecimal.Parse(input).Sqrt();
+            Assert.Equal(expected, r.ToString());
+            Assert.Equal(scale, r.Scale);
+        }
+
+        /// <summary>
+        ///     A zero result carries the preferred scale too, in both directions, because the
+        ///     reference returns <c>zeroValueOf(preferredScale)</c>. This is the case
+        ///     <c>ApplyPreferredScale</c> cannot reach: its strip loop is guarded on a non-zero
+        ///     coefficient, so it can raise a zero's scale but never lower it, and the early
+        ///     return for a zero dividend skipped it entirely.
+        /// </summary>
+        /// <remarks>
+        ///     The scale is asserted as well as the rendering, because a zero at a
+        ///     non-positive scale writes as plain "0" whichever scale it holds - only a
+        ///     positive scale shows in the text, as its fractional zeros.
+        /// </remarks>
+        [Theory]
+        [InlineData("0.00", "3", "0.00", 2)]
+        [InlineData("0.000", "3", "0.000", 3)]
+        [InlineData("0", "3.00", "0", -2)]
+        [InlineData("0.00", "3.0000", "0", -2)]
+        public void ADividedZeroCarriesThePreferredScale(
+            string a, string b, string expected, int scale)
+        {
+            BigDecimal q = BigDecimal.Parse(a).Divide(BigDecimal.Parse(b));
+            Assert.Equal(expected, q.ToString());
+            Assert.Equal(scale, q.Scale);
+        }
+
+        [Theory]
+        [InlineData("0", "0", 0)]
+        [InlineData("0.0", "0", 0)]
+        [InlineData("0.00", "0.0", 1)]
+        [InlineData("0.000", "0.0", 1)]
+        public void ARootedZeroCarriesThePreferredScale(
+            string input, string expected, int scale)
+        {
+            BigDecimal r = BigDecimal.Parse(input).Sqrt();
+            Assert.Equal(expected, r.ToString());
+            Assert.Equal(scale, r.Scale);
+        }
+
+        /// <summary>
+        ///     ...and that scale saturates rather than throwing, which is the other half of the
+        ///     reference's zero exemption: measured, a zero at scale <c>int.MaxValue</c> over
+        ///     one at <c>int.MinValue</c> is a zero at <c>int.MaxValue</c>, while the same pair
+        ///     with a non-zero dividend is <c>Underflow</c> (asserted in
+        ///     <see cref="DivisionRefusesAScaleOutsideIntRange" />).
+        /// </summary>
+        [Fact]
+        public void AZerosPreferredScaleSaturatesInsteadOfThrowing()
+        {
+            BigDecimal q = new BigDecimal(BigInteger.Zero, int.MaxValue)
+                .Divide(new BigDecimal(BigInteger.One, int.MinValue));
+            Assert.Equal(int.MaxValue, q.Scale);
+
+            BigDecimal r = new BigDecimal(BigInteger.Zero, int.MinValue)
+                .Divide(new BigDecimal(BigInteger.One, int.MaxValue));
+            Assert.Equal(int.MinValue, r.Scale);
+        }
+
+        /// <summary>
+        ///     Negative scales halve toward zero, as <c>scale / 2</c> does in the reference -
+        ///     -3 gives -1, not the floor's -2. Rendering hides it: all of these are "500",
+        ///     "20" and "100" whatever the scale.
+        /// </summary>
+        [Theory]
+        [InlineData("250E+3", -1)]
+        [InlineData("4E+2", -1)]
+        [InlineData("1E+4", -2)]
+        public void SqrtHalvesANegativeScaleTowardZero(string input, int scale)
+        {
+            Assert.Equal(scale, BigDecimal.Parse(input).Sqrt().Scale);
         }
     }
 }

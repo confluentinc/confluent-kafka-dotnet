@@ -279,7 +279,16 @@ namespace Confluent.SchemaRegistry
 
             if (unscaled.IsZero)
             {
-                return Zero;
+                // The reference returns zeroValueOf(preferredScale), not a bare zero: a zero
+                // dividend still carries dividend.scale - divisor.scale, so 0.00 / 3 is scale
+                // 2 and 0 / 3.00 is scale -2. `Zero` dropped both to scale 0 - invisible in
+                // ToPlainString, which renders every one of them "0", but a different scale
+                // field on the wire. ApplyPreferredScale below cannot cover this: its strip
+                // loop is guarded on a non-zero coefficient, so it can never lower a zero.
+                // Saturating, not checked: the reference clamps a zero's derived scale where
+                // it would throw for a non-zero one (see SaturateScale).
+                return new BigDecimal(
+                    BigInteger.Zero, SaturateScale((long)scale - divisor.scale));
             }
 
             int sign = unscaled.Sign * divisor.unscaled.Sign;
@@ -372,7 +381,9 @@ namespace Confluent.SchemaRegistry
 
             if (unscaled.IsZero)
             {
-                return Zero;
+                // As in Divide: a zero root carries the preferred scale, here scale / 2
+                // truncated toward zero. sqrt(0.00) is scale 1 in the reference, not 0.
+                return new BigDecimal(BigInteger.Zero, scale / 2);
             }
 
             BigInteger u = unscaled;
@@ -680,6 +691,19 @@ namespace Confluent.SchemaRegistry
 
             return (int)scale;
         }
+
+        /// <summary>
+        ///     Narrows a derived scale to <c>int</c> by clamping instead of throwing - what the
+        ///     JVM's <c>checkScale</c> does when the value is <b>zero</b>.
+        /// </summary>
+        /// <remarks>
+        ///     Measured on the reference: a zero at scale <c>int.MaxValue</c> divided by one at
+        ///     <c>int.MinValue</c> yields a zero at scale <c>int.MaxValue</c>, while the same
+        ///     pair with a non-zero dividend is <c>ArithmeticException: Underflow</c>. A zero
+        ///     is one digit at any scale, so no scale is out of reach for it.
+        /// </remarks>
+        private static int SaturateScale(long scale)
+            => scale < int.MinValue ? int.MinValue : scale > int.MaxValue ? int.MaxValue : (int)scale;
 
         /// <summary>
         ///     The digit count of an unscaled value, which is what <c>BigDecimal.precision()</c>
