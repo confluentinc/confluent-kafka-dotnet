@@ -269,6 +269,298 @@ namespace Confluent.SchemaRegistry.Serdes
             return message;
         }
 
+        /// <summary>
+        ///     Walks the message against the schema, evaluating every inline
+        ///     "confluent:rules" constraint encountered and collecting all failures.
+        ///     Read-only — the message is not modified.
+        ///
+        ///     Two kinds of rules are evaluated:
+        ///     <list type="bullet">
+        ///       <item>Object-level ("confluent:rules" on an object schema) — <c>this</c> is
+        ///         the object.</item>
+        ///       <item>Property-level ("confluent:rules" on a property schema) — <c>this</c>
+        ///         is the property value. Honors the skip-on-null contract: a property that
+        ///         is absent or null does not have its rules invoked.</item>
+        ///     </list>
+        ///
+        ///     Failures are returned with their location, rooted at "$" to match the JVM
+        ///     client (e.g. $.addr.zip, $.tags[3]). The walk continues after each failure
+        ///     unless failFast is set.
+        /// </summary>
+        public static async Task<IList<ValidationRuleError>> Validate(IValidationRuleExecutor executor,
+            JsonSchema rootSchema, object message, bool failFast)
+        {
+            var violations = new List<ValidationRuleError>();
+            if (executor == null || rootSchema == null || message == null)
+            {
+                return violations;
+            }
+
+            await Validate(executor, rootSchema, rootSchema, "$", message, failFast, violations)
+                .ConfigureAwait(false);
+            return violations;
+        }
+
+        /// <summary>
+        ///     Mirrors <see cref="Transform" />'s dispatch shape: the combined keywords
+        ///     (allOf/anyOf/oneOf) with their sibling properties/items, then arrays, then
+        ///     objects, then references.
+        /// </summary>
+        private static async Task Validate(IValidationRuleExecutor executor, JsonSchema rootSchema,
+            JsonSchema schema, string path, object message, bool failFast,
+            IList<ValidationRuleError> violations, JsonObjectType? typeOverride = null)
+        {
+            if (schema == null || message == null)
+            {
+                return;
+            }
+
+            // Rules declared at this level: this = the value at this location. This is the
+            // only place rules are read - a property's schema and the schema the walk
+            // recurses into for that property are the same object, so reading them in the
+            // property loop as well would charge every rule on an object-valued property
+            // twice. The message == null guard above is also the skip-on-null contract.
+            // Matches the JVM client.
+            foreach (ValidationRule rule in GetInlineValidationRules(schema))
+            {
+                await ValidationRules.Evaluate(executor, rule, schema, message, path, violations)
+                    .ConfigureAwait(false);
+                if (failFast && violations.Any())
+                {
+                    return;
+                }
+            }
+
+            JsonObjectType effectiveType = typeOverride ?? GetSchemaType(rootSchema, schema);
+
+            // A schema whose type allows several kinds has to be narrowed to the one the
+            // value actually is before dispatching: JsonObjectType is a flag set, so
+            // ["array","object"] carries the Array flag, and an object value would enter the
+            // array branch, fail its IList check and return with the object's own property
+            // rules never visited. Transform resolves the type the same way.
+            if (typeOverride == null && HasMultipleFlags(effectiveType))
+            {
+                JToken jsonObject = JToken.FromObject(message);
+                foreach (JsonObjectType flag in Enum.GetValues(typeof(JsonObjectType)))
+                {
+                    if (!effectiveType.HasFlag(flag) || flag.Equals(default(JsonObjectType)))
+                    {
+                        continue;
+                    }
+
+                    bool isValid;
+                    lock (rootSchema)
+                    {
+                        JsonObjectType originalType = schema.Type;
+                        try
+                        {
+                            schema.Type = flag;
+                            var validator = new JsonSchemaValidator();
+                            isValid = validator.Validate(jsonObject, schema).Count == 0;
+                        }
+                        finally
+                        {
+                            schema.Type = originalType;
+                        }
+                    }
+
+                    if (isValid)
+                    {
+                        // The rules for this node have already been evaluated above, so the
+                        // resolved pass must not read them again.
+                        await ValidateResolved(executor, rootSchema, schema, path, message,
+                            failFast, violations, flag).ConfigureAwait(false);
+                        return;
+                    }
+                }
+            }
+
+            await ValidateResolved(executor, rootSchema, schema, path, message, failFast,
+                violations, effectiveType).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        ///     Walks into whatever the schema describes, with its type already resolved to a
+        ///     single kind. The rules for this node have been evaluated by
+        ///     <see cref="Validate" />.
+        /// </summary>
+        private static async Task ValidateResolved(IValidationRuleExecutor executor,
+            JsonSchema rootSchema, JsonSchema schema, string path, object message,
+            bool failFast, IList<ValidationRuleError> violations, JsonObjectType effectiveType)
+        {
+            if (schema.AllOf.Count > 0 || schema.AnyOf.Count > 0 || schema.OneOf.Count > 0)
+            {
+                if (schema.AllOf.Count > 0)
+                {
+                    foreach (JsonSchema subschema in schema.AllOf)
+                    {
+                        await Validate(executor, rootSchema, subschema, path, message, failFast, violations)
+                            .ConfigureAwait(false);
+                        if (failFast && violations.Any())
+                        {
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    ICollection<JsonSchema> subschemas = schema.AnyOf.Count > 0 ? schema.AnyOf : schema.OneOf;
+                    bool oneOf = schema.OneOf.Count > 0;
+                    JToken jsonObject = JToken.FromObject(message);
+                    foreach (JsonSchema subschema in subschemas)
+                    {
+                        bool isValid;
+                        lock (rootSchema)
+                        {
+                            var validator = new JsonSchemaValidator();
+                            isValid = validator.Validate(jsonObject, subschema).Count == 0;
+                        }
+
+                        if (isValid)
+                        {
+                            await Validate(executor, rootSchema, subschema, path, message, failFast, violations)
+                                .ConfigureAwait(false);
+                            if (oneOf || (failFast && violations.Any()))
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (failFast && violations.Any())
+                {
+                    return;
+                }
+
+                // Also visit sibling properties/items at this level.
+                await ValidateProperties(executor, rootSchema, schema, path, message, failFast, violations)
+                    .ConfigureAwait(false);
+                if (failFast && violations.Any())
+                {
+                    return;
+                }
+
+                if (schema.Item != null && message is IList)
+                {
+                    await ValidateArray(executor, rootSchema, schema.Item, path, message, failFast, violations)
+                        .ConfigureAwait(false);
+                }
+
+                return;
+            }
+
+            if (effectiveType.HasFlag(JsonObjectType.Array))
+            {
+                if (message is IList)
+                {
+                    await ValidateArray(executor, rootSchema, schema.Item, path, message, failFast, violations)
+                        .ConfigureAwait(false);
+                }
+
+                return;
+            }
+
+            if (effectiveType.HasFlag(JsonObjectType.Object) || schema.Properties.Count > 0)
+            {
+                await ValidateProperties(executor, rootSchema, schema, path, message, failFast, violations)
+                    .ConfigureAwait(false);
+                return;
+            }
+
+            if (schema.HasReference)
+            {
+                await Validate(executor, rootSchema, schema.ActualTypeSchema, path, message, failFast,
+                    violations).ConfigureAwait(false);
+            }
+
+            // otherwise a primitive leaf - its rules were evaluated above, and it has no children
+        }
+
+        private static async Task ValidateArray(IValidationRuleExecutor executor, JsonSchema rootSchema,
+            JsonSchema itemSchema, string path, object message, bool failFast,
+            IList<ValidationRuleError> violations)
+        {
+            if (itemSchema == null || !(message is IList list))
+            {
+                return;
+            }
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                await Validate(executor, rootSchema, itemSchema, $"{path}[{i}]", list[i], failFast,
+                    violations).ConfigureAwait(false);
+                if (failFast && violations.Any())
+                {
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Recurses into each declared property value. Undeclared properties are not
+        ///     walked, matching the JVM client. Rules are not read here - see Validate,
+        ///     which each property value goes through.
+        /// </summary>
+        private static async Task ValidateProperties(IValidationRuleExecutor executor, JsonSchema rootSchema,
+            JsonSchema schema, string path, object message, bool failFast,
+            IList<ValidationRuleError> violations)
+        {
+            foreach (var it in schema.Properties)
+            {
+                string fullName = path + '.' + it.Key;
+                object value;
+                if (message is JObject jObject)
+                {
+                    if (!jObject.TryGetValue(it.Key, out JToken token))
+                    {
+                        continue;
+                    }
+
+                    value = token is JValue jv ? jv.Value : (object)token;
+                }
+                else
+                {
+                    FieldAccessor fieldAccessor;
+                    try
+                    {
+                        fieldAccessor = FieldAccessorCache.GetOrAdd(
+                            (message.GetType(), it.Key),
+                            key => new FieldAccessor(key.Item1, key.Item2));
+                    }
+                    catch (ArgumentException)
+                    {
+                        continue;
+                    }
+
+                    value = fieldAccessor.GetFieldValue(message);
+                }
+
+                await Validate(executor, rootSchema, it.Value, fullName, value, failFast, violations)
+                    .ConfigureAwait(false);
+                if (failFast && violations.Any())
+                {
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Reads the "confluent:rules" keyword off a schema. NJsonSchema preserves
+        ///     unknown keywords in ExtensionData, so this is a plain lookup.
+        /// </summary>
+        private static IList<ValidationRule> GetInlineValidationRules(JsonSchema schema)
+        {
+            if (schema?.ExtensionData == null
+                || !schema.ExtensionData.TryGetValue(ValidationRules.RulesProp, out var prop)
+                || prop == null)
+            {
+                return new List<ValidationRule>();
+            }
+
+            return ValidationRules.Parse(JsonConvert.SerializeObject(prop));
+        }
+
         private static bool HasMultipleFlags<T>(T flags) where T : Enum
         {
             var value = Convert.ToInt32(flags);

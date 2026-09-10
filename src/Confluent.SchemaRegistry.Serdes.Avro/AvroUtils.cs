@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -193,6 +194,179 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     return message;
             }
+        }
+
+        /// <summary>
+        ///     Walks the message against the schema, evaluating every inline
+        ///     "confluent:rules" CHECK constraint encountered and collecting all failures.
+        ///     Read-only — the message is not modified.
+        ///
+        ///     Two kinds of rules are evaluated:
+        ///     <list type="bullet">
+        ///       <item>Record-level ("confluent:rules" on a record schema) — <c>this</c> is
+        ///         the record.</item>
+        ///       <item>Field-level ("confluent:rules" on a record's field) — <c>this</c> is
+        ///         the field value. Honors the skip-on-null contract: a field whose value is
+        ///         null does not have its rules invoked.</item>
+        ///     </list>
+        ///
+        ///     Failures are returned with their dotted-path location (e.g. addr.zip,
+        ///     tags[3], scores["foo"]). The walk continues after each failure so callers see
+        ///     the full set rather than only the first, unless failFast is set.
+        /// </summary>
+        public static async Task<IList<ValidationRuleError>> Validate(IValidationRuleExecutor executor,
+            Avro.Schema schema, object message, bool failFast)
+        {
+            var violations = new List<ValidationRuleError>();
+            if (executor == null || schema == null || message == null)
+            {
+                return violations;
+            }
+
+            await Validate(executor, schema, "", message, failFast, violations).ConfigureAwait(false);
+            return violations;
+        }
+
+        /// <summary>
+        ///     Mirrors <see cref="Transform" />'s switch-on-tag dispatch shape.
+        /// </summary>
+        private static async Task Validate(IValidationRuleExecutor executor, Avro.Schema schema,
+            string path, object message, bool failFast, IList<ValidationRuleError> violations)
+        {
+            if (schema == null || message == null)
+            {
+                return;
+            }
+
+            switch (schema.Tag)
+            {
+                case Avro.Schema.Type.Union:
+                    IUnionResolver writer = GetResolver(schema, message);
+                    UnionSchema us = (UnionSchema)schema;
+                    int unionIndex = writer.Resolve(us, message);
+                    Avro.Schema member = us[unionIndex];
+                    if (member.Tag == Avro.Schema.Type.Null)
+                    {
+                        return;
+                    }
+
+                    await Validate(executor, member, path, message, failFast, violations)
+                        .ConfigureAwait(false);
+                    return;
+                case Avro.Schema.Type.Array:
+                    ArraySchema a = (ArraySchema)schema;
+                    if (message is IEnumerable array)
+                    {
+                        int index = 0;
+                        foreach (object element in array)
+                        {
+                            await Validate(executor, a.ItemSchema, $"{path}[{index}]", element,
+                                failFast, violations).ConfigureAwait(false);
+                            if (failFast && violations.Any())
+                            {
+                                return;
+                            }
+
+                            index++;
+                        }
+                    }
+
+                    return;
+                case Avro.Schema.Type.Map:
+                    MapSchema ms = (MapSchema)schema;
+                    if (message is IDictionary map)
+                    {
+                        foreach (DictionaryEntry entry in map)
+                        {
+                            await Validate(executor, ms.ValueSchema, $"{path}[\"{entry.Key}\"]",
+                                entry.Value, failFast, violations).ConfigureAwait(false);
+                            if (failFast && violations.Any())
+                            {
+                                return;
+                            }
+                        }
+                    }
+
+                    return;
+                case Avro.Schema.Type.Record:
+                    RecordSchema declared = (RecordSchema)schema;
+                    // Record-level rules: this = the record value.
+                    foreach (ValidationRule rule in GetInlineValidationRules(declared))
+                    {
+                        await ValidationRules.Evaluate(executor, rule, declared, message, path, violations)
+                            .ConfigureAwait(false);
+                        if (failFast && violations.Any())
+                        {
+                            return;
+                        }
+                    }
+
+                    // Iterate the runtime schema's fields (which handles schema evolution) but
+                    // read inline metadata off the declared schema's field.
+                    RecordSchema runtime = declared;
+                    if (message is ISpecificRecord specific)
+                    {
+                        runtime = (RecordSchema)specific.Schema;
+                    }
+                    else if (message is GenericRecord generic)
+                    {
+                        runtime = (RecordSchema)generic.Schema;
+                    }
+                    else
+                    {
+                        return;
+                    }
+
+                    foreach (Field f in runtime.Fields)
+                    {
+                        if (!declared.TryGetField(f.Name, out Field originalField))
+                        {
+                            originalField = f;
+                        }
+
+                        object value = message is ISpecificRecord specificRecord
+                            ? specificRecord.Get(f.Pos)
+                            : ((GenericRecord)message).GetValue(f.Pos);
+                        string childPath = path.Length == 0 ? f.Name : $"{path}.{f.Name}";
+
+                        // Skip-on-null: a null field value does not invoke the executor. The
+                        // recursion below still runs but no-ops for null.
+                        if (value != null)
+                        {
+                            foreach (ValidationRule rule in GetInlineValidationRules(originalField))
+                            {
+                                await ValidationRules.Evaluate(executor, rule, originalField.Schema, value,
+                                    childPath, violations).ConfigureAwait(false);
+                                if (failFast && violations.Any())
+                                {
+                                    return;
+                                }
+                            }
+                        }
+
+                        await Validate(executor, originalField.Schema, childPath, value, failFast,
+                            violations).ConfigureAwait(false);
+                        if (failFast && violations.Any())
+                        {
+                            return;
+                        }
+                    }
+
+                    return;
+                default:
+                    // primitive leaf — field-level rules were evaluated by the parent record case
+                    return;
+            }
+        }
+
+        private static IList<ValidationRule> GetInlineValidationRules(RecordSchema schema)
+        {
+            return ValidationRules.Parse(schema.GetProperty(ValidationRules.RulesProp));
+        }
+
+        private static IList<ValidationRule> GetInlineValidationRules(Field field)
+        {
+            return ValidationRules.Parse(field.GetProperty(ValidationRules.RulesProp));
         }
 
         private static RuleContext.Type GetType(Avro.Schema schema)
