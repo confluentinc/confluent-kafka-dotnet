@@ -329,7 +329,24 @@ namespace Confluent.SchemaRegistry.Rules
                     if (vt == VariantType.TimestampTz || vt == VariantType.TimestampNtz ||
                         vt == VariantType.TimestampNanosTz || vt == VariantType.TimestampNanosNtz)
                     {
-                        return VariantTimestamp(v, vt);
+                        IVal ts = VariantTimestamp(v, vt);
+                        if (ts != null)
+                        {
+                            return ts;
+                        }
+
+                        // A variant timestamp spans the whole int64 range while a CEL
+                        // timestamp is 0001-9999, so an out-of-range value is reachable from
+                        // data. Routed through nullOnError like a type mismatch, so
+                        // variants.as names the range and variants.tryAs answers CEL null.
+                        if (nullOnError)
+                        {
+                            return NullT.NullValue;
+                        }
+
+                        throw new ArgumentException(
+                            "variants.as: timestamp " + v.GetLong() + " is outside "
+                            + "0001-01-01T00:00:00Z..9999-12-31T23:59:59.999999999Z");
                     }
 
                     break;
@@ -379,9 +396,9 @@ namespace Confluent.SchemaRegistry.Rules
             // rather than collapsing to micros. FromEpoch* floor-divide, so negative epoch
             // values round toward -infinity (matching Java's variantGetTimestamp).
             Timestamp ts = vt == VariantType.TimestampTz || vt == VariantType.TimestampNtz
-                ? TimestampUtils.FromEpochMicros(raw)
-                : TimestampUtils.FromEpochNanos(raw);
-            return TimestampT.TimestampOf(ts);
+                ? TimestampUtils.FromEpochMicrosOrNull(raw)
+                : TimestampUtils.FromEpochNanosOrNull(raw);
+            return ts == null ? null : TimestampT.TimestampOf(ts);
         }
 
         // ---- Decimal / timestamp helpers ----

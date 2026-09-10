@@ -67,6 +67,37 @@ namespace Confluent.SchemaRegistry.Rules
 
         private static long FloorMod(long x, long y) => x - FloorDiv(x, y) * y;
 
+        /// <summary>
+        ///     A micros epoch as a Timestamp, or <c>null</c> when it falls outside the CEL
+        ///     range.
+        ///
+        ///     <para>Null rather than an exception because the caller decides:
+        ///     <c>variants.as</c> raises and <c>variants.tryAs</c> answers CEL null, the same
+        ///     split those two already apply to a type mismatch. Throwing from here instead
+        ///     made even a comparison fail and left <c>tryAs</c> no way to guard.</para>
+        /// </summary>
+        public static Timestamp FromEpochMicrosOrNull(long us) =>
+            FromEpochOrNull(us, 1_000_000L, 1_000L);
+
+        /// <summary>A nanos epoch as a Timestamp, or <c>null</c> when outside the CEL range.</summary>
+        public static Timestamp FromEpochNanosOrNull(long ns) =>
+            FromEpochOrNull(ns, 1_000_000_000L, 1L);
+
+        private static Timestamp FromEpochOrNull(long epoch, long perSecond, long nanosPerUnit)
+        {
+            long seconds = FloorDiv(epoch, perSecond);
+            if (seconds < MinEpochSecond || seconds > MaxEpochSecond)
+            {
+                return null;
+            }
+
+            return new Timestamp
+            {
+                Seconds = seconds,
+                Nanos = (int)(FloorMod(epoch, perSecond) * nanosPerUnit),
+            };
+        }
+
         public static Timestamp FromEpochMillis(long ms) =>
             CheckRange(new Timestamp
                 { Seconds = FloorDiv(ms, 1_000L), Nanos = (int)(FloorMod(ms, 1_000L) * 1_000_000L) });

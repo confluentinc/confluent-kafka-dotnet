@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Threading.Tasks;
 using Confluent.SchemaRegistry.Rules;
 using Google.Protobuf;
@@ -328,6 +329,49 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 Value = ByteString.CopyFrom(v.ValueBytes)
             };
             Assert.Equal(expected, await Eval(expr, msg));
+        }
+
+        /// <summary>
+        ///     A variant timestamp spans the whole int64 range while a CEL timestamp is
+        ///     0001-9999, so an out-of-range value is reachable from data. It used to be built
+        ///     unchecked; then the constructor fix added the bound to the shared
+        ///     <c>FromEpoch*</c> helpers, which refused so eagerly that even a comparison
+        ///     failed and <c>variants.tryAs</c> could not guard. The refusal now lives in the
+        ///     as/tryAs split, matching the reference's <c>variantGetTimestamp</c>.
+        /// </summary>
+        [Theory]
+        [InlineData(0L)]
+        [InlineData(253402300799999999L)]
+        [InlineData(-62135596800000000L)]
+        public async Task VariantAsTimestampAcceptsTheRange(long micros)
+        {
+            Variant v = TimestampVariant(micros);
+            Assert.Equal(true, await Eval(
+                "variants.as(this, 'timestamp') == variants.as(this, 'timestamp')", v));
+            // tryAs answers a timestamp, not null - otherwise the guard below proves nothing.
+            Assert.Equal(false, await Eval("variants.tryAs(this, 'timestamp') == null", v));
+        }
+
+        [Theory]
+        [InlineData(long.MaxValue)]
+        [InlineData(-long.MaxValue)]
+        [InlineData(253402300800999999L)]
+        public async Task VariantAsTimestampRefusesOutOfRange(long micros)
+        {
+            Variant v = TimestampVariant(micros);
+            Exception e = await Assert.ThrowsAnyAsync<Exception>(
+                () => Eval("variants.as(this, 'timestamp') != null", v));
+            Assert.Contains("is outside 0001-01-01T00:00:00Z",
+                e.InnerException?.Message ?? e.Message);
+            // tryAs answers CEL null instead, so a rule can guard on it.
+            Assert.Equal(true, await Eval("variants.tryAs(this, 'timestamp') == null", v));
+        }
+
+        private static Variant TimestampVariant(long micros)
+        {
+            var b = new VariantBuilder();
+            b.AppendTimestampTz(micros);
+            return b.Build();
         }
     }
 }
