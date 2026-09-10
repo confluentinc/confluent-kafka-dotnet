@@ -10,7 +10,7 @@
 * Fix early return in FindMessageByName (#2644)
 * Preserve HTTP status for retriable SR errors (#2647)
 * Security patch in examples and tests using old NJsonSchema versions, test framework upgrade in `Confluent.Kafka` tests (#2656)
-* Fix the CSFLE ciphertext version field being written in host byte order on big-endian
+* Fix the CSFLE ciphertext version field being written little-endian on big-endian
   platforms, which made encrypted fields unreadable across architectures
 
 

@@ -46,7 +46,8 @@ if [[ "$ON_S390X" != "--on-s390x" ]]; then
     chmod go-rwx ./$LOCAL_KEY
     echo "SSH key saved to $LOCAL_KEY"
 
-    if [ -z "$(ssh-keygen -F $S390X_HOST)" ]; then
+    if [ -z "$(ssh-keygen -F "$S390X_HOST")" ]; then
+        mkdir -p ~/.ssh
         vault kv get -field=known_host $SSH_KEY_PATH >> ~/.ssh/known_hosts
         echo "Added $S390X_HOST to the list of known hosts"
     fi
