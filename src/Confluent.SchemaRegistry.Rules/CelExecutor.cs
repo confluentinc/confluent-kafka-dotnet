@@ -473,6 +473,23 @@ namespace Confluent.SchemaRegistry.Rules
                 return Instant.FromDateTimeUtc(utc);
             }
 
+            // The decimal counterpart, for the same reason and at the same point: an Avro decimal
+            // logical type decodes to an AvroDecimal, and the checker was told that CLR type, so
+            // `decimals.add(value, ...)` failed with "found no matching overload" before the rule
+            // ran - measured, while `decimals.add(decimal(value), ...)` worked, which is why the
+            // wrapper appears in tests. The reference needs no wrapper: CelFieldExecutor binds
+            // through CelUtils.toCelValue, whose normalizeAvroDecimal returns a CelDecimal, and
+            // Python, JavaScript and C++ all accept a bare `value` too.
+            //
+            // ToCelDecimalOrNull already carries the AvroDecimal arm for exactly this case; only
+            // this path never reached it. The write-back in CelFieldExecutor keys off the field's
+            // original value rather than this converted one, so it still turns the result back.
+            object celDecimal = ToCelDecimalOrNull(value);
+            if (celDecimal != null)
+            {
+                return celDecimal;
+            }
+
             // A protobuf repeated or map field is homogeneous, so a collection of enums is
             // all enums. Converting it to a typed collection keeps the declared element type
             // an int; rebuilding it as object would type it dyn and the comparison would not
