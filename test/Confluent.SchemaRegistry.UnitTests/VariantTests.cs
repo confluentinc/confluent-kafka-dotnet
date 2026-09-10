@@ -601,6 +601,47 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.ThrowsAny<Exception>(() => Variant.ParseJson(json));
         }
 
+        /// <summary>
+        ///     Equality is over the encoding - the metadata bytes and the value bytes from the
+        ///     current position - not reference equality. Each case here has a twin in the other
+        ///     six clients.
+        /// </summary>
+        [Fact]
+        public void Equality_IsOverTheEncoding()
+        {
+            Assert.Equal(Variant.ParseJson("{\"name\":\"alice\"}"),
+                Variant.ParseJson("{\"name\":\"alice\"}"));
+            Assert.Equal(Variant.ParseJson("{\"name\":\"alice\"}").GetHashCode(),
+                Variant.ParseJson("{\"name\":\"alice\"}").GetHashCode());
+            Assert.Equal(Variant.ParseJson("1"), Variant.ParseJson("1"));
+            Assert.Equal(Variant.ParseJson("[1,2,3]"), Variant.ParseJson("[1,2,3]"));
+            Assert.Equal(Variant.ParseJson("null"), Variant.ParseJson("null"));
+
+            Assert.NotEqual(Variant.ParseJson("{\"name\":\"alice\"}"),
+                Variant.ParseJson("{\"name\":\"bob\"}"));
+            Assert.NotEqual(Variant.ParseJson("1"), Variant.ParseJson("2"));
+            Assert.NotEqual(Variant.ParseJson("[1,2,3]"), Variant.ParseJson("[1,2]"));
+            Assert.NotEqual(Variant.ParseJson("null"), Variant.ParseJson("0"));
+            Assert.False(Variant.ParseJson("1").Equals("1"));
+            Assert.False(Variant.ParseJson("1").Equals(null));
+
+            // The documented incompleteness: one value has many encodings. ParseJson follows
+            // Java number handling, so a fractional number is a double and an integer is not.
+            Assert.NotEqual(Variant.ParseJson("1"), Variant.ParseJson("1.0"));
+
+            // Metadata is compared too, and a navigated variant carries its parent's whole
+            // dictionary - so a field holding 1 is not the standalone variant 1.
+            Variant navigated = Variant.ParseJson("{\"a\":1}").GetFieldByKey("a");
+            Assert.NotEqual(Variant.ParseJson("1"), navigated);
+
+            // A navigated variant's buffer also runs to the end of the parent, so it equals the
+            // same position in an identical parent and not a sibling holding the same value.
+            Variant p1 = Variant.ParseJson("{\"x\":{\"k\":1},\"y\":{\"k\":1}}");
+            Variant p2 = Variant.ParseJson("{\"x\":{\"k\":1},\"y\":{\"k\":1}}");
+            Assert.Equal(p1.GetFieldByKey("x"), p2.GetFieldByKey("x"));
+            Assert.NotEqual(p1.GetFieldByKey("x"), p1.GetFieldByKey("y"));
+        }
+
         private static byte[] Combine(byte[] a, byte[] b)
         {
             var r = new byte[a.Length + b.Length];

@@ -351,6 +351,24 @@ namespace Confluent.SchemaRegistry.UnitTests
                 () => BigDecimal.UnscaledPrecision(BigInteger.Parse(new string('9', 20000))));
         }
 
+        // Remainder must be exact at any width - the Rust client computed it through a division
+        // capped at 100 digits and silently returned a wrong residual past that. This one is
+        // BigInteger `%` on the aligned coefficients, so it is exact by construction; measured
+        // on the JDK, 10^k mod 3 is 1 for every k.
+        [Fact]
+        public void Remainder_IsExactPastAHundredDigits()
+        {
+            var three = new BigDecimal(new BigInteger(3), 0);
+            foreach (int k in new[] { 99, 100, 101, 200, 1000 })
+            {
+                var v = new BigDecimal(BigInteger.Pow(10, k), 0);
+                Assert.Equal("1", v.Remainder(three).ToPlainString());
+            }
+            // And a case whose answer is not 1: 10^200 mod 7 is 2 (10^6 = 1 mod 7, 200 mod 6 = 2).
+            Assert.Equal("2", new BigDecimal(BigInteger.Pow(10, 200), 0)
+                .Remainder(new BigDecimal(new BigInteger(7), 0)).ToPlainString());
+        }
+
         // Rendering is a third site, reachable with no rescale at all: Divide holds its
         // coefficient to 38 digits while the scale runs free, so the value is cheap to hold
         // and enormous to print. The plain form pays for the scale in both directions.

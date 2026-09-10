@@ -123,6 +123,69 @@ namespace Confluent.SchemaRegistry
 
         internal int Position => pos;
 
+        // --- equality ---
+
+        /// <summary>
+        ///     Equality is over the encoding: the metadata bytes and the value bytes from
+        ///     <see cref="Position" />. The same comparison a <c>confluent.type.Variant</c>
+        ///     protobuf message already gets, so a variant read from a field and one built by
+        ///     <c>variants.parseJson</c> answer the same way.
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (!(obj is Variant other))
+            {
+                return false;
+            }
+
+            return SameFrom(value, pos, other.value, other.pos)
+                && SameFrom(metadata, 0, other.metadata, 0);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                for (int i = pos; i < value.Length; i++)
+                {
+                    hash = (hash * 31) + value[i];
+                }
+
+                foreach (byte b in metadata)
+                {
+                    hash = (hash * 31) + b;
+                }
+
+                return hash;
+            }
+        }
+
+        // The bytes remaining from each offset, which is what a navigated variant needs - its
+        // position is the start of the value, not the start of the parent's header.
+        private static bool SameFrom(byte[] a, int aPos, byte[] b, int bPos)
+        {
+            if (a.Length - aPos != b.Length - bPos)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < a.Length - aPos; i++)
+            {
+                if (a[aPos + i] != b[bPos + i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         // --- type ---
 
         public VariantType GetVariantType()

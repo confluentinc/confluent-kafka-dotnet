@@ -68,6 +68,37 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(expected, await Eval(expr, Doc));
         }
 
+        /// <summary>
+        ///     Variant <c>==</c> is equality of the encoding. <see cref="VariantT.Equal" />
+        ///     delegates to <c>Variant.Equals</c>, which used to be reference equality and
+        ///     reported two byte-identical variants unequal. Sound but incomplete: equal bytes
+        ///     mean equal values, but one value has many encodings.
+        /// </summary>
+        [Theory]
+        [InlineData("variants.parseJson('1') == variants.parseJson('1')", true)]
+        [InlineData("variants.parseJson('1') != variants.parseJson('1')", false)]
+        [InlineData("variants.parseJson('{}') == variants.parseJson('{}')", true)]
+        [InlineData("variants.parseJson('{\"a\":1}') == variants.parseJson('{\"a\":1}')", true)]
+        [InlineData("variants.parseJson('1') == variants.parseJson('2')", false)]
+        // Incomplete, as documented: an int and a double are two encodings.
+        [InlineData("variants.parseJson('1') == variants.parseJson('1.0')", false)]
+        // Containers recurse with the same equality.
+        [InlineData("[variants.parseJson('1')] == [variants.parseJson('1')]", true)]
+        [InlineData("[variants.parseJson('1')] == [variants.parseJson('2')]", false)]
+        // Navigation: the same position in an identical parent.
+        [InlineData("variants.field(variants.parseJson('{\"a\":1}'), 'a') == "
+            + "variants.field(variants.parseJson('{\"a\":1}'), 'a')", true)]
+        // A field holding 1 is not the standalone variant 1: it carries its parent's metadata
+        // dictionary, which is part of the comparison.
+        [InlineData("variants.field(variants.parseJson('{\"a\":1}'), 'a') == variants.parseJson('1')",
+            false)]
+        // And the whole document, reached two ways, is the same variant.
+        [InlineData("variants.parseJson(this) == variants.parseJson(this)", true)]
+        public async Task VariantEqualityIsOverTheEncoding(string expr, bool expected)
+        {
+            Assert.Equal(expected, await Eval(expr, Doc));
+        }
+
         [Theory]
         // Empty/whitespace input is a soft failure: variants.tryParseJson catches the parse error
         // and yields CEL null, whereas variants.parseJson (strict) throws.
