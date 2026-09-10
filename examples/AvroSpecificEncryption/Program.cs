@@ -25,7 +25,6 @@ using Confluent.SchemaRegistry.Encryption.Aws;
 using Confluent.SchemaRegistry.Encryption.Azure;
 using Confluent.SchemaRegistry.Encryption.Gcp;
 using Confluent.SchemaRegistry.Encryption.HcVault;
-using Confluent.SchemaRegistry.Encryption.AliCloud;
 using Confluent.SchemaRegistry.Serdes;
 
 
@@ -46,7 +45,6 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
             AzureKmsDriver.Register();
             GcpKmsDriver.Register();
             HcVaultKmsDriver.Register();
-            AliCloudKmsDriver.Register();
             LocalKmsDriver.Register();
             FieldEncryptionExecutor.Register();
 
@@ -54,7 +52,7 @@ namespace Confluent.Kafka.Examples.AvroSpecificEncryption
             string schemaRegistryUrl = args[1];
             string topicName = args[2];
             string kekName = args[3];
-            string kmsType = args[4]; // one of aws-kms, azure-kms, gcp-kms, hcvault, alicloud-kms
+            string kmsType = args[4]; // one of aws-kms, azure-kms, gcp-kms, hcvault
             string kmsKeyId = args[5];
             string subjectName = topicName + "-value";
 
