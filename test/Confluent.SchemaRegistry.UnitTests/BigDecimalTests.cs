@@ -440,5 +440,54 @@ namespace Confluent.SchemaRegistry.UnitTests
         {
             Assert.Equal("1230", new BigDecimal(new BigInteger(123), -1).ToPlainString());
         }
+
+        /// <summary>
+        ///     The division result scale is computed in <c>long</c> and checked only after
+        ///     normalization. <c>s - baseShift</c> wrapped in <c>int</c>: a 40-digit coefficient
+        ///     at scale 0 divided by 1 at scale <c>int.MaxValue</c> has a true scale of
+        ///     -2147483649, which wrapped to +2147483647 - turning an enormous quotient into a
+        ///     vanishingly small one, silently, with nothing failing until some later operation
+        ///     happened to trip a different guard. The JDK refuses the pair outright
+        ///     (<c>ArithmeticException: Underflow</c>), measured.
+        /// </summary>
+        [Fact]
+        public void DivisionRefusesAScaleOutsideIntRange()
+        {
+            var big = new BigDecimal(
+                BigInteger.Parse("1234567890123456789012345678901234567890"), 0);
+
+            // The true scale is -2147483649, which used to wrap to +2147483647.
+            ArithmeticException e = Assert.Throws<ArithmeticException>(
+                () => big.Divide(new BigDecimal(BigInteger.One, int.MaxValue)));
+            Assert.Contains("-2147483649", e.Message);
+
+            // The mirror image, which the baseShift check already caught.
+            Assert.Throws<ArithmeticException>(
+                () => new BigDecimal(BigInteger.One, int.MinValue)
+                    .Divide(new BigDecimal(BigInteger.One, int.MaxValue)));
+        }
+
+        /// <summary>
+        ///     The preferred-scale normalization still holds, so the check cannot be satisfied
+        ///     by refusing ordinary division. These are the JVM's answers.
+        /// </summary>
+        [Theory]
+        [InlineData("6.0", "3", "2.0", 1)]
+        [InlineData("10.00", "2", "5.00", 2)]
+        [InlineData("100", "4", "25", 0)]
+        public void DivisionKeepsThePreferredScale(string a, string b, string expected, int scale)
+        {
+            BigDecimal q = BigDecimal.Parse(a).Divide(BigDecimal.Parse(b));
+            Assert.Equal(expected, q.ToString());
+            Assert.Equal(scale, q.Scale);
+        }
+
+        [Theory]
+        [InlineData("4.00", "2.0")]
+        [InlineData("100.0000", "10.00")]
+        public void SqrtKeepsThePreferredScale(string input, string expected)
+        {
+            Assert.Equal(expected, BigDecimal.Parse(input).Sqrt().ToString());
+        }
     }
 }

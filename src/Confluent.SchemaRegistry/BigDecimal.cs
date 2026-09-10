@@ -316,17 +316,27 @@ namespace Confluent.SchemaRegistry
             }
 
             BigInteger resultUnscaled = sign < 0 ? -q : q;
-            int resultScale = s - baseShift;
+            // long, and checked only after normalization. `s - baseShift` wraps in int:
+            // measured, a 40-digit coefficient at scale 0 divided by 1 at scale int.MaxValue
+            // has a true scale of -2147483649, which wrapped to +2147483647 - turning an
+            // enormous quotient into a vanishingly small one, silently. The JDK refuses that
+            // pair outright (ArithmeticException: Underflow). `baseShift` above was already
+            // computed in long for the same reason; this subtraction was not.
+            //
+            // Checked *after* ApplyPreferredScale rather than before, because normalization
+            // moves the scale: stripping trailing zeros lowers it and padding raises it, so an
+            // intermediate outside the range can still normalize back into it.
+            long resultScale = (long)s - baseShift;
             if (exact)
             {
                 // Java targets the preferred scale (dividend.scale - divisor.scale) for an
                 // exact result: strip trailing zeros only down to it, and pad back up to it
                 // when the natural scale is smaller. Never strip below the preferred scale
                 // (6.0/3 -> "2.0", not "2"; 10.00/2 -> "5.00").
-                ApplyPreferredScale(ref resultUnscaled, ref resultScale, scale - divisor.scale);
+                ApplyPreferredScale(ref resultUnscaled, ref resultScale, (long)scale - divisor.scale);
             }
 
-            return new BigDecimal(resultUnscaled, resultScale);
+            return new BigDecimal(resultUnscaled, CheckScale(resultScale, "decimals.div"));
         }
 
         /// <summary>
@@ -395,15 +405,16 @@ namespace Confluent.SchemaRegistry
                 s -= 1;
             }
 
+            long resultScale = s;
             if (exact)
             {
                 // Java targets the preferred scale (radicand.scale / 2) for an exact result:
                 // strip trailing zeros only down to it, padding back up when the natural scale
                 // is smaller (sqrt(4.00) -> "2.0"; sqrt(100.0000) -> "10.00").
-                ApplyPreferredScale(ref q, ref s, scale / 2);
+                ApplyPreferredScale(ref q, ref resultScale, (long)scale / 2);
             }
 
-            return new BigDecimal(q, s);
+            return new BigDecimal(q, CheckScale(resultScale, "decimals.sqrt"));
         }
 
         // ---- Rounding ----------------------------------------------------------------
@@ -783,7 +794,8 @@ namespace Confluent.SchemaRegistry
         ///     <c>dividend.scale - divisor.scale</c> for division and <c>radicand.scale / 2</c>
         ///     for square root.
         /// </summary>
-        private static void ApplyPreferredScale(ref BigInteger value, ref int scale, int preferredScale)
+        private static void ApplyPreferredScale(
+            ref BigInteger value, ref long scale, long preferredScale)
         {
             while (scale > preferredScale && !value.IsZero && value % 10 == 0)
             {
@@ -793,7 +805,12 @@ namespace Confluent.SchemaRegistry
 
             if (scale < preferredScale)
             {
-                value *= Pow10(preferredScale - scale);
+                // Padding multiplies the coefficient by 10^gap, so the gap is a width the
+                // result has to carry - bounded here rather than handed to Pow10, which would
+                // otherwise be asked for an absurd power once the scales are in long.
+                long gap = preferredScale - scale;
+                RequireSaneWidth((long)Digits(value) + gap, "decimals.div", "the result");
+                value *= Pow10((int)gap);
                 scale = preferredScale;
             }
         }
