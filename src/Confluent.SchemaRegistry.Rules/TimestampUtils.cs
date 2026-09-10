@@ -27,6 +27,33 @@ namespace Confluent.SchemaRegistry.Rules
     /// </summary>
     internal static class TimestampUtils
     {
+        /// <summary>
+        ///     The CEL timestamp range, 0001-01-01T00:00:00Z..9999-12-31T23:59:59.999999999Z,
+        ///     in epoch seconds. Same bounds as the reference's
+        ///     <c>TimestampUtils.MIN/MAX_EPOCH_SECOND</c>.
+        /// </summary>
+        private const long MinEpochSecond = -62135596800L;
+
+        private const long MaxEpochSecond = 253402300799L;
+
+        /// <summary>
+        ///     Refuses an epoch outside the CEL range, as the reference's
+        ///     <c>instantOfEpoch</c> does. Protobuf's own formatting catches the upper end, but
+        ///     not the lower: measured, <c>timestamp(-62135596801, 0)</c> rendered as
+        ///     <c>0000-12-31T23:59:59Z</c> - a year CEL has no representation for.
+        /// </summary>
+        private static Timestamp CheckRange(Timestamp ts)
+        {
+            if (ts.Seconds < MinEpochSecond || ts.Seconds > MaxEpochSecond)
+            {
+                throw new ArgumentException(
+                    $"timestamp: out of range: {ts.Seconds} seconds since the epoch is outside " +
+                    "0001-01-01T00:00:00Z..9999-12-31T23:59:59.999999999Z");
+            }
+
+            return ts;
+        }
+
         private static long FloorDiv(long x, long y)
         {
             long q = x / y;
@@ -41,15 +68,19 @@ namespace Confluent.SchemaRegistry.Rules
         private static long FloorMod(long x, long y) => x - FloorDiv(x, y) * y;
 
         public static Timestamp FromEpochMillis(long ms) =>
-            new Timestamp { Seconds = FloorDiv(ms, 1_000L), Nanos = (int)(FloorMod(ms, 1_000L) * 1_000_000L) };
+            CheckRange(new Timestamp
+                { Seconds = FloorDiv(ms, 1_000L), Nanos = (int)(FloorMod(ms, 1_000L) * 1_000_000L) });
 
         public static Timestamp FromEpochMicros(long us) =>
-            new Timestamp { Seconds = FloorDiv(us, 1_000_000L), Nanos = (int)(FloorMod(us, 1_000_000L) * 1_000L) };
+            CheckRange(new Timestamp
+                { Seconds = FloorDiv(us, 1_000_000L), Nanos = (int)(FloorMod(us, 1_000_000L) * 1_000L) });
 
         public static Timestamp FromEpochNanos(long ns) =>
-            new Timestamp { Seconds = FloorDiv(ns, 1_000_000_000L), Nanos = (int)FloorMod(ns, 1_000_000_000L) };
+            CheckRange(new Timestamp
+                { Seconds = FloorDiv(ns, 1_000_000_000L), Nanos = (int)FloorMod(ns, 1_000_000_000L) });
 
-        public static Timestamp FromEpochSeconds(long s) => new Timestamp { Seconds = s, Nanos = 0 };
+        public static Timestamp FromEpochSeconds(long s) =>
+            CheckRange(new Timestamp { Seconds = s, Nanos = 0 });
 
         /// <summary>
         ///     Construct from an epoch numeric value at a Flink-style decimal precision:

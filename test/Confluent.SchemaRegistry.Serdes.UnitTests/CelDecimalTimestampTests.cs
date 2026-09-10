@@ -392,5 +392,35 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 "this.ts == timestamp(\"2023-11-14T22:13:20.123Z\")", exact));
             Assert.Equal(true, await Eval("this.ts.getFullYear() == 2023", exact));
         }
+
+        /// <summary>
+        ///     The two-argument timestamp constructor has to refuse an epoch outside the CEL
+        ///     range, as the reference's <c>instantOfEpoch</c> does. Protobuf's own formatting
+        ///     caught the upper end, but not the lower: measured before the check,
+        ///     <c>timestamp(-62135596801, 0)</c> rendered as <c>0000-12-31T23:59:59Z</c>.
+        /// </summary>
+        [Theory]
+        [InlineData("string(timestamp(0, 0))", "1970-01-01T00:00:00Z")]
+        [InlineData("string(timestamp(253402300799, 0))", "9999-12-31T23:59:59Z")]
+        [InlineData("string(timestamp(-62135596800, 0))", "0001-01-01T00:00:00Z")]
+        // int64 nanoseconds cannot leave the range, so the widest nanos value still answers.
+        [InlineData("string(timestamp(9223372036854775807, 9))", "2262-04-11T23:47:16.854775807Z")]
+        // FloorDiv, not truncation: a pre-epoch value keeps a non-negative sub-second part.
+        [InlineData("string(timestamp(-1500, 3))", "1969-12-31T23:59:58.500Z")]
+        public async Task TwoArgTimestampInRange(string expr, string expected)
+        {
+            Assert.Equal(expected, await Eval(expr, "x"));
+        }
+
+        [Theory]
+        [InlineData("string(timestamp(253402300800, 0))")]
+        [InlineData("string(timestamp(-62135596801, 0))")]
+        [InlineData("string(timestamp(9223372036854775807, 0))")]
+        [InlineData("string(timestamp(-9223372036854775807, 0))")]
+        [InlineData("string(timestamp(9223372036854775807, 3))")]
+        public async Task TwoArgTimestampOutOfRangeIsRefused(string expr)
+        {
+            await Assert.ThrowsAnyAsync<Exception>(() => Eval(expr, "x"));
+        }
     }
 }
