@@ -565,5 +565,63 @@ namespace Confluent.SchemaRegistry.UnitTests
         {
             Assert.Equal(scale, BigDecimal.Parse(input).Sqrt().Scale);
         }
+
+        /// <summary>
+        ///     The preferred scale does not override the 38-digit context precision. Java pads
+        ///     toward the preferred scale only while the result still fits in
+        ///     <c>mc.precision</c> significant digits and stops short otherwise, so the target
+        ///     is <c>min(preferred, minimalScale + (38 - minimalPrecision))</c>, floored at the
+        ///     minimal scale. Without the cap this padded to the raw preferred scale - 101
+        ///     significant digits for <c>1.&lt;100 zeros&gt; / 1</c>.
+        /// </summary>
+        /// <remarks>
+        ///     Note the cap is on <b>precision</b>, not on scale: 0.5 spends one digit before
+        ///     the padding starts and so reaches scale 38, where 1 reaches only 37.
+        /// </remarks>
+        [Theory]
+        // 37 zeros is exactly 38 significant digits: the last reachable preferred scale.
+        [InlineData(37, "1", 37)]
+        // 40 and 100 would need 41 and 101 digits; both stop at 37.
+        [InlineData(40, "1", 37)]
+        [InlineData(100, "1", 37)]
+        [InlineData(100, "2", 38)]
+        [InlineData(100, "8", 38)]
+        public void ThePreferredScaleCannotExceedTheContextPrecision(
+            int dividendZeros, string divisor, int expectedScale)
+        {
+            BigDecimal q = BigDecimal.Parse("1." + new string('0', dividendZeros))
+                .Divide(BigDecimal.Parse(divisor));
+            Assert.Equal(expectedScale, q.Scale);
+            // The significant digits, counted off the plain form: never more than the 38 the
+            // context allows. Before the cap this was 101.
+            int significant = q.ToString().Replace(".", "").TrimStart('0').Length;
+            Assert.True(significant <= 38, $"{significant} significant digits exceeded 38");
+        }
+
+        [Theory]
+        [InlineData(40, 20)]
+        [InlineData(74, 37)]
+        [InlineData(100, 37)]
+        public void SqrtsPreferredScaleCannotExceedTheContextPrecision(
+            int radicandZeros, int expectedScale)
+        {
+            BigDecimal r = BigDecimal.Parse("1." + new string('0', radicandZeros)).Sqrt();
+            Assert.Equal(expectedScale, r.Scale);
+        }
+
+        /// <summary>
+        ///     A zero is exempt from that cap - it is one digit at any scale, so it keeps the
+        ///     full preferred scale. Measured on the reference: <c>0.&lt;100 zeros&gt; / 1</c>
+        ///     is scale 100 at precision 1.
+        /// </summary>
+        [Theory]
+        [InlineData("1", 100)]
+        [InlineData("3.0", 99)]
+        public void AZeroIsExemptFromThePrecisionCap(string divisor, int expectedScale)
+        {
+            BigDecimal q = BigDecimal.Parse("0." + new string('0', 100))
+                .Divide(BigDecimal.Parse(divisor));
+            Assert.Equal(expectedScale, q.Scale);
+        }
     }
 }

@@ -821,21 +821,36 @@ namespace Confluent.SchemaRegistry
         private static void ApplyPreferredScale(
             ref BigInteger value, ref long scale, long preferredScale)
         {
-            while (scale > preferredScale && !value.IsZero && value % 10 == 0)
+            // Strip all the way to the minimal scale first, then pad up to the target. Java
+            // strips only down to the preferred scale, but the target below is never lower
+            // than the minimal scale, so the two agree and this needs one loop rather than a
+            // conditional one.
+            while (!value.IsZero && value % 10 == 0)
             {
                 value /= 10;
                 scale--;
             }
 
-            if (scale < preferredScale)
+            // The preferred scale does not override the context precision. Java pads toward it
+            // only while the result still fits in mc.precision significant digits, and stops
+            // short otherwise. Measured: 1.<40 zeros> / 1 is scale 37 there, not the preferred
+            // 40, and 1.<100 zeros> / 8 is scale 38 because 0.125 already spends 3 of the 38 on
+            // digits that are not padding. Without the cap the padding ran to the raw preferred
+            // scale - 101 significant digits for 1.<100 zeros> / 1.
+            long headroom = DivisionPrecision - Digits(value);
+            long target = Math.Max(scale, Math.Min(preferredScale, scale + headroom));
+
+            if (target > scale)
             {
                 // Padding multiplies the coefficient by 10^gap, so the gap is a width the
                 // result has to carry - bounded here rather than handed to Pow10, which would
-                // otherwise be asked for an absurd power once the scales are in long.
-                long gap = preferredScale - scale;
+                // otherwise be asked for an absurd power once the scales are in long. The
+                // precision cap already holds the gap under 38, so this is now a backstop
+                // rather than the only bound.
+                long gap = target - scale;
                 RequireSaneWidth((long)Digits(value) + gap, "decimals.div", "the result");
                 value *= Pow10((int)gap);
-                scale = preferredScale;
+                scale = target;
             }
         }
 
