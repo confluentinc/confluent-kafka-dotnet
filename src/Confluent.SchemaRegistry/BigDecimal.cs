@@ -560,6 +560,17 @@ namespace Confluent.SchemaRegistry
             bool negative = unscaled.Sign < 0;
             string digits = BigInteger.Abs(unscaled).ToString(CultureInfo.InvariantCulture);
 
+            if (scale < 0 && unscaled.IsZero)
+            {
+                // A zero at a negative scale is "0", not "0" followed by -scale zeros.
+                // BigDecimal.toPlainString has this case in exactly this branch
+                // ("if (this.scale < 0) { if (signum() == 0) return "0"; ... }") and only here:
+                // measured on the JVM, a zero at a *positive* scale keeps its fractional zeros
+                // ("0.00" stays "0.00") and a non-zero coefficient still pads (123 at scale -1
+                // is "1230"). Without it, `0E+3` rendered "0000".
+                return "0";
+            }
+
             var sb = new StringBuilder();
             if (scale <= 0)
             {

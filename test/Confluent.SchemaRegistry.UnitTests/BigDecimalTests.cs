@@ -410,5 +410,35 @@ namespace Confluent.SchemaRegistry.UnitTests
         {
             Assert.Equal(expectedScale, BigDecimal.Parse(s).Scale);
         }
+
+        /// <summary>
+        ///     A zero at a negative scale renders as <c>"0"</c>, not as <c>"0"</c> followed by
+        ///     that many zeros. <c>BigDecimal.toPlainString</c> special-cases zero in the
+        ///     negative-scale branch and only there, so the neighbours keep their zeros: a zero
+        ///     at a positive scale stays <c>"0.00"</c>, and a non-zero coefficient still pads
+        ///     (123 at scale -1 is <c>"1230"</c>). All measured on the JVM. Go and Rust had the
+        ///     same defect; Python, JS and C++ were already right.
+        /// </summary>
+        [Theory]
+        // The fix.
+        [InlineData("0E+3", "0")]
+        [InlineData("0E+1", "0")]
+        [InlineData("0E-0", "0")]
+        // The neighbours, which must not change.
+        [InlineData("0.00", "0.00")]
+        [InlineData("0", "0")]
+        [InlineData("1E+1", "10")]
+        [InlineData("1.23", "1.23")]
+        public void AZeroAtANegativeScaleRendersAsZero(string input, string expected)
+        {
+            Assert.Equal(expected, BigDecimal.Parse(input).ToPlainString());
+        }
+
+        /// <summary>A non-zero coefficient at a negative scale still pads.</summary>
+        [Fact]
+        public void ANonZeroAtANegativeScaleStillPads()
+        {
+            Assert.Equal("1230", new BigDecimal(new BigInteger(123), -1).ToPlainString());
+        }
     }
 }
