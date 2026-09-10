@@ -123,6 +123,44 @@ namespace Confluent.SchemaRegistry
 
         internal int Position => pos;
 
+        /// <summary>
+        ///     The value bytes from this node's start - the form a navigated sub-variant
+        ///     re-encodes as, and what any write-back has to use.
+        ///
+        ///     <para><see cref="ValueBytes" /> is the whole buffer, shared across sub-variants,
+        ///     so a navigated variant's own value begins at <see cref="Position" />. Handing
+        ///     <see cref="ValueBytes" /> to an encoder therefore writes the *parent root* rather
+        ///     than the selected value - measured, a field navigated out of
+        ///     <c>{"a":1,"secret":"..."}</c> came back as the whole document. The other clients
+        ///     all have this accessor already (Go's <c>StandaloneValueBytes</c>, C++'s
+        ///     <c>standaloneValueBytes</c>, Rust's <c>standalone_value_bytes</c>), and Java's
+        ///     <c>getValueBuffer</c> is a positioned <c>ByteBuffer</c>.</para>
+        ///
+        ///     <para>Like all of those, this slices to the end of the buffer rather than to the
+        ///     node's exact extent, so a navigated value still carries its later siblings'
+        ///     bytes. Decoding ignores them - the encoding is self-delimiting - and trimming
+        ///     needs a value-size walk that only the reference currently has.</para>
+        /// </summary>
+        public byte[] StandaloneValueBytes
+        {
+            get
+            {
+                if (pos <= 0)
+                {
+                    return value;
+                }
+
+                if (pos >= value.Length)
+                {
+                    return new byte[0];
+                }
+
+                var slice = new byte[value.Length - pos];
+                Array.Copy(value, pos, slice, 0, slice.Length);
+                return slice;
+            }
+        }
+
         // --- equality ---
 
         /// <summary>

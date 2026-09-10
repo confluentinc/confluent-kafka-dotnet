@@ -386,5 +386,29 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.Equal("12.34", new BigDecimal(new BigInteger(1234), 2).ToPlainString());
             Assert.Equal(1000002, new BigDecimal(BigInteger.One, 1000000).ToPlainString().Length);
         }
+
+        /// <summary>
+        ///     The parsed scale is <c>fractionDigits - exponent</c>, which overflows int for an
+        ///     extreme exponent - and unchecked int arithmetic wraps rather than throwing.
+        ///     Measured, "1e-2147483648" gave scale -2147483648, turning a vanishingly small
+        ///     value into an enormous one. The reference refuses it outright:
+        ///     <c>new BigDecimal("1e-2147483648")</c> raises "Scale out of range."
+        /// </summary>
+        [Theory]
+        [InlineData("1e-2147483648")]
+        [InlineData("0.1e-2147483648")]
+        public void ParseRefusesAScaleOutsideTheIntRange(string s)
+        {
+            Assert.Throws<FormatException>(() => BigDecimal.Parse(s));
+        }
+
+        /// <summary>The int32 boundaries themselves still parse.</summary>
+        [Theory]
+        [InlineData("1e-2147483647", 2147483647)]
+        [InlineData("1e2147483647", -2147483647)]
+        public void ParseAcceptsTheIntBoundaries(string s, int expectedScale)
+        {
+            Assert.Equal(expectedScale, BigDecimal.Parse(s).Scale);
+        }
     }
 }

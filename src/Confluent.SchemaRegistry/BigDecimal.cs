@@ -170,7 +170,20 @@ namespace Confluent.SchemaRegistry
             }
 
             // value = digits × 10^-fractionDigits × 10^exponent = digits × 10^-(fractionDigits - exponent)
-            return new BigDecimal(digits, fractionDigits - exponent);
+            //
+            // Computed in long: the subtraction overflows int for an extreme exponent, and
+            // unchecked int arithmetic wraps rather than throwing. Measured, "1e-2147483648"
+            // gave scale -2147483648 - 0 - int.MinValue wrapping back to int.MinValue - so a
+            // vanishingly small value silently became an enormous one. The reference refuses
+            // it: new BigDecimal("1e-2147483648") raises NumberFormatException("Scale out of
+            // range.").
+            long resultScale = (long)fractionDigits - exponent;
+            if (resultScale < int.MinValue || resultScale > int.MaxValue)
+            {
+                throw new FormatException($"'{s}' has a scale outside the supported int range");
+            }
+
+            return new BigDecimal(digits, (int)resultScale);
         }
 
         /// <summary>

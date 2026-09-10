@@ -642,6 +642,32 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.NotEqual(p1.GetFieldByKey("x"), p1.GetFieldByKey("y"));
         }
 
+        /// <summary>
+        ///     A navigated sub-variant's own value starts at its position, so a write-back has
+        ///     to use <see cref="Variant.StandaloneValueBytes" />. <c>ValueBytes</c> is the whole
+        ///     shared buffer, and handing that to an encoder reconstructed the *parent root*:
+        ///     measured, the "a" field of {"a":1,"secret":"TOPSECRET"} came back as the whole
+        ///     document, so a rule that narrowed a variant to a safe subtree wrote the original.
+        /// </summary>
+        [Fact]
+        public void StandaloneValueBytesStartAtThePosition()
+        {
+            Variant doc = Variant.ParseJson("{\"a\":1,\"secret\":\"TOPSECRET\"}");
+            Variant child = doc.GetFieldByKey("a");
+
+            // The whole buffer is shared, so ValueBytes alone cannot identify the child.
+            Assert.Same(doc.ValueBytes, child.ValueBytes);
+            Assert.Equal("1", child.ToJson());
+
+            Variant reencoded = new Variant(child.StandaloneValueBytes, child.MetadataBytes);
+            Assert.Equal("1", reencoded.ToJson());
+
+            // A root variant is unaffected: its position is already zero.
+            Assert.Same(doc.ValueBytes, doc.StandaloneValueBytes);
+            Assert.Equal(doc.ToJson(),
+                new Variant(doc.StandaloneValueBytes, doc.MetadataBytes).ToJson());
+        }
+
         private static byte[] Combine(byte[] a, byte[] b)
         {
             var r = new byte[a.Length + b.Length];

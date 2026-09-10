@@ -112,7 +112,7 @@ namespace Confluent.SchemaRegistry.Serdes
             var variant = (Variant)logicalValue;
             var record = new GenericRecord((RecordSchema)schema.BaseSchema);
             record.Add("metadata", variant.MetadataBytes);
-            record.Add("value", variant.ValueBytes);
+            record.Add("value", variant.StandaloneValueBytes);
             return record;
         }
 
@@ -152,7 +152,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             var record = new GenericRecord(schema);
             record.Add("metadata", variant.MetadataBytes);
-            record.Add("value", variant.ValueBytes);
+            record.Add("value", variant.StandaloneValueBytes);
             return record;
         }
 

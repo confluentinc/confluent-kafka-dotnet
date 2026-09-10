@@ -288,7 +288,7 @@ namespace Confluent.SchemaRegistry.Rules
                 Require(fullName == VariantTypeName, "a variant", fullName);
                 IMessage output = BuildValueType(desc);
                 SetByName(output, "metadata", ByteString.CopyFrom(variant.MetadataBytes));
-                SetByName(output, "value", ByteString.CopyFrom(variant.ValueBytes));
+                SetByName(output, "value", ByteString.CopyFrom(variant.StandaloneValueBytes));
                 return output;
             }
 
