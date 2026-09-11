@@ -82,17 +82,55 @@ namespace Confluent.SchemaRegistry.Rules
             return output;
         }
 
+        /// <summary>
+        ///     Applies a result map to <paramref name="output" />, one entry per declared field.
+        ///
+        ///     Two entries can name the same slot, and applying both leaves the outcome to
+        ///     whatever order the rule wrote them in. <c>JsonFormat</c> refuses both shapes, and
+        ///     the two have <i>opposite</i> null handling, which is the part worth stating:
+        ///
+        ///     <list type="bullet">
+        ///       <item><b>The same field twice.</b> <see cref="FindField" /> accepts a field's
+        ///         declared name and its JSON name, so <c>total_amount</c> and
+        ///         <c>totalAmount</c> are one field. <c>mergeField</c> tests
+        ///         <c>builder.hasField</c> before its null early-return, so a null after a value
+        ///         is refused ("Field p.M.total_amount has already been set.") while a null
+        ///         after a null is not.</item>
+        ///       <item><b>Two members of one oneof.</b> Setting a member clears its siblings, so
+        ///         applying both kept whichever came last. <c>mergeOneofField</c> refuses this
+        ///         ("Cannot set field p.M.b because another field p.M.a belonging to the same
+        ///         oneof has already been set"), but only after returning early for a null, so a
+        ///         null does <i>not</i> count - which agrees with this writer's own rule that a
+        ///         null clears rather than sets.</item>
+        ///     </list>
+        ///
+        ///     Measured against protobuf-java. A proto3 <c>optional</c> field sits in a synthetic
+        ///     oneof of exactly one member, which <c>RealContainingOneof</c> reports as none, so
+        ///     it can never collide with a sibling. The two names in each message are sorted, so
+        ///     a diagnostic does not depend on the dictionary's enumeration order.
+        /// </summary>
         private static void Fill(IMessage output, IDictionary values)
         {
             MessageDescriptor desc = output.Descriptor;
+            // field number -> the result key that set it; oneof -> the member that filled it.
+            var setBy = new Dictionary<int, string>();
+            var oneofBy = new Dictionary<string, string>();
             foreach (DictionaryEntry entry in values)
             {
-                FieldDescriptor fd = FindField(desc, entry.Key?.ToString());
+                string name = entry.Key?.ToString();
+                FieldDescriptor fd = FindField(desc, name);
                 if (fd == null)
                 {
                     // A key the schema does not declare has nowhere to go. Dropping it matches
                     // the JVM client, whose JSON parse ignores unknown fields.
                     continue;
+                }
+
+                // Before the null branch, because that is where the JVM's hasField test sits.
+                if (setBy.TryGetValue(fd.FieldNumber, out string alreadySet))
+                {
+                    throw new RuleException("result names field " + fd.FullName
+                        + " twice, as " + Ordered(alreadySet, name));
                 }
 
                 if (IsNull(entry.Value))
@@ -103,9 +141,29 @@ namespace Confluent.SchemaRegistry.Rules
                     continue;
                 }
 
+                setBy[fd.FieldNumber] = name;
+                OneofDescriptor oneof = fd.RealContainingOneof;
+                if (oneof != null)
+                {
+                    if (oneofBy.TryGetValue(oneof.FullName, out string sibling)
+                        && sibling != fd.Name)
+                    {
+                        throw new RuleException("result sets more than one member of oneof "
+                            + oneof.FullName + ": " + Ordered(sibling, fd.Name));
+                    }
+
+                    oneofBy[oneof.FullName] = fd.Name;
+                }
+
                 SetField(output, fd, entry.Value);
             }
         }
+
+        /// <summary>
+        ///     Two names in a stable order, so an error does not vary with enumeration order.
+        /// </summary>
+        private static string Ordered(string x, string y) =>
+            string.CompareOrdinal(x, y) <= 0 ? x + " and " + y : y + " and " + x;
 
         /// <summary>
         ///     Covers both shapes a CEL null takes here: a plain <c>null</c>, and the
