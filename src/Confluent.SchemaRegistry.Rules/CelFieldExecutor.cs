@@ -1,4 +1,5 @@
-﻿using Google.Protobuf;
+﻿using Avro;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 
 namespace Confluent.SchemaRegistry.Rules
@@ -77,6 +78,27 @@ namespace Confluent.SchemaRegistry.Rules
                 {
                     result = ((ByteString)result).ToByteArray();
                 }
+
+                // Symmetric with the DateTime arm of ToCelValue above: the field went in as a
+                // DateTime and was presented to CEL as a timestamp, so whatever comes back has to
+                // become a DateTime again before Avro's writer sees it. Keyed off what the field
+                // *was*, not off the target format, so a protobuf Timestamp field - which is a
+                // message and rebuilt by ProtobufUtils - is left alone.
+                if (fieldValue is DateTime)
+                {
+                    result = CelExecutor.ToAvroDateTimeOrNull(result) ?? result;
+                }
+
+                // The decimal counterpart, and keyed off the field's own value for the same
+                // reason: an Avro decimal field goes in as an AvroDecimal and is presented to CEL
+                // as a decimal, so the result has to be turned back. On a *repeated* field the
+                // walk applies the rule per element, so `fieldValue` is the element and this
+                // covers the array case as well as the scalar one.
+                if (fieldValue is AvroDecimal)
+                {
+                    result = CelExecutor.ToAvroDecimalOrNull(result) ?? result;
+                }
+
                 return result;
             }
             
