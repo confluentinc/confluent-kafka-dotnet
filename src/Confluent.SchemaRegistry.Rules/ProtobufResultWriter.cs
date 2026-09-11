@@ -195,7 +195,11 @@ namespace Confluent.SchemaRegistry.Rules
             {
                 if (IsNull(entry.Value))
                 {
-                    continue;
+                    // Dropping the entry reported success while deleting it. A protobuf map
+                    // value cannot be null, and JsonFormat says exactly that, measured:
+                    //   {"m": {"a": null}} -> Map value cannot be null.
+                    throw new RuleException(
+                        "cannot write a null value to map field " + fd.FullName);
                 }
 
                 // The key needs narrowing just as the value does: CEL carries an integer key as
@@ -225,7 +229,11 @@ namespace Confluent.SchemaRegistry.Rules
             {
                 if (IsNull(item))
                 {
-                    continue;
+                    // Skipping changed the list's length and still reported success, so
+                    // [1, null, 2] came back with two elements. JsonFormat refuses it, measured:
+                    //   {"r": [null]} -> Repeated field elements cannot be null in field: r
+                    throw new RuleException(
+                        "cannot write null to repeated field " + fd.FullName);
                 }
 
                 target.Add(fd.FieldType == FieldType.Message

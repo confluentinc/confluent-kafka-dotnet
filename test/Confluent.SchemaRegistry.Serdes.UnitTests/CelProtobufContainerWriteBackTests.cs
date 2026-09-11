@@ -133,6 +133,22 @@ message ValueTypeNested {
             Assert.Equal("hi", result.Label);
         }
 
+        // A null *inside* a container was skipped, which changed the list's length (or dropped
+        // a map entry) and still reported success. protobuf has no null to store, and the
+        // reference refuses the document - measured against protobuf-java's JsonFormat:
+        //   {"r": [null]}       -> Repeated field elements cannot be null in field: r
+        //   {"m": {"a": null}}  -> Map value cannot be null.
+        [Theory]
+        [InlineData("{'amounts': [null], 'label': message.label}", "repeated field")]
+        [InlineData("{'amounts': [message.amounts[0], null], 'label': message.label}",
+            "repeated field")]
+        [InlineData("{'amount_map': {'a': null}, 'label': message.label}", "map field")]
+        public async Task ANullInsideAContainerIsReported(string expr, string named)
+        {
+            var ex = await Assert.ThrowsAnyAsync<RuleException>(() => Transform(expr));
+            Assert.Contains(named, ex.ToString());
+        }
+
         [Fact]
         public async Task AnEmptyContainerIsStillAValidShape()
         {
