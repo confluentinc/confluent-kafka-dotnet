@@ -181,6 +181,60 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(new AvroDecimal(7.50m), got["amount"]);
         }
 
+        // ---- a field-level TRANSFORM over the null branch ----------------------------------
+        //
+        // CelFieldExecutor keyed its inverse logical-type conversions off `fieldValue is
+        // AvroDecimal`, which is false for the null branch, so a rule materialising a decimal
+        // from null handed Avro a BigDecimal it cannot write. One rule, two inputs, and only
+        // the null one failed.
+        private string FieldTransform(string subject, string expr, object amount)
+        {
+            var rule = new Rule("r", RuleKind.Transform, RuleMode.Write, "CEL_FIELD",
+                new HashSet<string> { "AMOUNT" }, null, expr, null, null, false);
+            var schema = new RegisteredSchema(subject + "-value", 1, 1, SchemaText,
+                SchemaType.Avro, null)
+            {
+                RuleSet = new RuleSet(new List<Rule>(), new List<Rule> { rule })
+            };
+            store[SchemaText] = 1;
+            subjectStore[subject + "-value"] = new List<RegisteredSchema> { schema };
+
+            var rec = new GenericRecord((RecordSchema)Avro.Schema.Parse(SchemaText));
+            rec.Add("amount", amount);
+            rec.Add("plain", "hi");
+
+            var ser = new AvroSerializer<GenericRecord>(schemaRegistryClient,
+                new AvroSerializerConfig { AutoRegisterSchemas = false, UseLatestVersion = true });
+            var deser = new AvroDeserializer<GenericRecord>(schemaRegistryClient, null);
+            var ctx = new SerializationContext(MessageComponentType.Value, subject);
+            byte[] bytes = ser.SerializeAsync(rec, ctx).Result;
+            GenericRecord got = deser.DeserializeAsync(bytes, false, ctx).Result;
+            return got["amount"] == null ? "<null>" : got["amount"].ToString();
+        }
+
+        [Fact]
+        public void FieldTransformMaterialisesADecimalFromANull()
+        {
+            Assert.Equal(new AvroDecimal(7.50m).ToString(),
+                FieldTransform("ft1", "decimal('7.50')", null));
+        }
+
+        [Fact]
+        public void FieldTransformOnAPresentDecimalIsUnchanged()
+        {
+            // The control that localised it: the same rule always worked here.
+            Assert.Equal(new AvroDecimal(7.50m).ToString(),
+                FieldTransform("ft2", "decimal('7.50')", new AvroDecimal(1.00m)));
+        }
+
+        [Fact]
+        public void FieldTransformCanStillEchoANull()
+        {
+            // The null branch still round-trips: Cel.NET binds it as the protobuf NullValue
+            // enum, which FindType declares as CheckedNull, so an identity rule hands back null.
+            Assert.Equal("<null>", FieldTransform("ft3", "value", null));
+        }
+
         [Fact]
         public void PresentValueStillEvaluatesNormally()
         {
