@@ -87,10 +87,28 @@ namespace Confluent.SchemaRegistry.Rules
                 throw new RuleException($"Validation rule '{name}' has no expression");
             }
 
+            object arrived = message;
+
             // Present the value the way its declared type implies before anything reads it:
-            // the declared type, the script-type sample and the binding all derive from it,
-            // and Cel.NET rejects a CLR enum outright ("enum not allowed here").
+            // the declared type and the binding both derive from it, and Cel.NET rejects a CLR
+            // enum outright ("enum not allowed here").
             message = CelExecutor.ToCelValue(message);
+
+            // The sample BuildScript registers types from. A message or a record has to be read
+            // as it *arrived*, because the conversion above can erase what identifies it - a
+            // confluent.type.Decimal becomes a DecimalT and stops being an IMessage. Everything
+            // else has to be read *after*, because there the conversion is the point (a CLR enum
+            // reaches Cel.NET as "enum not allowed here"). Neither position works for both.
+            object scriptTypeSource =
+                arrived is IMessage || arrived is ISpecificRecord || arrived is GenericRecord
+                    ? arrived
+                    : message;
+
+            object celDecimal = CelExecutor.ToCelDecimalOrNull(message);
+            if (celDecimal != null)
+            {
+                message = celDecimal;
+            }
 
             // Prefer the field's declared type over the CLR type of the value: the
             // descriptor is what the rule was written against, and it distinguishes cases the
@@ -117,9 +135,9 @@ namespace Confluent.SchemaRegistry.Rules
             // A rule on a repeated or map field binds a collection to `this`, and the
             // registry has to be chosen from what the collection holds - otherwise the
             // elements' fields cannot be resolved at evaluation time.
-            object typeSample = TypeSample(message);
+            object typeSample = TypeSample(scriptTypeSource);
             var ruleWithArgs = new CelExecutor.RuleWithArgs(
-                rule.Expr, DetermineScriptType(typeSample), declTypes, schema?.ToString());
+                rule.Expr, ScriptTypeFor(schema, typeSample), declTypes, schema?.ToString());
 
             Script script;
             await cacheMutex.WaitAsync().ConfigureAwait(false);
@@ -129,7 +147,7 @@ namespace Confluent.SchemaRegistry.Rules
                 {
                     try
                     {
-                        script = executor.BuildScript(ruleWithArgs, typeSample);
+                        script = executor.BuildScript(ruleWithArgs, typeSample, schema);
                     }
                     catch (Exception e)
                     {
@@ -201,6 +219,39 @@ namespace Confluent.SchemaRegistry.Rules
         /// <summary>
         ///     Determines which CEL type registry a value needs, from the value itself.
         /// </summary>
+        /// <summary>
+        ///     The script type, and so the registry, for one inline rule — taken from the
+        ///     <b>schema</b>, as the reference does.
+        /// </summary>
+        /// <remarks>
+        ///     Reading it off the value made one schema use two registries: a record-level rule
+        ///     bound the record and got Avro, while a field-level rule on the same schema bound a
+        ///     bare <c>AvroDecimal</c> and fell through to JSON. The value is kept only as the
+        ///     fallback for a null hint, which no walker passes.
+        /// </remarks>
+        private static CelExecutor.ScriptType ScriptTypeFor(object schema, object message)
+        {
+            if (schema is Avro.Schema)
+            {
+                return CelExecutor.ScriptType.Avro;
+            }
+
+            if (schema == null)
+            {
+                return DetermineScriptType(message);
+            }
+
+            // By namespace, not by type: the message-level hint is a DescriptorProto from
+            // protobuf-net.Reflection, which declares the *same* fully-qualified name as
+            // Google.Protobuf's. A `schema is DescriptorProto` test binds whichever this assembly
+            // can see and silently never matches the other. Anything else is a JSON Schema hint;
+            // this assembly references neither serdes package, so neither can be named here.
+            return schema.GetType().FullName?.StartsWith(
+                       "Google.Protobuf.Reflection.", StringComparison.Ordinal) == true
+                ? CelExecutor.ScriptType.Protobuf
+                : CelExecutor.ScriptType.Json;
+        }
+
         private static CelExecutor.ScriptType DetermineScriptType(object message)
         {
             if (message is ISpecificRecord || message is GenericRecord)
