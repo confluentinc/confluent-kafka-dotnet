@@ -1643,9 +1643,13 @@ namespace Confluent.Kafka
         public string Name
             => kafkaHandle.Name;
 
+        /// <inheritdoc/>
+        public string ClusterId
+            => kafkaHandle.ClusterId;
+
 
         /// <summary>
-        ///     An opaque reference to the underlying librdkafka 
+        ///     An opaque reference to the underlying librdkafka
         ///     client instance.
         /// </summary>
         public Handle Handle

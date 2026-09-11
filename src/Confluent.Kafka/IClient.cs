@@ -51,6 +51,22 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Gets the cluster id of the Kafka cluster this client is
+        ///     connected to, or null if it has not yet been retrieved.
+        ///
+        ///     The cluster id is fetched from the broker metadata and cached
+        ///     locally. A null return indicates the cluster id has not yet
+        ///     been retrieved; the application should retry after a short
+        ///     delay.
+        /// </summary>
+        /// <remarks>
+        ///     This attribute corresponds to the OpenTelemetry semantic
+        ///     convention <c>messaging.kafka.cluster.id</c>.
+        /// </remarks>
+        string ClusterId { get; }
+
+
+        /// <summary>
         ///     Adds one or more brokers to the Client's list
         ///     of initial bootstrap brokers. 
         ///
