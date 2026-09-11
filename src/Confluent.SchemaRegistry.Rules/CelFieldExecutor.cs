@@ -81,18 +81,16 @@ namespace Confluent.SchemaRegistry.Rules
                     result = ((ByteString)result).ToByteArray();
                 }
 
-                // The null branch carries no type, so neither arm below can key off the value
-                // alone: a rule materialising a decimal from it handed Avro a BigDecimal it
-                // cannot write. The containing message is what is still known, and each
-                // conversion is a no-op for any other result, so both are attempted.
-                bool nullAvroField = fieldValue == null
-                    && (message is GenericRecord || message is ISpecificRecord);
+                // A null branch's value carries no type, so the value alone cannot say what the
+                // field holds. The field's own schema can, which is what the walk puts on the
+                // context for exactly this.
+                string slot = AvroSlotLogicalType(fieldCtx.FieldDescriptor);
 
                 // Symmetric with the DateTime arm of ToCelValue above: the field went in as a
                 // DateTime and was presented to CEL as a timestamp, so what comes back has to
                 // become a DateTime again before Avro's writer sees it. A protobuf Timestamp
                 // field is a message rebuilt by ProtobufUtils, and is left alone.
-                if (fieldValue is DateTime || nullAvroField)
+                if (fieldValue is DateTime || (fieldValue == null && DateTimeLogicalTypes.Contains(slot)))
                 {
                     result = CelExecutor.ToAvroDateTimeOrNull(result) ?? result;
                 }
@@ -101,7 +99,7 @@ namespace Confluent.SchemaRegistry.Rules
                 // is presented to CEL as a decimal, so the result has to be turned back. On a
                 // repeated field the walk applies the rule per element, so `fieldValue` is the
                 // element and this covers arrays as well as scalars.
-                if (fieldValue is AvroDecimal || nullAvroField)
+                if (fieldValue is AvroDecimal || (fieldValue == null && slot == "decimal"))
                 {
                     result = CelExecutor.ToAvroDecimalOrNull(result) ?? result;
                 }
@@ -111,6 +109,37 @@ namespace Confluent.SchemaRegistry.Rules
             
             public void Dispose()
             {
+            }
+
+            /// <summary>The Avro logical types this client reads as a DateTime.</summary>
+            private static readonly ISet<string> DateTimeLogicalTypes = new HashSet<string>
+            {
+                "date", "timestamp-millis", "timestamp-micros",
+                "local-timestamp-millis", "local-timestamp-micros"
+            };
+
+            /// <summary>
+            ///     The logical type an Avro slot declares, looking through a nullable union.
+            ///     Null when the slot is not an Avro schema, which is every other format.
+            /// </summary>
+            private static string AvroSlotLogicalType(object fieldDescriptor)
+            {
+                if (!(fieldDescriptor is Avro.Schema schema))
+                {
+                    return null;
+                }
+                if (schema is UnionSchema union)
+                {
+                    foreach (Avro.Schema branch in union.Schemas)
+                    {
+                        if (branch.Tag != Avro.Schema.Type.Null)
+                        {
+                            schema = branch;
+                            break;
+                        }
+                    }
+                }
+                return (schema as LogicalSchema)?.LogicalTypeName;
             }
         }
     }

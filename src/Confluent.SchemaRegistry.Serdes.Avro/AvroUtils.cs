@@ -440,6 +440,19 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+        /// <summary>
+        ///     Narrows the field context's descriptor to the slot being walked, so a leaf inside a
+        ///     container sees its own schema rather than the container's.
+        /// </summary>
+        private static void SetSlotSchema(RuleContext ctx, Avro.Schema schema)
+        {
+            RuleContext.FieldContext fieldContext = ctx.CurrentField();
+            if (fieldContext != null)
+            {
+                fieldContext.FieldDescriptor = schema;
+            }
+        }
+
         public static async Task<object> Transform(RuleContext ctx, Avro.Schema schema, object message,
             IFieldTransform fieldTransform)
         {
@@ -474,6 +487,8 @@ namespace Confluent.SchemaRegistry.Serdes
                         return message;
                     }
                     ArraySchema a = (ArraySchema)schema;
+                    // An element's slot is its own schema, not the array's.
+                    SetSlotSchema(ctx, a.ItemSchema);
                     var arrayTransformer = (int index, object elem) =>
                         Transform(ctx, a.ItemSchema, elem, fieldTransform);
                     return await Utils.TransformEnumerableAsync(message, arrayTransformer).ConfigureAwait(false);
@@ -483,6 +498,8 @@ namespace Confluent.SchemaRegistry.Serdes
                         return message;
                     }
                     MapSchema ms = (MapSchema)schema;
+                    // A value's slot is its own schema, not the map's.
+                    SetSlotSchema(ctx, ms.ValueSchema);
                     var mapTransformer = (object key, object value) =>
                         Transform(ctx, ms.ValueSchema, value, fieldTransform);
                     return await Utils.TransformDictionaryAsync(message, mapTransformer).ConfigureAwait(false);
@@ -512,7 +529,10 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
 
                         string fullName = rs.Fullname + "." + f.Name;
-                        using (ctx.EnterField(message, fullName, f.Name, GetType(originalField.Schema), GetInlineTags(originalField)))
+                        // The field's declared schema: a null branch's value carries no type, so
+                        // the value alone cannot say what the field can hold.
+                        using (ctx.EnterField(message, fullName, f.Name, GetType(originalField.Schema),
+                                   GetInlineTags(originalField), originalField.Schema))
                         {
                             if (message is ISpecificRecord)
                             {
