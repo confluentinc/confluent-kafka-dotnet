@@ -18,6 +18,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -357,45 +358,35 @@ namespace Confluent.Kafka.Impl
             return headersPtr;
         }
 
-        internal ErrorCode Produce(
+        internal unsafe ErrorCode Produce(
             string topic,
-            byte[] val, int valOffset, int valLength,
-            byte[] key, int keyOffset, int keyLength,
+            ReadOnlyMemory<byte>? val,
+            ReadOnlyMemory<byte>? key,
             int partition,
             long timestamp,
             IReadOnlyList<IHeader> headers,
             IntPtr opaque)
         {
-            var pValue = IntPtr.Zero;
-            var pKey = IntPtr.Zero;
+            MemoryHandle? valueHandle = null;
+            IntPtr valuePtr = IntPtr.Zero;
+            UIntPtr valueLength = UIntPtr.Zero;
 
-            var gchValue = default(GCHandle);
-            var gchKey = default(GCHandle);
+            MemoryHandle? keyHandle = null;
+            IntPtr keyPtr = IntPtr.Zero;
+            UIntPtr keyLength = UIntPtr.Zero;
 
-            if (val == null)
+            if (val != null)
             {
-                if (valOffset != 0 || valLength != 0)
-                {
-                    throw new ArgumentException("valOffset and valLength parameters must be 0 when producing null values.");
-                }
-            }
-            else
-            {
-                gchValue = GCHandle.Alloc(val, GCHandleType.Pinned);
-                pValue = Marshal.UnsafeAddrOfPinnedArrayElement(val, valOffset);
+                valueHandle = val.Value.Pin();
+                valuePtr = (IntPtr)valueHandle.Value.Pointer;
+                valueLength = (UIntPtr)val.Value.Length;
             }
 
-            if (key == null)
+            if (key != null)
             {
-                if (keyOffset != 0 || keyLength != 0)
-                {
-                    throw new ArgumentException("keyOffset and keyLength parameters must be 0 when producing null key values.");
-                }
-            }
-            else
-            {
-                gchKey = GCHandle.Alloc(key, GCHandleType.Pinned);
-                pKey = Marshal.UnsafeAddrOfPinnedArrayElement(key, keyOffset);
+                keyHandle = key.Value.Pin();
+                keyPtr = (IntPtr)keyHandle.Value.Pointer;
+                keyLength = (UIntPtr)key.Value.Length;
             }
 
             IntPtr headersPtr = marshalHeaders(headers);
@@ -407,8 +398,8 @@ namespace Confluent.Kafka.Impl
                     topic,
                     partition,
                     (IntPtr)MsgFlags.MSG_F_COPY,
-                    pValue, (UIntPtr)valLength,
-                    pKey, (UIntPtr)keyLength,
+                    valuePtr, valueLength,
+                    keyPtr, keyLength,
                     timestamp,
                     headersPtr,
                     opaque);
@@ -433,15 +424,8 @@ namespace Confluent.Kafka.Impl
             }
             finally
             {
-                if (val != null)
-                {
-                    gchValue.Free();
-                }
-
-                if (key != null)
-                {
-                    gchKey.Free();
-                }
+                valueHandle?.Dispose();
+                keyHandle?.Dispose();
             }
         }
 
