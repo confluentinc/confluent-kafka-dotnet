@@ -222,6 +222,9 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 case "subscribe":
                     Run_Consume(brokerList, topics, cts.Token);
                     break;
+                case "parallel":
+                    ParallelProcess.Run_Consume(brokerList, topics, cts.Token);
+                    break;
                 case "manual":
                     Run_ManualAssign(brokerList, topics, cts.Token);
                     break;
