@@ -270,6 +270,16 @@ namespace Confluent.SchemaRegistry.Rules
                 return offset.UtcDateTime;
             }
 
+            // CEL has one integer width and one floating one, so an int or float field receives a
+            // long or a double whatever it declares, and Apache.Avro's writer type-checks the CLR
+            // type ("System.Int32 required to write against Int schema but found System.Int64").
+            // Every rule over a schema with an int or float field failed, the identity one
+            // included. The reference narrows against the schema in narrowToInt / narrowToFloat.
+            if (IsIntegral(value) || IsFloating(value))
+            {
+                return NarrowNumeric(schema, value);
+            }
+
             if (value is IDictionary nested && Unwrap(schema) is RecordSchema recordSchema)
             {
                 return BuildRecord(recordSchema, nested);
@@ -315,6 +325,107 @@ namespace Confluent.SchemaRegistry.Rules
             }
 
             return value;
+        }
+
+        private static bool IsIntegral(object value) =>
+            value is long || value is int || value is short || value is sbyte
+            || value is ulong || value is uint || value is ushort || value is byte;
+
+        private static bool IsFloating(object value) => value is double || value is float;
+
+        /// <summary>
+        ///     A numeric CEL result as the CLR type the field's Avro type is written from, or the
+        ///     value unchanged when the schema names no numeric type it fits - the writer reports
+        ///     that mismatch itself.
+        /// </summary>
+        private static object NarrowNumeric(Avro.Schema schema, object value)
+        {
+            long? integral = null;
+            if (IsIntegral(value))
+            {
+                if (value is ulong unsigned)
+                {
+                    if (unsigned > long.MaxValue)
+                    {
+                        throw new RuleException(
+                            "Value " + unsigned + " out of range for LONG field");
+                    }
+
+                    integral = (long)unsigned;
+                }
+                else
+                {
+                    integral = System.Convert.ToInt64(value);
+                }
+            }
+
+            switch (NumericTag(schema, integral))
+            {
+                case Avro.Schema.Type.Int:
+                    // narrowToInt's range check: truncating would write a different number.
+                    if (integral < int.MinValue || integral > int.MaxValue)
+                    {
+                        throw new RuleException(
+                            "Value " + integral + " out of range for INT field");
+                    }
+
+                    return (int)integral.Value;
+                case Avro.Schema.Type.Long:
+                    return integral.Value;
+                case Avro.Schema.Type.Float:
+                    return integral.HasValue
+                        ? (float)integral.Value
+                        : System.Convert.ToSingle(value);
+                case Avro.Schema.Type.Double:
+                    return integral.HasValue
+                        ? (double)integral.Value
+                        : System.Convert.ToDouble(value);
+                default:
+                    return value;
+            }
+        }
+
+        /// <summary>
+        ///     The Avro numeric type a result will be written as, or Null when the schema names
+        ///     none. A union is resolved by value the way the reference's branchAccepts is, since
+        ///     a union is transparent in CEL - Unwrap's first-non-null branch is not enough here.
+        /// </summary>
+        private static Avro.Schema.Type NumericTag(Avro.Schema schema, long? integral)
+        {
+            if (schema is UnionSchema union)
+            {
+                foreach (Avro.Schema branch in union.Schemas)
+                {
+                    Avro.Schema.Type tag = NumericTag(branch, integral);
+                    if (tag == Avro.Schema.Type.Int
+                        && (!integral.HasValue
+                            || (integral >= int.MinValue && integral <= int.MaxValue)))
+                    {
+                        return tag;
+                    }
+
+                    if (tag == Avro.Schema.Type.Long || tag == Avro.Schema.Type.Float
+                        || tag == Avro.Schema.Type.Double)
+                    {
+                        return tag;
+                    }
+                }
+
+                return Avro.Schema.Type.Null;
+            }
+
+            switch (schema.Tag)
+            {
+                case Avro.Schema.Type.Int:
+                case Avro.Schema.Type.Long:
+                case Avro.Schema.Type.Float:
+                case Avro.Schema.Type.Double:
+                    return schema.Tag;
+                default:
+                    // A logical type's Tag is Logical, not its base type, and its values arrive
+                    // as DateTime or AvroDecimal rather than as a bare number.
+                    return Avro.Schema.Type.Null;
+            }
         }
 
         /// <summary>
