@@ -649,6 +649,20 @@ namespace Confluent.SchemaRegistry
             int sc = scale;
             if (sc < 0)
             {
+                // Expanding first would build 10^1000000000 for a decoded scale of -1e9, to
+                // discover afterwards that nothing at that scale fits. Zero is exempt, as
+                // everywhere else a width is guarded; anything else needs 10^29 at minimum,
+                // which is already past decimal.MaxValue. Also keeps int.MinValue off the negation.
+                if (uns.IsZero)
+                {
+                    return decimal.Zero;
+                }
+
+                if (sc < -28)
+                {
+                    throw new OverflowException("The value cannot fit into System.Decimal.");
+                }
+
                 uns *= BigInteger.Pow(10, -sc);
                 sc = 0;
             }

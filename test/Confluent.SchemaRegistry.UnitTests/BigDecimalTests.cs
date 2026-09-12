@@ -651,5 +651,26 @@ namespace Confluent.SchemaRegistry.UnitTests
                 .Divide(BigDecimal.Parse(divisor));
             Assert.Equal(expectedScale, q.Scale);
         }
+
+        /// <summary>
+        ///     ToDecimal expanded a negative scale before checking whether anything at that scale
+        ///     could fit, so a decoded scale of -1e9 built 10^1000000000 to discover it could not.
+        ///     Zero is exempt, as it is everywhere a width is guarded.
+        /// </summary>
+        [Fact]
+        public void ToDecimalRefusesAWildNegativeScaleWithoutExpandingIt()
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            Assert.Throws<OverflowException>(() => new BigDecimal(1, -1_000_000_000).ToDecimal());
+            Assert.Throws<OverflowException>(() => new BigDecimal(1, int.MinValue).ToDecimal());
+            watch.Stop();
+            Assert.True(watch.ElapsedMilliseconds < 1000,
+                $"took {watch.ElapsedMilliseconds} ms, so the scale was expanded");
+
+            Assert.Equal(decimal.Zero, new BigDecimal(0, int.MinValue).ToDecimal());
+            // The boundary: 1e28 fits, 1e29 does not, so nothing representable is refused.
+            Assert.Equal(1e28m, new BigDecimal(1, -28).ToDecimal());
+            Assert.Throws<OverflowException>(() => new BigDecimal(1, -29).ToDecimal());
+        }
     }
 }

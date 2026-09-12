@@ -354,6 +354,30 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        public void AppendDecimal_OversizedCoefficient_ThrowsWithoutRenderingIt()
+        {
+            // Digit counting renders the coefficient, which is quadratic in .NET - 300,000
+            // digits takes 1.4s - so the width is bounded from the byte count first. The
+            // boundary cases pin that the guard rejects nothing a 38-digit value needs.
+            var b = new VariantBuilder();
+            var huge = BigInteger.Pow(10, 200000);
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            Assert.Throws<VariantException>(() => b.AppendDecimal(huge, 0));
+            watch.Stop();
+            Assert.True(watch.ElapsedMilliseconds < 1000,
+                $"took {watch.ElapsedMilliseconds} ms, so the coefficient was rendered");
+
+            var b2 = new VariantBuilder();
+            b2.StartArray();
+            b2.AppendDecimal(BigInteger.Pow(10, 38) - 1, 0);
+            b2.EndArray();
+            Assert.Equal(VariantType.Decimal16, b2.Build().GetElementAtIndex(0).GetVariantType());
+
+            var b3 = new VariantBuilder();
+            Assert.Throws<VariantException>(() => b3.AppendDecimal(BigInteger.Pow(10, 39), 0));
+        }
+
+        [Fact]
         public void AppendDecimal_NegativeScale_Throws()
         {
             var b = new VariantBuilder();

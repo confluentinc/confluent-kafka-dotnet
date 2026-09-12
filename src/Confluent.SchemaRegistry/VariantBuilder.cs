@@ -565,6 +565,14 @@ namespace Confluent.SchemaRegistry
         private void WriteDecimal(BigInteger unscaled, int scale)
         {
             if (scale < 0) throw new VariantException("decimal scale must be non-negative");
+            // Rendering to decimal digits is quadratic in .NET - a 300,000-digit coefficient takes
+            // 1.4s - and a caller can hand one in. 17 bytes of two's complement is the widest a
+            // 38-digit value can be, so anything past that is out of range without rendering it.
+            if (unscaled.ToByteArray().Length > 17)
+            {
+                throw new VariantException("decimal exceeds maximum precision (38)");
+            }
+
             int digits = BigInteger.Abs(unscaled).ToString(CultureInfo.InvariantCulture).Length;
             int code, width;
             if (scale <= 9 && digits <= 9) { code = Variant.TDecimal4; width = 4; }
