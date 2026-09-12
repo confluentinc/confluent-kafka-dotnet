@@ -553,6 +553,34 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         /// <summary>
+        ///     A scale near <c>int.MinValue</c> does not overflow the intermediate exponents.
+        ///     <c>(Digits - 1) - scale</c> was an int, so it wrapped and the sign flipped:
+        ///     1e1073741824 came back as 1e-1073741824, an enormous value as its own reciprocal,
+        ///     with no error at all.
+        ///
+        ///     Asserted against the arithmetic rather than against the reference, because the
+        ///     reference overflows here too: at scale -2147483647 the JVM answers scale
+        ///     +1073741862, which is 2^31 away from the -1073741786 the root actually has.
+        ///     decimals.md stopped predicting the JVM's domain limits, so being right beats
+        ///     being bug-compatible. The other three rows do match the JVM, measured.
+        /// </summary>
+        [Theory]
+        [InlineData(int.MinValue, -1073741824)]
+        [InlineData(-2147483647, -1073741786)]
+        [InlineData(-2000000000, -1000000000)]
+        [InlineData(int.MaxValue, 1073741861)]
+        public void SqrtDoesNotOverflowAtExtremeScales(int scale, int expected)
+        {
+            BigDecimal r = new BigDecimal(BigInteger.One, scale).Sqrt();
+            Assert.Equal(expected, r.Scale);
+            // The root's exponent, derived from the result rather than restated: sqrt(1e-scale)
+            // has exponent -scale/2, and a 38-digit unscaled value carries 37 of it.
+            long effectiveExponent = (long)(r.Unscaled.ToString().Length - 1) - r.Scale;
+            long trueExponent = -((long)scale) / 2;
+            Assert.InRange(effectiveExponent, trueExponent - 1, trueExponent);
+        }
+
+        /// <summary>
         ///     Negative scales halve toward zero, as <c>scale / 2</c> does in the reference -
         ///     -3 gives -1, not the floor's -2. Rendering hides it: all of these are "500",
         ///     "20" and "100" whatever the scale.

@@ -388,20 +388,24 @@ namespace Confluent.SchemaRegistry
 
             BigInteger u = unscaled;
             // eV = floor(log10(value)); eR ≈ floor(eV / 2) is the msd exponent of the root.
-            int eV = (Digits(u) - 1) - scale;
-            int eR = (int)Math.Floor(eV / 2.0);
-            int s = DivisionPrecision - 1 - eR;
+            // Held in long: `(Digits - 1) - scale` overflows int for a scale near int.MinValue,
+            // and the sign flip turned 1e1073741824 into its reciprocal rather than failing.
+            // CheckScale below is the one narrowing, as in Divide.
+            long eV = (long)(Digits(u) - 1) - scale;
+            long eR = (long)Math.Floor(eV / 2.0);
+            long s = DivisionPrecision - 1 - eR;
 
-            // M = value × 10^(2s) must be an integer, i.e. 2s - scale >= 0.
-            int exp2 = 2 * s - scale;
+            // M = value × 10^(2s) must be an integer, i.e. 2s - scale >= 0. `s` absorbs the
+            // magnitude, so exp2 stays around 75 - Digits whatever the scale.
+            long exp2 = 2 * s - scale;
             if (exp2 < 0)
             {
-                int bump = (-exp2 + 1) / 2;
+                long bump = (-exp2 + 1) / 2;
                 s += bump;
                 exp2 = 2 * s - scale;
             }
 
-            BigInteger m = u * Pow10(exp2);
+            BigInteger m = u * Pow10(checked((int)exp2));
             BigInteger q = ISqrt(m);
             bool exact = m == q * q;
             // HALF_UP: round up when m >= (q + 0.5)^2, i.e. 4m >= (2q + 1)^2.
