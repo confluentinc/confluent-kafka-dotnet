@@ -84,7 +84,7 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected Action<IProducer<TKey, TValue>, string> OAuthBearerTokenRefreshHandler { get; set; }
 
-        /// <summary>        
+        /// <summary>
         ///     The per-topic custom partitioners.
         /// </summary>
         internal protected Dictionary<string, PartitionerDelegate> Partitioners { get; set; } = new Dictionary<string, PartitionerDelegate>();
@@ -103,6 +103,11 @@ namespace Confluent.Kafka
         ///     The configured value serializer.
         /// </summary>
         internal protected ISerializer<TValue> ValueSerializer { get; set; }
+
+        /// <summary>
+        ///     The configured segment value serializer.
+        /// </summary>
+        internal protected ISegmentSerializer<TValue> SegmentValueSerializer { get; set; }
 
         /// <summary>
         ///     The configured async key serializer.
@@ -137,9 +142,9 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     A collection of librdkafka configuration parameters 
+        ///     A collection of librdkafka configuration parameters
         ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
+        ///     and parameters specific to this client (refer to:
         ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
         ///     At a minimum, 'bootstrap.servers' must be specified.
         /// </summary>
@@ -321,7 +326,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(ISerializer<TValue> serializer)
         {
-            if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null || this.SegmentValueSerializer != null)
             {
                 throw new InvalidOperationException("Value serializer may not be specified more than once.");
             }
@@ -359,11 +364,30 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
-            if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null || this.SegmentValueSerializer != null)
             {
                 throw new InvalidOperationException("Value serializer may not be specified more than once.");
             }
             this.AsyncValueSerializer = serializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     The serializer to use to serialize values.
+        /// </summary>
+        /// <remarks>
+        ///     If your value serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_ValueSerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetValueSerializer(ISegmentSerializer<TValue> serializer)
+        {
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null || this.SegmentValueSerializer != null)
+            {
+                throw new InvalidOperationException("Value serializer may not be specified more than once.");
+            }
+            this.SegmentValueSerializer = serializer;
             return this;
         }
 
