@@ -106,11 +106,13 @@ namespace Confluent.SchemaRegistry
         }
 
         public FieldContext EnterField(object containingMessage,
-            string fullName, string name, Type type, ISet<string> tags)
+            string fullName, string name, Type type, ISet<string> tags,
+            object fieldDescriptor = null)
         {
             ISet<string> allTags = new HashSet<string>(tags);
             allTags.UnionWith(GetTags(fullName));
-            return new FieldContext(this, containingMessage, fullName, name, type, allTags);
+            return new FieldContext(this, containingMessage, fullName, name, type, allTags,
+                fieldDescriptor);
         }
 
         public class FieldContext : IDisposable
@@ -127,8 +129,15 @@ namespace Confluent.SchemaRegistry
 
             public ISet<string> Tags { get; set; }
 
+            /// <summary>
+            ///     The schema of the slot the value is written back into, for formats that carry
+            ///     detail the value does not: an Avro <see cref="Avro.Schema" />. Narrowed as the
+            ///     walk descends into an array or a map. Null for protobuf and JSON Schema.
+            /// </summary>
+            public object FieldDescriptor { get; set; }
+
             public FieldContext(RuleContext ruleContext, object containingMessage, string fullName, string name,
-                Type type, ISet<string> tags)
+                Type type, ISet<string> tags, object fieldDescriptor = null)
             {
                 RuleContext = ruleContext;
                 ContainingMessage = containingMessage;
@@ -136,6 +145,7 @@ namespace Confluent.SchemaRegistry
                 Name = name;
                 Type = type;
                 Tags = tags;
+                FieldDescriptor = fieldDescriptor;
                 RuleContext.fieldContexts.Push(this);
             }
 
