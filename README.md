@@ -86,7 +86,7 @@ optimizing communication with the Kafka brokers for you, batching requests as ap
 
 Production applications should serialize with Schema Registry. Producing plain string
 or raw values leads to data-quality issues, broken consumers, and ungovernable data.
-This example requires the `Confluent.SchemaRegistry` and
+The producer examples below require the `Confluent.SchemaRegistry` and
 `Confluent.SchemaRegistry.Serdes.Json` packages in addition to `Confluent.Kafka`.
 
 ```csharp
@@ -119,7 +119,7 @@ class Program
         try
         {
             var user = new User { Name = "Confluent", FavoriteNumber = 42 };
-            var dr = await p.ProduceAsync("test-topic", new Message<Null, User> { Value = user });
+            var dr = await p.ProduceAsync("my-topic", new Message<Null, User> { Value = user });
             Console.WriteLine($"Delivered to '{dr.TopicPartitionOffset}'");
         }
         catch (ProduceException<Null, User> e)
@@ -143,23 +143,41 @@ use the `Produce` method instead:
 ```csharp
 using System;
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 
 class Program
 {
+    public class User
+    {
+        public string Name { get; set; }
+        public int FavoriteNumber { get; set; }
+    }
+
     public static void Main(string[] args)
     {
         var conf = new ProducerConfig { BootstrapServers = "localhost:9092" };
+        var schemaRegistryConfig = new SchemaRegistryConfig { Url = "http://localhost:8081" };
 
-        Action<DeliveryReport<Null, string>> handler = r =>
+        Action<DeliveryReport<Null, User>> handler = r =>
             Console.WriteLine(!r.Error.IsError
                 ? $"Delivered message to {r.TopicPartitionOffset}"
                 : $"Delivery Error: {r.Error.Reason}");
 
-        using (var p = new ProducerBuilder<Null, string>(conf).Build())
+        using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+        // Note: the Schema Registry serializers are asynchronous. The fire-and-forget
+        // `Produce` method requires a synchronous serializer, so wrap it with
+        // `AsSyncOverAsync`. Schema lookups are cached, so this only blocks on the
+        // first message for a given schema.
+        using (var p = new ProducerBuilder<Null, User>(conf)
+            .SetValueSerializer(new JsonSerializer<User>(schemaRegistry).AsSyncOverAsync())
+            .Build())
         {
             for (int i = 0; i < 100; ++i)
             {
-                p.Produce("my-topic", new Message<Null, string> { Value = i.ToString() }, handler);
+                var user = new User { Name = "Confluent", FavoriteNumber = i };
+                p.Produce("my-topic", new Message<Null, User> { Value = user }, handler);
             }
 
             // wait for up to 10 seconds for any inflight messages to be delivered.
@@ -171,13 +189,26 @@ class Program
 
 ### Basic Consumer Example
 
+This example consumes the messages produced by the examples above. It deserializes with
+Schema Registry, so it requires the `Confluent.SchemaRegistry` and
+`Confluent.SchemaRegistry.Serdes.Json` packages in addition to `Confluent.Kafka`.
+
 ```csharp
 using System;
 using System.Threading;
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 
 class Program
 {
+    public class User
+    {
+        public string Name { get; set; }
+        public int FavoriteNumber { get; set; }
+    }
+
     public static void Main(string[] args)
     {
         var conf = new ConsumerConfig
@@ -191,8 +222,12 @@ class Program
             // earliest message in the topic 'my-topic' the first time you run the program.
             AutoOffsetReset = AutoOffsetReset.Earliest
         };
+        var schemaRegistryConfig = new SchemaRegistryConfig { Url = "http://localhost:8081" };
 
-        using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
+        using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+        using (var c = new ConsumerBuilder<Ignore, User>(conf)
+            .SetValueDeserializer(new JsonDeserializer<User>(schemaRegistry).AsSyncOverAsync())
+            .Build())
         {
             c.Subscribe("my-topic");
 
@@ -210,7 +245,7 @@ class Program
                     try
                     {
                         var cr = c.Consume(cts.Token);
-                        Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
+                        Console.WriteLine($"Consumed '{cr.Message.Value.Name}' ({cr.Message.Value.FavoriteNumber}) at: '{cr.TopicPartitionOffset}'.");
                     }
                     catch (ConsumeException e)
                     {
