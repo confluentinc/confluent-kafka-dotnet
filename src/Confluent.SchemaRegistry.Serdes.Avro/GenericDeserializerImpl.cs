@@ -182,7 +182,11 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             SchemaNames namedSchemas = await AvroUtils.ResolveNamedSchema(schema, schemaRegistryClient)
                 .ConfigureAwait(continueOnCapturedContext: false);
-            return Avro.Schema.Parse(schema.SchemaString, namedSchemas);
+            // A by-name reference to confluent.type.Variant loses the variant logical type in
+            // Apache.Avro; rebinding the reference before the parse restores it. See
+            // VariantSchemaRebinder. A no-op for every schema without one.
+            return Avro.Schema.Parse(
+                VariantSchemaRebinder.Rebind(schema.SchemaString), namedSchemas);
         }
 
         private async Task<DatumReader<GenericRecord>> GetDatumReader(Avro.Schema writerSchema, Avro.Schema readerSchema)

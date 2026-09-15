@@ -47,6 +47,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             { "confluent/meta.proto", GetResource("confluent.meta.proto") },
             { "confluent/type/decimal.proto", GetResource("confluent.type.decimal.proto") },
+            { "confluent/type/variant.proto", GetResource("confluent.type.variant.proto") },
             { "google/type/calendar_period.proto", GetResource("google.type.calendar_period.proto") },
             { "google/type/color.proto", GetResource("google.type.color.proto") },
             { "google/type/date.proto", GetResource("google.type.date.proto") },
@@ -103,6 +104,21 @@ namespace Confluent.SchemaRegistry.Serdes
                     && (message.GetType().GetGenericTypeDefinition() == typeof(List<>)
                         || message.GetType().GetGenericTypeDefinition() == typeof(IList<>))))
             {
+                if (ctx.Rule.Kind == RuleKind.Condition)
+                {
+                    // A condition's per-element verdicts are evaluated and dropped. The
+                    // reference collects them into an untyped list, which the field-level
+                    // check never reads as `false`, so a CEL_FIELD condition does not apply
+                    // to a container field. Utils.TransformEnumerableAsync builds a
+                    // List<T> for the element type instead, and adding a bool to it throws.
+                    foreach (object element in (IEnumerable)message)
+                    {
+                        await Transform(ctx, desc, element, fieldTransform).ConfigureAwait(false);
+                    }
+
+                    return message;
+                }
+
                 var transformer = (int index, object elem) =>
                     Transform(ctx, desc, elem, fieldTransform);
                 return await Utils.TransformEnumerableAsync(message, transformer).ConfigureAwait(false);
@@ -113,6 +129,15 @@ namespace Confluent.SchemaRegistry.Serdes
                              || message.GetType().GetGenericTypeDefinition() == typeof(IDictionary<,>))))
             {
                 return message;
+            }
+            else if (message is IMessage leaf && IsCelLeafMessage(leaf.Descriptor))
+            {
+                // A decimal or a timestamp is a single value to a rule, not a record to
+                // descend into. Without this the walk reached value/scale and seconds/nanos
+                // one at a time, so a rule tagged for the field never fired and the message
+                // came back unchanged with no error. Ported from the JVM client's #4538.
+                return await TransformValueTypeLeaf(ctx, fieldContext, leaf, fieldTransform)
+                    .ConfigureAwait(false);
             }
             else if (message is IMessage)
             {
@@ -242,6 +267,131 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <summary>
+        ///     Message types a CEL rule works with as a single value rather than as a record.
+        ///
+        ///     Avro carries the same concepts as logical types on a primitive, so the field is a
+        ///     leaf there and a CEL_FIELD rule reaches it. Variant is deliberately absent: it is
+        ///     a record in Avro too, so skipping it is the behaviour that matches, and a variant
+        ///     is reached with a message-level CEL rule instead.
+        /// </summary>
+        private const string CelDecimalTypeName = "confluent.type.Decimal";
+        private const string CelTimestampTypeName = "google.protobuf.Timestamp";
+
+        internal static bool IsCelLeafMessage(MessageDescriptor desc) =>
+            desc != null && (desc.FullName == CelDecimalTypeName
+                             || desc.FullName == CelTimestampTypeName);
+
+        /// <summary>
+        ///     Hands the whole decimal or timestamp message to the field transform and encodes
+        ///     whatever the rule returns back into it.
+        /// </summary>
+        private static async Task<object> TransformValueTypeLeaf(RuleContext ctx,
+            RuleContext.FieldContext fieldContext, IMessage message,
+            IFieldTransform fieldTransform)
+        {
+            if (fieldContext == null)
+            {
+                return message;
+            }
+
+            ISet<string> ruleTags = ctx.Rule.Tags ?? new HashSet<string>();
+            ISet<string> intersect = new HashSet<string>(fieldContext.Tags);
+            intersect.IntersectWith(ruleTags);
+            if (ruleTags.Count != 0 && intersect.Count == 0)
+            {
+                return message;
+            }
+
+            object newValue = await fieldTransform.Transform(ctx, fieldContext, message)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+            if (ctx.Rule.Kind == RuleKind.Condition)
+            {
+                // A verdict on the value, not a replacement for it. The caller raises on a
+                // false verdict, so it is returned as-is.
+                return newValue;
+            }
+
+            return RebuildValueType(ctx, message, newValue);
+        }
+
+        /// <summary>
+        ///     Encodes what a CEL_FIELD rule returned back into the field's message.
+        ///
+        ///     An identity rule hands back the message it was given; a computed rule hands back
+        ///     a <see cref="BigDecimal" /> or a timestamp. Anything else is a rule-authoring
+        ///     mistake and is named as one rather than written back as a default.
+        /// </summary>
+        private static IMessage RebuildValueType(RuleContext ctx, IMessage original,
+            object value)
+        {
+            MessageDescriptor desc = original.Descriptor;
+            if (value == null)
+            {
+                throw ValueTypeError(ctx, desc, "null", "a decimal or timestamp");
+            }
+
+            if (value is IMessage m && m.Descriptor.FullName == desc.FullName)
+            {
+                // Already the right message, which is what an identity rule produces.
+                return m;
+            }
+
+            if (desc.FullName == CelDecimalTypeName)
+            {
+                if (value is BigDecimal bigDecimal)
+                {
+                    return bigDecimal.ToProtobufDecimal();
+                }
+
+                if (value is decimal dec)
+                {
+                    return dec.ToProtobufDecimal();
+                }
+
+                throw ValueTypeError(ctx, desc, value.GetType().Name, "a decimal");
+            }
+
+            // The CEL runtime hands timestamps back as NodaTime values. Naming the type keeps
+            // every digit: ToUnixTimeSecondsAndNanoseconds truncates the seconds towards the
+            // start of time so the nanoseconds are non-negative, which is protobuf's own
+            // contract. Converting through DateTimeOffset instead rounded to its 100-nanosecond
+            // tick, turning a Nanos of 123456789 into 123456700.
+            if (value is NodaTime.ZonedDateTime zoned)
+            {
+                var (seconds, nanoseconds) = zoned.ToInstant().ToUnixTimeSecondsAndNanoseconds();
+                return new Google.Protobuf.WellKnownTypes.Timestamp
+                {
+                    Seconds = seconds,
+                    Nanos = (int)nanoseconds,
+                };
+            }
+
+            if (value is NodaTime.Instant instant)
+            {
+                var (seconds, nanoseconds) = instant.ToUnixTimeSecondsAndNanoseconds();
+                return new Google.Protobuf.WellKnownTypes.Timestamp
+                {
+                    Seconds = seconds,
+                    Nanos = (int)nanoseconds,
+                };
+            }
+
+            if (value is DateTimeOffset offset)
+            {
+                return Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(offset);
+            }
+
+            throw ValueTypeError(ctx, desc, value.GetType().Name, "a timestamp");
+        }
+
+        private static RuleException ValueTypeError(RuleContext ctx, MessageDescriptor desc,
+            string actual, string expected) =>
+            new RuleException("Rule " + ctx.Rule.Name + " returned " + actual
+                              + " for a field which is a " + desc.FullName
+                              + "; expected " + expected);
+
+        /// <summary>
         ///     Whether a field holds a message, so that the walks descend into it.
         /// </summary>
         private static bool IsMessageKind(FieldDescriptorProto schemaFd) =>
@@ -281,7 +431,12 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 object newValue = await Transform(ctx, valueType, entry.Value, fieldTransform)
                     .ConfigureAwait(false);
-                updates.Add(new KeyValuePair<object, object>(entry.Key, newValue));
+                // A verdict is not a replacement for the value: evaluated per entry and
+                // dropped, exactly as on a repeated field.
+                if (ctx.Rule.Kind != RuleKind.Condition)
+                {
+                    updates.Add(new KeyValuePair<object, object>(entry.Key, newValue));
+                }
             }
 
             foreach (KeyValuePair<object, object> update in updates)
@@ -398,6 +553,16 @@ namespace Confluent.SchemaRegistry.Serdes
             switch (field.FieldType)
             {
                 case FieldType.Message:
+                    // Report the same primitive type the Avro counterpart does, so that
+                    // CEL_FIELD applies to the field and a rule written against one format
+                    // ports to the other.
+                    if (IsCelLeafMessage(field.MessageType))
+                    {
+                        return field.MessageType.FullName == CelDecimalTypeName
+                            ? RuleContext.Type.Bytes
+                            : RuleContext.Type.Long;
+                    }
+
                     return RuleContext.Type.Record;
                 case FieldType.Enum:
                     return RuleContext.Type.Enum;
