@@ -109,7 +109,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
             var nonJsonConfig = config
                 .Where(item => !item.Key.StartsWith("json.") && !item.Key.StartsWith("rules.")
-                    && !item.Key.StartsWith("subject.name.strategy."));
+                    && !item.Key.StartsWith("subject.name.strategy.")
+                    && !item.Key.StartsWith("validation.rules."));
             if (nonJsonConfig.Count() > 0)
             {
                 throw new ArgumentException($"JsonDeserializer: unknown configuration parameter {nonJsonConfig.First().Key}.");

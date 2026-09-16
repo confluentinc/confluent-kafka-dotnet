@@ -13,8 +13,8 @@ Users who don't reference this package see zero AWS dependencies in their depend
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Confluent.Kafka" Version="2.15.0" />
-  <PackageReference Include="Confluent.Kafka.OAuthBearer.Aws" Version="2.15.0" />
+  <PackageReference Include="Confluent.Kafka" Version="2.15.1" />
+  <PackageReference Include="Confluent.Kafka.OAuthBearer.Aws" Version="2.15.1" />
 </ItemGroup>
 ```
 

@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+import "confluent/meta.proto";
+
+package example;
+
+message ValidationPerson {
+    option (confluent.message_meta) = {
+        rules: [{name: "nameNotForbidden", expr: "this.name != 'forbidden'"}]
+    };
+
+    string name = 1 [(confluent.field_meta) = {
+        rules: [{name: "nameNotEmpty", doc: "name must not be empty", expr: "size(this) > 0"}]
+    }];
+    int32 favorite_number = 2 [(confluent.field_meta) = {
+        rules: [{name: "numberPositive", expr: "this >= 0"}]
+    }];
+}
+
+// The bracketed list form (the cross-client canonical form) with more than one rule per
+// field. protobuf-net's .proto text parser accepts it as of 3.3.21; these fixtures are
+// compiled by protoc, so both rules are present in the descriptor either way.
+message ValidationListForm {
+    string id = 1 [(confluent.field_meta) = {
+        rules: [
+            { name: "idPrefix", expr: "this.startsWith('ord-')" },
+            { name: "idLength", doc: "id is too short", expr: "size(this) > 4" }
+        ]
+    }];
+}
+
+// Collection shapes for the walk tests: a nested message, a repeated message and a map of
+// messages, all reached only by descending with the field's own message type.
+message ValidationItem {
+  option (confluent.message_meta) = {
+    rules: [{name: "itemPositive", expr: "this.v > 0"}]
+  };
+
+  int32 v = 1;
+  string label = 2 [(confluent.field_meta) = { tags: "PII" }];
+}
+
+message ValidationContainer {
+  ValidationItem inner = 1;
+  repeated ValidationItem items = 2;
+  map<string, ValidationItem> labels = 3;
+  repeated string tags = 4 [(confluent.field_meta) = { tags: "PII" }];
+}
+
+// The presence shapes, for pinning skip-on-null. proto3 tracks explicit presence for a
+// oneof member, an `optional` scalar and a singular message field; a plain scalar, a
+// repeated field and a map have none, so they are never "unset".
+message ValidationPresence {
+  string plain = 1 [(confluent.field_meta) = {
+    rules: [{name: "plainRule", expr: "size(this) > 0"}]
+  }];
+  optional string opt = 2 [(confluent.field_meta) = {
+    rules: [{name: "optRule", expr: "size(this) > 0"}]
+  }];
+  repeated string many = 3 [(confluent.field_meta) = {
+    rules: [{name: "manyRule", expr: "size(this) > 0"}]
+  }];
+  oneof choice {
+    string a = 4 [(confluent.field_meta) = {
+      rules: [{name: "aRule", expr: "size(this) > 0"}]
+    }];
+  }
+}
+
+// An enum field is compared by its number, matching the other clients - a rule reads
+// `this == 1`, not the symbol name.
+enum ValidationColor {
+  VALIDATION_COLOR_RED = 0;
+  VALIDATION_COLOR_GREEN = 1;
+}
+
+message ValidationEnumHolder {
+  ValidationColor color = 1 [(confluent.field_meta) = {
+    rules: [{name: "isGreen", expr: "this == 1"}]
+  }];
+}
+
+// Unsigned and enum fields, whose CEL type the CLR type of the value cannot settle on its
+// own. Used to pin that the walk types a field from its descriptor.
+message ValidationTypedFields {
+  uint64 big = 1;
+  int64 small = 2;
+  ValidationColor color = 3;
+  repeated uint64 bigs = 4;
+}

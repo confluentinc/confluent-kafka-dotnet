@@ -30,11 +30,12 @@ namespace Confluent.SchemaRegistry.Encryption
         
         public async Task<byte[]> Encrypt(byte[] plaintext)
         {
+            var aeadConfigs = GetAeadConfigs();
             for (int i = 0; i < KmsKeyIds.Count; i++)
             {
                 try
                 {
-                    IKmsClient kmsClient = GetKmsClient(Configs, Kek.KmsType, KmsKeyIds[i]);
+                    IKmsClient kmsClient = GetKmsClient(aeadConfigs, Kek.KmsType, KmsKeyIds[i]);
                     return await kmsClient.Encrypt(plaintext).ConfigureAwait(false);
                 }
                 catch (Exception e)
@@ -50,11 +51,12 @@ namespace Confluent.SchemaRegistry.Encryption
 
         public async Task<byte[]> Decrypt(byte[] ciphertext)
         {
+            var aeadConfigs = GetAeadConfigs();
             for (int i = 0; i < KmsKeyIds.Count; i++)
             {
                 try
                 {
-                    IKmsClient kmsClient = GetKmsClient(Configs, Kek.KmsType, KmsKeyIds[i]);
+                    IKmsClient kmsClient = GetKmsClient(aeadConfigs, Kek.KmsType, KmsKeyIds[i]);
                     return await kmsClient.Decrypt(ciphertext).ConfigureAwait(false);
                 }
                 catch (Exception e)
@@ -66,6 +68,21 @@ namespace Confluent.SchemaRegistry.Encryption
                 }
             }
             throw new RuleException("No KEK found for decryption");
+        }
+
+        // Merges the kek's KmsProps (e.g. encrypt.azure.key.version.save) into a copy of the
+        // executor-level configs, so KMS-specific per-kek settings reach NewKmsClient/GetAead.
+        private IEnumerable<KeyValuePair<string, string>> GetAeadConfigs()
+        {
+            var aeadConfigs = Configs.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            if (Kek.KmsProps != null)
+            {
+                foreach (var kvp in Kek.KmsProps)
+                {
+                    aeadConfigs[kvp.Key] = kvp.Value;
+                }
+            }
+            return aeadConfigs;
         }
 
         private IList<string> GetKmsKeyIds()

@@ -48,6 +48,94 @@ namespace Confluent.SchemaRegistry
         public SerdeConfig(IDictionary<string, string> config) : base(config) { }
 
         /// <summary>
+        ///     Configuration property names shared by all serializers and deserializers.
+        /// </summary>
+        public static class SharedPropertyNames
+        {
+            /// <summary>
+            ///     Determines when inline validation rules run, relative to domain rule
+            ///     transformations. One of DISABLED, BEFORE_DOMAIN_RULES or
+            ///     AFTER_DOMAIN_RULES.
+            ///
+            ///     default: DISABLED
+            /// </summary>
+            public const string ValidationRulesExecution = "validation.rules.execution";
+
+            /// <summary>
+            ///     When true, validation stops at the first failed rule and reports only
+            ///     that violation. When false, every node is visited and the full set of
+            ///     violations is reported.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string ValidationRulesFailFast = "validation.rules.fail.fast";
+        }
+
+        /// <summary>
+        ///     Determines when inline validation rules run, relative to domain rule
+        ///     transformations.
+        ///
+        ///     default: <see cref="Confluent.SchemaRegistry.ValidationRulesExecution.Disabled" />
+        /// </summary>
+        public ValidationRulesExecution ValidationRulesExecution
+        {
+            get
+            {
+                var result = Get(SharedPropertyNames.ValidationRulesExecution);
+                if (result == null)
+                {
+                    return Confluent.SchemaRegistry.ValidationRulesExecution.Disabled;
+                }
+
+                switch (result.ToUpperInvariant())
+                {
+                    case "DISABLED":
+                        return Confluent.SchemaRegistry.ValidationRulesExecution.Disabled;
+                    case "BEFORE_DOMAIN_RULES":
+                        return Confluent.SchemaRegistry.ValidationRulesExecution.BeforeDomainRules;
+                    case "AFTER_DOMAIN_RULES":
+                        return Confluent.SchemaRegistry.ValidationRulesExecution.AfterDomainRules;
+                    default:
+                        throw new ArgumentException(
+                            $"Unknown {SharedPropertyNames.ValidationRulesExecution} value: {result}. " +
+                            "Expected one of DISABLED, BEFORE_DOMAIN_RULES, AFTER_DOMAIN_RULES.");
+                }
+            }
+            set
+            {
+                string str;
+                switch (value)
+                {
+                    case Confluent.SchemaRegistry.ValidationRulesExecution.Disabled:
+                        str = "DISABLED";
+                        break;
+                    case Confluent.SchemaRegistry.ValidationRulesExecution.BeforeDomainRules:
+                        str = "BEFORE_DOMAIN_RULES";
+                        break;
+                    case Confluent.SchemaRegistry.ValidationRulesExecution.AfterDomainRules:
+                        str = "AFTER_DOMAIN_RULES";
+                        break;
+                    default:
+                        throw new ArgumentException($"Unknown ValidationRulesExecution value: {value}");
+                }
+
+                SetObject(SharedPropertyNames.ValidationRulesExecution, str);
+            }
+        }
+
+        /// <summary>
+        ///     When true, validation stops at the first failed rule and reports only that
+        ///     violation.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool ValidationRulesFailFast
+        {
+            get => GetBool(SharedPropertyNames.ValidationRulesFailFast) ?? false;
+            set => SetObject(SharedPropertyNames.ValidationRulesFailFast, value);
+        }
+
+        /// <summary>
         ///     Gets a configuration property as a dictionary value given a key.
         /// </summary>
         /// <param name="key">
