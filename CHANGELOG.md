@@ -5,6 +5,12 @@
 * Add support for saving Azure key version with DEK (#2641)
 * Pass context when clients make KEK calls to DEK Registry (#2642)
 * Add support for inline validation rules (#2651)
+* Add CI coverage for linux-s390x (IBM Z) and document s390x platform support
+
+## Fixes
+
+* Fix the CSFLE ciphertext version field being written little-endian on big-endian
+  platforms, which made encrypted fields unreadable across architectures
 
 
 # 2.15.1
