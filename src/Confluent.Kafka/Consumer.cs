@@ -566,6 +566,11 @@ namespace Confluent.Kafka
 
 
         /// <inheritdoc/>
+        public string ClusterId
+            => kafkaHandle.ClusterId;
+
+
+        /// <inheritdoc/>
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
 

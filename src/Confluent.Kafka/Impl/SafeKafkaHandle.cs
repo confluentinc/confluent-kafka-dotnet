@@ -1179,6 +1179,24 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        internal string ClusterId
+        {
+            get
+            {
+                ThrowIfHandleClosed();
+
+                IntPtr strPtr = Librdkafka.clusterid(handle, IntPtr.Zero);
+                if (strPtr == IntPtr.Zero)
+                {
+                    return null;
+                }
+
+                string clusterId = Util.Marshal.PtrToStringUTF8(strPtr);
+                Librdkafka.mem_free(handle, strPtr);
+                return clusterId;
+            }
+        }
+
         internal static List<TopicPartitionError> GetTopicPartitionErrorList(IntPtr listPtr)
         {
             if (listPtr == IntPtr.Zero)
