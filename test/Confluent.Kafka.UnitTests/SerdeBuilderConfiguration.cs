@@ -210,11 +210,10 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public void Builder_IsNotConsultedForTheClusterIdWhenNotNeeded()
+        public void Build_DoesNotWaitOnTheBroker()
         {
-            // A serializer that does not need the cluster id must not cause the
-            // producer to ask the broker for one - which, with no broker reachable,
-            // would otherwise stall construction.
+            // No broker is reachable here, so construction must not ask for the
+            // cluster id itself - that is deferred to the serializer's first use.
             var valueBuilder = new RecordingSerializerBuilder();
 
             using (new ProducerBuilder<string, string>(ProducerConfig())

@@ -32,8 +32,8 @@ namespace Confluent.Kafka
     ///     <see cref="System.IDisposable" />: doing so would cause analyzers to
     ///     require disposal at every construction site in application code, which is
     ///     misleading given that a serializer holding no resources of its own has
-    ///     nothing to release. Use the <c>Dispose</c> extension methods to release an
-    ///     arbitrary serializer or deserializer.
+    ///     nothing to release. Use the <c>DisposeOwnedResources</c> extension methods
+    ///     to release an arbitrary serializer or deserializer.
     /// </summary>
     public interface ISerdeOwnedResources
     {

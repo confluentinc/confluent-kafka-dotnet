@@ -591,11 +591,6 @@ namespace Confluent.Kafka
 
 
         /// <inheritdoc/>
-        public string ClusterId(TimeSpan timeout)
-            => kafkaHandle.ClusterId(timeout.TotalMillisecondsAsInt());
-
-
-        /// <inheritdoc/>
         public Handle Handle
             => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
 
@@ -769,70 +764,98 @@ namespace Confluent.Kafka
                 Librdkafka.conf_set_oauthbearer_token_refresh_cb(configPtr, oAuthBearerTokenRefreshCallbackDelegate);
             }
 
-            this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr, this);
-            configHandle.SetHandleAsInvalid(); // config object is no longer useable.
+            // Deserializers are constructed before the native handle so that a
+            // throwing builder leaks nothing.
+            InitializeDeserializers(builder);
 
-            var pollSetConsumerError = kafkaHandle.PollSetConsumer();
-            if (pollSetConsumerError != ErrorCode.NoError)
+            try
             {
-                throw new KafkaException(new Error(pollSetConsumerError,
-                    $"Failed to redirect the poll queue to consumer_poll queue: {ErrorCodeExtensions.GetReason(pollSetConsumerError)}"));
-            }
+                this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr, this);
+                configHandle.SetHandleAsInvalid(); // config object is no longer useable.
 
-            // setup key deserializer. A deserializer constructed from a builder is
-            // owned by this consumer, and is disposed along with it.
-            if (builder.KeyDeserializerBuilder != null)
-            {
-                this.keyDeserializer = builder.KeyDeserializerBuilder.Build(builder.Config, true);
-                this.ownsKeyDeserializer = true;
-            }
-            else if (builder.AsyncKeyDeserializerBuilder != null)
-            {
-                this.keyDeserializer = builder.AsyncKeyDeserializerBuilder
-                    .Build(builder.Config, true).AsSyncOverAsync();
-                this.ownsKeyDeserializer = true;
-            }
-            else if (builder.KeyDeserializer == null)
-            {
-                if (!defaultDeserializers.TryGetValue(typeof(TKey), out object deserializer))
+                var pollSetConsumerError = kafkaHandle.PollSetConsumer();
+                if (pollSetConsumerError != ErrorCode.NoError)
                 {
-                    throw new InvalidOperationException(
-                        $"Key deserializer was not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
+                    throw new KafkaException(new Error(pollSetConsumerError,
+                        $"Failed to redirect the poll queue to consumer_poll queue: {ErrorCodeExtensions.GetReason(pollSetConsumerError)}"));
                 }
-                this.keyDeserializer = (IDeserializer<TKey>)deserializer;
-            }
-            else
-            {
-                this.keyDeserializer = builder.KeyDeserializer;
-            }
 
-            // setup value deserializer.
-            if (builder.ValueDeserializerBuilder != null)
-            {
-                this.valueDeserializer = builder.ValueDeserializerBuilder.Build(builder.Config, false);
-                this.ownsValueDeserializer = true;
+                PropagateClusterId();
             }
-            else if (builder.AsyncValueDeserializerBuilder != null)
+            catch
             {
-                this.valueDeserializer = builder.AsyncValueDeserializerBuilder
-                    .Build(builder.Config, false).AsSyncOverAsync();
-                this.ownsValueDeserializer = true;
+                // A constructor that throws never reaches Dispose, so release the
+                // deserializers this consumer owns.
+                DisposeOwnedDeserializers();
+                throw;
             }
-            else if (builder.ValueDeserializer == null)
+        }
+
+
+        private void InitializeDeserializers(ConsumerBuilder<TKey, TValue> builder)
+        {
+            try
             {
-                if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
+                // setup key deserializer. A deserializer constructed from a builder is
+                // owned by this consumer, and is disposed along with it.
+                if (builder.KeyDeserializerBuilder != null)
                 {
-                    throw new InvalidOperationException(
-                        $"Value deserializer was not specified and there is no default deserializer defined for type {typeof(TValue).Name}.");
+                    this.keyDeserializer = builder.KeyDeserializerBuilder.Build(builder.Config, true);
+                    this.ownsKeyDeserializer = true;
                 }
-                this.valueDeserializer = (IDeserializer<TValue>)deserializer;
-            }
-            else
-            {
-                this.valueDeserializer = builder.ValueDeserializer;
-            }
+                else if (builder.AsyncKeyDeserializerBuilder != null)
+                {
+                    this.keyDeserializer = builder.AsyncKeyDeserializerBuilder
+                        .Build(builder.Config, true).AsSyncOverAsync();
+                    this.ownsKeyDeserializer = true;
+                }
+                else if (builder.KeyDeserializer == null)
+                {
+                    if (!defaultDeserializers.TryGetValue(typeof(TKey), out object deserializer))
+                    {
+                        throw new InvalidOperationException(
+                            $"Key deserializer was not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
+                    }
+                    this.keyDeserializer = (IDeserializer<TKey>)deserializer;
+                }
+                else
+                {
+                    this.keyDeserializer = builder.KeyDeserializer;
+                }
 
-            PropagateClusterId();
+                // setup value deserializer.
+                if (builder.ValueDeserializerBuilder != null)
+                {
+                    this.valueDeserializer = builder.ValueDeserializerBuilder.Build(builder.Config, false);
+                    this.ownsValueDeserializer = true;
+                }
+                else if (builder.AsyncValueDeserializerBuilder != null)
+                {
+                    this.valueDeserializer = builder.AsyncValueDeserializerBuilder
+                        .Build(builder.Config, false).AsSyncOverAsync();
+                    this.ownsValueDeserializer = true;
+                }
+                else if (builder.ValueDeserializer == null)
+                {
+                    if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
+                    {
+                        throw new InvalidOperationException(
+                            $"Value deserializer was not specified and there is no default deserializer defined for type {typeof(TValue).Name}.");
+                    }
+                    this.valueDeserializer = (IDeserializer<TValue>)deserializer;
+                }
+                else
+                {
+                    this.valueDeserializer = builder.ValueDeserializer;
+                }
+            }
+            catch
+            {
+                // A constructor that throws never reaches Dispose, so release any
+                // deserializer already built here before the failure.
+                DisposeOwnedDeserializers();
+                throw;
+            }
         }
 
 
@@ -864,13 +887,13 @@ namespace Confluent.Kafka
             if (ownsKeyDeserializer)
             {
                 ownsKeyDeserializer = false;
-                if (keyDeserializer != null) { keyDeserializer.Dispose(); }
+                if (keyDeserializer != null) { keyDeserializer.DisposeOwnedResources(); }
             }
 
             if (ownsValueDeserializer)
             {
                 ownsValueDeserializer = false;
-                if (valueDeserializer != null) { valueDeserializer.Dispose(); }
+                if (valueDeserializer != null) { valueDeserializer.DisposeOwnedResources(); }
             }
         }
 

@@ -242,7 +242,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 .SetSchemaRegistryClient(clientMock.Object)
                 .Build(ClientConfig, false);
 
-            serializer.Dispose();
+            serializer.DisposeOwnedResources();
 
             clientMock.Verify(x => x.Dispose(), Times.Never());
         }
@@ -256,8 +256,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 .SetSchemaRegistryClient(clientMock.Object)
                 .Build(ClientConfig, false);
 
-            deserializer.Dispose();
-            deserializer.Dispose();
+            deserializer.DisposeOwnedResources();
+            deserializer.DisposeOwnedResources();
 
             clientMock.Verify(x => x.Dispose(), Times.Never());
         }
@@ -271,7 +271,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             Assert.True(Owns(serializer));
 
-            serializer.Dispose();
+            serializer.DisposeOwnedResources();
 
             Assert.False(Owns(serializer));
         }
@@ -285,7 +285,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             Assert.True(Owns(deserializer));
 
-            deserializer.Dispose();
+            deserializer.DisposeOwnedResources();
 
             Assert.False(Owns(deserializer));
         }
@@ -297,8 +297,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 .SetSchemaRegistryConfig(Config())
                 .Build(ClientConfig, false);
 
-            serializer.Dispose();
-            serializer.Dispose();
+            serializer.DisposeOwnedResources();
+            serializer.DisposeOwnedResources();
 
             Assert.False(Owns(serializer));
         }
@@ -309,7 +309,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var clientMock = new Mock<ISchemaRegistryClient>();
             var serializer = new AvroSerializer<int>(clientMock.Object);
 
-            serializer.Dispose();
+            serializer.DisposeOwnedResources();
 
             clientMock.Verify(x => x.Dispose(), Times.Never());
         }

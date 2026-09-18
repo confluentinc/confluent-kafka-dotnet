@@ -197,11 +197,11 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void Extensions_DisposeIsANoOpForABuiltInSerializer()
+        public void Extensions_DisposeOwnedResourcesIsANoOpForABuiltInSerializer()
         {
             // Must not throw, and must leave the serializer usable.
-            Serializers.Utf8.Dispose();
-            Deserializers.Utf8.Dispose();
+            Serializers.Utf8.DisposeOwnedResources();
+            Deserializers.Utf8.DisposeOwnedResources();
 
             Assert.NotNull(Serializers.Utf8.Serialize("value",
                 new SerializationContext(MessageComponentType.Value, "topic")));

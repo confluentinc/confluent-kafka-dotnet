@@ -47,6 +47,12 @@ namespace Confluent.Kafka
         ///     null if it cannot do so within the client's timeout. Implementations
         ///     are expected to invoke it lazily, only when the id is actually needed.
         ///
+        ///     The resolver is bound to the client that supplied it, and throws
+        ///     <see cref="ObjectDisposedException" /> once that client has been
+        ///     disposed. A serializer or deserializer handed to a producer or
+        ///     consumer must therefore not be used after that client is disposed,
+        ///     unless the cluster id it needs was specified via configuration.
+        ///
         ///     Implementations must ignore the resolver when the cluster id is not
         ///     relevant to their configuration, or when it was specified explicitly
         ///     via configuration, so that a configured cluster id is never
