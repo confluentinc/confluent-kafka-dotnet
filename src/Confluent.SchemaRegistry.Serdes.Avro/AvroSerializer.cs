@@ -44,10 +44,9 @@ namespace Confluent.SchemaRegistry.Serdes
         private IAsyncSerializer<T> serializerImpl;
 
         // The underlying implementation is not constructed until the first
-        // serialize call, which is after the cluster id is propagated, so the
-        // value is held here and applied when the implementation is created.
-        private string clusterId;
-        private bool clusterIdSet;
+        // serialize call, which is after the cluster id resolver is propagated, so
+        // the resolver is held here and applied when the implementation is created.
+        private Func<string> clusterIdResolver;
         private bool ownsSchemaRegistryClient;
 
         /// <summary>
@@ -161,9 +160,9 @@ namespace Confluent.SchemaRegistry.Serdes
                             schemaRegistryClient, config, ruleRegistry)
                         : new SpecificSerializerImpl<T>(schemaRegistryClient, config, ruleRegistry);
 
-                    if (clusterIdSet)
+                    if (clusterIdResolver != null)
                     {
-                        serializerImpl.SetClusterId(clusterId);
+                        serializerImpl.SetClusterIdResolver(clusterIdResolver);
                     }
                 }
 
@@ -178,29 +177,15 @@ namespace Confluent.SchemaRegistry.Serdes
 
 
         /// <inheritdoc />
-        public bool NeedsClusterId
-            => serializerImpl != null
-                ? serializerImpl.NeedsClusterId()
-                : !clusterIdSet && AssociatedNameStrategy.NeedsClusterIdFor(
-                    config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated, config);
-
-
-        /// <inheritdoc />
-        public void SetClusterId(string clusterId)
+        public void SetClusterIdResolver(Func<string> clusterIdResolver)
         {
-            if (!NeedsClusterId)
-            {
-                return;
-            }
-
             if (serializerImpl != null)
             {
-                serializerImpl.SetClusterId(clusterId);
+                serializerImpl.SetClusterIdResolver(clusterIdResolver);
                 return;
             }
 
-            this.clusterId = clusterId;
-            this.clusterIdSet = true;
+            this.clusterIdResolver = clusterIdResolver;
         }
 
 

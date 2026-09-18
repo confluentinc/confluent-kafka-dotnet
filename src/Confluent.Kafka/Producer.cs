@@ -74,8 +74,8 @@ namespace Confluent.Kafka
         private SafeKafkaHandle ownedKafkaHandle;
 
         /// <summary>
-        ///     The maximum period of time to wait for the Kafka cluster id, when a
-        ///     serializer requires it. Matches the default max.block.ms.
+        ///     The maximum period of time a serializer's cluster id resolver waits
+        ///     for the Kafka cluster id, on the serializer's first use.
         /// </summary>
         private const int ClusterIdTimeoutMs = 60000;
 
@@ -604,45 +604,23 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Supply the id of the Kafka cluster this producer is connected to, to
-        ///     any serializer that makes use of it.
+        ///     Hand any serializer that makes use of the id of the Kafka cluster this
+        ///     producer is connected to a resolver for it.
         ///
-        ///     The cluster id is resolved at most once, and only when a serializer
-        ///     actually needs it, so that producers whose serializers do not use it
-        ///     incur no additional broker round trip.
+        ///     The id is resolved lazily, when the serializer needs it, so that
+        ///     construction never waits on a broker - which it could not reach
+        ///     anyway when, for instance, the OAUTHBEARER token refresh callback is
+        ///     served by a poll loop that only starts after construction.
         /// </summary>
         private void PropagateClusterId()
         {
-            bool keyNeedsClusterId = keySerializer != null
-                ? keySerializer.NeedsClusterId()
-                : asyncKeySerializer != null && asyncKeySerializer.NeedsClusterId();
+            Func<string> clusterIdResolver = () => KafkaHandle.ClusterId(ClusterIdTimeoutMs);
 
-            bool valueNeedsClusterId = valueSerializer != null
-                ? valueSerializer.NeedsClusterId()
-                : asyncValueSerializer != null && asyncValueSerializer.NeedsClusterId();
+            if (keySerializer != null) { keySerializer.SetClusterIdResolver(clusterIdResolver); }
+            else { asyncKeySerializer.SetClusterIdResolver(clusterIdResolver); }
 
-            if (!keyNeedsClusterId && !valueNeedsClusterId)
-            {
-                return;
-            }
-
-            string clusterId = KafkaHandle.ClusterId(ClusterIdTimeoutMs);
-            if (clusterId == null)
-            {
-                return;
-            }
-
-            if (keyNeedsClusterId)
-            {
-                if (keySerializer != null) { keySerializer.SetClusterId(clusterId); }
-                else { asyncKeySerializer.SetClusterId(clusterId); }
-            }
-
-            if (valueNeedsClusterId)
-            {
-                if (valueSerializer != null) { valueSerializer.SetClusterId(clusterId); }
-                else { asyncValueSerializer.SetClusterId(clusterId); }
-            }
+            if (valueSerializer != null) { valueSerializer.SetClusterIdResolver(clusterIdResolver); }
+            else { asyncValueSerializer.SetClusterIdResolver(clusterIdResolver); }
         }
 
         /// <summary>
@@ -678,6 +656,8 @@ namespace Confluent.Kafka
             InitializeSerializers(
                 builder.KeySerializer, builder.ValueSerializer,
                 builder.AsyncKeySerializer, builder.AsyncValueSerializer);
+
+            PropagateClusterId();
         }
 
         internal Producer(ProducerBuilder<TKey, TValue> builder)

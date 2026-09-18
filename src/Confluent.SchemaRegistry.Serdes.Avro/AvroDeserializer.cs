@@ -44,10 +44,9 @@ namespace Confluent.SchemaRegistry.Serdes
         private IAsyncDeserializer<T> deserializerImpl;
 
         // The underlying implementation is not constructed until the first
-        // deserialize call, which is after the cluster id is propagated, so the
-        // value is held here and applied when the implementation is created.
-        private string clusterId;
-        private bool clusterIdSet;
+        // deserialize call, which is after the cluster id resolver is propagated, so
+        // the resolver is held here and applied when the implementation is created.
+        private Func<string> clusterIdResolver;
         private bool ownsSchemaRegistryClient;
 
         public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient)
@@ -141,9 +140,9 @@ namespace Confluent.SchemaRegistry.Serdes
                         ? (IAsyncDeserializer<T>)new GenericDeserializerImpl(schemaRegistryClient, config, ruleRegistry)
                         : new SpecificDeserializerImpl<T>(schemaRegistryClient, config, ruleRegistry);
 
-                    if (clusterIdSet)
+                    if (clusterIdResolver != null)
                     {
-                        deserializerImpl.SetClusterId(clusterId);
+                        deserializerImpl.SetClusterIdResolver(clusterIdResolver);
                     }
                 }
 
@@ -158,29 +157,15 @@ namespace Confluent.SchemaRegistry.Serdes
 
 
         /// <inheritdoc />
-        public bool NeedsClusterId
-            => deserializerImpl != null
-                ? deserializerImpl.NeedsClusterId()
-                : !clusterIdSet && AssociatedNameStrategy.NeedsClusterIdFor(
-                    config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated, config);
-
-
-        /// <inheritdoc />
-        public void SetClusterId(string clusterId)
+        public void SetClusterIdResolver(Func<string> clusterIdResolver)
         {
-            if (!NeedsClusterId)
-            {
-                return;
-            }
-
             if (deserializerImpl != null)
             {
-                deserializerImpl.SetClusterId(clusterId);
+                deserializerImpl.SetClusterIdResolver(clusterIdResolver);
                 return;
             }
 
-            this.clusterId = clusterId;
-            this.clusterIdSet = true;
+            this.clusterIdResolver = clusterIdResolver;
         }
 
 

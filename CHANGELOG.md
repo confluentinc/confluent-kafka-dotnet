@@ -13,9 +13,9 @@
 * Producers, consumers and admin clients can now report the id of the Kafka
   cluster they're connected to.
 * The Kafka cluster id is now propagated to Schema Registry serializers and
-  deserializers automatically, so subject name strategies based on the
-  cluster no longer need it configured by hand. See the [AvroGenericAssociation](examples/AvroGenericAssociation)
-  example.
+  deserializers automatically, and resolved lazily on first use, so subject
+  name strategies based on the cluster no longer need it configured by hand.
+  See the [AvroGenericAssociation](examples/AvroGenericAssociation) example.
 
 
 ## Enhancements

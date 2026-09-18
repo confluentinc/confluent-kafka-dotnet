@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using Confluent.Kafka.SyncOverAsync;
 
 
@@ -37,60 +38,32 @@ namespace Confluent.Kafka
     public static class SerdeExtensions
     {
         /// <summary>
-        ///     Whether <paramref name="serializer" /> still requires the id of the
-        ///     Kafka cluster the client is connected to.
+        ///     Supply a resolver for the id of the Kafka cluster the client is
+        ///     connected to, if <paramref name="serializer" /> makes use of it.
         /// </summary>
-        public static bool NeedsClusterId<T>(this ISerializer<T> serializer)
-            => NeedsClusterId(Unwrap(serializer));
+        public static void SetClusterIdResolver<T>(this ISerializer<T> serializer, Func<string> clusterIdResolver)
+            => SetClusterIdResolver(Unwrap(serializer), clusterIdResolver);
 
         /// <summary>
-        ///     Whether <paramref name="serializer" /> still requires the id of the
-        ///     Kafka cluster the client is connected to.
+        ///     Supply a resolver for the id of the Kafka cluster the client is
+        ///     connected to, if <paramref name="serializer" /> makes use of it.
         /// </summary>
-        public static bool NeedsClusterId<T>(this IAsyncSerializer<T> serializer)
-            => NeedsClusterId((object)serializer);
+        public static void SetClusterIdResolver<T>(this IAsyncSerializer<T> serializer, Func<string> clusterIdResolver)
+            => SetClusterIdResolver((object)serializer, clusterIdResolver);
 
         /// <summary>
-        ///     Whether <paramref name="deserializer" /> still requires the id of the
-        ///     Kafka cluster the client is connected to.
+        ///     Supply a resolver for the id of the Kafka cluster the client is
+        ///     connected to, if <paramref name="deserializer" /> makes use of it.
         /// </summary>
-        public static bool NeedsClusterId<T>(this IDeserializer<T> deserializer)
-            => NeedsClusterId(Unwrap(deserializer));
+        public static void SetClusterIdResolver<T>(this IDeserializer<T> deserializer, Func<string> clusterIdResolver)
+            => SetClusterIdResolver(Unwrap(deserializer), clusterIdResolver);
 
         /// <summary>
-        ///     Whether <paramref name="deserializer" /> still requires the id of the
-        ///     Kafka cluster the client is connected to.
+        ///     Supply a resolver for the id of the Kafka cluster the client is
+        ///     connected to, if <paramref name="deserializer" /> makes use of it.
         /// </summary>
-        public static bool NeedsClusterId<T>(this IAsyncDeserializer<T> deserializer)
-            => NeedsClusterId((object)deserializer);
-
-        /// <summary>
-        ///     Supply the id of the Kafka cluster the client is connected to, if
-        ///     <paramref name="serializer" /> makes use of it.
-        /// </summary>
-        public static void SetClusterId<T>(this ISerializer<T> serializer, string clusterId)
-            => SetClusterId(Unwrap(serializer), clusterId);
-
-        /// <summary>
-        ///     Supply the id of the Kafka cluster the client is connected to, if
-        ///     <paramref name="serializer" /> makes use of it.
-        /// </summary>
-        public static void SetClusterId<T>(this IAsyncSerializer<T> serializer, string clusterId)
-            => SetClusterId((object)serializer, clusterId);
-
-        /// <summary>
-        ///     Supply the id of the Kafka cluster the client is connected to, if
-        ///     <paramref name="deserializer" /> makes use of it.
-        /// </summary>
-        public static void SetClusterId<T>(this IDeserializer<T> deserializer, string clusterId)
-            => SetClusterId(Unwrap(deserializer), clusterId);
-
-        /// <summary>
-        ///     Supply the id of the Kafka cluster the client is connected to, if
-        ///     <paramref name="deserializer" /> makes use of it.
-        /// </summary>
-        public static void SetClusterId<T>(this IAsyncDeserializer<T> deserializer, string clusterId)
-            => SetClusterId((object)deserializer, clusterId);
+        public static void SetClusterIdResolver<T>(this IAsyncDeserializer<T> deserializer, Func<string> clusterIdResolver)
+            => SetClusterIdResolver((object)deserializer, clusterIdResolver);
 
         /// <summary>
         ///     Release any resources <paramref name="serializer" /> created itself.
@@ -120,14 +93,11 @@ namespace Confluent.Kafka
         public static void Dispose<T>(this IAsyncDeserializer<T> deserializer)
             => DisposeOwnedResources((object)deserializer);
 
-        private static bool NeedsClusterId(object serde)
-            => serde is IClusterIdAware clusterIdAware && clusterIdAware.NeedsClusterId;
-
-        private static void SetClusterId(object serde, string clusterId)
+        private static void SetClusterIdResolver(object serde, Func<string> clusterIdResolver)
         {
             if (serde is IClusterIdAware clusterIdAware)
             {
-                clusterIdAware.SetClusterId(clusterId);
+                clusterIdAware.SetClusterIdResolver(clusterIdResolver);
             }
         }
 

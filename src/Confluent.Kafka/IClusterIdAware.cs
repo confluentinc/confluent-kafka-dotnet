@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 
 namespace Confluent.Kafka
 {
@@ -21,39 +23,38 @@ namespace Confluent.Kafka
     ///     Implemented by serializers and deserializers that can make use of the id
     ///     of the Kafka cluster the client is connected to.
     ///
-    ///     A producer or consumer resolves the cluster id once during construction,
-    ///     but only if at least one of its serializers or deserializers reports
-    ///     <see cref="NeedsClusterId" />, and then supplies it via
-    ///     <see cref="SetClusterId" />.
+    ///     A producer or consumer does not resolve the cluster id itself. During
+    ///     construction it hands each serializer or deserializer a resolver, via
+    ///     <see cref="SetClusterIdResolver" />, which the serde invokes the first
+    ///     time it actually needs the id. Resolving the id requires the client to
+    ///     have reached a broker, which is not always possible during construction -
+    ///     an OAUTHBEARER token refresh callback, for instance, is only served from
+    ///     the poll loop - so deferring it keeps construction from blocking.
     ///
     ///     This interface is deliberately separate from <see cref="ISerializer{T}" />
     ///     and friends: those are implemented by application code, so adding members
-    ///     to them would be a breaking change. Use the <c>NeedsClusterId</c> and
-    ///     <c>SetClusterId</c> extension methods to interrogate an arbitrary
-    ///     serializer or deserializer.
+    ///     to them would be a breaking change. Use the <c>SetClusterIdResolver</c>
+    ///     extension methods to hand a resolver to an arbitrary serializer or
+    ///     deserializer.
     /// </summary>
     public interface IClusterIdAware
     {
         /// <summary>
-        ///     Whether this instance still requires the Kafka cluster id.
+        ///     Supply a resolver for the id of the Kafka cluster the client is
+        ///     connected to.
         ///
-        ///     Returns false when the cluster id is not relevant to this instance's
-        ///     configuration, or when it has already been supplied - either
-        ///     explicitly via configuration, or by an earlier call to
-        ///     <see cref="SetClusterId" />.
-        /// </summary>
-        bool NeedsClusterId { get; }
-
-        /// <summary>
-        ///     Supply the id of the Kafka cluster the client is connected to.
+        ///     The resolver may block while the client reaches a broker, and returns
+        ///     null if it cannot do so within the client's timeout. Implementations
+        ///     are expected to invoke it lazily, only when the id is actually needed.
         ///
-        ///     Implementations must ignore the value when
-        ///     <see cref="NeedsClusterId" /> is false, so that a cluster id
-        ///     specified via configuration is never overwritten.
+        ///     Implementations must ignore the resolver when the cluster id is not
+        ///     relevant to their configuration, or when it was specified explicitly
+        ///     via configuration, so that a configured cluster id is never
+        ///     overwritten.
         /// </summary>
-        /// <param name="clusterId">
-        ///     The Kafka cluster id.
+        /// <param name="clusterIdResolver">
+        ///     Resolves the Kafka cluster id.
         /// </param>
-        void SetClusterId(string clusterId);
+        void SetClusterIdResolver(Func<string> clusterIdResolver);
     }
 }

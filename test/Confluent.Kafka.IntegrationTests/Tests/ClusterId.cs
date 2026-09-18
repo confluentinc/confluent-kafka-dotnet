@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Confluent.Kafka.TestsCommon;
 using Xunit;
@@ -78,9 +79,8 @@ namespace Confluent.Kafka.IntegrationTests
         }
 
         /// <summary>
-        ///     A producer resolves the cluster id and supplies it to a serializer
-        ///     that asks for one, and does not ask the cluster at all when no
-        ///     serializer needs it.
+        ///     A producer hands a cluster id aware serializer a resolver that yields
+        ///     the id of the cluster it is connected to.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void ClusterIdPropagation(string bootstrapServers)
@@ -89,47 +89,78 @@ namespace Confluent.Kafka.IntegrationTests
 
             var expectedClusterId = ExpectedClusterId(bootstrapServers);
 
-            // A serializer that needs the cluster id is given it.
-            var needy = new ClusterIdAwareSerializer(needsClusterId: true);
+            var aware = new ClusterIdAwareSerializer();
             using (new TestProducerBuilder<Null, string>(
                 new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetValueSerializer(needy)
+                    .SetValueSerializer(aware)
                     .Build())
             {
+                Assert.Equal(expectedClusterId, aware.ClusterIdResolver());
             }
-            Assert.Equal(expectedClusterId, needy.ClusterId);
 
-            // A serializer that does not need it is left alone.
-            var indifferent = new ClusterIdAwareSerializer(needsClusterId: false);
-            using (new TestProducerBuilder<Null, string>(
-                new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetValueSerializer(indifferent)
-                    .Build())
-            {
-            }
-            Assert.Null(indifferent.ClusterId);
-
-            // Both key and value serializers are served by a single resolution.
-            var key = new ClusterIdAwareSerializer(needsClusterId: true);
-            var value = new ClusterIdAwareSerializer(needsClusterId: true);
+            // Key and value serializers each receive the resolver exactly once.
+            var key = new ClusterIdAwareSerializer();
+            var value = new ClusterIdAwareSerializer();
             using (new TestProducerBuilder<string, string>(
                 new ProducerConfig { BootstrapServers = bootstrapServers })
                     .SetKeySerializer(key)
                     .SetValueSerializer(value)
                     .Build())
             {
+                Assert.Equal(expectedClusterId, key.ClusterIdResolver());
+                Assert.Equal(expectedClusterId, value.ClusterIdResolver());
             }
-            Assert.Equal(expectedClusterId, key.ClusterId);
-            Assert.Equal(expectedClusterId, value.ClusterId);
-            Assert.Equal(1, key.SetClusterIdCallCount);
-            Assert.Equal(1, value.SetClusterIdCallCount);
+            Assert.Equal(1, key.SetClusterIdResolverCallCount);
+            Assert.Equal(1, value.SetClusterIdResolverCallCount);
+
+            // A producer sharing another producer's handle serves its serializers
+            // too.
+            var dependent = new ClusterIdAwareSerializer();
+            using (var main = new TestProducerBuilder<Null, string>(
+                new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (new DependentProducerBuilder<Null, string>(main.Handle)
+                    .SetValueSerializer(dependent)
+                    .Build())
+            {
+                Assert.Equal(expectedClusterId, dependent.ClusterIdResolver());
+            }
 
             LogToFile("end   ClusterIdPropagation");
         }
 
         /// <summary>
-        ///     A consumer resolves the cluster id and supplies it to a deserializer
-        ///     that asks for one, including through a serializer builder.
+        ///     Constructing a producer does not wait on the cluster: the resolver
+        ///     is handed over, and it is the serializer that pays for resolving the
+        ///     id, when it first needs it.
+        /// </summary>
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public void ClusterIdResolutionIsDeferred(string bootstrapServers)
+        {
+            LogToFile("start ClusterIdResolutionIsDeferred");
+
+            var aware = new ClusterIdAwareSerializer();
+            var stopwatch = Stopwatch.StartNew();
+
+            // No broker listens here, so resolving the id during construction
+            // would block until its timeout.
+            using (new TestProducerBuilder<Null, string>(
+                new ProducerConfig { BootstrapServers = "localhost:1" })
+                    .SetValueSerializer(aware)
+                    .Build())
+            {
+            }
+
+            Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(10),
+                $"Producer construction took {stopwatch.Elapsed}");
+            Assert.NotNull(aware.ClusterIdResolver);
+
+            LogToFile("end   ClusterIdResolutionIsDeferred");
+        }
+
+        /// <summary>
+        ///     A consumer hands a cluster id aware deserializer a resolver that
+        ///     yields the id of the cluster it is connected to, including through a
+        ///     deserializer builder.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void ClusterIdPropagationConsumer(string bootstrapServers)
@@ -138,35 +169,22 @@ namespace Confluent.Kafka.IntegrationTests
 
             var expectedClusterId = ExpectedClusterId(bootstrapServers);
 
-            var needy = new ClusterIdAwareDeserializer(needsClusterId: true);
+            var aware = new ClusterIdAwareDeserializer();
             using (new TestConsumerBuilder<Null, string>(
                 new ConsumerConfig
                 {
                     BootstrapServers = bootstrapServers,
                     GroupId = Guid.NewGuid().ToString()
                 })
-                    .SetValueDeserializer(needy)
+                    .SetValueDeserializer(aware)
                     .Build())
             {
+                Assert.Equal(expectedClusterId, aware.ClusterIdResolver());
             }
-            Assert.Equal(expectedClusterId, needy.ClusterId);
-
-            var indifferent = new ClusterIdAwareDeserializer(needsClusterId: false);
-            using (new TestConsumerBuilder<Null, string>(
-                new ConsumerConfig
-                {
-                    BootstrapServers = bootstrapServers,
-                    GroupId = Guid.NewGuid().ToString()
-                })
-                    .SetValueDeserializer(indifferent)
-                    .Build())
-            {
-            }
-            Assert.Null(indifferent.ClusterId);
 
             // A deserializer reached through a builder is served too, and is
             // disposed along with the consumer that built it.
-            var built = new ClusterIdAwareDeserializer(needsClusterId: true);
+            var built = new ClusterIdAwareDeserializer();
             using (new TestConsumerBuilder<Null, string>(
                 new ConsumerConfig
                 {
@@ -176,8 +194,8 @@ namespace Confluent.Kafka.IntegrationTests
                     .SetValueDeserializerBuilder(new StubDeserializerBuilder(built))
                     .Build())
             {
+                Assert.Equal(expectedClusterId, built.ClusterIdResolver());
             }
-            Assert.Equal(expectedClusterId, built.ClusterId);
             Assert.True(built.Disposed);
 
             LogToFile("end   ClusterIdPropagationConsumer");
@@ -195,22 +213,14 @@ namespace Confluent.Kafka.IntegrationTests
         private class ClusterIdAwareSerializer
             : ISerializer<string>, IClusterIdAware, ISerdeOwnedResources
         {
-            private readonly bool needsClusterId;
-
-            public ClusterIdAwareSerializer(bool needsClusterId)
-                => this.needsClusterId = needsClusterId;
-
-            public string ClusterId { get; private set; }
-            public int SetClusterIdCallCount { get; private set; }
+            public Func<string> ClusterIdResolver { get; private set; }
+            public int SetClusterIdResolverCallCount { get; private set; }
             public bool Disposed { get; private set; }
 
-            public bool NeedsClusterId
-                => needsClusterId && ClusterId == null;
-
-            public void SetClusterId(string clusterId)
+            public void SetClusterIdResolver(Func<string> clusterIdResolver)
             {
-                ++SetClusterIdCallCount;
-                ClusterId = clusterId;
+                ++SetClusterIdResolverCallCount;
+                ClusterIdResolver = clusterIdResolver;
             }
 
             public void DisposeOwnedResources()
@@ -223,19 +233,11 @@ namespace Confluent.Kafka.IntegrationTests
         private class ClusterIdAwareDeserializer
             : IDeserializer<string>, IClusterIdAware, ISerdeOwnedResources
         {
-            private readonly bool needsClusterId;
-
-            public ClusterIdAwareDeserializer(bool needsClusterId)
-                => this.needsClusterId = needsClusterId;
-
-            public string ClusterId { get; private set; }
+            public Func<string> ClusterIdResolver { get; private set; }
             public bool Disposed { get; private set; }
 
-            public bool NeedsClusterId
-                => needsClusterId && ClusterId == null;
-
-            public void SetClusterId(string clusterId)
-                => ClusterId = clusterId;
+            public void SetClusterIdResolver(Func<string> clusterIdResolver)
+                => ClusterIdResolver = clusterIdResolver;
 
             public void DisposeOwnedResources()
                 => Disposed = true;
