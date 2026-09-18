@@ -494,11 +494,6 @@ namespace Confluent.Kafka
 
 
         /// <inheritdoc/>
-        public string ClusterId(TimeSpan timeout)
-            => KafkaHandle.ClusterId(timeout.TotalMillisecondsAsInt());
-
-
-        /// <inheritdoc/>
         public int AddBrokers(string brokers)
             => KafkaHandle.AddBrokers(brokers);
 
@@ -532,74 +527,81 @@ namespace Confluent.Kafka
             IAsyncSerializerBuilder<TValue> asyncValueSerializerBuilder = null,
             IEnumerable<KeyValuePair<string, string>> config = null)
         {
-            // A serializer constructed from a builder is owned by this producer,
-            // and is disposed along with it.
-            if (keySerializerBuilder != null)
+            try
             {
-                keySerializer = keySerializerBuilder.Build(config, true);
-                this.ownsKeySerializer = true;
-            }
-            else if (asyncKeySerializerBuilder != null)
-            {
-                asyncKeySerializer = asyncKeySerializerBuilder.Build(config, true);
-                this.ownsKeySerializer = true;
-            }
-
-            if (valueSerializerBuilder != null)
-            {
-                valueSerializer = valueSerializerBuilder.Build(config, false);
-                this.ownsValueSerializer = true;
-            }
-            else if (asyncValueSerializerBuilder != null)
-            {
-                asyncValueSerializer = asyncValueSerializerBuilder.Build(config, false);
-                this.ownsValueSerializer = true;
-            }
-
-            // setup key serializer.
-            if (keySerializer == null && asyncKeySerializer == null)
-            {
-                if (!defaultSerializers.TryGetValue(typeof(TKey), out object serializer))
+                // setup key serializer. A serializer constructed from a builder is
+                // owned by this producer, and is disposed along with it.
+                if (keySerializerBuilder != null)
                 {
-                    throw new ArgumentNullException(
-                        $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
+                    this.keySerializer = keySerializerBuilder.Build(config, true);
+                    this.ownsKeySerializer = true;
                 }
-                this.keySerializer = (ISerializer<TKey>)serializer;
-            }
-            else if (keySerializer == null && asyncKeySerializer != null)
-            {
-                this.asyncKeySerializer = asyncKeySerializer;
-            }
-            else if (keySerializer != null && asyncKeySerializer == null)
-            {
-                this.keySerializer = keySerializer;
-            }
-            else
-            {
-                throw new InvalidOperationException("FATAL: Both async and sync key serializers were set.");
-            }
-
-            // setup value serializer.
-            if (valueSerializer == null && asyncValueSerializer == null)
-            {
-                if (!defaultSerializers.TryGetValue(typeof(TValue), out object serializer))
+                else if (asyncKeySerializerBuilder != null)
                 {
-                    throw new ArgumentNullException(
-                        $"Value serializer not specified and there is no default serializer defined for type {typeof(TValue).Name}.");
+                    this.asyncKeySerializer = asyncKeySerializerBuilder.Build(config, true);
+                    this.ownsKeySerializer = true;
                 }
-                this.valueSerializer = (ISerializer<TValue>)serializer;
+                else if (keySerializer == null && asyncKeySerializer == null)
+                {
+                    if (!defaultSerializers.TryGetValue(typeof(TKey), out object serializer))
+                    {
+                        throw new ArgumentNullException(
+                            $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
+                    }
+                    this.keySerializer = (ISerializer<TKey>)serializer;
+                }
+                else if (keySerializer == null)
+                {
+                    this.asyncKeySerializer = asyncKeySerializer;
+                }
+                else if (asyncKeySerializer == null)
+                {
+                    this.keySerializer = keySerializer;
+                }
+                else
+                {
+                    throw new InvalidOperationException("FATAL: Both async and sync key serializers were set.");
+                }
+
+                // setup value serializer.
+                if (valueSerializerBuilder != null)
+                {
+                    this.valueSerializer = valueSerializerBuilder.Build(config, false);
+                    this.ownsValueSerializer = true;
+                }
+                else if (asyncValueSerializerBuilder != null)
+                {
+                    this.asyncValueSerializer = asyncValueSerializerBuilder.Build(config, false);
+                    this.ownsValueSerializer = true;
+                }
+                else if (valueSerializer == null && asyncValueSerializer == null)
+                {
+                    if (!defaultSerializers.TryGetValue(typeof(TValue), out object serializer))
+                    {
+                        throw new ArgumentNullException(
+                            $"Value serializer not specified and there is no default serializer defined for type {typeof(TValue).Name}.");
+                    }
+                    this.valueSerializer = (ISerializer<TValue>)serializer;
+                }
+                else if (valueSerializer == null)
+                {
+                    this.asyncValueSerializer = asyncValueSerializer;
+                }
+                else if (asyncValueSerializer == null)
+                {
+                    this.valueSerializer = valueSerializer;
+                }
+                else
+                {
+                    throw new InvalidOperationException("FATAL: Both async and sync value serializers were set.");
+                }
             }
-            else if (valueSerializer == null && asyncValueSerializer != null)
+            catch
             {
-                this.asyncValueSerializer = asyncValueSerializer;
-            }
-            else if (valueSerializer != null && asyncValueSerializer == null)
-            {
-                this.valueSerializer = valueSerializer;
-            }
-            else
-            {
-                throw new InvalidOperationException("FATAL: Both async and sync value serializers were set.");
+                // A constructor that throws never reaches Dispose, so release any
+                // serializer already built here before the failure.
+                DisposeOwnedSerializers();
+                throw;
             }
         }
 
@@ -632,15 +634,15 @@ namespace Confluent.Kafka
             if (ownsKeySerializer)
             {
                 ownsKeySerializer = false;
-                if (keySerializer != null) { keySerializer.Dispose(); }
-                else if (asyncKeySerializer != null) { asyncKeySerializer.Dispose(); }
+                if (keySerializer != null) { keySerializer.DisposeOwnedResources(); }
+                else if (asyncKeySerializer != null) { asyncKeySerializer.DisposeOwnedResources(); }
             }
 
             if (ownsValueSerializer)
             {
                 ownsValueSerializer = false;
-                if (valueSerializer != null) { valueSerializer.Dispose(); }
-                else if (asyncValueSerializer != null) { asyncValueSerializer.Dispose(); }
+                if (valueSerializer != null) { valueSerializer.DisposeOwnedResources(); }
+                else if (asyncValueSerializer != null) { asyncValueSerializer.DisposeOwnedResources(); }
             }
         }
 
@@ -817,23 +819,8 @@ namespace Confluent.Kafka
                 Librdkafka.conf_set_default_topic_conf(configPtr, topicConfigHandle.DangerousGetHandle());
             }
 
-            this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
-            configHandle.SetHandleAsInvalid();  // ownership was transferred.
-
-            // Per-topic partitioners.
-            foreach (var partitioner in partitioners)
-            {
-                var topicConfigHandle = this.ownedKafkaHandle.DuplicateDefaultTopicConfig();
-                addPartitionerToTopicConfig(topicConfigHandle, partitioner.Value);
-                this.ownedKafkaHandle.newTopic(partitioner.Key, topicConfigHandle.DangerousGetHandle());
-            }
-
-            if (!manualPoll)
-            {
-                callbackCts = new CancellationTokenSource();
-                callbackTask = StartPollTask(callbackCts.Token);
-            }
-
+            // Serializers are constructed before the native handle so that a
+            // throwing builder leaks nothing.
             InitializeSerializers(
                 builder.KeySerializer, builder.ValueSerializer,
                 builder.AsyncKeySerializer, builder.AsyncValueSerializer,
@@ -841,7 +828,34 @@ namespace Confluent.Kafka
                 builder.AsyncKeySerializerBuilder, builder.AsyncValueSerializerBuilder,
                 builder.Config);
 
-            PropagateClusterId();
+            try
+            {
+                this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
+                configHandle.SetHandleAsInvalid();  // ownership was transferred.
+
+                // Per-topic partitioners.
+                foreach (var partitioner in partitioners)
+                {
+                    var topicConfigHandle = this.ownedKafkaHandle.DuplicateDefaultTopicConfig();
+                    addPartitionerToTopicConfig(topicConfigHandle, partitioner.Value);
+                    this.ownedKafkaHandle.newTopic(partitioner.Key, topicConfigHandle.DangerousGetHandle());
+                }
+
+                if (!manualPoll)
+                {
+                    callbackCts = new CancellationTokenSource();
+                    callbackTask = StartPollTask(callbackCts.Token);
+                }
+
+                PropagateClusterId();
+            }
+            catch
+            {
+                // A constructor that throws never reaches Dispose, so release the
+                // serializers this producer owns.
+                DisposeOwnedSerializers();
+                throw;
+            }
         }
 
 

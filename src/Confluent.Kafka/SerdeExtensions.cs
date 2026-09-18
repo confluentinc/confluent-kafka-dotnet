@@ -69,28 +69,28 @@ namespace Confluent.Kafka
         ///     Release any resources <paramref name="serializer" /> created itself.
         ///     Resources supplied by the application are not released.
         /// </summary>
-        public static void Dispose<T>(this ISerializer<T> serializer)
+        public static void DisposeOwnedResources<T>(this ISerializer<T> serializer)
             => DisposeOwnedResources(Unwrap(serializer));
 
         /// <summary>
         ///     Release any resources <paramref name="serializer" /> created itself.
         ///     Resources supplied by the application are not released.
         /// </summary>
-        public static void Dispose<T>(this IAsyncSerializer<T> serializer)
+        public static void DisposeOwnedResources<T>(this IAsyncSerializer<T> serializer)
             => DisposeOwnedResources((object)serializer);
 
         /// <summary>
         ///     Release any resources <paramref name="deserializer" /> created itself.
         ///     Resources supplied by the application are not released.
         /// </summary>
-        public static void Dispose<T>(this IDeserializer<T> deserializer)
+        public static void DisposeOwnedResources<T>(this IDeserializer<T> deserializer)
             => DisposeOwnedResources(Unwrap(deserializer));
 
         /// <summary>
         ///     Release any resources <paramref name="deserializer" /> created itself.
         ///     Resources supplied by the application are not released.
         /// </summary>
-        public static void Dispose<T>(this IAsyncDeserializer<T> deserializer)
+        public static void DisposeOwnedResources<T>(this IAsyncDeserializer<T> deserializer)
             => DisposeOwnedResources((object)deserializer);
 
         private static void SetClusterIdResolver(object serde, Func<string> clusterIdResolver)

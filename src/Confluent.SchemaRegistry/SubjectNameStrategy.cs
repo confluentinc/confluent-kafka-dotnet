@@ -195,6 +195,10 @@ namespace Confluent.SchemaRegistry
         ///     resolver invocations - are rare. A cluster id specified via
         ///     <see cref="KafkaClusterIdConfig" /> always wins; otherwise the most
         ///     recently supplied resolver is used.
+        ///
+        ///     The resolver is bound to the client that supplied it and fails once
+        ///     that client is disposed, so a serde using this strategy must not
+        ///     outlive the producer or consumer it was handed to.
         /// </summary>
         /// <param name="clusterIdResolver">
         ///     Resolves the Kafka cluster id, returning null if it cannot be

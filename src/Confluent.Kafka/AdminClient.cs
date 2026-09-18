@@ -1645,13 +1645,6 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.ClusterId(TimeSpan)" />
-        /// </summary>
-        public string ClusterId(TimeSpan timeout)
-            => kafkaHandle.ClusterId(timeout.TotalMillisecondsAsInt());
-
-
-        /// <summary>
         ///     An opaque reference to the underlying librdkafka 
         ///     client instance.
         /// </summary>
