@@ -83,21 +83,12 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <inheritdoc />
         public IAsyncSerializer<T> Build(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
-        {
-            var client = ResolveSchemaRegistryClient(out bool owned);
-
-            var serializer = schema == null
-                ? new JsonSerializer<T>(
-                    client, serializerConfig, jsonSchemaGeneratorSettings, ruleRegistry)
-                : new JsonSerializer<T>(
-                    client, schema, serializerConfig, jsonSchemaGeneratorSettings, ruleRegistry);
-
-            if (owned)
-            {
-                serializer.OwnSchemaRegistryClient();
-            }
-
-            return serializer;
-        }
+            => ConstructSerde(
+                client => schema == null
+                    ? new JsonSerializer<T>(
+                        client, serializerConfig, jsonSchemaGeneratorSettings, ruleRegistry)
+                    : new JsonSerializer<T>(
+                        client, schema, serializerConfig, jsonSchemaGeneratorSettings, ruleRegistry),
+                serializer => serializer.OwnSchemaRegistryClient());
     }
 }

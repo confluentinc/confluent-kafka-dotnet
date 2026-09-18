@@ -191,9 +191,13 @@ namespace Confluent.Kafka.UnitTests
         {
             var key = new TrackingSerializer();
             var value = new ResolverRejectingSerializer();
+            PartitionerDelegate partitioner = (topic, count, keyData, keyIsNull) => 0;
 
+            // The partitioner exercises the release of its pinned delegate, which
+            // must happen only after the native handle has been destroyed.
             Assert.Throws<NotSupportedException>(() =>
                 new ProducerBuilder<string, string>(ProducerConfig())
+                    .SetDefaultPartitioner(partitioner)
                     .SetKeySerializerBuilder(new StubBuilder(key))
                     .SetValueSerializerBuilder(new StubBuilder(value))
                     .Build());

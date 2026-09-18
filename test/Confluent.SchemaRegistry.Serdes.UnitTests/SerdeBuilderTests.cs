@@ -178,6 +178,46 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
         }
 
+        // A serde constructor that throws must not leak a client the builder
+        // constructed for it; a client the application supplied is left alone.
+
+        private static AvroSerializerConfig UnknownParameter()
+        {
+            var config = new AvroSerializerConfig();
+            config.Set("avro.serializer.bogus", "true");
+            return config;
+        }
+
+        [Fact]
+        public void Build_DisposesAConstructedClient_WhenTheSerdeRejectsItsConfig()
+        {
+            var client = new Mock<ISchemaRegistryClient>();
+            var clientBuilder = new Mock<ISchemaRegistryClientBuilder>();
+            clientBuilder.Setup(b => b.Build()).Returns(client.Object);
+
+            var builder = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClientBuilder(clientBuilder.Object)
+                .SetSerializerConfig(UnknownParameter());
+
+            Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+
+            client.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public void Build_LeavesAnInjectedClientAlone_WhenTheSerdeRejectsItsConfig()
+        {
+            var client = new Mock<ISchemaRegistryClient>();
+
+            var builder = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClient(client.Object)
+                .SetSerializerConfig(UnknownParameter());
+
+            Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+
+            client.Verify(c => c.Dispose(), Times.Never);
+        }
+
         // Client construction from configuration.
 
         [Fact]

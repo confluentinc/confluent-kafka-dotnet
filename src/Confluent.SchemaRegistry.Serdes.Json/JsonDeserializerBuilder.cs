@@ -101,20 +101,13 @@ namespace Confluent.SchemaRegistry.Serdes
                     "JsonDeserializer does not support specifying both an explicit schema and a rule registry.");
             }
 
-            var client = ResolveSchemaRegistryClient(out bool owned);
-
-            var deserializer = schema == null
-                ? new JsonDeserializer<T>(
-                    client, deserializerConfig, jsonSchemaGeneratorSettings, ruleRegistry)
-                : new JsonDeserializer<T>(
-                    client, schema, deserializerConfig, jsonSchemaGeneratorSettings);
-
-            if (owned)
-            {
-                deserializer.OwnSchemaRegistryClient();
-            }
-
-            return deserializer;
+            return ConstructSerde(
+                client => schema == null
+                    ? new JsonDeserializer<T>(
+                        client, deserializerConfig, jsonSchemaGeneratorSettings, ruleRegistry)
+                    : new JsonDeserializer<T>(
+                        client, schema, deserializerConfig, jsonSchemaGeneratorSettings),
+                deserializer => deserializer.OwnSchemaRegistryClient());
         }
     }
 }
