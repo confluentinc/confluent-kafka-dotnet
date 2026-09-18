@@ -55,7 +55,8 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     The maximum period of time a deserializer's cluster id resolver waits
-        ///     for the Kafka cluster id, on the deserializer's first use.
+        ///     for the Kafka cluster id, each time the deserializer resolves it for
+        ///     an association lookup.
         /// </summary>
         private const int ClusterIdTimeoutMs = 60000;
 
@@ -785,8 +786,9 @@ namespace Confluent.Kafka
             catch
             {
                 // A constructor that throws never reaches Dispose, so release the
-                // deserializers this consumer owns.
+                // deserializers this consumer owns and the handle, if it was created.
                 DisposeOwnedDeserializers();
+                this.kafkaHandle?.Dispose();
                 throw;
             }
         }

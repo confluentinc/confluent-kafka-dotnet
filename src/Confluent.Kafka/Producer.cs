@@ -75,7 +75,8 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     The maximum period of time a serializer's cluster id resolver waits
-        ///     for the Kafka cluster id, on the serializer's first use.
+        ///     for the Kafka cluster id, each time the serializer resolves it for
+        ///     an association lookup.
         /// </summary>
         private const int ClusterIdTimeoutMs = 60000;
 
@@ -833,6 +834,11 @@ namespace Confluent.Kafka
                 this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
                 configHandle.SetHandleAsInvalid();  // ownership was transferred.
 
+                // Only the handle is needed for this, so it runs before the poll
+                // task starts: everything in this block that can throw does so
+                // while no background thread is using the handle yet.
+                PropagateClusterId();
+
                 // Per-topic partitioners.
                 foreach (var partitioner in partitioners)
                 {
@@ -846,14 +852,13 @@ namespace Confluent.Kafka
                     callbackCts = new CancellationTokenSource();
                     callbackTask = StartPollTask(callbackCts.Token);
                 }
-
-                PropagateClusterId();
             }
             catch
             {
                 // A constructor that throws never reaches Dispose, so release the
-                // serializers this producer owns.
+                // serializers this producer owns and the handle, if it was created.
                 DisposeOwnedSerializers();
+                this.ownedKafkaHandle?.Dispose();
                 throw;
             }
         }
