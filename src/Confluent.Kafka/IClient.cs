@@ -22,6 +22,12 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     Defines methods common to all client types.
+    ///
+    ///     Further operations common to all clients are
+    ///     provided as extension methods by
+    ///     <see cref="ClientExtensions" />, such as
+    ///     <see cref="ClientExtensions.ClusterId" /> and
+    ///     <see cref="ClientExtensions.OAuthBearerSetToken" />.
     /// </summary>
     public interface IClient : IDisposable
     {

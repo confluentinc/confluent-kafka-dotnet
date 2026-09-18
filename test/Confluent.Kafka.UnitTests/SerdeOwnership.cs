@@ -182,8 +182,56 @@ namespace Confluent.Kafka.UnitTests
             Assert.True(key.Disposed);
         }
 
+        // Failures after the native handle exists must release it too; a serde
+        // rejecting the cluster id resolver is the one such failure that
+        // application code can cause.
+
+        [Fact]
+        public void Producer_ReleasesEverything_WhenASerdeRejectsTheClusterIdResolver()
+        {
+            var key = new TrackingSerializer();
+            var value = new ResolverRejectingSerializer();
+
+            Assert.Throws<NotSupportedException>(() =>
+                new ProducerBuilder<string, string>(ProducerConfig())
+                    .SetKeySerializerBuilder(new StubBuilder(key))
+                    .SetValueSerializerBuilder(new StubBuilder(value))
+                    .Build());
+
+            Assert.True(key.Disposed);
+            Assert.True(value.Disposed);
+        }
+
+        [Fact]
+        public void Consumer_ReleasesEverything_WhenASerdeRejectsTheClusterIdResolver()
+        {
+            var key = new TrackingDeserializer();
+            var value = new ResolverRejectingDeserializer();
+
+            Assert.Throws<NotSupportedException>(() =>
+                new ConsumerBuilder<string, string>(ConsumerConfig())
+                    .SetKeyDeserializerBuilder(new StubBuilder(key))
+                    .SetValueDeserializerBuilder(new StubBuilder(value))
+                    .Build());
+
+            Assert.True(key.Disposed);
+            Assert.True(value.Disposed);
+        }
+
         private class NoDefaultSerde
         {
+        }
+
+        private class ResolverRejectingSerializer : TrackingSerializer, IClusterIdAware
+        {
+            public void SetClusterIdResolver(Func<string> clusterIdResolver)
+                => throw new NotSupportedException("no cluster id here");
+        }
+
+        private class ResolverRejectingDeserializer : TrackingDeserializer, IClusterIdAware
+        {
+            public void SetClusterIdResolver(Func<string> clusterIdResolver)
+                => throw new NotSupportedException("no cluster id here");
         }
 
         private class TrackingSerializer : ISerializer<string>, ISerdeOwnedResources
