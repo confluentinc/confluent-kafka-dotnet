@@ -859,6 +859,14 @@ namespace Confluent.Kafka
                 // serializers this producer owns and the handle, if it was created.
                 DisposeOwnedSerializers();
                 this.ownedKafkaHandle?.Dispose();
+
+                // Unpinned only once the handle is gone: librdkafka may invoke a
+                // partitioner until rd_kafka_destroy returns.
+                foreach (var ph in this.partitionerHandles)
+                {
+                    ph.Free();
+                }
+                this.partitionerHandles.Clear();
                 throw;
             }
         }

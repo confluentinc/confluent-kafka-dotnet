@@ -25,8 +25,8 @@ namespace Confluent.Kafka
     ///
     ///     A producer or consumer does not resolve the cluster id itself. During
     ///     construction it hands each serializer or deserializer a resolver, via
-    ///     <see cref="SetClusterIdResolver" />, which the serde invokes the first
-    ///     time it actually needs the id. Resolving the id requires the client to
+    ///     <see cref="SetClusterIdResolver" />, which the serde invokes whenever it
+    ///     actually needs the id. Resolving the id requires the client to
     ///     have reached a broker, which is not always possible during construction -
     ///     an OAUTHBEARER token refresh callback, for instance, is only served from
     ///     the poll loop - so deferring it keeps construction from blocking.

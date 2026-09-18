@@ -55,16 +55,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <inheritdoc />
         public IAsyncDeserializer<T> Build(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
-        {
-            var client = ResolveSchemaRegistryClient(out bool owned);
-            var deserializer = new AvroDeserializer<T>(client, deserializerConfig, ruleRegistry);
-
-            if (owned)
-            {
-                deserializer.OwnSchemaRegistryClient();
-            }
-
-            return deserializer;
-        }
+            => ConstructSerde(
+                client => new AvroDeserializer<T>(client, deserializerConfig, ruleRegistry),
+                deserializer => deserializer.OwnSchemaRegistryClient());
     }
 }

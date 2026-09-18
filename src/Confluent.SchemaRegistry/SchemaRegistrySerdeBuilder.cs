@@ -189,5 +189,50 @@ namespace Confluent.SchemaRegistry
             owned = true;
             return new CachedSchemaRegistryClient(schemaRegistryConfig);
         }
+
+        /// <summary>
+        ///     Construct the serde around the resolved Schema Registry client,
+        ///     handing the client's ownership to the serde when it was constructed
+        ///     here.
+        ///
+        ///     A serde constructor that throws - on an unknown configuration
+        ///     parameter, say - would otherwise leak the client just constructed,
+        ///     since nothing else holds a reference to it yet.
+        /// </summary>
+        /// <param name="construct">
+        ///     Constructs the serde from the client.
+        /// </param>
+        /// <param name="ownSchemaRegistryClient">
+        ///     Makes the serde take ownership of its client, so that the client is
+        ///     disposed along with it. Invoked only when the client was constructed
+        ///     here.
+        /// </param>
+        protected TSerde ConstructSerde<TSerde>(
+            Func<ISchemaRegistryClient, TSerde> construct,
+            Action<TSerde> ownSchemaRegistryClient)
+        {
+            var client = ResolveSchemaRegistryClient(out bool owned);
+
+            TSerde serde;
+            try
+            {
+                serde = construct(client);
+            }
+            catch
+            {
+                if (owned)
+                {
+                    client?.Dispose();
+                }
+                throw;
+            }
+
+            if (owned)
+            {
+                ownSchemaRegistryClient(serde);
+            }
+
+            return serde;
+        }
     }
 }

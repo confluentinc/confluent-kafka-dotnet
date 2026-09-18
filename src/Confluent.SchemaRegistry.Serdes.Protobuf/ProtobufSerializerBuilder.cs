@@ -56,16 +56,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <inheritdoc />
         public IAsyncSerializer<T> Build(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
-        {
-            var client = ResolveSchemaRegistryClient(out bool owned);
-            var serializer = new ProtobufSerializer<T>(client, serializerConfig, ruleRegistry);
-
-            if (owned)
-            {
-                serializer.OwnSchemaRegistryClient();
-            }
-
-            return serializer;
-        }
+            => ConstructSerde(
+                client => new ProtobufSerializer<T>(client, serializerConfig, ruleRegistry),
+                serializer => serializer.OwnSchemaRegistryClient());
     }
 }
