@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Moq;
 using Xunit;
@@ -82,10 +83,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
-        public void Build_AppliesTheSerializerConfig()
+        public async Task Build_AppliesTheSerializerConfig()
         {
-            // The Topic strategy does not use the cluster id, so a serializer built
-            // with it reports no need - which shows the config reached the serde.
+            // The Topic strategy registers under the topic name rather than an
+            // association - which shows the config reached the serde.
             var serializer = new AvroSerializerBuilder<int>()
                 .SetSchemaRegistryClient(schemaRegistryClient)
                 .SetSerializerConfig(new AvroSerializerConfig
@@ -94,17 +95,10 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 })
                 .Build(ClientConfig, false);
 
-            Assert.False(serializer.NeedsClusterId());
-        }
+            await serializer.SerializeAsync(1,
+                new SerializationContext(MessageComponentType.Value, testTopic));
 
-        [Fact]
-        public void Build_TheResultingSerdeNeedsTheClusterIdByDefault()
-        {
-            var serializer = new AvroSerializerBuilder<int>()
-                .SetSchemaRegistryClient(schemaRegistryClient)
-                .Build(ClientConfig, false);
-
-            Assert.True(serializer.NeedsClusterId());
+            Assert.True(subjectStore.ContainsKey($"{testTopic}-value"));
         }
 
         [Fact]

@@ -96,7 +96,10 @@ namespace Confluent.SchemaRegistry
     ///     This strategy queries schema registry for the associated subject name for the topic.
     ///     The topic is passed as the resource name to schema registry. If there is a configuration
     ///     property named "subject.name.strategy.kafka.cluster.id", then its value will be passed
-    ///     as the resource namespace; otherwise the value "-" will be passed as the resource namespace.
+    ///     as the resource namespace. Otherwise, if the producer or consumer supplied a cluster id
+    ///     resolver via <see cref="SetClusterIdResolver" />, the id it resolves to is used, resolved
+    ///     when the association is looked up. Failing both, the value "-" will be passed as the
+    ///     resource namespace.
     ///     
     ///     If more than one subject is returned from the query, an exception will be thrown.
     ///     If no subjects are returned from the query, then the behavior will fall back
@@ -123,8 +126,9 @@ namespace Confluent.SchemaRegistry
         private const int DefaultCacheCapacity = 1000;
 
         private readonly ISchemaRegistryClient schemaRegistryClient;
-        private string kafkaClusterId;
-        private bool kafkaClusterIdSet;
+        private readonly string kafkaClusterId;
+        private readonly bool kafkaClusterIdSet;
+        private Func<string> clusterIdResolver;
         private readonly SubjectNameStrategy fallbackSubjectNameStrategy;
         private readonly ConcurrentDictionary<CacheKey, string> subjectNameCache;
 
@@ -181,70 +185,51 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Whether a serde configured with the given subject name strategy and
-        ///     configuration would need the Kafka cluster id to be supplied.
+        ///     Supply a resolver for the id of the Kafka cluster the client is
+        ///     connected to, to be used as the resource namespace when looking up
+        ///     associations.
         ///
-        ///     Only the <see cref="SubjectNameStrategy.Associated" /> strategy uses
-        ///     the cluster id, and only when it was not configured explicitly via
-        ///     <see cref="KafkaClusterIdConfig" />.
-        ///
-        ///     This allows the answer to be determined from configuration alone,
-        ///     before a strategy instance has been constructed.
+        ///     The resolver is only invoked when an association is looked up, never
+        ///     during construction, so constructing the client never waits on a
+        ///     broker. Subject names are cached per topic, so lookups - and hence
+        ///     resolver invocations - are rare. A cluster id specified via
+        ///     <see cref="KafkaClusterIdConfig" /> always wins; otherwise the most
+        ///     recently supplied resolver is used.
         /// </summary>
-        /// <param name="strategy">The subject name strategy.</param>
-        /// <param name="config">The configuration, which may be null.</param>
-        public static bool NeedsClusterIdFor(
-            SubjectNameStrategy strategy,
-            IEnumerable<KeyValuePair<string, string>> config)
+        /// <param name="clusterIdResolver">
+        ///     Resolves the Kafka cluster id, returning null if it cannot be
+        ///     resolved.
+        /// </param>
+        public void SetClusterIdResolver(Func<string> clusterIdResolver)
         {
-            if (strategy != SubjectNameStrategy.Associated)
-            {
-                return false;
-            }
-
-            if (config == null)
-            {
-                return true;
-            }
-
-            foreach (var kvp in config)
-            {
-                if (kvp.Key == KafkaClusterIdConfig)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        ///     Whether the Kafka cluster id still needs to be supplied.
-        ///
-        ///     False once the cluster id has been configured via
-        ///     <see cref="KafkaClusterIdConfig" />, or supplied by an earlier call to
-        ///     <see cref="SetClusterId" />.
-        /// </summary>
-        public bool NeedsClusterId
-            => !kafkaClusterIdSet;
-
-        /// <summary>
-        ///     Supply the id of the Kafka cluster the client is connected to, to be
-        ///     used as the resource namespace when looking up associations.
-        ///
-        ///     A cluster id specified via <see cref="KafkaClusterIdConfig" /> always
-        ///     wins, and the value is only ever set once.
-        /// </summary>
-        /// <param name="clusterId">The Kafka cluster id.</param>
-        public void SetClusterId(string clusterId)
-        {
-            if (!NeedsClusterId)
+            if (kafkaClusterIdSet)
             {
                 return;
             }
 
-            this.kafkaClusterId = clusterId;
-            this.kafkaClusterIdSet = true;
+            this.clusterIdResolver = clusterIdResolver;
+        }
+
+        // Not cached here: the subject name cache already keeps association
+        // lookups rare, and the client caches the cluster id itself once known.
+        private string ResolveClusterId()
+        {
+            if (kafkaClusterIdSet)
+            {
+                return kafkaClusterId;
+            }
+
+            var resolver = clusterIdResolver;
+            if (resolver == null)
+            {
+                return NamespaceWildcard;
+            }
+
+            return resolver()
+                ?? throw new InvalidOperationException(
+                    "The Kafka cluster id could not be resolved, which typically means " +
+                    "the client has not reached a broker yet. Set " +
+                    $"{KafkaClusterIdConfig} to supply it explicitly.");
         }
 
         /// <summary>
@@ -308,7 +293,7 @@ namespace Confluent.SchemaRegistry
             {
                 associations = await schemaRegistryClient.GetAssociationsByResourceNameAsync(
                     context.Topic,
-                    kafkaClusterId ?? NamespaceWildcard,
+                    ResolveClusterId(),
                     "topic",
                     associationTypes,
                     null,
@@ -434,8 +419,8 @@ namespace Confluent.SchemaRegistry
         ///     additionally exposing the <see cref="AssociatedNameStrategy" /> instance
         ///     backing it, if any.
         ///
-        ///     The instance is needed to supply the Kafka cluster id after construction -
-        ///     refer to <see cref="AssociatedNameStrategy.SetClusterId" />.
+        ///     The instance is needed to supply the Kafka cluster id resolver after
+        ///     construction - refer to <see cref="AssociatedNameStrategy.SetClusterIdResolver" />.
         /// </summary>
         /// <param name="strategy">The subject name strategy.</param>
         /// <param name="schemaRegistryClient">

@@ -54,8 +54,8 @@ namespace Confluent.Kafka
         private IDeserializer<TValue> valueDeserializer;
 
         /// <summary>
-        ///     The maximum period of time to wait for the Kafka cluster id, when a
-        ///     deserializer requires it. Matches the default max.block.ms.
+        ///     The maximum period of time a deserializer's cluster id resolver waits
+        ///     for the Kafka cluster id, on the deserializer's first use.
         /// </summary>
         private const int ClusterIdTimeoutMs = 60000;
 
@@ -837,31 +837,21 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Supply the id of the Kafka cluster this consumer is connected to, to
-        ///     any deserializer that makes use of it.
+        ///     Hand any deserializer that makes use of the id of the Kafka cluster
+        ///     this consumer is connected to a resolver for it.
         ///
-        ///     The cluster id is resolved at most once, and only when a deserializer
-        ///     actually needs it, so that consumers whose deserializers do not use it
-        ///     incur no additional broker round trip.
+        ///     The id is resolved lazily, when the deserializer needs it. By then a
+        ///     message has been fetched, so the metadata is already cached and the
+        ///     resolver returns at once; resolving during construction instead
+        ///     would wait on a broker that an OAUTHBEARER consumer, whose token
+        ///     refresh callback is only served from Consume, cannot yet reach.
         /// </summary>
         private void PropagateClusterId()
         {
-            bool keyNeedsClusterId = keyDeserializer != null && keyDeserializer.NeedsClusterId();
-            bool valueNeedsClusterId = valueDeserializer != null && valueDeserializer.NeedsClusterId();
+            Func<string> clusterIdResolver = () => kafkaHandle.ClusterId(ClusterIdTimeoutMs);
 
-            if (!keyNeedsClusterId && !valueNeedsClusterId)
-            {
-                return;
-            }
-
-            string clusterId = kafkaHandle.ClusterId(ClusterIdTimeoutMs);
-            if (clusterId == null)
-            {
-                return;
-            }
-
-            if (keyNeedsClusterId) { keyDeserializer.SetClusterId(clusterId); }
-            if (valueNeedsClusterId) { valueDeserializer.SetClusterId(clusterId); }
+            keyDeserializer.SetClusterIdResolver(clusterIdResolver);
+            valueDeserializer.SetClusterIdResolver(clusterIdResolver);
         }
 
 

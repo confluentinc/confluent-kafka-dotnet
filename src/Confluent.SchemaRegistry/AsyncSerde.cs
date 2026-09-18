@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry
         ///     The associated subject name strategy backing
         ///     <see cref="subjectNameStrategy" />, when that strategy is
         ///     <see cref="SubjectNameStrategy.Associated" />. Retained so that the
-        ///     Kafka cluster id can be supplied after construction.
+        ///     Kafka cluster id resolver can be supplied after construction.
         /// </summary>
         protected AssociatedNameStrategy associatedNameStrategy = null;
 
@@ -86,12 +86,8 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <inheritdoc />
-        public bool NeedsClusterId
-            => associatedNameStrategy?.NeedsClusterId ?? false;
-
-        /// <inheritdoc />
-        public void SetClusterId(string clusterId)
-            => associatedNameStrategy?.SetClusterId(clusterId);
+        public void SetClusterIdResolver(Func<string> clusterIdResolver)
+            => associatedNameStrategy?.SetClusterIdResolver(clusterIdResolver);
 
         /// <inheritdoc />
         public virtual void DisposeOwnedResources()

@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -23,6 +24,9 @@ namespace Confluent.SchemaRegistry.UnitTests
     ///     Tests for the Kafka cluster id handling of
     ///     <see cref="AssociatedNameStrategy" />, which resolves subject names
     ///     against the cluster the client is connected to.
+    ///
+    ///     The resolver itself is exercised in the serdes unit tests, which have a
+    ///     schema registry mock to observe lookups against.
     /// </summary>
     public class AssociatedNameStrategyTests
     {
@@ -38,99 +42,73 @@ namespace Confluent.SchemaRegistry.UnitTests
             };
 
         [Fact]
-        public void NeedsClusterId_WhenNotConfigured()
+        public void SetClusterIdResolver_IsRetained()
         {
-            Assert.True(Strategy().NeedsClusterId);
+            Func<string> resolver = () => "lkc-resolved";
+            var strategy = Strategy();
+
+            strategy.SetClusterIdResolver(resolver);
+
+            Assert.Same(resolver, Resolver(strategy));
         }
 
         [Fact]
-        public void NeedsClusterId_WhenConfigIsEmpty()
+        public void SetClusterIdResolver_IsRetained_WhenConfigIsEmpty()
         {
-            Assert.True(Strategy(new List<KeyValuePair<string, string>>()).NeedsClusterId);
+            Func<string> resolver = () => "lkc-resolved";
+            var strategy = Strategy(new List<KeyValuePair<string, string>>());
+
+            strategy.SetClusterIdResolver(resolver);
+
+            Assert.Same(resolver, Resolver(strategy));
         }
 
         [Fact]
-        public void DoesNotNeedClusterId_WhenConfigured()
+        public void SetClusterIdResolver_DoesNotInvokeTheResolver()
         {
-            Assert.False(Strategy(ClusterIdConfig("lkc-configured")).NeedsClusterId);
+            int calls = 0;
+            var strategy = Strategy();
+
+            strategy.SetClusterIdResolver(() => { ++calls; return "lkc-resolved"; });
+
+            Assert.Equal(0, calls);
         }
 
         [Fact]
-        public void DoesNotNeedClusterId_WhenConfiguredAsEmptyString()
+        public void SetClusterIdResolver_TheLatestIsRetained()
+        {
+            Func<string> second = () => "lkc-second";
+            var strategy = Strategy();
+
+            strategy.SetClusterIdResolver(() => "lkc-first");
+            strategy.SetClusterIdResolver(second);
+
+            Assert.Same(second, Resolver(strategy));
+        }
+
+        [Fact]
+        public void SetClusterIdResolver_DoesNotOverrideAConfiguredValue()
+        {
+            var strategy = Strategy(ClusterIdConfig("lkc-configured"));
+
+            strategy.SetClusterIdResolver(() => "lkc-resolved");
+
+            Assert.Equal("lkc-configured", ConfiguredClusterId(strategy));
+            Assert.Null(Resolver(strategy));
+        }
+
+        [Fact]
+        public void SetClusterIdResolver_DoesNotOverrideAValueConfiguredAsEmptyString()
         {
             // An explicitly configured empty value is still an explicit choice, and
             // must not be overwritten. This is why the strategy tracks whether the
             // id was set rather than comparing against null or the wildcard.
-            Assert.False(Strategy(ClusterIdConfig("")).NeedsClusterId);
-        }
+            var strategy = Strategy(ClusterIdConfig(""));
 
-        [Fact]
-        public void SetClusterId_SatisfiesTheNeed()
-        {
-            var strategy = Strategy();
-            Assert.True(strategy.NeedsClusterId);
+            strategy.SetClusterIdResolver(() => "lkc-resolved");
 
-            strategy.SetClusterId("lkc-resolved");
-
-            Assert.False(strategy.NeedsClusterId);
-        }
-
-        [Fact]
-        public void SetClusterId_IsStickyAcrossRepeatedCalls()
-        {
-            var strategy = Strategy();
-
-            strategy.SetClusterId("lkc-first");
-            strategy.SetClusterId("lkc-second");
-
-            Assert.False(strategy.NeedsClusterId);
-            Assert.Equal("lkc-first", ConfiguredClusterId(strategy));
-        }
-
-        [Fact]
-        public void SetClusterId_DoesNotOverrideAConfiguredValue()
-        {
-            var strategy = Strategy(ClusterIdConfig("lkc-configured"));
-
-            strategy.SetClusterId("lkc-resolved");
-
-            Assert.Equal("lkc-configured", ConfiguredClusterId(strategy));
-        }
-
-        [Fact]
-        public void NeedsClusterIdFor_OnlyTheAssociatedStrategy()
-        {
-            Assert.True(AssociatedNameStrategy.NeedsClusterIdFor(
-                SubjectNameStrategy.Associated, null));
-
-            Assert.False(AssociatedNameStrategy.NeedsClusterIdFor(
-                SubjectNameStrategy.Topic, null));
-            Assert.False(AssociatedNameStrategy.NeedsClusterIdFor(
-                SubjectNameStrategy.Record, null));
-            Assert.False(AssociatedNameStrategy.NeedsClusterIdFor(
-                SubjectNameStrategy.TopicRecord, null));
-            Assert.False(AssociatedNameStrategy.NeedsClusterIdFor(
-                SubjectNameStrategy.None, null));
-        }
-
-        [Fact]
-        public void NeedsClusterIdFor_FalseWhenConfigured()
-        {
-            Assert.False(AssociatedNameStrategy.NeedsClusterIdFor(
-                SubjectNameStrategy.Associated, ClusterIdConfig("lkc-configured")));
-        }
-
-        [Fact]
-        public void NeedsClusterIdFor_TrueWhenSomeOtherPropertyIsConfigured()
-        {
-            var config = new List<KeyValuePair<string, string>>
-            {
-                new KeyValuePair<string, string>(
-                    AssociatedNameStrategy.FallbackTypeConfig, "RECORD")
-            };
-
-            Assert.True(AssociatedNameStrategy.NeedsClusterIdFor(
-                SubjectNameStrategy.Associated, config));
+            Assert.Equal("", ConfiguredClusterId(strategy));
+            Assert.Null(Resolver(strategy));
         }
 
         [Fact]
@@ -140,7 +118,6 @@ namespace Confluent.SchemaRegistry.UnitTests
                 null, null, out AssociatedNameStrategy strategy);
 
             Assert.NotNull(strategy);
-            Assert.True(strategy.NeedsClusterId);
         }
 
         [Theory]
@@ -155,13 +132,18 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.Null(associated);
         }
 
-        // The configured cluster id is private state; it is observable only through
-        // the resource namespace used for association lookups, so read it back
-        // reflectively rather than reaching for a schema registry.
+        // The configured cluster id and the resolver are private state; they are
+        // observable only through the resource namespace used for association
+        // lookups, so read them back reflectively rather than reaching for a
+        // schema registry.
         private static string ConfiguredClusterId(AssociatedNameStrategy strategy)
-            => (string)typeof(AssociatedNameStrategy)
-                .GetField("kafkaClusterId",
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-                .GetValue(strategy);
+            => (string)PrivateField("kafkaClusterId").GetValue(strategy);
+
+        private static Func<string> Resolver(AssociatedNameStrategy strategy)
+            => (Func<string>)PrivateField("clusterIdResolver").GetValue(strategy);
+
+        private static System.Reflection.FieldInfo PrivateField(string name)
+            => typeof(AssociatedNameStrategy).GetField(name,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
     }
 }
