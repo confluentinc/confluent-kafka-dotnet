@@ -62,6 +62,26 @@ namespace Confluent.Kafka
         internal protected IDeserializer<TValue> ValueDeserializer { get; set; }
 
         /// <summary>
+        ///     The configured key deserializer builder.
+        /// </summary>
+        internal protected IDeserializerBuilder<TKey> KeyDeserializerBuilder { get; set; }
+
+        /// <summary>
+        ///     The configured value deserializer builder.
+        /// </summary>
+        internal protected IDeserializerBuilder<TValue> ValueDeserializerBuilder { get; set; }
+
+        /// <summary>
+        ///     The configured async key deserializer builder.
+        /// </summary>
+        internal protected IAsyncDeserializerBuilder<TKey> AsyncKeyDeserializerBuilder { get; set; }
+
+        /// <summary>
+        ///     The configured async value deserializer builder.
+        /// </summary>
+        internal protected IAsyncDeserializerBuilder<TValue> AsyncValueDeserializerBuilder { get; set; }
+
+        /// <summary>
         ///     The configured partitions assigned handler.
         /// </summary>
         internal protected Func<IConsumer<TKey, TValue>, List<TopicPartition>, IEnumerable<TopicPartitionOffset>> PartitionsAssignedHandler { get; set; }
@@ -262,7 +282,8 @@ namespace Confluent.Kafka
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetKeyDeserializer(IDeserializer<TKey> deserializer)
         {
-            if (this.KeyDeserializer != null)
+            if (this.KeyDeserializer != null
+                || this.KeyDeserializerBuilder != null || this.AsyncKeyDeserializerBuilder != null)
             {
                 throw new InvalidOperationException("Key deserializer may not be specified more than once.");
             }
@@ -281,11 +302,116 @@ namespace Confluent.Kafka
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetValueDeserializer(IDeserializer<TValue> deserializer)
         {
-            if (this.ValueDeserializer != null)
+            if (this.ValueDeserializer != null
+                || this.ValueDeserializerBuilder != null || this.AsyncValueDeserializerBuilder != null)
             {
                 throw new InvalidOperationException("Value deserializer may not be specified more than once.");
             }
             this.ValueDeserializer = deserializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     Set the builder of the deserializer to use to deserialize keys.
+        ///
+        ///     In contrast to <see cref="SetKeyDeserializer(IDeserializer{TKey})" />, the
+        ///     deserializer is constructed by the consumer, which supplies its own
+        ///     configuration to the builder. A deserializer constructed this way is
+        ///     owned by the consumer and is disposed along with it.
+        /// </summary>
+        /// <remarks>
+        ///     If your key deserializer throws an exception, this will be
+        ///     wrapped in a ConsumeException with ErrorCode
+        ///     Local_KeyDeserialization and thrown by the initiating call to
+        ///     Consume.
+        /// </remarks>
+        public ConsumerBuilder<TKey, TValue> SetKeyDeserializerBuilder(IDeserializerBuilder<TKey> deserializerBuilder)
+        {
+            if (this.KeyDeserializer != null
+                || this.KeyDeserializerBuilder != null || this.AsyncKeyDeserializerBuilder != null)
+            {
+                throw new InvalidOperationException("Key deserializer may not be specified more than once.");
+            }
+            this.KeyDeserializerBuilder = deserializerBuilder;
+            return this;
+        }
+
+        /// <summary>
+        ///     Set the builder of the deserializer to use to deserialize values.
+        ///
+        ///     In contrast to <see cref="SetValueDeserializer(IDeserializer{TValue})" />, the
+        ///     deserializer is constructed by the consumer, which supplies its own
+        ///     configuration to the builder. A deserializer constructed this way is
+        ///     owned by the consumer and is disposed along with it.
+        /// </summary>
+        /// <remarks>
+        ///     If your value deserializer throws an exception, this will be
+        ///     wrapped in a ConsumeException with ErrorCode
+        ///     Local_ValueDeserialization and thrown by the initiating call to
+        ///     Consume.
+        /// </remarks>
+        public ConsumerBuilder<TKey, TValue> SetValueDeserializerBuilder(IDeserializerBuilder<TValue> deserializerBuilder)
+        {
+            if (this.ValueDeserializer != null
+                || this.ValueDeserializerBuilder != null || this.AsyncValueDeserializerBuilder != null)
+            {
+                throw new InvalidOperationException("Value deserializer may not be specified more than once.");
+            }
+            this.ValueDeserializerBuilder = deserializerBuilder;
+            return this;
+        }
+
+        /// <summary>
+        ///     Set the builder of the deserializer to use to deserialize keys.
+        ///
+        ///     The deserializer is constructed by the consumer, which supplies its own
+        ///     configuration to the builder, and wrapped for use where a sync
+        ///     deserializer is required - refer to
+        ///     <see cref="Confluent.Kafka.SyncOverAsync.SyncOverAsyncDeserializer{T}" />
+        ///     for the implications of this. A deserializer constructed this way is
+        ///     owned by the consumer and is disposed along with it.
+        /// </summary>
+        /// <remarks>
+        ///     If your key deserializer throws an exception, this will be
+        ///     wrapped in a ConsumeException with ErrorCode
+        ///     Local_KeyDeserialization and thrown by the initiating call to
+        ///     Consume.
+        /// </remarks>
+        public ConsumerBuilder<TKey, TValue> SetKeyDeserializerBuilder(IAsyncDeserializerBuilder<TKey> deserializerBuilder)
+        {
+            if (this.KeyDeserializer != null
+                || this.KeyDeserializerBuilder != null || this.AsyncKeyDeserializerBuilder != null)
+            {
+                throw new InvalidOperationException("Key deserializer may not be specified more than once.");
+            }
+            this.AsyncKeyDeserializerBuilder = deserializerBuilder;
+            return this;
+        }
+
+        /// <summary>
+        ///     Set the builder of the deserializer to use to deserialize values.
+        ///
+        ///     The deserializer is constructed by the consumer, which supplies its own
+        ///     configuration to the builder, and wrapped for use where a sync
+        ///     deserializer is required - refer to
+        ///     <see cref="Confluent.Kafka.SyncOverAsync.SyncOverAsyncDeserializer{T}" />
+        ///     for the implications of this. A deserializer constructed this way is
+        ///     owned by the consumer and is disposed along with it.
+        /// </summary>
+        /// <remarks>
+        ///     If your value deserializer throws an exception, this will be
+        ///     wrapped in a ConsumeException with ErrorCode
+        ///     Local_ValueDeserialization and thrown by the initiating call to
+        ///     Consume.
+        /// </remarks>
+        public ConsumerBuilder<TKey, TValue> SetValueDeserializerBuilder(IAsyncDeserializerBuilder<TValue> deserializerBuilder)
+        {
+            if (this.ValueDeserializer != null
+                || this.ValueDeserializerBuilder != null || this.AsyncValueDeserializerBuilder != null)
+            {
+                throw new InvalidOperationException("Value deserializer may not be specified more than once.");
+            }
+            this.AsyncValueDeserializerBuilder = deserializerBuilder;
             return this;
         }
 

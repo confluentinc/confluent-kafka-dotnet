@@ -114,6 +114,26 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
+        /// <summary>
+        ///     The configured key serializer builder.
+        /// </summary>
+        internal protected ISerializerBuilder<TKey> KeySerializerBuilder { get; set; }
+
+        /// <summary>
+        ///     The configured value serializer builder.
+        /// </summary>
+        internal protected ISerializerBuilder<TValue> ValueSerializerBuilder { get; set; }
+
+        /// <summary>
+        ///     The configured async key serializer builder.
+        /// </summary>
+        internal protected IAsyncSerializerBuilder<TKey> AsyncKeySerializerBuilder { get; set; }
+
+        /// <summary>
+        ///     The configured async value serializer builder.
+        /// </summary>
+        internal protected IAsyncSerializerBuilder<TValue> AsyncValueSerializerBuilder { get; set; }
+
         internal Producer<TKey,TValue>.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
         {
             return new Producer<TKey, TValue>.Config
@@ -302,7 +322,8 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetKeySerializer(ISerializer<TKey> serializer)
         {
-            if (this.KeySerializer != null || this.AsyncKeySerializer != null)
+            if (this.KeySerializer != null || this.AsyncKeySerializer != null
+                || this.KeySerializerBuilder != null || this.AsyncKeySerializerBuilder != null)
             {
                 throw new InvalidOperationException("Key serializer may not be specified more than once.");
             }
@@ -321,7 +342,8 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(ISerializer<TValue> serializer)
         {
-            if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null
+                || this.ValueSerializerBuilder != null || this.AsyncValueSerializerBuilder != null)
             {
                 throw new InvalidOperationException("Value serializer may not be specified more than once.");
             }
@@ -340,7 +362,8 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetKeySerializer(IAsyncSerializer<TKey> serializer)
         {
-            if (this.KeySerializer != null || this.AsyncKeySerializer != null)
+            if (this.KeySerializer != null || this.AsyncKeySerializer != null
+                || this.KeySerializerBuilder != null || this.AsyncKeySerializerBuilder != null)
             {
                 throw new InvalidOperationException("Key serializer may not be specified more than once.");
             }
@@ -359,11 +382,112 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
-            if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null
+                || this.ValueSerializerBuilder != null || this.AsyncValueSerializerBuilder != null)
             {
                 throw new InvalidOperationException("Value serializer may not be specified more than once.");
             }
             this.AsyncValueSerializer = serializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     The builder of the serializer to use to serialize keys.
+        ///
+        ///     In contrast to <see cref="SetKeySerializer(ISerializer{TKey})" />, the
+        ///     serializer is constructed by the producer, which supplies its own
+        ///     configuration to the builder. A serializer constructed this way is
+        ///     owned by the producer and is disposed along with it.
+        /// </summary>
+        /// <remarks>
+        ///     If your key serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_KeySerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetKeySerializerBuilder(ISerializerBuilder<TKey> serializerBuilder)
+        {
+            if (this.KeySerializer != null || this.AsyncKeySerializer != null
+                || this.KeySerializerBuilder != null || this.AsyncKeySerializerBuilder != null)
+            {
+                throw new InvalidOperationException("Key serializer may not be specified more than once.");
+            }
+            this.KeySerializerBuilder = serializerBuilder;
+            return this;
+        }
+
+        /// <summary>
+        ///     The builder of the serializer to use to serialize values.
+        ///
+        ///     In contrast to <see cref="SetValueSerializer(ISerializer{TValue})" />, the
+        ///     serializer is constructed by the producer, which supplies its own
+        ///     configuration to the builder. A serializer constructed this way is
+        ///     owned by the producer and is disposed along with it.
+        /// </summary>
+        /// <remarks>
+        ///     If your value serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_ValueSerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetValueSerializerBuilder(ISerializerBuilder<TValue> serializerBuilder)
+        {
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null
+                || this.ValueSerializerBuilder != null || this.AsyncValueSerializerBuilder != null)
+            {
+                throw new InvalidOperationException("Value serializer may not be specified more than once.");
+            }
+            this.ValueSerializerBuilder = serializerBuilder;
+            return this;
+        }
+
+        /// <summary>
+        ///     The builder of the serializer to use to serialize keys.
+        ///
+        ///     In contrast to <see cref="SetKeySerializer(IAsyncSerializer{TKey})" />, the
+        ///     serializer is constructed by the producer, which supplies its own
+        ///     configuration to the builder. A serializer constructed this way is
+        ///     owned by the producer and is disposed along with it.
+        /// </summary>
+        /// <remarks>
+        ///     If your key serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_KeySerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetKeySerializerBuilder(IAsyncSerializerBuilder<TKey> serializerBuilder)
+        {
+            if (this.KeySerializer != null || this.AsyncKeySerializer != null
+                || this.KeySerializerBuilder != null || this.AsyncKeySerializerBuilder != null)
+            {
+                throw new InvalidOperationException("Key serializer may not be specified more than once.");
+            }
+            this.AsyncKeySerializerBuilder = serializerBuilder;
+            return this;
+        }
+
+        /// <summary>
+        ///     The builder of the serializer to use to serialize values.
+        ///
+        ///     In contrast to <see cref="SetValueSerializer(IAsyncSerializer{TValue})" />, the
+        ///     serializer is constructed by the producer, which supplies its own
+        ///     configuration to the builder. A serializer constructed this way is
+        ///     owned by the producer and is disposed along with it.
+        /// </summary>
+        /// <remarks>
+        ///     If your value serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_ValueSerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetValueSerializerBuilder(IAsyncSerializerBuilder<TValue> serializerBuilder)
+        {
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null
+                || this.ValueSerializerBuilder != null || this.AsyncValueSerializerBuilder != null)
+            {
+                throw new InvalidOperationException("Value serializer may not be specified more than once.");
+            }
+            this.AsyncValueSerializerBuilder = serializerBuilder;
             return this;
         }
 
