@@ -16,7 +16,6 @@
 
 using Avro;
 using Avro.Generic;
-using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using System;
@@ -57,10 +56,12 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
             {
-                using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
+                // The consumer builds the deserializer from the schema registry
+                // configuration, and owns the resulting schema registry client.
                 using (var consumer =
                     new ConsumerBuilder<string, GenericRecord>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName })
-                        .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializerBuilder(new AvroDeserializerBuilder<GenericRecord>()
+                            .SetSchemaRegistryConfig(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -90,10 +91,10 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                 }
             });
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var producer =
                 new ProducerBuilder<string, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
+                    .SetValueSerializerBuilder(new AvroSerializerBuilder<GenericRecord>()
+                        .SetSchemaRegistryConfig(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
                     .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
