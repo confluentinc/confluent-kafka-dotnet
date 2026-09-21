@@ -2,10 +2,10 @@
 
 ## New features
 
-* Serializers and deserializers can now be supplied to a producer or consumer
-  as a *builder*, which the client invokes during its own construction and
-  then owns, disposing it (and any Schema Registry client it created) when
-  the client itself is disposed. See the [AvroGeneric](examples/AvroGeneric) example.
+* Serializers and deserializers can now be supplied to a producer, dependent
+  producer or consumer as a *builder*, which the client invokes during its own
+  construction and then owns, disposing it (and any Schema Registry client it
+  created) when the client itself is disposed. See the [AvroGeneric](examples/AvroGeneric) example.
 * Schema Registry serde builders are now available for each supported format,
   each configurable with a Schema Registry client you own or the
   configuration to build one from. See the [AvroGeneric](examples/AvroGeneric),

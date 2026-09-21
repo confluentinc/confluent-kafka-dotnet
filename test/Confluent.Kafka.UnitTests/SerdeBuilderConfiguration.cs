@@ -159,6 +159,70 @@ namespace Confluent.Kafka.UnitTests
                 () => builder.SetValueDeserializerBuilder(new StubAsyncDeserializerBuilder<string>()));
         }
 
+        // Dependent producer: the same exclusion, and the builder receives the
+        // configuration of the producer owning the handle.
+
+        [Fact]
+        public void DependentProducer_RejectsSerializerThenBuilder()
+        {
+            using (var parent = new ProducerBuilder<Null, Null>(ProducerConfig()).Build())
+            {
+                var builder = new DependentProducerBuilder<string, string>(parent.Handle)
+                    .SetValueSerializer(Serializers.Utf8);
+
+                Assert.Throws<InvalidOperationException>(
+                    () => builder.SetValueSerializerBuilder(new StubSerializerBuilder<string>()));
+            }
+        }
+
+        [Fact]
+        public void DependentProducer_RejectsBuilderThenSerializer()
+        {
+            using (var parent = new ProducerBuilder<Null, Null>(ProducerConfig()).Build())
+            {
+                var builder = new DependentProducerBuilder<string, string>(parent.Handle)
+                    .SetKeySerializerBuilder(new StubAsyncSerializerBuilder<string>());
+
+                Assert.Throws<InvalidOperationException>(
+                    () => builder.SetKeySerializer(Serializers.Utf8));
+            }
+        }
+
+        [Fact]
+        public void DependentProducer_RejectsSyncAndAsyncBuildersTogether()
+        {
+            using (var parent = new ProducerBuilder<Null, Null>(ProducerConfig()).Build())
+            {
+                var builder = new DependentProducerBuilder<string, string>(parent.Handle)
+                    .SetValueSerializerBuilder(new StubSerializerBuilder<string>());
+
+                Assert.Throws<InvalidOperationException>(
+                    () => builder.SetValueSerializerBuilder(new StubAsyncSerializerBuilder<string>()));
+            }
+        }
+
+        [Fact]
+        public void DependentProducer_BuilderReceivesTheParentConfigAndIsKeyFlag()
+        {
+            var keyBuilder = new RecordingSerializerBuilder();
+            var valueBuilder = new RecordingSerializerBuilder();
+
+            using (var parent = new ProducerBuilder<Null, Null>(ProducerConfig()).Build())
+            using (new DependentProducerBuilder<string, string>(parent.Handle)
+                .SetKeySerializerBuilder(keyBuilder)
+                .SetValueSerializerBuilder(valueBuilder)
+                .Build())
+            {
+            }
+
+            Assert.True(keyBuilder.IsKey);
+            Assert.False(valueBuilder.IsKey);
+            Assert.Contains(keyBuilder.Config,
+                kvp => kvp.Key == "bootstrap.servers" && kvp.Value == "localhost:9092");
+            Assert.Contains(valueBuilder.Config,
+                kvp => kvp.Key == "bootstrap.servers" && kvp.Value == "localhost:9092");
+        }
+
         // Setting only a builder is accepted.
 
         [Fact]

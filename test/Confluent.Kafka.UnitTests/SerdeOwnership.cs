@@ -124,6 +124,83 @@ namespace Confluent.Kafka.UnitTests
             Assert.False(key.Disposed);
         }
 
+        // A dependent producer owns the serializers it built, independently of the
+        // producer whose handle it borrows.
+
+        [Fact]
+        public void DependentProducer_DisposesBuilderBuiltSerializers()
+        {
+            var key = new TrackingSerializer();
+            var value = new TrackingAsyncSerializer();
+
+            using (var parent = new ProducerBuilder<Null, Null>(ProducerConfig()).Build())
+            {
+                using (new DependentProducerBuilder<string, string>(parent.Handle)
+                    .SetKeySerializerBuilder(new StubBuilder(key))
+                    .SetValueSerializerBuilder(new StubAsyncBuilder(value))
+                    .Build())
+                {
+                    Assert.False(key.Disposed);
+                    Assert.False(value.Disposed);
+                }
+
+                Assert.True(key.Disposed);
+                Assert.True(value.Disposed);
+            }
+        }
+
+        [Fact]
+        public void DependentProducer_LeavesApplicationSuppliedSerializersAlone()
+        {
+            var key = new TrackingSerializer();
+
+            using (var parent = new ProducerBuilder<Null, Null>(ProducerConfig()).Build())
+            using (new DependentProducerBuilder<string, string>(parent.Handle)
+                .SetKeySerializer(key)
+                .SetValueSerializer(Serializers.Utf8)
+                .Build())
+            {
+            }
+
+            Assert.False(key.Disposed);
+        }
+
+        [Fact]
+        public void DependentProducer_ReleasesABuiltSerializer_WhenTheOtherBuilderThrows()
+        {
+            var key = new TrackingSerializer();
+
+            using (var parent = new ProducerBuilder<Null, Null>(ProducerConfig()).Build())
+            {
+                Assert.Throws<InvalidOperationException>(() =>
+                    new DependentProducerBuilder<string, string>(parent.Handle)
+                        .SetKeySerializerBuilder(new StubBuilder(key))
+                        .SetValueSerializerBuilder(new ThrowingBuilder())
+                        .Build());
+            }
+
+            Assert.True(key.Disposed);
+        }
+
+        [Fact]
+        public void DependentProducer_ReleasesEverything_WhenASerdeRejectsTheClusterIdResolver()
+        {
+            var key = new TrackingSerializer();
+            var value = new ResolverRejectingSerializer();
+
+            using (var parent = new ProducerBuilder<Null, Null>(ProducerConfig()).Build())
+            {
+                Assert.Throws<NotSupportedException>(() =>
+                    new DependentProducerBuilder<string, string>(parent.Handle)
+                        .SetKeySerializerBuilder(new StubBuilder(key))
+                        .SetValueSerializerBuilder(new StubBuilder(value))
+                        .Build());
+            }
+
+            Assert.True(key.Disposed);
+            Assert.True(value.Disposed);
+        }
+
         // Disposal when construction fails: a constructor that throws never
         // reaches Dispose, so whatever was already built must be released on the
         // way out.
