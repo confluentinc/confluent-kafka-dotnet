@@ -86,6 +86,10 @@ namespace Confluent.Kafka
         private bool ownsValueSerializer;
         private Handle borrowedHandle;
 
+        // The configuration this producer was constructed with, carried on its
+        // Handle so that a dependent producer can hand it to serializer builders.
+        private IEnumerable<KeyValuePair<string, string>> clientConfig;
+
         private SafeKafkaHandle KafkaHandle
             => ownedKafkaHandle != null 
                 ? ownedKafkaHandle
@@ -441,16 +445,20 @@ namespace Confluent.Kafka
                 disposeHasBeenCalled = true;
             }
 
-            // do nothing if we borrowed a handle.
+            if (disposing)
+            {
+                // Serializers this producer constructed from a builder are owned by
+                // it, so they are released here - whether or not the handle is its
+                // own. Serializers supplied by the application remain the
+                // application's responsibility.
+                DisposeOwnedSerializers();
+            }
+
+            // do nothing else if we borrowed a handle.
             if (ownedKafkaHandle == null) { return; }
 
             if (disposing)
             {
-                // Serializers this producer constructed from a builder are owned by
-                // it, so they are released here. Serializers supplied by the
-                // application remain the application's responsibility.
-                DisposeOwnedSerializers();
-
                 // Unpin partitioner functions
                 foreach (var ph in this.partitionerHandles)
                 {
@@ -510,7 +518,7 @@ namespace Confluent.Kafka
             {
                 if (this.ownedKafkaHandle != null)
                 {
-                    return new Handle { Owner = this, LibrdkafkaHandle = ownedKafkaHandle };
+                    return new Handle { Owner = this, LibrdkafkaHandle = ownedKafkaHandle, Config = clientConfig };
                 }
 
                 return borrowedHandle;
@@ -656,16 +664,32 @@ namespace Confluent.Kafka
                 throw new Exception("A Producer instance may only be constructed using the handle of another Producer instance.");
             }
 
+            // A dependent producer has no configuration of its own; its serializer
+            // builders receive the configuration of the producer owning the handle.
             InitializeSerializers(
                 builder.KeySerializer, builder.ValueSerializer,
-                builder.AsyncKeySerializer, builder.AsyncValueSerializer);
+                builder.AsyncKeySerializer, builder.AsyncValueSerializer,
+                builder.KeySerializerBuilder, builder.ValueSerializerBuilder,
+                builder.AsyncKeySerializerBuilder, builder.AsyncValueSerializerBuilder,
+                borrowedHandle.Config);
 
-            PropagateClusterId();
+            try
+            {
+                PropagateClusterId();
+            }
+            catch
+            {
+                // A constructor that throws never reaches Dispose, so release the
+                // serializers this producer owns.
+                DisposeOwnedSerializers();
+                throw;
+            }
         }
 
         internal Producer(ProducerBuilder<TKey, TValue> builder)
         {
             var baseConfig = builder.ConstructBaseConfig(this);
+            this.clientConfig = builder.Config;
             var partitioners = baseConfig.partitioners;
             var defaultPartitioner = baseConfig.defaultPartitioner;
 
