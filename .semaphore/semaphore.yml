@@ -56,24 +56,13 @@ blocks:
     run:
       when: "branch = 'master' OR pull_request =~ '.*' OR tag =~ '^v[0-9]\\.'"
     task:
-      # Semaphore has no native s390x agent yet, so this runs on an amd64 agent
-      # that offloads the work over SSH to a dedicated IBM Z host, the same way
-      # librdkafka's s390x block does.
+      # Runs natively on the s390x (IBM Z) Semaphore agent.
       agent:
         machine:
-          type: s1-prod-ubuntu24-04-amd64-1
-      env_vars:
-        - name: S390X_USER
-          value: "ubuntu"
-        - name: LOCAL_KEY
-          value: "./s390x.prv"
-      epilogue:
-        commands:
-          - if [[ "$LOCAL_KEY" =~ ^\./.*$ ]]; then rm -f $LOCAL_KEY; fi
+          type: s1-ubuntu-24-s390x-4
       jobs:
         - name: 'Build and test'
           commands:
-            - . vault-setup
             - scripts/run-tests-s390x.sh
   - name: 'Windows x64'
     dependencies: [ ]
