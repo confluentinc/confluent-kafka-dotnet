@@ -246,7 +246,7 @@ namespace Confluent.Kafka
                     }
                 }
 
-                IntPtr timestampType = (IntPtr)TimestampType.NotAvailable;
+                int timestampType = (int)TimestampType.NotAvailable;
                 long timestamp = 0;
                 if (enableDeliveryReportTimestamp)
                 {

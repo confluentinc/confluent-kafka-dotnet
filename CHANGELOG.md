@@ -11,6 +11,10 @@
 
 * Fix the CSFLE ciphertext version field being written little-endian on big-endian
   platforms, which made encrypted fields unreadable across architectures
+* Fix message `Timestamp.Type` being read as `NotAvailable` on big-endian platforms
+  (e.g. s390x): librdkafka's `rd_kafka_timestamp_type_t` out-parameter (a 32-bit enum)
+  was marshalled as a pointer-sized `IntPtr`, so the value landed in the high word and
+  was truncated to `0` on big-endian
 
 
 # 2.15.1
