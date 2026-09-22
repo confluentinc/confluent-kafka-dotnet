@@ -5,6 +5,16 @@
 * Add support for saving Azure key version with DEK (#2641)
 * Pass context when clients make KEK calls to DEK Registry (#2642)
 * Add support for inline validation rules (#2651)
+* Add CI coverage for linux-s390x (IBM Z) and document s390x platform support
+
+## Fixes
+
+* Fix the CSFLE ciphertext version field being written little-endian on big-endian
+  platforms, which made encrypted fields unreadable across architectures
+* Fix message `Timestamp.Type` being read as `NotAvailable` on big-endian platforms
+  (e.g. s390x): librdkafka's `rd_kafka_timestamp_type_t` out-parameter (a 32-bit enum)
+  was marshalled as a pointer-sized `IntPtr`, so the value landed in the high word and
+  was truncated to `0` on big-endian
 
 
 # 2.15.1
