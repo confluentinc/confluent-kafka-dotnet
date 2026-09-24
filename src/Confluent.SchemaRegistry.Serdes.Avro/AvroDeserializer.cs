@@ -46,7 +46,7 @@ namespace Confluent.SchemaRegistry.Serdes
         // The underlying implementation is not constructed until the first
         // deserialize call, which is after the cluster id resolver is propagated, so
         // the resolver is held here and applied when the implementation is created.
-        private Func<string> clusterIdResolver;
+        private Func<Task<string>> clusterIdResolver;
         private bool ownsSchemaRegistryClient;
 
         public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient)
@@ -157,7 +157,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
 
         /// <inheritdoc />
-        public void SetClusterIdResolver(Func<string> clusterIdResolver)
+        public void SetClusterIdResolver(Func<Task<string>> clusterIdResolver)
         {
             if (deserializerImpl != null)
             {

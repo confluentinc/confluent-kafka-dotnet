@@ -305,13 +305,13 @@ namespace Confluent.Kafka.UnitTests
 
         private class ResolverRejectingSerializer : TrackingSerializer, IClusterIdAware
         {
-            public void SetClusterIdResolver(Func<string> clusterIdResolver)
+            public void SetClusterIdResolver(Func<Task<string>> clusterIdResolver)
                 => throw new NotSupportedException("no cluster id here");
         }
 
         private class ResolverRejectingDeserializer : TrackingDeserializer, IClusterIdAware
         {
-            public void SetClusterIdResolver(Func<string> clusterIdResolver)
+            public void SetClusterIdResolver(Func<Task<string>> clusterIdResolver)
                 => throw new NotSupportedException("no cluster id here");
         }
 

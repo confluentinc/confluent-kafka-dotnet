@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Confluent.SchemaRegistry.UnitTests
@@ -44,7 +45,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void SetClusterIdResolver_IsRetained()
         {
-            Func<string> resolver = () => "lkc-resolved";
+            Func<Task<string>> resolver = () => Task.FromResult("lkc-resolved");
             var strategy = Strategy();
 
             strategy.SetClusterIdResolver(resolver);
@@ -55,7 +56,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void SetClusterIdResolver_IsRetained_WhenConfigIsEmpty()
         {
-            Func<string> resolver = () => "lkc-resolved";
+            Func<Task<string>> resolver = () => Task.FromResult("lkc-resolved");
             var strategy = Strategy(new List<KeyValuePair<string, string>>());
 
             strategy.SetClusterIdResolver(resolver);
@@ -69,7 +70,7 @@ namespace Confluent.SchemaRegistry.UnitTests
             int calls = 0;
             var strategy = Strategy();
 
-            strategy.SetClusterIdResolver(() => { ++calls; return "lkc-resolved"; });
+            strategy.SetClusterIdResolver(() => { ++calls; return Task.FromResult("lkc-resolved"); });
 
             Assert.Equal(0, calls);
         }
@@ -77,10 +78,10 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void SetClusterIdResolver_TheLatestIsRetained()
         {
-            Func<string> second = () => "lkc-second";
+            Func<Task<string>> second = () => Task.FromResult("lkc-second");
             var strategy = Strategy();
 
-            strategy.SetClusterIdResolver(() => "lkc-first");
+            strategy.SetClusterIdResolver(() => Task.FromResult("lkc-first"));
             strategy.SetClusterIdResolver(second);
 
             Assert.Same(second, Resolver(strategy));
@@ -91,7 +92,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         {
             var strategy = Strategy(ClusterIdConfig("lkc-configured"));
 
-            strategy.SetClusterIdResolver(() => "lkc-resolved");
+            strategy.SetClusterIdResolver(() => Task.FromResult("lkc-resolved"));
 
             Assert.Equal("lkc-configured", ConfiguredClusterId(strategy));
             Assert.Null(Resolver(strategy));
@@ -105,7 +106,7 @@ namespace Confluent.SchemaRegistry.UnitTests
             // id was set rather than comparing against null or the wildcard.
             var strategy = Strategy(ClusterIdConfig(""));
 
-            strategy.SetClusterIdResolver(() => "lkc-resolved");
+            strategy.SetClusterIdResolver(() => Task.FromResult("lkc-resolved"));
 
             Assert.Equal("", ConfiguredClusterId(strategy));
             Assert.Null(Resolver(strategy));
@@ -139,8 +140,8 @@ namespace Confluent.SchemaRegistry.UnitTests
         private static string ConfiguredClusterId(AssociatedNameStrategy strategy)
             => (string)PrivateField("kafkaClusterId").GetValue(strategy);
 
-        private static Func<string> Resolver(AssociatedNameStrategy strategy)
-            => (Func<string>)PrivateField("clusterIdResolver").GetValue(strategy);
+        private static Func<Task<string>> Resolver(AssociatedNameStrategy strategy)
+            => (Func<Task<string>>)PrivateField("clusterIdResolver").GetValue(strategy);
 
         private static System.Reflection.FieldInfo PrivateField(string name)
             => typeof(AssociatedNameStrategy).GetField(name,

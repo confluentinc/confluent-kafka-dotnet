@@ -52,7 +52,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             int calls = 0;
             var serializer = new AvroSerializer<int>(schemaRegistryClient);
-            serializer.SetClusterIdResolver(() => { ++calls; return ClusterId; });
+            serializer.SetClusterIdResolver(() => { ++calls; return Task.FromResult(ClusterId); });
             Assert.Equal(0, calls);
 
             await serializer.SerializeAsync(1, ValueContext(testTopic));
@@ -73,7 +73,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             int calls = 0;
             var deserializer = new AvroDeserializer<int>(schemaRegistryClient);
-            deserializer.SetClusterIdResolver(() => { ++calls; return ClusterId; });
+            deserializer.SetClusterIdResolver(() => { ++calls; return Task.FromResult(ClusterId); });
             Assert.Equal(0, calls);
 
             Assert.Equal(1, await deserializer.DeserializeAsync(bytes, false, ValueContext(testTopic)));
@@ -89,7 +89,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             int calls = 0;
             var serializer = new JsonSerializer<UnitTestJsonRecord>(schemaRegistryClient);
-            serializer.SetClusterIdResolver(() => { ++calls; return ClusterId; });
+            serializer.SetClusterIdResolver(() => { ++calls; return Task.FromResult(ClusterId); });
             Assert.Equal(0, calls);
 
             await serializer.SerializeAsync(new UnitTestJsonRecord { Value = 1 }, ValueContext(testTopic));
@@ -107,7 +107,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             int calls = 0;
             var serializer = new AvroSerializer<int>(
                 schemaRegistryClient, new AvroSerializerConfig(WithClusterId()));
-            serializer.SetClusterIdResolver(() => { ++calls; return ClusterId; });
+            serializer.SetClusterIdResolver(() => { ++calls; return Task.FromResult(ClusterId); });
 
             await serializer.SerializeAsync(1, ValueContext(testTopic));
 
@@ -125,7 +125,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var serializer = new AvroSerializer<int>(
                 schemaRegistryClient,
                 new AvroSerializerConfig { SubjectNameStrategy = SubjectNameStrategy.Topic });
-            serializer.SetClusterIdResolver(() => { ++calls; return ClusterId; });
+            serializer.SetClusterIdResolver(() => { ++calls; return Task.FromResult(ClusterId); });
 
             await serializer.SerializeAsync(1, ValueContext(testTopic));
 
@@ -140,8 +140,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Associate("lkc-second", "second-subject");
 
             var serializer = new AvroSerializer<int>(schemaRegistryClient);
-            serializer.SetClusterIdResolver(() => "lkc-first");
-            serializer.SetClusterIdResolver(() => "lkc-second");
+            serializer.SetClusterIdResolver(() => Task.FromResult("lkc-first"));
+            serializer.SetClusterIdResolver(() => Task.FromResult("lkc-second"));
 
             await serializer.SerializeAsync(1, ValueContext(testTopic));
 
@@ -159,7 +159,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             ISerializer<int> serializer =
                 new AvroSerializer<int>(schemaRegistryClient).AsSyncOverAsync();
-            serializer.SetClusterIdResolver(() => ClusterId);
+            serializer.SetClusterIdResolver(() => Task.FromResult(ClusterId));
 
             serializer.Serialize(1, ValueContext(testTopic));
 
@@ -179,7 +179,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             int calls = 0;
             IDeserializer<int> deserializer =
                 new AvroDeserializer<int>(schemaRegistryClient).AsSyncOverAsync();
-            deserializer.SetClusterIdResolver(() => { ++calls; return ClusterId; });
+            deserializer.SetClusterIdResolver(() => { ++calls; return Task.FromResult(ClusterId); });
 
             Assert.Equal(1, deserializer.Deserialize(bytes, false, ValueContext(testTopic)));
             Assert.Equal(1, calls);
@@ -192,8 +192,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public void Extensions_SetClusterIdResolverIsANoOpForABuiltInSerializer()
         {
             // Must not throw.
-            Serializers.Utf8.SetClusterIdResolver(() => ClusterId);
-            Deserializers.Utf8.SetClusterIdResolver(() => ClusterId);
+            Serializers.Utf8.SetClusterIdResolver(() => Task.FromResult(ClusterId));
+            Deserializers.Utf8.SetClusterIdResolver(() => Task.FromResult(ClusterId));
         }
 
         [Fact]
@@ -216,7 +216,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         {
             int calls = 0;
             var strategy = new AssociatedNameStrategy(schemaRegistryClient, null);
-            strategy.SetClusterIdResolver(() => { ++calls; return ClusterId; });
+            strategy.SetClusterIdResolver(() => { ++calls; return Task.FromResult(ClusterId); });
 
             Assert.Equal(0, calls);
 
@@ -232,7 +232,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             // cache already makes lookups rare, and the client caches the id.
             int calls = 0;
             var strategy = new AssociatedNameStrategy(schemaRegistryClient, null);
-            strategy.SetClusterIdResolver(() => { ++calls; return ClusterId; });
+            strategy.SetClusterIdResolver(() => { ++calls; return Task.FromResult(ClusterId); });
 
             await strategy.GetSubjectNameAsync(ValueContext(testTopic), null);
             await strategy.GetSubjectNameAsync(KeyContext(testTopic), null);
@@ -252,7 +252,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Associate(AssociatedNameStrategy.NamespaceWildcard, "wildcard-subject");
 
             var strategy = new AssociatedNameStrategy(schemaRegistryClient, null);
-            strategy.SetClusterIdResolver(() => ClusterId);
+            strategy.SetClusterIdResolver(() => Task.FromResult(ClusterId));
 
             Assert.Equal("resolved-subject",
                 await strategy.GetSubjectNameAsync(ValueContext(testTopic), null));
@@ -277,7 +277,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
 
             int calls = 0;
             var strategy = new AssociatedNameStrategy(schemaRegistryClient, WithClusterId());
-            strategy.SetClusterIdResolver(() => { ++calls; return ClusterId; });
+            strategy.SetClusterIdResolver(() => { ++calls; return Task.FromResult(ClusterId); });
 
             Assert.Equal("configured-subject",
                 await strategy.GetSubjectNameAsync(ValueContext(testTopic), null));
@@ -291,8 +291,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Associate("lkc-second", "second-subject");
 
             var strategy = new AssociatedNameStrategy(schemaRegistryClient, null);
-            strategy.SetClusterIdResolver(() => "lkc-first");
-            strategy.SetClusterIdResolver(() => "lkc-second");
+            strategy.SetClusterIdResolver(() => Task.FromResult("lkc-first"));
+            strategy.SetClusterIdResolver(() => Task.FromResult("lkc-second"));
 
             Assert.Equal("second-subject",
                 await strategy.GetSubjectNameAsync(ValueContext(testTopic), null));
@@ -306,7 +306,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             string resolved = null;
             int calls = 0;
             var strategy = new AssociatedNameStrategy(schemaRegistryClient, null);
-            strategy.SetClusterIdResolver(() => { ++calls; return resolved; });
+            strategy.SetClusterIdResolver(() => { ++calls; return Task.FromResult(resolved); });
 
             // A resolver returns null when the client could not reach a broker in
             // time. That must not silently degrade to the wildcard namespace.
@@ -318,6 +318,41 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal("resolved-subject",
                 await strategy.GetSubjectNameAsync(ValueContext(testTopic), null));
             Assert.Equal(2, calls);
+        }
+
+        [Fact]
+        public async Task APendingResolution_DoesNotBlockTheLookup()
+        {
+            Associate(ClusterId, "resolved-subject");
+
+            var resolution = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var strategy = new AssociatedNameStrategy(schemaRegistryClient, null);
+            strategy.SetClusterIdResolver(() => resolution.Task);
+
+            // The lookups return at once, still pending, rather than blocking the
+            // caller until the client reaches a broker.
+            var valueLookup = strategy.GetSubjectNameAsync(ValueContext(testTopic), null);
+            var otherLookup = strategy.GetSubjectNameAsync(ValueContext(testTopic), null);
+            Assert.False(valueLookup.IsCompleted);
+            Assert.False(otherLookup.IsCompleted);
+
+            resolution.SetResult(ClusterId);
+
+            Assert.Equal("resolved-subject", await valueLookup);
+            Assert.Equal("resolved-subject", await otherLookup);
+        }
+
+        [Fact]
+        public async Task AFailedResolution_FailsTheLookup()
+        {
+            // Once the client is disposed its resolver fails, which must surface
+            // rather than degrade to the wildcard namespace.
+            var strategy = new AssociatedNameStrategy(schemaRegistryClient, null);
+            strategy.SetClusterIdResolver(
+                () => Task.FromException<string>(new ObjectDisposedException("handle")));
+
+            await Assert.ThrowsAsync<ObjectDisposedException>(
+                () => strategy.GetSubjectNameAsync(ValueContext(testTopic), null));
         }
 
         private static SerializationContext ValueContext(string topic)

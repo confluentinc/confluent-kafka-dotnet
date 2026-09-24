@@ -621,11 +621,14 @@ namespace Confluent.Kafka
         ///     The id is resolved lazily, when the serializer needs it, so that
         ///     construction never waits on a broker - which it could not reach
         ///     anyway when, for instance, the OAUTHBEARER token refresh callback is
-        ///     served by a poll loop that only starts after construction.
+        ///     served by a poll loop that only starts after construction. The
+        ///     resolver never blocks the serializing thread, and concurrent
+        ///     resolutions - from both serializers, and from any dependent producer
+        ///     sharing the handle - share a single call into librdkafka.
         /// </summary>
         private void PropagateClusterId()
         {
-            Func<string> clusterIdResolver = () => KafkaHandle.ClusterId(ClusterIdTimeoutMs);
+            Func<Task<string>> clusterIdResolver = () => KafkaHandle.ClusterIdAsync(ClusterIdTimeoutMs);
 
             if (keySerializer != null) { keySerializer.SetClusterIdResolver(clusterIdResolver); }
             else { asyncKeySerializer.SetClusterIdResolver(clusterIdResolver); }

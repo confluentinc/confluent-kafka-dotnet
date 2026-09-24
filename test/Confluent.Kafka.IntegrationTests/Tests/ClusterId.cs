@@ -83,7 +83,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     the id of the cluster it is connected to.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void ClusterIdPropagation(string bootstrapServers)
+        public async Task ClusterIdPropagation(string bootstrapServers)
         {
             LogToFile("start ClusterIdPropagation");
 
@@ -95,7 +95,7 @@ namespace Confluent.Kafka.IntegrationTests
                     .SetValueSerializer(aware)
                     .Build())
             {
-                Assert.Equal(expectedClusterId, aware.ClusterIdResolver());
+                Assert.Equal(expectedClusterId, await aware.ClusterIdResolver());
             }
 
             // Key and value serializers each receive the resolver exactly once.
@@ -107,8 +107,8 @@ namespace Confluent.Kafka.IntegrationTests
                     .SetValueSerializer(value)
                     .Build())
             {
-                Assert.Equal(expectedClusterId, key.ClusterIdResolver());
-                Assert.Equal(expectedClusterId, value.ClusterIdResolver());
+                Assert.Equal(expectedClusterId, await key.ClusterIdResolver());
+                Assert.Equal(expectedClusterId, await value.ClusterIdResolver());
             }
             Assert.Equal(1, key.SetClusterIdResolverCallCount);
             Assert.Equal(1, value.SetClusterIdResolverCallCount);
@@ -122,7 +122,7 @@ namespace Confluent.Kafka.IntegrationTests
                     .SetValueSerializer(dependent)
                     .Build())
             {
-                Assert.Equal(expectedClusterId, dependent.ClusterIdResolver());
+                Assert.Equal(expectedClusterId, await dependent.ClusterIdResolver());
             }
 
             LogToFile("end   ClusterIdPropagation");
@@ -163,7 +163,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     deserializer builder.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void ClusterIdPropagationConsumer(string bootstrapServers)
+        public async Task ClusterIdPropagationConsumer(string bootstrapServers)
         {
             LogToFile("start ClusterIdPropagationConsumer");
 
@@ -179,7 +179,7 @@ namespace Confluent.Kafka.IntegrationTests
                     .SetValueDeserializer(aware)
                     .Build())
             {
-                Assert.Equal(expectedClusterId, aware.ClusterIdResolver());
+                Assert.Equal(expectedClusterId, await aware.ClusterIdResolver());
             }
 
             // A deserializer reached through a builder is served too, and is
@@ -194,7 +194,7 @@ namespace Confluent.Kafka.IntegrationTests
                     .SetValueDeserializerBuilder(new StubDeserializerBuilder(built))
                     .Build())
             {
-                Assert.Equal(expectedClusterId, built.ClusterIdResolver());
+                Assert.Equal(expectedClusterId, await built.ClusterIdResolver());
             }
             Assert.True(built.Disposed);
 
@@ -213,11 +213,11 @@ namespace Confluent.Kafka.IntegrationTests
         private class ClusterIdAwareSerializer
             : ISerializer<string>, IClusterIdAware, ISerdeOwnedResources
         {
-            public Func<string> ClusterIdResolver { get; private set; }
+            public Func<Task<string>> ClusterIdResolver { get; private set; }
             public int SetClusterIdResolverCallCount { get; private set; }
             public bool Disposed { get; private set; }
 
-            public void SetClusterIdResolver(Func<string> clusterIdResolver)
+            public void SetClusterIdResolver(Func<Task<string>> clusterIdResolver)
             {
                 ++SetClusterIdResolverCallCount;
                 ClusterIdResolver = clusterIdResolver;
@@ -233,10 +233,10 @@ namespace Confluent.Kafka.IntegrationTests
         private class ClusterIdAwareDeserializer
             : IDeserializer<string>, IClusterIdAware, ISerdeOwnedResources
         {
-            public Func<string> ClusterIdResolver { get; private set; }
+            public Func<Task<string>> ClusterIdResolver { get; private set; }
             public bool Disposed { get; private set; }
 
-            public void SetClusterIdResolver(Func<string> clusterIdResolver)
+            public void SetClusterIdResolver(Func<Task<string>> clusterIdResolver)
                 => ClusterIdResolver = clusterIdResolver;
 
             public void DisposeOwnedResources()

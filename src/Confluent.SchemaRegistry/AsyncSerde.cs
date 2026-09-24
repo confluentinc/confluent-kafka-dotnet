@@ -86,7 +86,7 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <inheritdoc />
-        public void SetClusterIdResolver(Func<string> clusterIdResolver)
+        public void SetClusterIdResolver(Func<Task<string>> clusterIdResolver)
             => associatedNameStrategy?.SetClusterIdResolver(clusterIdResolver);
 
         /// <inheritdoc />
