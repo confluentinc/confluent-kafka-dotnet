@@ -723,6 +723,12 @@ namespace Confluent.Kafka
                 }
             }
 
+            // Deserializers are constructed before any native resource is
+            // allocated, so that a throwing builder leaks nothing: the
+            // librdkafka config below is only freed once its ownership
+            // transfers to rd_kafka_new.
+            InitializeDeserializers(builder);
+
             var configHandle = SafeConfigHandle.Create();
 
             modifiedConfig.ForEach((kvp) =>
@@ -764,10 +770,6 @@ namespace Confluent.Kafka
             {
                 Librdkafka.conf_set_oauthbearer_token_refresh_cb(configPtr, oAuthBearerTokenRefreshCallbackDelegate);
             }
-
-            // Deserializers are constructed before the native handle so that a
-            // throwing builder leaks nothing.
-            InitializeDeserializers(builder);
 
             try
             {

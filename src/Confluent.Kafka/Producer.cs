@@ -772,6 +772,17 @@ namespace Confluent.Kafka
                 }
             }
 
+            // Serializers are constructed before any native resource is
+            // allocated, so that a throwing builder leaks nothing: neither the
+            // librdkafka config below, whose ownership only transfers to
+            // rd_kafka_new, nor the GCHandle pinning a custom partitioner.
+            InitializeSerializers(
+                builder.KeySerializer, builder.ValueSerializer,
+                builder.AsyncKeySerializer, builder.AsyncValueSerializer,
+                builder.KeySerializerBuilder, builder.ValueSerializerBuilder,
+                builder.AsyncKeySerializerBuilder, builder.AsyncValueSerializerBuilder,
+                builder.Config);
+
             var configHandle = SafeConfigHandle.Create();
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
@@ -843,15 +854,6 @@ namespace Confluent.Kafka
                 addPartitionerToTopicConfig(topicConfigHandle, defaultPartitioner);
                 Librdkafka.conf_set_default_topic_conf(configPtr, topicConfigHandle.DangerousGetHandle());
             }
-
-            // Serializers are constructed before the native handle so that a
-            // throwing builder leaks nothing.
-            InitializeSerializers(
-                builder.KeySerializer, builder.ValueSerializer,
-                builder.AsyncKeySerializer, builder.AsyncValueSerializer,
-                builder.KeySerializerBuilder, builder.ValueSerializerBuilder,
-                builder.AsyncKeySerializerBuilder, builder.AsyncValueSerializerBuilder,
-                builder.Config);
 
             try
             {
