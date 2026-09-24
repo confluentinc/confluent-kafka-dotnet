@@ -54,6 +54,26 @@ namespace Confluent.Kafka
         /// </summary>
         public IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
+        /// <summary>
+        ///     The configured key serializer builder.
+        /// </summary>
+        public ISerializerBuilder<TKey> KeySerializerBuilder { get; set; }
+
+        /// <summary>
+        ///     The configured value serializer builder.
+        /// </summary>
+        public ISerializerBuilder<TValue> ValueSerializerBuilder { get; set; }
+
+        /// <summary>
+        ///     The configured async key serializer builder.
+        /// </summary>
+        public IAsyncSerializerBuilder<TKey> AsyncKeySerializerBuilder { get; set; }
+
+        /// <summary>
+        ///     The configured async value serializer builder.
+        /// </summary>
+        public IAsyncSerializerBuilder<TValue> AsyncValueSerializerBuilder { get; set; }
+
 
         /// <summary>
         ///     An underlying librdkafka client handle that the Producer will use to 
@@ -70,6 +90,7 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetKeySerializer(ISerializer<TKey> serializer)
         {
+            ThrowIfKeySerializerBuilderSet();
             this.KeySerializer = serializer;
             return this;
         }
@@ -79,6 +100,7 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetValueSerializer(ISerializer<TValue> serializer)
         {
+            ThrowIfValueSerializerBuilderSet();
             this.ValueSerializer = serializer;
             return this;
         }
@@ -88,6 +110,7 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetKeySerializer(IAsyncSerializer<TKey> serializer)
         {
+            ThrowIfKeySerializerBuilderSet();
             this.AsyncKeySerializer = serializer;
             return this;
         }
@@ -97,8 +120,111 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
+            ThrowIfValueSerializerBuilderSet();
             this.AsyncValueSerializer = serializer;
             return this;
+        }
+
+        /// <summary>
+        ///     The builder of the serializer to use to serialize keys.
+        ///
+        ///     In contrast to <see cref="SetKeySerializer(ISerializer{TKey})" />, the
+        ///     serializer is constructed by the producer, which supplies the
+        ///     configuration of the producer owning the handle to the builder. A
+        ///     serializer constructed this way is owned by the dependent producer
+        ///     and is disposed along with it.
+        /// </summary>
+        public DependentProducerBuilder<TKey, TValue> SetKeySerializerBuilder(ISerializerBuilder<TKey> serializerBuilder)
+        {
+            ThrowIfKeySerializerSet();
+            this.KeySerializerBuilder = serializerBuilder;
+            return this;
+        }
+
+        /// <summary>
+        ///     The builder of the serializer to use to serialize values.
+        ///
+        ///     In contrast to <see cref="SetValueSerializer(ISerializer{TValue})" />, the
+        ///     serializer is constructed by the producer, which supplies the
+        ///     configuration of the producer owning the handle to the builder. A
+        ///     serializer constructed this way is owned by the dependent producer
+        ///     and is disposed along with it.
+        /// </summary>
+        public DependentProducerBuilder<TKey, TValue> SetValueSerializerBuilder(ISerializerBuilder<TValue> serializerBuilder)
+        {
+            ThrowIfValueSerializerSet();
+            this.ValueSerializerBuilder = serializerBuilder;
+            return this;
+        }
+
+        /// <summary>
+        ///     The builder of the async serializer to use to serialize keys.
+        ///
+        ///     In contrast to <see cref="SetKeySerializer(IAsyncSerializer{TKey})" />, the
+        ///     serializer is constructed by the producer, which supplies the
+        ///     configuration of the producer owning the handle to the builder. A
+        ///     serializer constructed this way is owned by the dependent producer
+        ///     and is disposed along with it.
+        /// </summary>
+        public DependentProducerBuilder<TKey, TValue> SetKeySerializerBuilder(IAsyncSerializerBuilder<TKey> serializerBuilder)
+        {
+            ThrowIfKeySerializerSet();
+            this.AsyncKeySerializerBuilder = serializerBuilder;
+            return this;
+        }
+
+        /// <summary>
+        ///     The builder of the async serializer to use to serialize values.
+        ///
+        ///     In contrast to <see cref="SetValueSerializer(IAsyncSerializer{TValue})" />, the
+        ///     serializer is constructed by the producer, which supplies the
+        ///     configuration of the producer owning the handle to the builder. A
+        ///     serializer constructed this way is owned by the dependent producer
+        ///     and is disposed along with it.
+        /// </summary>
+        public DependentProducerBuilder<TKey, TValue> SetValueSerializerBuilder(IAsyncSerializerBuilder<TValue> serializerBuilder)
+        {
+            ThrowIfValueSerializerSet();
+            this.AsyncValueSerializerBuilder = serializerBuilder;
+            return this;
+        }
+
+        // A serializer and a serializer builder are mutually exclusive for the
+        // same message component. Setting a serializer twice remains permitted,
+        // as it always was for this builder.
+
+        private void ThrowIfKeySerializerBuilderSet()
+        {
+            if (this.KeySerializerBuilder != null || this.AsyncKeySerializerBuilder != null)
+            {
+                throw new InvalidOperationException("Key serializer may not be specified more than once.");
+            }
+        }
+
+        private void ThrowIfValueSerializerBuilderSet()
+        {
+            if (this.ValueSerializerBuilder != null || this.AsyncValueSerializerBuilder != null)
+            {
+                throw new InvalidOperationException("Value serializer may not be specified more than once.");
+            }
+        }
+
+        private void ThrowIfKeySerializerSet()
+        {
+            if (this.KeySerializer != null || this.AsyncKeySerializer != null
+                || this.KeySerializerBuilder != null || this.AsyncKeySerializerBuilder != null)
+            {
+                throw new InvalidOperationException("Key serializer may not be specified more than once.");
+            }
+        }
+
+        private void ThrowIfValueSerializerSet()
+        {
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null
+                || this.ValueSerializerBuilder != null || this.AsyncValueSerializerBuilder != null)
+            {
+                throw new InvalidOperationException("Value serializer may not be specified more than once.");
+            }
         }
 
         /// <summary>

@@ -35,13 +35,19 @@ namespace Confluent.SchemaRegistry.Serdes
     ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AvroSerializer<T> : IAsyncSerializer<T>
+    public class AvroSerializer<T> : IAsyncSerializer<T>, IClusterIdAware, ISerdeOwnedResources
     {
         private ISchemaRegistryClient schemaRegistryClient;
         private AvroSerializerConfig config;
         private RuleRegistry ruleRegistry;
 
         private IAsyncSerializer<T> serializerImpl;
+
+        // The underlying implementation is not constructed until the first
+        // serialize call, which is after the cluster id resolver is propagated, so
+        // the resolver is held here and applied when the implementation is created.
+        private Func<Task<string>> clusterIdResolver;
+        private bool ownsSchemaRegistryClient;
 
         /// <summary>
         ///     The default initial size (in bytes) of buffers used for message 
@@ -153,6 +159,11 @@ namespace Confluent.SchemaRegistry.Serdes
                         ? (IAsyncSerializer<T>)new GenericSerializerImpl(
                             schemaRegistryClient, config, ruleRegistry)
                         : new SpecificSerializerImpl<T>(schemaRegistryClient, config, ruleRegistry);
+
+                    if (clusterIdResolver != null)
+                    {
+                        serializerImpl.SetClusterIdResolver(clusterIdResolver);
+                    }
                 }
 
                 return await serializerImpl.SerializeAsync(value, context)
@@ -164,5 +175,37 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+
+        /// <inheritdoc />
+        public void SetClusterIdResolver(Func<Task<string>> clusterIdResolver)
+        {
+            if (serializerImpl != null)
+            {
+                serializerImpl.SetClusterIdResolver(clusterIdResolver);
+                return;
+            }
+
+            this.clusterIdResolver = clusterIdResolver;
+        }
+
+
+        /// <inheritdoc />
+        public void DisposeOwnedResources()
+        {
+            if (ownsSchemaRegistryClient)
+            {
+                schemaRegistryClient?.Dispose();
+                ownsSchemaRegistryClient = false;
+            }
+        }
+
+
+        /// <summary>
+        ///     Take ownership of the schema registry client, so that it is disposed
+        ///     along with this serializer. Used by <see cref="AvroSerializerBuilder{T}" />
+        ///     when it constructed the client itself.
+        /// </summary>
+        internal void OwnSchemaRegistryClient()
+            => ownsSchemaRegistryClient = true;
     }
 }
