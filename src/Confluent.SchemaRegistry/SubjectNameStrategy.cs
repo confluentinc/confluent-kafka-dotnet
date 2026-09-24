@@ -128,7 +128,7 @@ namespace Confluent.SchemaRegistry
         private readonly ISchemaRegistryClient schemaRegistryClient;
         private readonly string kafkaClusterId;
         private readonly bool kafkaClusterIdSet;
-        private Func<string> clusterIdResolver;
+        private Func<Task<string>> clusterIdResolver;
         private readonly SubjectNameStrategy fallbackSubjectNameStrategy;
         private readonly ConcurrentDictionary<CacheKey, string> subjectNameCache;
 
@@ -201,10 +201,10 @@ namespace Confluent.SchemaRegistry
         ///     outlive the producer or consumer it was handed to.
         /// </summary>
         /// <param name="clusterIdResolver">
-        ///     Resolves the Kafka cluster id, returning null if it cannot be
-        ///     resolved.
+        ///     Resolves the Kafka cluster id, returning a task that completes with
+        ///     null if it cannot be resolved.
         /// </param>
-        public void SetClusterIdResolver(Func<string> clusterIdResolver)
+        public void SetClusterIdResolver(Func<Task<string>> clusterIdResolver)
         {
             if (kafkaClusterIdSet)
             {
@@ -216,7 +216,8 @@ namespace Confluent.SchemaRegistry
 
         // Not cached here: the subject name cache already keeps association
         // lookups rare, and the client caches the cluster id itself once known.
-        private string ResolveClusterId()
+        // Concurrent lookups share the client's single resolution in flight.
+        private async Task<string> ResolveClusterIdAsync()
         {
             if (kafkaClusterIdSet)
             {
@@ -229,7 +230,7 @@ namespace Confluent.SchemaRegistry
                 return NamespaceWildcard;
             }
 
-            return resolver()
+            return await resolver().ConfigureAwait(false)
                 ?? throw new InvalidOperationException(
                     "The Kafka cluster id could not be resolved, which typically means " +
                     "the client has not reached a broker yet. Set " +
@@ -292,12 +293,14 @@ namespace Confluent.SchemaRegistry
             var isKey = context.Component == MessageComponentType.Key;
             var associationTypes = new List<string> { isKey ? "key" : "value" };
 
+            var kafkaClusterId = await ResolveClusterIdAsync().ConfigureAwait(false);
+
             IList<Association> associations;
             try
             {
                 associations = await schemaRegistryClient.GetAssociationsByResourceNameAsync(
                     context.Topic,
-                    ResolveClusterId(),
+                    kafkaClusterId,
                     "topic",
                     associationTypes,
                     null,

@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading.Tasks;
 
 
 namespace Confluent.Kafka
@@ -43,9 +44,11 @@ namespace Confluent.Kafka
         ///     Supply a resolver for the id of the Kafka cluster the client is
         ///     connected to.
         ///
-        ///     The resolver may block while the client reaches a broker, and returns
-        ///     null if it cannot do so within the client's timeout. Implementations
-        ///     are expected to invoke it lazily, only when the id is actually needed.
+        ///     The resolver returns a task that completes once the client has reached
+        ///     a broker, with null if it cannot do so within the client's timeout;
+        ///     invoking it never blocks the caller. Concurrent invocations share a
+        ///     single resolution. Implementations are expected to invoke it lazily,
+        ///     only when the id is actually needed.
         ///
         ///     The resolver is bound to the client that supplied it, and throws
         ///     <see cref="ObjectDisposedException" /> once that client has been
@@ -61,6 +64,6 @@ namespace Confluent.Kafka
         /// <param name="clusterIdResolver">
         ///     Resolves the Kafka cluster id.
         /// </param>
-        void SetClusterIdResolver(Func<string> clusterIdResolver);
+        void SetClusterIdResolver(Func<Task<string>> clusterIdResolver);
     }
 }

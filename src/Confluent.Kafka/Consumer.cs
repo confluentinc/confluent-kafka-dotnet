@@ -872,10 +872,11 @@ namespace Confluent.Kafka
         ///     resolver returns at once; resolving during construction instead
         ///     would wait on a broker that an OAUTHBEARER consumer, whose token
         ///     refresh callback is only served from Consume, cannot yet reach.
+        ///     Concurrent resolutions share a single call into librdkafka.
         /// </summary>
         private void PropagateClusterId()
         {
-            Func<string> clusterIdResolver = () => kafkaHandle.ClusterId(ClusterIdTimeoutMs);
+            Func<Task<string>> clusterIdResolver = () => kafkaHandle.ClusterIdAsync(ClusterIdTimeoutMs);
 
             keyDeserializer.SetClusterIdResolver(clusterIdResolver);
             valueDeserializer.SetClusterIdResolver(clusterIdResolver);
