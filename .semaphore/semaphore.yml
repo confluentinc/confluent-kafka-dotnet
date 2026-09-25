@@ -64,6 +64,9 @@ blocks:
         - name: 'Build and test'
           commands:
             - scripts/run-tests-s390x.sh
+        - name: 'Integration tests'
+          commands:
+            - scripts/run-integration-tests-s390x.sh
   - name: 'Windows x64'
     dependencies: [ ]
     task:
