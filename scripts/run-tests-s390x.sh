@@ -29,8 +29,10 @@ sed 's/^\[ evp_properties \]/[ evp_properties ]\nrh-allow-sha1-signatures = yes/
     /etc/pki/tls/openssl.cnf > /tmp/openssl-allow-sha1.cnf
 export OPENSSL_CONF=/tmp/openssl-allow-sha1.cnf
 
-echo "--- dotnet --info ---"
-dotnet --info | head -20
+# "which" is not installed in the UBI9 image; command -v is the shell built-in equivalent.
+command -v dotnet
+dotnet --version
+dotnet --list-sdks
 
 # Build and test each unit project on its own rather than restoring the whole
 # solution. A solution-wide restore drags in the Exe helper projects (Benchmark,
@@ -54,8 +56,8 @@ for p in Confluent.Kafka.UnitTests \
     # than a positional argument. Build explicitly first and run with --no-build:
     # letting dotnet test build implicitly makes the platform report "Zero tests ran",
     # so the main CI runs --no-build too.
-    dotnet build "test/$p/$p.csproj" -f net10.0
-    dotnet test --project "test/$p/$p.csproj" -f net10.0 --no-build
+    dotnet build "test/$p/$p.csproj" -f net10.0 -c "$CONFIGURATION"
+    dotnet test --project "test/$p/$p.csproj" -f net10.0 -c "$CONFIGURATION" --no-build
 done
 INNER
 chmod +x run-unit-tests.sh
@@ -63,9 +65,15 @@ chmod +x run-unit-tests.sh
 # No --platform flag: the agent is natively s390x, so this pulls the s390x image.
 # -u 0 because the UBI9 image runs as uid 1001, which cannot write bin/ and obj/
 # into the bind-mounted checkout.
+#
+# CONFIGURATION: the pipeline sets it for every block (Release); pass it into the
+# container, which doesn't inherit the agent's environment.
+docker pull -q registry.access.redhat.com/ubi9/dotnet-100
+docker image inspect --format '{{index .RepoDigests 0}}' registry.access.redhat.com/ubi9/dotnet-100
 set +e
 docker run --rm -u 0 \
     -e DOTNET_CLI_TELEMETRY_OPTOUT=true \
+    -e "CONFIGURATION=${CONFIGURATION:-Release}" \
     -v "$PWD:/work" -w /work \
     registry.access.redhat.com/ubi9/dotnet-100 \
     ./run-unit-tests.sh

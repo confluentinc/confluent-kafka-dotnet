@@ -53,8 +53,6 @@ blocks:
             - make test-latest  
   - name: 'Linux s390x'
     dependencies: [ ]
-    run:
-      when: "branch = 'master' OR pull_request =~ '.*' OR tag =~ '^v[0-9]\\.'"
     task:
       # Runs natively on the s390x (IBM Z) Semaphore agent.
       agent:
@@ -64,9 +62,15 @@ blocks:
         - name: 'Build and test'
           commands:
             - scripts/run-tests-s390x.sh
-        - name: 'Integration tests'
+        - name: 'Build and test with "classic" protocol'
           commands:
-            - scripts/run-integration-tests-s390x.sh
+            - scripts/run-integration-tests-s390x.sh classic
+        - name: 'Build and test with "consumer" protocol'
+          commands:
+            - scripts/run-integration-tests-s390x.sh consumer
+        - name: 'Schema registry and serdes integration tests'
+          commands:
+            - scripts/run-integration-tests-s390x.sh schema-registry
   - name: 'Windows x64'
     dependencies: [ ]
     task:
