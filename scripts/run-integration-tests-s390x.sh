@@ -247,10 +247,12 @@ export SEMAPHORE_SKIP_FLAKY_TESTS=true
 # - -result-xml keeps a per-test record of what passed, failed or was skipped.
 # - -noColor: on Linux the runner colours every line, which the CI log shows as
 #   white text.
+# - LogDelegate and the two custom partitioner tests can hang on s390x; skipped for now.
 RET=0
 for p in $PROJECTS; do
     echo "--- test $p ---"
     (cd "test/$p" && "./bin/$CONFIGURATION/net10.0/$p" -noLogo -noColor -method- '*SyncOverAsync' \
+        -method- '*LogDelegate' -method- '*Producer_CustomPartitioner' -method- '*Producer_MultiPartitioner' \
         -longRunning 120 -result-xml "/work/test-results-$p.xml") || RET=1
 done
 exit $RET

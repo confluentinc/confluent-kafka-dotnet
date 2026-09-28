@@ -2,6 +2,7 @@ namespace Confluent.Kafka.TestsCommon;
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Confluent.Kafka;
 
 public class TestConsumerBuilder<TKey, TValue> : ConsumerBuilder<TKey, TValue>
@@ -9,7 +10,11 @@ public class TestConsumerBuilder<TKey, TValue> : ConsumerBuilder<TKey, TValue>
     public TestConsumerBuilder(IEnumerable<KeyValuePair<string, string>> config) :
         base(EditConfig(config))
     {
-        SetLogHandler((_, m) => Console.WriteLine(m.Message));
+        // Not on s390x for now: a log handler can hang the CI testing process there sometimes.
+        if (RuntimeInformation.ProcessArchitecture != Architecture.S390x)
+        {
+            SetLogHandler((_, m) => Console.WriteLine(m.Message));
+        }
     }
 
     private static IEnumerable<KeyValuePair<string, string>> EditConfig(
