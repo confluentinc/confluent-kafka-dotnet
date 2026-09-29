@@ -75,7 +75,7 @@ namespace Confluent.Kafka
         private Handle borrowedHandle;
 
         private SafeKafkaHandle KafkaHandle
-            => ownedKafkaHandle != null 
+            => ownedKafkaHandle != null
                 ? ownedKafkaHandle
                 : (SafeKafkaHandle)borrowedHandle.LibrdkafkaHandle;
 
