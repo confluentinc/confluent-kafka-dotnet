@@ -1,6 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Authors>Confluent Inc.</Authors>
+    <Description>Shared API contracts and model types used by the Confluent Kafka and Schema Registry clients.</Description>
+    <Copyright>Copyright 2026 Confluent Inc.</Copyright>
+    <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>confluent-logo.png</PackageIcon>
+    <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
+    <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+    <PackageTags>Kafka;Confluent;Abstractions</PackageTags>
+    <PackageId>Confluent.Kafka.Abstractions</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Title>Confluent.Kafka.Abstractions</Title>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <RootNamespace>Confluent.Kafka</RootNamespace>
     <AssemblyName>Confluent.Kafka.Abstractions</AssemblyName>
@@ -21,6 +35,11 @@
 
   <ItemGroup>
     <PackageReference Include="System.Memory" Version="4.6.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

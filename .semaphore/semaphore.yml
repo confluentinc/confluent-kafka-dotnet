@@ -88,6 +88,7 @@ blocks:
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
+            - dotnet pack src/Confluent.Kafka.Abstractions/Confluent.Kafka.Abstractions.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Encryption/Confluent.SchemaRegistry.Encryption.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Encryption.Aws/Confluent.SchemaRegistry.Encryption.Aws.csproj -c ${Env:CONFIGURATION} --version-suffix ci-${Env:SEMAPHORE_JOB_ID} --output artifacts
@@ -120,6 +121,7 @@ blocks:
             - dotnet restore
             - dotnet build Confluent.Kafka.sln -c ${Env:CONFIGURATION}
             - dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c ${Env:CONFIGURATION} --output artifacts
+            - dotnet pack src/Confluent.Kafka.Abstractions/Confluent.Kafka.Abstractions.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Encryption/Confluent.SchemaRegistry.Encryption.csproj -c ${Env:CONFIGURATION} --output artifacts
             - dotnet pack src/Confluent.SchemaRegistry.Encryption.Aws/Confluent.SchemaRegistry.Encryption.Aws.csproj -c ${Env:CONFIGURATION} --output artifacts
