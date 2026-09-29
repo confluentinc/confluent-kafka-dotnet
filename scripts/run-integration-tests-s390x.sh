@@ -247,12 +247,10 @@ export SEMAPHORE_SKIP_FLAKY_TESTS=true
 # - -result-xml keeps a per-test record of what passed, failed or was skipped.
 # - -noColor: on Linux the runner colours every line, which the CI log shows as
 #   white text.
-# - LogDelegate and the two custom partitioner tests can hang on s390x; skipped for now.
 RET=0
 for p in $PROJECTS; do
     echo "--- test $p ---"
     (cd "test/$p" && "./bin/$CONFIGURATION/net10.0/$p" -noLogo -noColor -method- '*SyncOverAsync' \
-        -method- '*LogDelegate' -method- '*Producer_CustomPartitioner' -method- '*Producer_MultiPartitioner' \
         -longRunning 120 -result-xml "/work/test-results-$p.xml") || RET=1
 done
 exit $RET
@@ -264,7 +262,11 @@ docker image inspect --format '{{index .RepoDigests 0}}' "$DOTNET_IMAGE"
 
 # --network host so the tests reach the broker and Schema Registry on localhost.
 # A hard timeout so a hung test fails the job instead of holding the agent.
-TEST_ENV=(-e DOTNET_CLI_TELEMETRY_OPTOUT=true -e "CONFIGURATION=${CONFIGURATION:-Release}" -e "PROJECTS=$PROJECTS")
+# Mono, the .NET runtime on s390x, suspends threads for garbage collection with signals by default,
+# and librdkafka blocks signals on its threads, which run the tests' log handlers. Cooperative
+# suspension doesn't use signals (see the s390x section of README.md).
+TEST_ENV=(-e DOTNET_CLI_TELEMETRY_OPTOUT=true -e "CONFIGURATION=${CONFIGURATION:-Release}" -e "PROJECTS=$PROJECTS"
+          -e MONO_THREADS_SUSPEND=coop)
 if [[ $MODE == consumer ]]; then
     TEST_ENV+=(-e TEST_CONSUMER_GROUP_PROTOCOL=consumer)
 fi
