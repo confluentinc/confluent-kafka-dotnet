@@ -857,9 +857,9 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr> _message_errstr;
         internal static IntPtr message_errstr(IntPtr rkmessage) => _message_errstr(rkmessage);
 
-        internal delegate long messageTimestampDelegate(IntPtr rkmessage, out IntPtr tstype);
+        internal delegate long messageTimestampDelegate(IntPtr rkmessage, out int tstype);
         private static messageTimestampDelegate _message_timestamp;
-        internal static long message_timestamp(IntPtr rkmessage, out IntPtr tstype) => _message_timestamp(rkmessage, out tstype);
+        internal static long message_timestamp(IntPtr rkmessage, out int tstype) => _message_timestamp(rkmessage, out tstype);
 
         private static Func<IntPtr, PersistenceStatus> _message_status;
         internal static PersistenceStatus message_status(IntPtr rkmessage) => _message_status(rkmessage);
