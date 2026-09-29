@@ -15,21 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Runtime.CompilerServices;
 using Confluent.Kafka.Impl;
-using Confluent.Kafka.Internal;
-
-// Provide ModuleInitializerAttribute on pre-.NET 5 targets.
-// The C# compiler uses this attribute to emit a CLR module initializer
-// (ECMA-335 §II.10.5.3), which the runtime calls automatically when the
-// assembly is loaded, before any other code in the assembly executes.
-#if !NET5_0_OR_GREATER
-namespace System.Runtime.CompilerServices
-{
-    [AttributeUsage(AttributeTargets.Method)]
-    internal sealed class ModuleInitializerAttribute : Attribute { }
-}
-#endif
 
 namespace Confluent.Kafka
 {
@@ -64,24 +50,4 @@ namespace Confluent.Kafka
         }
     }
 
-    /// <summary>
-    ///     Registers Confluent.Kafka-specific delegates when the assembly is loaded.
-    ///     The CLR runs <see cref="Initialize"/> automatically before any other code
-    ///     in this assembly executes (including unit tests that reference the assembly).
-    /// </summary>
-    internal static class KafkaAssemblyInit
-    {
-        [ModuleInitializer]
-        internal static void Initialize()
-        {
-            // Wire ErrorCodeExtensions.GetReason() up to librdkafka's rd_kafka_err2str().
-            // Librdkafka.Initialize(null) is idempotent; it loads the native library on
-            // first call and is a no-op on subsequent calls.
-            ErrorCodeExtensions.s_getReasonImpl = static code =>
-            {
-                Librdkafka.Initialize(null);
-                return Util.Marshal.PtrToStringUTF8(Librdkafka.err2str(code));
-            };
-        }
-    }
 }

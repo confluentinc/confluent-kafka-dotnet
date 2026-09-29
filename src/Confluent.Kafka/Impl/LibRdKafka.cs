@@ -606,6 +606,8 @@ namespace Confluent.Kafka.Impl
                     throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");
                 }
 
+                ErrorCodeExtensions.RegisterGetReasonImplementation(
+                    static code => Util.Marshal.PtrToStringUTF8(err2str(code)));
                 isInitialized = true;
                 return true;
             }

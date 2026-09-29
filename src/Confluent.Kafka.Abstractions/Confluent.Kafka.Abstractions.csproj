@@ -24,6 +24,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.CLSCompliantAttribute">
+      <_Parameter1>true</_Parameter1>
+    </AssemblyAttribute>
     <!-- Key= causes the SDK to auto-extract the public key from the .snk so the
          strong-named Confluent.Kafka assembly is accepted as a trusted friend. -->
     <InternalsVisibleTo Include="Confluent.Kafka"
