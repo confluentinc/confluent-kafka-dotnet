@@ -74,6 +74,11 @@ platform. A few environment constraints are specific to s390x:
   None of these affect normal `Confluent.Kafka` usage.
 - **No GSSAPI/Kerberos.** The s390x `librdkafka` build is configured with `--disable-gssapi`. Other SASL
   mechanisms are unaffected.
+- **Set `MONO_THREADS_SUSPEND=coop` if the application uses a log handler (`SetLogHandler`) or a custom
+  partitioner.** .NET on s390x runs on the Mono runtime, and in its default mode the process can occasionally
+  hang during garbage collection when these callbacks run. Set the environment variable before the process
+  starts (for example in the Dockerfile or service definition). The value must be exactly `coop`: Mono aborts
+  on an invalid or empty value.
 
 Building this repository from source on s390x has two wrinkles, neither of which affects consumers of the
 published packages (see `scripts/run-tests-s390x.sh`):
