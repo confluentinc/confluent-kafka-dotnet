@@ -28,6 +28,8 @@ namespace Confluent.Kafka.Admin
     {
         /// <summary>
         ///     The configuration to use to create the new topic.
+        ///     To associate a schema with this topic at creation time, set
+        ///     <c>confluent.value.association</c> (and optionally <c>confluent.key.association</c>).
         /// </summary>
         public Dictionary<string, string> Configs { get; set; }
 
