@@ -279,8 +279,8 @@ namespace Confluent.Kafka
         /// </returns>
         public override string ToString()
         {
-            // If a rich error string is available return that, otherwise fall
-            // back to librdkafka's static error code to string conversion.
+            // If a rich error string is available return that. Otherwise use
+            // librdkafka's text when initialized, or the enum name before then.
             if (!string.IsNullOrEmpty(reason))
                 return reason;
             else

@@ -66,6 +66,7 @@ blocks:
             - $Env:Path += ";C:\dotnet"
             - dotnet restore
             - dotnet test --project test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj -f net10.0 -c ${CONFIGURATION} --no-build
+            - dotnet test --project test/Confluent.Kafka.Abstractions.UnitTests/Confluent.Kafka.Abstractions.UnitTests.csproj -f net10.0 -c ${CONFIGURATION} --no-build
             - dotnet test --project test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj -f net10.0 -c ${CONFIGURATION} --no-build
             - dotnet test --project test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj -f net10.0 -c ${CONFIGURATION} --no-build
             - dotnet test --project test/Confluent.Kafka.OAuthBearer.Aws.UnitTests/Confluent.Kafka.OAuthBearer.Aws.UnitTests.csproj -f net10.0 -c ${CONFIGURATION} --no-build
