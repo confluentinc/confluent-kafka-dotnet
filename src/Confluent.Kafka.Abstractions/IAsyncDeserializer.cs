@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A deserializer for use with <see cref="Confluent.Kafka.Consumer{TKey,TValue}" />.
+    ///     A deserializer for use with <c>Consumer&lt;TKey,TValue&gt;</c>.
     /// </summary>
     public interface IAsyncDeserializer<T>
     {

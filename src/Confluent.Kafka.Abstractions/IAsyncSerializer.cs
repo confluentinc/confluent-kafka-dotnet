@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
+    ///     Defines a serializer for use with <c>Producer&lt;TKey,TValue&gt;</c>.
     /// </summary>
     public interface IAsyncSerializer<T>
     {

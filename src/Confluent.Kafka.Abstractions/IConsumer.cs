@@ -44,13 +44,9 @@ namespace Confluent.Kafka
         ///     committed handlers may be invoked as a
         ///     side-effect of calling this method (on the
         ///     same thread).
+        ///     An unsuccessful call may throw <c>ConsumeException</c>;
+        ///     inspect its Error property for detailed information.
         /// </remarks>
-        /// <exception cref="ConsumeException">
-        ///     Thrown
-        ///     when a call to this method is unsuccessful
-        ///     for any reason. Inspect the Error property
-        ///     of the exception for detailed information.
-        /// </exception>
         ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout);
 
         /// <summary>
@@ -70,14 +66,9 @@ namespace Confluent.Kafka
         ///     offsets committed handlers may be invoked
         ///     as a side-effect of calling this method
         ///     (on the same thread).
+        ///     An unsuccessful call may throw <c>ConsumeException</c>, except when
+        ///     the operation is cancelled by the caller.
         /// </remarks>
-        /// <exception cref="Confluent.Kafka.ConsumeException">
-        ///     Thrown
-        ///     when a call to this method is unsuccessful
-        ///     for any reason (except cancellation by
-        ///     user). Inspect the Error property of the
-        ///     exception for detailed information.
-        /// </exception>
         /// <exception cref="System.OperationCanceledException">
         ///     Thrown on cancellation.
         /// </exception>
@@ -101,13 +92,9 @@ namespace Confluent.Kafka
         ///     committed handlers may be invoked as a
         ///     side-effect of calling this method (on the
         ///     same thread).
+        ///     An unsuccessful call may throw <c>ConsumeException</c>;
+        ///     inspect its Error property for detailed information.
         /// </remarks>
-        /// <exception cref="ConsumeException">
-        ///     Thrown
-        ///     when a call to this method is unsuccessful
-        ///     for any reason. Inspect the Error property
-        ///     of the exception for detailed information.
-        /// </exception>
         ConsumeResult<TKey, TValue> Consume(TimeSpan timeout);
 
 
@@ -120,7 +107,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Gets the current partition assignment as set by
-        ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assign(TopicPartition)" />
+        ///     <c>Consumer&lt;TKey,TValue&gt;.Assign(TopicPartition)</c>
         ///     or implicitly.
         /// </summary>
         List<TopicPartition> Assignment { get; }
@@ -128,7 +115,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Gets the current topic subscription as set by
-        ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Subscribe(string)" />.
+        ///     <c>Consumer&lt;TKey,TValue&gt;.Subscribe(string)</c>.
         /// </summary>
         List<string> Subscription { get; }
 
@@ -342,6 +329,8 @@ namespace Confluent.Kafka
         ///     next receive the message with offset N.
         ///     Hence, this method stores an offset of
         ///     <paramref name="result" />.Offset + 1.
+        ///     A partition-specific result error is reported by
+        ///     <c>TopicPartitionOffsetException</c>.
         /// </remarks>
         /// <param name="result">
         ///     A consume result used to determine
@@ -353,9 +342,6 @@ namespace Confluent.Kafka
         /// </returns>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if result is in error.
         /// </exception>
         /// <exception cref="System.InvalidOperationException">
         ///     Thrown if the <paramref name="result"/> param is an empty consume result.
@@ -388,15 +374,13 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Commit all offsets for the current assignment.
         /// </summary>
+        /// <remarks>
+        ///     If any constituent result is in error, this method throws
+        ///     <c>TopicPartitionOffsetException</c>. The entire result is
+        ///     available via the exception's <c>Results</c> property.
+        /// </remarks>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if any of the constituent results is in
-        ///     error. The entire result (which may contain
-        ///     constituent results that are not in error) is
-        ///     available via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
-        ///     property of the exception.
         /// </exception>
         List<TopicPartitionOffset> Commit();
 
@@ -407,15 +391,13 @@ namespace Confluent.Kafka
         /// <param name="offsets">
         ///     The topic/partition offsets to commit.
         /// </param>
+        /// <remarks>
+        ///     If any constituent result is in error, this method throws
+        ///     <c>TopicPartitionOffsetException</c>. The entire result is
+        ///     available via the exception's <c>Results</c> property.
+        /// </remarks>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if any of the constituent results is in
-        ///     error. The entire result (which may contain
-        ///     constituent results that are not in error) is
-        ///     available via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
-        ///     property of the exception.
         /// </exception>
         void Commit(IEnumerable<TopicPartitionOffset> offsets);
 
@@ -435,9 +417,6 @@ namespace Confluent.Kafka
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
         /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if the result is in error.
-        /// </exception>
         /// <exception cref="System.InvalidOperationException">
         ///     Thrown if the <paramref name="result"/> param is an empty consume result.
         /// </exception>
@@ -447,6 +426,8 @@ namespace Confluent.Kafka
         ///     next receive the message with offset N.
         ///     Hence, this method commits an offset of
         ///     <paramref name="result" />.Offset + 1.
+        ///     If the result is in error, the method throws
+        ///     <c>TopicPartitionOffsetException</c>.
         /// </remarks>
         void Commit(ConsumeResult<TKey, TValue> result);
 
@@ -478,11 +459,12 @@ namespace Confluent.Kafka
         /// <param name="partitions">
         ///     The partitions to pause consumption of.
         /// </param>
+        /// <remarks>
+        ///     Per-partition success/error information is surfaced through
+        ///     <c>TopicPartitionException</c>.
+        /// </remarks>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionException">
-        ///     Per partition success or error.
         /// </exception>
         void Pause(IEnumerable<TopicPartition> partitions);
 
@@ -493,11 +475,12 @@ namespace Confluent.Kafka
         /// <param name="partitions">
         ///     The partitions to resume consumption of.
         /// </param>
+        /// <remarks>
+        ///     Per-partition success/error information is surfaced through
+        ///     <c>TopicPartitionException</c>.
+        /// </remarks>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionException">
-        ///     Per partition success or error.
         /// </exception>
         void Resume(IEnumerable<TopicPartition> partitions);
 
@@ -513,20 +496,17 @@ namespace Confluent.Kafka
         ///     previous message, or, alternately a partition
         ///     specific error may also be returned.
         /// </summary>
+        /// <remarks>
+        ///     If a partition-specific result is in error, the method throws
+        ///     <c>TopicPartitionOffsetException</c>, which exposes the entire
+        ///     result through its <c>Results</c> property.
+        /// </remarks>
         /// <param name="timeout">
         ///     The maximum period of time the call
         ///     may block.
         /// </param>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if any of the constituent results is in
-        ///     error. The entire result (which may contain
-        ///     constituent results that are not in error) is
-        ///     available via the
-        ///     <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
-        ///     property of the exception.
         /// </exception>
         List<TopicPartitionOffset> Committed(TimeSpan timeout);
 
@@ -541,6 +521,11 @@ namespace Confluent.Kafka
         ///     previous message, or, alternately a partition
         ///     specific error may also be returned.
         /// </summary>
+        /// <remarks>
+        ///     If a partition-specific result is in error, the method throws
+        ///     <c>TopicPartitionOffsetException</c>, which exposes the entire
+        ///     result through its <c>Results</c> property.
+        /// </remarks>
         /// <param name="partitions">
         ///     the partitions to get the committed
         ///     offsets for.
@@ -551,14 +536,6 @@ namespace Confluent.Kafka
         /// </param>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if any of the constituent results is in
-        ///     error. The entire result (which may contain
-        ///     constituent results that are not in error) is
-        ///     available via the
-        ///     <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
-        ///     property of the exception.
         /// </exception>
         List<TopicPartitionOffset> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout);
 
@@ -591,6 +568,9 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     The consumer does not need to be assigned to
         ///     the requested partitions.
+        ///     If a partition-specific result is in error, the method throws
+        ///     <c>TopicPartitionOffsetException</c>, which exposes the entire
+        ///     result through its <c>Results</c> property.
         /// </remarks>
         /// <param name="timestampsToSearch">
         ///     The mapping from partition
@@ -609,14 +589,6 @@ namespace Confluent.Kafka
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown
         ///     if the operation fails.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if any of the constituent results is
-        ///     in error. The entire result (which may contain
-        ///     constituent results that are not in error) is
-        ///     available via the
-        ///     <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
-        ///     property of the exception.
         /// </exception>
         List<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout);
 
@@ -671,12 +643,12 @@ namespace Confluent.Kafka
         ///     alerts the group coordinator
         ///     that the consumer is exiting the group then
         ///     releases all resources used by this consumer.
-        ///     You should call <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Close" />
-        ///     instead of <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Dispose()" />
+        ///     You should call <c>Consumer&lt;TKey,TValue&gt;.Close()</c>
+        ///     instead of <c>Consumer&lt;TKey,TValue&gt;.Dispose()</c>
         ///     (or just before) to ensure a timely consumer
         ///     group rebalance. If you do not call
-        ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Close" />
-        ///     or <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Unsubscribe" />,
+        ///     <c>Consumer&lt;TKey,TValue&gt;.Close()</c>
+        ///     or <c>Consumer&lt;TKey,TValue&gt;.Unsubscribe()</c>,
         ///     the group will rebalance after a timeout
         ///     specified by the group's `session.timeout.ms`.
         ///     Note: the partition assignment and partitions
