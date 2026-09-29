@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -31,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Tests for GetWatermarkOffsets and QueryWatermarkOffsets.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void WatermarkOffsets(string bootstrapServers)
+        public async Task WatermarkOffsets(string bootstrapServers)
         {
             LogToFile("start WatermarkOffsets");
 
@@ -51,7 +52,7 @@ namespace Confluent.Kafka.IntegrationTests
                 DeliveryResult<Null, string> dr;
                 using (var producer = new TestProducerBuilder<Null, string>(producerConfig).Build())
                 {
-                    dr = producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = testString }).Result;
+                    dr = await producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = testString }, TestContext.Current.CancellationToken);
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10))); // this isn't necessary.
                 }
 

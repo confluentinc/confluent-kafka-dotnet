@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using Xunit;
+using System.Threading.Tasks;
 using System;
 using Confluent.Kafka.Admin;
 using System.Collections.Generic;
@@ -33,7 +34,7 @@ namespace Confluent.Kafka.UnitTests
         };
 
         [Fact]
-        public async void NullTopicCollection()
+        public async Task NullTopicCollection()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -47,7 +48,7 @@ namespace Confluent.Kafka.UnitTests
         }
         
         [Fact]
-        public async void EmptyTopicCollection()
+        public async Task EmptyTopicCollection()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -63,7 +64,7 @@ namespace Confluent.Kafka.UnitTests
 
         
         [Fact]
-        public async void WrongTopicNames()
+        public async Task WrongTopicNames()
         {
             var wrongTopicCollections = new List<TopicCollection>
             {
@@ -85,7 +86,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void WrongRequestTimeoutValue()
+        public async Task WrongRequestTimeoutValue()
         {
             var topicCollections =  TopicCollection.OfTopicNames(new List<string> {});
             var wrongRequestTimeoutValue = new DescribeTopicsOptions
@@ -101,7 +102,7 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
-        public async void LocalTimeout()
+        public async Task LocalTimeout()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig
             { 

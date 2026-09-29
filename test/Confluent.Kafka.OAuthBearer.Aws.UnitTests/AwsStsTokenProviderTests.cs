@@ -118,7 +118,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://my.audience");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            await provider.GetTokenAsync();
+            await provider.GetTokenAsync(TestContext.Current.CancellationToken);
             Assert.Single(fake.LastRequest.Audience);
             Assert.Equal("https://my.audience", fake.LastRequest.Audience[0]);
         }
@@ -130,7 +130,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var cfg = AwsOAuthBearerConfig.Parse(
                 "region=us-east-1,audience=https://a,signing_algorithm=RS256");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            await provider.GetTokenAsync();
+            await provider.GetTokenAsync(TestContext.Current.CancellationToken);
             Assert.Equal("RS256", fake.LastRequest.SigningAlgorithm);
         }
 
@@ -141,7 +141,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var cfg = AwsOAuthBearerConfig.Parse(
                 "region=us-east-1,audience=https://a,duration_seconds=900");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            await provider.GetTokenAsync();
+            await provider.GetTokenAsync(TestContext.Current.CancellationToken);
             Assert.Equal(900, fake.LastRequest.DurationSeconds);
         }
 
@@ -151,7 +151,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            await provider.GetTokenAsync();
+            await provider.GetTokenAsync(TestContext.Current.CancellationToken);
             Assert.Equal(300, fake.LastRequest.DurationSeconds);
         }
 
@@ -161,7 +161,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            await provider.GetTokenAsync();
+            await provider.GetTokenAsync(TestContext.Current.CancellationToken);
             Assert.Equal("ES384", fake.LastRequest.SigningAlgorithm);
         }
 
@@ -172,7 +172,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var cfg = AwsOAuthBearerConfig.Parse(
                 "region=us-east-1,audience=https://a,tag_team=platform,tag_environment=prod");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            await provider.GetTokenAsync();
+            await provider.GetTokenAsync(TestContext.Current.CancellationToken);
 
             Assert.Equal(2, fake.LastRequest.Tags.Count);
             Assert.Contains(fake.LastRequest.Tags, t => t.Key == "team" && t.Value == "platform");
@@ -185,7 +185,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            await provider.GetTokenAsync();
+            await provider.GetTokenAsync(TestContext.Current.CancellationToken);
 
             // AWS SDK pre-initializes Tags to an empty AlwaysSendList<Tag>; verify we didn't add any entries.
             Assert.Empty(fake.LastRequest.Tags);
@@ -199,7 +199,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            var tok = await provider.GetTokenAsync();
+            var tok = await provider.GetTokenAsync(TestContext.Current.CancellationToken);
 
             Assert.Equal(CannedJwt, tok.TokenValue);
             Assert.Equal(RoleArn, tok.PrincipalName);
@@ -221,7 +221,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 }));
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            var tok = await provider.GetTokenAsync();
+            var tok = await provider.GetTokenAsync(TestContext.Current.CancellationToken);
 
             var utcKind = DateTime.SpecifyKind(localKindTimestamp, DateTimeKind.Utc);
             var expected = new DateTimeOffset(utcKind).ToUnixTimeMilliseconds();
@@ -243,7 +243,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var provider = new AwsStsTokenProvider(cfg, fake);
 
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => provider.GetTokenAsync());
+                () => provider.GetTokenAsync(TestContext.Current.CancellationToken));
             Assert.Contains("Expiration", ex.Message);
         }
         
@@ -260,7 +260,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 "region=us-east-1,audience=https://a",
                 saslExtensions);
             var provider = new AwsStsTokenProvider(cfg, fake);
-            var tok = await provider.GetTokenAsync();
+            var tok = await provider.GetTokenAsync(TestContext.Current.CancellationToken);
             Assert.NotNull(tok.Extensions);
             Assert.Equal(2, tok.Extensions.Count);
             Assert.Equal("lkc-123", tok.Extensions["logicalCluster"]);
@@ -273,7 +273,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var fake = new FakeStsClient((req, ct) => Task.FromResult(OkResponse()));
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            var tok = await provider.GetTokenAsync();
+            var tok = await provider.GetTokenAsync(TestContext.Current.CancellationToken);
             Assert.Null(tok.Extensions);
         }
 
@@ -290,7 +290,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
                 }));
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
-            await Assert.ThrowsAsync<FormatException>(() => provider.GetTokenAsync());
+            await Assert.ThrowsAsync<FormatException>(() => provider.GetTokenAsync(TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -303,7 +303,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             var ex = await Assert.ThrowsAsync<AmazonSecurityTokenServiceException>(
-                () => provider.GetTokenAsync());
+                () => provider.GetTokenAsync(TestContext.Current.CancellationToken));
             Assert.Equal("AccessDenied", ex.ErrorCode);
         }
 
@@ -316,7 +316,7 @@ namespace Confluent.Kafka.OAuthBearer.Aws.UnitTests
             var cfg = AwsOAuthBearerConfig.Parse("region=us-east-1,audience=https://a");
             var provider = new AwsStsTokenProvider(cfg, fake);
             await Assert.ThrowsAsync<OutboundWebIdentityFederationDisabledException>(
-                () => provider.GetTokenAsync());
+                () => provider.GetTokenAsync(TestContext.Current.CancellationToken));
         }
 
         [Fact]

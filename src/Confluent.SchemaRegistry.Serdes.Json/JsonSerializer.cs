@@ -121,7 +121,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
             var nonJsonConfig = config
                 .Where(item => !item.Key.StartsWith("json.") && !item.Key.StartsWith("rules.")
-                    && !item.Key.StartsWith("subject.name.strategy."));
+                    && !item.Key.StartsWith("subject.name.strategy.")
+                    && !item.Key.StartsWith("validation.rules."));
             if (nonJsonConfig.Count() > 0)
             {
                 throw new ArgumentException($"JsonSerializer: unknown configuration parameter {nonJsonConfig.First().Key}");
@@ -273,11 +274,27 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return await JsonUtils.Transform(ctx, parsedSchema, parsedSchema, "$", message, transform).ConfigureAwait(false);
                     };
+                    if (ValidationEnabled(ValidationRulesExecution.BeforeDomainRules))
+                    {
+                        await ValidateInlineRules(parsedSchema, value).ConfigureAwait(false);
+                    }
+
                     value = await ExecuteRules(context.Component == MessageComponentType.Key,
                             subject, context.Topic, context.Headers, RuleMode.Write,
                             null, latestSchema, value, fieldTransformer)
                         .ContinueWith(t => (T)t.Result)
                         .ConfigureAwait(continueOnCapturedContext: false);
+
+                    if (ValidationEnabled(ValidationRulesExecution.AfterDomainRules))
+                    {
+                        await ValidateInlineRules(parsedSchema, value).ConfigureAwait(false);
+                    }
+                }
+                else if (ValidationEnabled())
+                {
+                    // No domain rules run on this path, so before and after collapse to a
+                    // single validation point; parsedSchema is the local one here.
+                    await ValidateInlineRules(parsedSchema, value).ConfigureAwait(false);
                 }
 
                 var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, jsonSchemaGeneratorSettingsSerializerSettings);
@@ -325,6 +342,18 @@ namespace Confluent.SchemaRegistry.Serdes
             JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, jsonSchemaGeneratorSettings);
             return await utils.GetResolvedSchema().ConfigureAwait(false);
+        }
+
+
+        /// <summary>
+        ///     Evaluates the schema's inline validation rules against the message, throwing a
+        ///     single exception listing every violation found.
+        /// </summary>
+        private async Task ValidateInlineRules(NJsonSchema.JsonSchema schema, object value)
+        {
+            var violations = await JsonUtils.Validate(GetValidationExecutor(), schema, value,
+                validationRulesFailFast).ConfigureAwait(false);
+            ValidationRules.ThrowIfFailed(violations);
         }
 
     }

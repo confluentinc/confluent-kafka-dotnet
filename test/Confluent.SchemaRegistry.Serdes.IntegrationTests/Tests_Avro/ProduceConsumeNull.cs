@@ -89,7 +89,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 new ConsumerBuilder<string, ProduceConsumeUser>(consumerConfig)
                     .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
                     .SetValueDeserializer(new AvroDeserializer<ProduceConsumeUser>(schemaRegistry).AsSyncOverAsync())
-                    .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
+                    .SetErrorHandler((_, e) => Assert.Fail(e.Reason))
                     .Build())
             {
                 consumer.Subscribe(topic);

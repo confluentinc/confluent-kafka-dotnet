@@ -24,10 +24,10 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void SpecialValues()
         {
-            Assert.Equal(Offset.Beginning.Value, -2);
-            Assert.Equal(Offset.End.Value, -1);
-            Assert.Equal(Offset.Unset.Value, -1001);
-            Assert.Equal(Offset.Stored.Value, -1000);
+            Assert.Equal(-2, Offset.Beginning.Value);
+            Assert.Equal(-1, Offset.End.Value);
+            Assert.Equal(-1001, Offset.Unset.Value);
+            Assert.Equal(-1000, Offset.Stored.Value);
         }
 
         [Fact]

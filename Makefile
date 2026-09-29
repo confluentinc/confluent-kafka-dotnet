@@ -25,16 +25,16 @@ build:
 
 test:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
-		dotnet test test/$$d/$$d.csproj ; \
+		dotnet test --project test/$$d/$$d.csproj ; \
 	done)
 
 test-coverage:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
-		$(DOTNET_COVERAGE_TOOL) collect "dotnet test -f $(DEFAULT_TEST_FRAMEWORK) test/$$d/$$d.csproj" \
+		$(DOTNET_COVERAGE_TOOL) collect "dotnet test --project test/$$d/$$d.csproj -f $(DEFAULT_TEST_FRAMEWORK)" \
 			-f xml -o test/$$d/coverage.xml ; \
 	done)
 
 test-latest:
 	@(for d in $(UNIT_TEST_DIRS) ; do \
-		dotnet test -f $(DEFAULT_TEST_FRAMEWORK) test/$$d/$$d.csproj ; \
+		dotnet test --project test/$$d/$$d.csproj -f $(DEFAULT_TEST_FRAMEWORK) ; \
 	done)

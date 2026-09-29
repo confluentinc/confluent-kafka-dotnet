@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Xunit;
 
@@ -27,7 +28,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     Test producing non-record type using TopicRecord strategy fails (value)
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        private static void ProduceInvalid_NotRecord1(string bootstrapServers, string schemaRegistryServers)
+        private static async Task ProduceInvalid_NotRecord1(string bootstrapServers, string schemaRegistryServers)
         {
             string topic = Guid.NewGuid().ToString();
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
@@ -51,7 +52,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Exception caught = null;
                 try
                 {
-                    producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }).GetAwaiter().GetResult();
+                    await producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }, TestContext.Current.CancellationToken);
                 }
                 catch (Exception e)
                 {
@@ -68,7 +69,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     Test producing non-record type using Record strategy fails (value)
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        private static void ProduceInvalid_NotRecord2(string bootstrapServers, string schemaRegistryServers)
+        private static async Task ProduceInvalid_NotRecord2(string bootstrapServers, string schemaRegistryServers)
         {
             string topic = Guid.NewGuid().ToString();
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
@@ -92,7 +93,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Exception caught = null;
                 try
                 {
-                    producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }).GetAwaiter().GetResult();
+                    await producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }, TestContext.Current.CancellationToken);
                 }
                 catch (Exception e)
                 {
@@ -109,7 +110,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     Test producing non-record type using TopicRecord strategy fails (key)
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        private static void ProduceInvalid_NotRecord3(string bootstrapServers, string schemaRegistryServers)
+        private static async Task ProduceInvalid_NotRecord3(string bootstrapServers, string schemaRegistryServers)
         {
             string topic = Guid.NewGuid().ToString();
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
@@ -133,7 +134,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Exception caught = null;
                 try
                 {
-                    producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }).GetAwaiter().GetResult();
+                    await producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }, TestContext.Current.CancellationToken);
                 }
                 catch (Exception e)
                 {
@@ -150,7 +151,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     Test producing non-record type using Record strategy fails (key)
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        private static void ProduceInvalid_NotRecord4(string bootstrapServers, string schemaRegistryServers)
+        private static async Task ProduceInvalid_NotRecord4(string bootstrapServers, string schemaRegistryServers)
         {
             string topic = Guid.NewGuid().ToString();
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
@@ -174,7 +175,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Exception caught = null;
                 try
                 {
-                    producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }).GetAwaiter().GetResult();
+                    await producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }, TestContext.Current.CancellationToken);
                 }
                 catch (Exception e)
                 {

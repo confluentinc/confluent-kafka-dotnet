@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using Xunit;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 
 
@@ -27,7 +28,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     strategies works for Protobuf serializers.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void SubjectNameStrategiesProtobuf(string bootstrapServers, string schemaRegistryServers)
+        public static async Task SubjectNameStrategiesProtobuf(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
@@ -42,9 +43,9 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var u = new UInt32Value();
                     u.Value = 42;
-                    producer.ProduceAsync(topic.Name, new Message<string, UInt32Value> { Key = "test1", Value = u }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, UInt32Value> { Key = "test1", Value = u }, TestContext.Current.CancellationToken);
 
-                    var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
+                    var subjects = await schemaRegistry.GetAllSubjectsAsync();
                     Assert.Contains(topic.Name + "-UInt32Value", subjects);
                     Assert.DoesNotContain(topic.Name + "-value", subjects);
                     // May contain the record name subject from a previous test.
@@ -57,9 +58,9 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var u = new UInt32Value();
                     u.Value = 42;
-                    producer.ProduceAsync(topic.Name, new Message<string, UInt32Value> { Key = "test1", Value = u }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, UInt32Value> { Key = "test1", Value = u }, TestContext.Current.CancellationToken);
 
-                    var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
+                    var subjects = await schemaRegistry.GetAllSubjectsAsync();
                     // Note: If this value is in SR by any means (even if not via this test),
                     // it implies what is being tested here is functional.
                     Assert.Contains("UInt32Value", subjects);
@@ -73,9 +74,9 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     var u = new UInt32Value();
                     u.Value = 42;
-                    producer.ProduceAsync(topic.Name, new Message<string, UInt32Value> { Key = "test1", Value = u }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, UInt32Value> { Key = "test1", Value = u }, TestContext.Current.CancellationToken);
 
-                    var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
+                    var subjects = await schemaRegistry.GetAllSubjectsAsync();
                     Assert.Contains(topic.Name + "-value", subjects);
                 }
             }

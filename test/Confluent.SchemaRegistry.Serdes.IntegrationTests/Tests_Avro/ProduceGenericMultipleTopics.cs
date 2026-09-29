@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Avro;
 using Avro.Generic;
@@ -13,7 +14,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     Avro deserializer.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void ProduceGenericMultipleTopics(string bootstrapServers, string schemaRegistryServers)
+        public static async Task ProduceGenericMultipleTopics(string bootstrapServers, string schemaRegistryServers)
         {
             var s = (RecordSchema)RecordSchema.Parse(
                 @"{
@@ -48,8 +49,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
-                dr2 = p.ProduceAsync(topic2, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
+                dr = await p.ProduceAsync(topic, new Message<Null, GenericRecord> { Key = null, Value = record }, TestContext.Current.CancellationToken);
+                dr2 = await p.ProduceAsync(topic2, new Message<Null, GenericRecord> { Key = null, Value = record }, TestContext.Current.CancellationToken);
             }
 
             Assert.Null(dr.Key);

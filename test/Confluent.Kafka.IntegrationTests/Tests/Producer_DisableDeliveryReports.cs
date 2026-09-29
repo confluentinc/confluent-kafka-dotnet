@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -30,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_DisableDeliveryReports(string bootstrapServers)
+        public async Task Producer_DisableDeliveryReports(string bootstrapServers)
         {
             LogToFile("start Producer_DisableDeliveryReports");
 
@@ -76,23 +77,27 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var drTask = producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
+                    TestContext.Current.CancellationToken);
                 Assert.True(drTask.IsCompleted); // should complete immediately.
-                Assert.Equal(Offset.Unset, drTask.Result.Offset);
-                Assert.Equal(Partition.Any, drTask.Result.Partition);
-                Assert.Equal(singlePartitionTopic, drTask.Result.Topic);
-                Assert.Equal(TestKey, drTask.Result.Message.Key);
-                Assert.Equal(TestValue, drTask.Result.Message.Value);
+                var dr = await drTask;
+                Assert.Equal(Offset.Unset, dr.Offset);
+                Assert.Equal(Partition.Any, dr.Partition);
+                Assert.Equal(singlePartitionTopic, dr.Topic);
+                Assert.Equal(TestKey, dr.Message.Key);
+                Assert.Equal(TestValue, dr.Message.Value);
 
                 drTask = producer.ProduceAsync(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
+                    TestContext.Current.CancellationToken);
                 Assert.True(drTask.IsCompleted); // should complete immediately.
-                Assert.Equal(Offset.Unset, drTask.Result.Offset);
-                Assert.Equal(0, (int)drTask.Result.Partition);
-                Assert.Equal(singlePartitionTopic, drTask.Result.Topic);
-                Assert.Equal(TestKey, drTask.Result.Message.Key);
-                Assert.Equal(TestValue, drTask.Result.Message.Value);
+                dr = await drTask;
+                Assert.Equal(Offset.Unset, dr.Offset);
+                Assert.Equal(0, (int)dr.Partition);
+                Assert.Equal(singlePartitionTopic, dr.Topic);
+                Assert.Equal(TestKey, dr.Message.Key);
+                Assert.Equal(TestValue, dr.Message.Value);
 
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }

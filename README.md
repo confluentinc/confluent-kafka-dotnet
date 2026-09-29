@@ -44,18 +44,19 @@ confluent-kafka-dotnet is distributed via NuGet. We provide the following  packa
 - [Confluent.SchemaRegistry.Encryption.Azure](https://www.nuget.org/packages/Confluent.SchemaRegistry.Encryption.Azure/) *[netstandard2.1, net462, net8.0, net10.0]* - Confluent Schema Registry client-side field-level encryption client for Azure Key Vault.
 - [Confluent.SchemaRegistry.Encryption.Gcp](https://www.nuget.org/packages/Confluent.SchemaRegistry.Encryption.Gcp/) *[netstandard2.1, net462, net8.0, net10.0]* - Confluent Schema Registry client-side field-level encryption client for Google Cloud KMS.
 - [Confluent.SchemaRegistry.Encryption.HcVault](https://www.nuget.org/packages/Confluent.SchemaRegistry.Encryption.HcVault/) *[netstandard2.1, net462, net8.0, net10.0]* - Confluent Schema Registry client-side field-level encryption client for Hashicorp Vault.
+- [Confluent.SchemaRegistry.Encryption.AliCloud](https://www.nuget.org/packages/Confluent.SchemaRegistry.Encryption.AliCloud/) *[netstandard2.1, net462, net8.0, net10.0]* - Confluent Schema Registry client-side field-level encryption client for Alibaba Cloud KMS.
 - [Confluent.SchemaRegistry.Rules](https://www.nuget.org/packages/Confluent.SchemaRegistry.Rules/) *[netstandard2.1, net462, net8.0, net10.0]* - Confluent Schema Registry client-side support for data quality rules (via the Common Expression Language) and schema migration rules (via JSONata).
 
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 2.15.0
+Install-Package Confluent.Kafka -Version 2.15.1
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 2.15.0 Confluent.Kafka
+dotnet add package -v 2.15.1 Confluent.Kafka
 ```
 
 Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provides a number of different builds of `librdkafka` that are compatible with [common platforms](https://github.com/edenhill/librdkafka/wiki/librdkafka.redist-NuGet-package-runtime-libraries). If you are on one of these platforms this will all work seamlessly (and you don't need to explicitly reference `librdkafka.redist`). If you are on a different platform, you may need to [build librdkafka](https://github.com/edenhill/librdkafka#building) manually (or acquire it via other means) and load it using the [Library.Load](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.Library.html#Confluent_Kafka_Library_Load_System_String_) method.
@@ -83,35 +84,55 @@ requests before proceeding. You might typically want to do this in highly concur
 for example in the context of handling web requests. Behind the scenes, the client will manage
 optimizing communication with the Kafka brokers for you, batching requests as appropriate.
 
+Production applications should serialize with Schema Registry. Producing plain string
+or raw values leads to data-quality issues, broken consumers, and ungovernable data.
+The producer examples below require the `Confluent.SchemaRegistry` and
+`Confluent.SchemaRegistry.Serdes.Json` packages in addition to `Confluent.Kafka`.
+
 ```csharp
 using System;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 
 class Program
 {
+    public class User
+    {
+        public string Name { get; set; }
+        public int FavoriteNumber { get; set; }
+    }
+
     public static async Task Main(string[] args)
     {
         var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
+        var schemaRegistryConfig = new SchemaRegistryConfig { Url = "http://localhost:8081" };
 
-        // If serializers are not specified, default serializers from
-        // `Confluent.Kafka.Serializers` will be automatically used where
-        // available. Note: by default strings are encoded as UTF8.
-        using (var p = new ProducerBuilder<Null, string>(config).Build())
+        // The JSON schema is generated from the User type, then registered and
+        // validated on produce.
+        using var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig);
+        using var p = new ProducerBuilder<Null, User>(config)
+            .SetValueSerializer(new JsonSerializer<User>(schemaRegistry))
+            .Build();
+
+        try
         {
-            try
-            {
-                var dr = await p.ProduceAsync("test-topic", new Message<Null, string> { Value = "test" });
-                Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
-            }
-            catch (ProduceException<Null, string> e)
-            {
-                Console.WriteLine($"Delivery failed: {e.Error.Reason}");
-            }
+            var user = new User { Name = "Confluent", FavoriteNumber = 42 };
+            var dr = await p.ProduceAsync("my-topic", new Message<Null, User> { Value = user });
+            Console.WriteLine($"Delivered to '{dr.TopicPartitionOffset}'");
+        }
+        catch (ProduceException<Null, User> e)
+        {
+            Console.WriteLine($"Delivery failed: {e.Error.Reason}");
         }
     }
 }
 ```
+
+Avro and Protobuf serializers are also available — see [Schema Registry Integration](#schema-registry-integration)
+and the [JsonSerialization](examples/JsonSerialization), [AvroSpecific](examples/AvroSpecific),
+and [Protobuf](examples/Protobuf) examples.
 
 Note that a server round-trip is slow (3ms at a minimum; actual latency depends on many factors).
 In highly concurrent scenarios you will achieve high overall throughput out of the producer using
@@ -122,23 +143,41 @@ use the `Produce` method instead:
 ```csharp
 using System;
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 
 class Program
 {
+    public class User
+    {
+        public string Name { get; set; }
+        public int FavoriteNumber { get; set; }
+    }
+
     public static void Main(string[] args)
     {
         var conf = new ProducerConfig { BootstrapServers = "localhost:9092" };
+        var schemaRegistryConfig = new SchemaRegistryConfig { Url = "http://localhost:8081" };
 
-        Action<DeliveryReport<Null, string>> handler = r =>
+        Action<DeliveryReport<Null, User>> handler = r =>
             Console.WriteLine(!r.Error.IsError
                 ? $"Delivered message to {r.TopicPartitionOffset}"
                 : $"Delivery Error: {r.Error.Reason}");
 
-        using (var p = new ProducerBuilder<Null, string>(conf).Build())
+        using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+        // Note: the Schema Registry serializers are asynchronous. The fire-and-forget
+        // `Produce` method requires a synchronous serializer, so wrap it with
+        // `AsSyncOverAsync`. Schema lookups are cached, so this only blocks on the
+        // first message for a given schema.
+        using (var p = new ProducerBuilder<Null, User>(conf)
+            .SetValueSerializer(new JsonSerializer<User>(schemaRegistry).AsSyncOverAsync())
+            .Build())
         {
             for (int i = 0; i < 100; ++i)
             {
-                p.Produce("my-topic", new Message<Null, string> { Value = i.ToString() }, handler);
+                var user = new User { Name = "Confluent", FavoriteNumber = i };
+                p.Produce("my-topic", new Message<Null, User> { Value = user }, handler);
             }
 
             // wait for up to 10 seconds for any inflight messages to be delivered.
@@ -150,13 +189,26 @@ class Program
 
 ### Basic Consumer Example
 
+This example consumes the messages produced by the examples above. It deserializes with
+Schema Registry, so it requires the `Confluent.SchemaRegistry` and
+`Confluent.SchemaRegistry.Serdes.Json` packages in addition to `Confluent.Kafka`.
+
 ```csharp
 using System;
 using System.Threading;
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 
 class Program
 {
+    public class User
+    {
+        public string Name { get; set; }
+        public int FavoriteNumber { get; set; }
+    }
+
     public static void Main(string[] args)
     {
         var conf = new ConsumerConfig
@@ -170,8 +222,12 @@ class Program
             // earliest message in the topic 'my-topic' the first time you run the program.
             AutoOffsetReset = AutoOffsetReset.Earliest
         };
+        var schemaRegistryConfig = new SchemaRegistryConfig { Url = "http://localhost:8081" };
 
-        using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
+        using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+        using (var c = new ConsumerBuilder<Ignore, User>(conf)
+            .SetValueDeserializer(new JsonDeserializer<User>(schemaRegistry).AsSyncOverAsync())
+            .Build())
         {
             c.Subscribe("my-topic");
 
@@ -189,7 +245,7 @@ class Program
                     try
                     {
                         var cr = c.Consume(cts.Token);
-                        Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
+                        Console.WriteLine($"Consumed '{cr.Message.Value.Name}' ({cr.Message.Value.FavoriteNumber}) at: '{cr.TopicPartitionOffset}'.");
                     }
                     catch (ConsumeException e)
                     {

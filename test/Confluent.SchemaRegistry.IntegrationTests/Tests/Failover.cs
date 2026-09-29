@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -25,7 +26,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void Failover(Config config)
+        public static async Task Failover(Config config)
         {
             var testSchema =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
@@ -36,8 +37,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
-                var id = sr.RegisterSchemaAsync(subject, testSchema, false).Result;
-                var id2 = sr.GetSchemaIdAsync(subject, testSchema, false).Result;
+                var id = await sr.RegisterSchemaAsync(subject, testSchema, false);
+                var id2 = await sr.GetSchemaIdAsync(subject, testSchema, false);
                 Assert.Equal(id, id2);
             }
 
@@ -45,8 +46,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
-                var id = sr.RegisterSchemaAsync(subject, testSchema, false).Result;
-                var id2 = sr.GetSchemaIdAsync(subject, testSchema, false).Result;
+                var id = await sr.RegisterSchemaAsync(subject, testSchema, false);
+                var id2 = await sr.GetSchemaIdAsync(subject, testSchema, false);
                 Assert.Equal(id, id2);
             }
 
@@ -55,16 +56,9 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
                 
-                Assert.Throws<HttpRequestException>(() => 
+                await Assert.ThrowsAsync<HttpRequestException>(async () =>
                 {
-                    try
-                    {
-                        sr.RegisterSchemaAsync(subject, testSchema).Wait();
-                    }
-                    catch (AggregateException e)
-                    {
-                        throw e.InnerException;
-                    }
+                    await sr.RegisterSchemaAsync(subject, testSchema);
                 });
             }
 

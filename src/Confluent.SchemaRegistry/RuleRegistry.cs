@@ -27,10 +27,12 @@ namespace Confluent.SchemaRegistry
         private readonly SemaphoreSlim ruleExecutorsMutex = new SemaphoreSlim(1);
         private readonly SemaphoreSlim ruleActionsMutex = new SemaphoreSlim(1);
         private readonly SemaphoreSlim ruleOverridesMutex = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim validationRuleExecutorMutex = new SemaphoreSlim(1);
 
         private IDictionary<string, IRuleExecutor> ruleExecutors = new Dictionary<string, IRuleExecutor>();
         private IDictionary<string, IRuleAction> ruleActions = new Dictionary<string, IRuleAction>();
         private IDictionary<string, RuleOverride> ruleOverrides = new Dictionary<string, RuleOverride>();
+        private IValidationRuleExecutor validationRuleExecutor;
 
         private static readonly RuleRegistry GLOBAL_INSTANCE = new RuleRegistry();
 
@@ -49,6 +51,41 @@ namespace Confluent.SchemaRegistry
             finally
             {
                 ruleExecutorsMutex.Release();
+            }
+        }
+
+        /// <summary>
+        ///     Registers the executor used to evaluate inline validation rules. Validation
+        ///     rule executors are not keyed by type, so there is a single slot rather than
+        ///     a map.
+        /// </summary>
+        public void RegisterValidationExecutor(IValidationRuleExecutor executor)
+        {
+            validationRuleExecutorMutex.Wait();
+            try
+            {
+                validationRuleExecutor = executor;
+            }
+            finally
+            {
+                validationRuleExecutorMutex.Release();
+            }
+        }
+
+        /// <summary>
+        ///     Returns the registered validation rule executor, or null when no rules
+        ///     package has registered one.
+        /// </summary>
+        public IValidationRuleExecutor GetValidationExecutor()
+        {
+            validationRuleExecutorMutex.Wait();
+            try
+            {
+                return validationRuleExecutor;
+            }
+            finally
+            {
+                validationRuleExecutorMutex.Release();
             }
         }
 
@@ -165,6 +202,14 @@ namespace Confluent.SchemaRegistry
         public static void RegisterRuleExecutor(IRuleExecutor executor)
         {
             GlobalInstance.RegisterExecutor(executor);
+        }
+
+        /// <summary>
+        ///     Registers the global executor used to evaluate inline validation rules.
+        /// </summary>
+        public static void RegisterValidationRuleExecutor(IValidationRuleExecutor executor)
+        {
+            GlobalInstance.RegisterValidationExecutor(executor);
         }
 
         public static void RegisterRuleAction(IRuleAction action)

@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -29,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test of disabling marshaling of message headers.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Consumer_DisableTimestamps(string bootstrapServers)
+        public async Task Consumer_DisableTimestamps(string bootstrapServers)
         {
             LogToFile("start Consumer_DisableTimestamps");
 
@@ -45,19 +46,20 @@ namespace Confluent.Kafka.IntegrationTests
             DeliveryResult<byte[], byte[]> dr;
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                dr = producer.ProduceAsync(
+                dr = await producer.ProduceAsync(
                     singlePartitionTopic,
                     new Message<byte[], byte[]>
                     {
                         Value = Serializers.Utf8.Serialize("my-value", SerializationContext.Empty),
                         Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
-                    }
-                ).Result;
+                    },
+                    TestContext.Current.CancellationToken
+                );
             }
 
             using (var consumer =
                 new TestConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
+                    .SetErrorHandler((_, e) => Assert.Fail(e.Reason))
                     .Build())
             {                    
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });

@@ -18,6 +18,7 @@ using Xunit;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Newtonsoft.Json;
@@ -73,7 +74,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     Test various things
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void ProduceConsumeMixedJson(string bootstrapServers, string schemaRegistryServers)
+        public static async Task ProduceConsumeMixedJson(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
@@ -93,16 +94,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         LastName = "User",
                         NumberWithRange = 7 // range should be between 2 and 5.
                     };
-                    Assert.Throws<ProduceException<string, PersonPoco>>(() => {
-                        try
-                        {
-                            producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }).Wait();
-                        }
-                        catch (AggregateException ax)
-                        {
-                            // what would be thrown if the call was awaited.
-                            throw ax.InnerException;
-                        }
+                    await Assert.ThrowsAsync<ProduceException<string, PersonPoco>>(async () => {
+                        await producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }, TestContext.Current.CancellationToken);
                     });
                 }
 
@@ -114,8 +107,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         // Omit LastName
                         NumberWithRange = 3
                     };
-                    Assert.Throws<AggregateException>(() => {
-                        producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }).Wait();
+                    await Assert.ThrowsAnyAsync<Exception>(async () => {
+                        await producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }, TestContext.Current.CancellationToken);
                     });
                 }
 
@@ -145,9 +138,9 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             }
                         }
                     };
-                    producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, PersonPoco> { Key = "test1", Value = p }, TestContext.Current.CancellationToken);
 
-                    var schema = schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructValueSubjectName(topic.Name, null)).Result.SchemaString;
+                    var schema = (await schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructValueSubjectName(topic.Name, null))).SchemaString;
 
                     var consumerConfig = new ConsumerConfig
                     {
@@ -162,7 +155,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             .Build())
                     {
                         consumer.Subscribe(topic.Name);
-                        var cr = consumer.Consume();
+                        var cr = consumer.Consume(TestContext.Current.CancellationToken);
                         Assert.Equal(p.FirstName, cr.Message.Value.FirstName);
                         Assert.Equal(p.MiddleName, cr.Message.Value.MiddleName);
                         Assert.Equal(p.LastName, cr.Message.Value.LastName);

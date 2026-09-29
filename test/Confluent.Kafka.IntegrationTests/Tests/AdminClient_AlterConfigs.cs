@@ -18,6 +18,7 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Xunit;
@@ -31,15 +32,15 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.AlterConfigs.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_AlterConfigs(string bootstrapServers)
+        public async Task AdminClient_AlterConfigs(string bootstrapServers)
         {
             LogToFile("start AdminClient_AlterConfigs");
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 // 1. create a new topic to play with.
                 string topicName = Guid.NewGuid().ToString();
-                adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
+                await adminClient.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } });
                 Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throws unknown topic/partition error.
 
                 // 2. do an invalid alter configs call to change it.
@@ -56,38 +57,36 @@ namespace Confluent.Kafka.IntegrationTests
                 };
                 try
                 {
-                    adminClient.AlterConfigsAsync(toUpdate).Wait();
-                    Assert.True(false);
+                    await adminClient.AlterConfigsAsync(toUpdate);
+                    Assert.Fail("expecting exception");
                 }
-                catch (Exception e)
+                catch (AlterConfigsException ace)
                 {
-                    Assert.True(e.InnerException.GetType() == typeof(AlterConfigsException));
-                    var ace = (AlterConfigsException)e.InnerException;
                     Assert.Single(ace.Results);
                     Assert.Contains("Unknown", ace.Results[0].Error.Reason);
                 }
 
-                // 3. test that in the failed alter configs call for the specified config resource, the 
+                // 3. test that in the failed alter configs call for the specified config resource, the
                 // config that was specified correctly wasn't updated.
-                List<DescribeConfigsResult> describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
+                List<DescribeConfigsResult> describeConfigsResult = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource });
                 Assert.NotEqual("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 4. do a valid call, and check that the alteration did correctly happen.
-                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
-                { 
-                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="10011" } } } 
+                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
+                {
+                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="10011" } } }
                 };
-                adminClient.AlterConfigsAsync(toUpdate);
-                describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
+                await adminClient.AlterConfigsAsync(toUpdate);
+                describeConfigsResult = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource });
                 Assert.Equal("10011", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 4. test ValidateOnly = true does not update config entry.
-                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
-                { 
-                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="20002" } } } 
+                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
+                {
+                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="20002" } } }
                 };
-                adminClient.AlterConfigsAsync(toUpdate, new AlterConfigsOptions { ValidateOnly = true }).Wait();
-                describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
+                await adminClient.AlterConfigsAsync(toUpdate, new AlterConfigsOptions { ValidateOnly = true });
+                describeConfigsResult = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource });
                 Assert.Equal("10011", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // FIXME: altering broker configuration sometimes causes
@@ -113,18 +112,18 @@ namespace Confluent.Kafka.IntegrationTests
                   
                 // 6. test updating more than one resource.
                 string topicName2 = Guid.NewGuid().ToString();
-                adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
+                await adminClient.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } });
                 Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throws unknown topic/partition error.
 
                 var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
-                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
+                toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
                 {
                     { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="222" } } },
                     { configResource2, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="333" } } }
                 };
-                adminClient.AlterConfigsAsync(toUpdate).Wait();
-                describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource, configResource2 }).Result;
+                await adminClient.AlterConfigsAsync(toUpdate);
+                describeConfigsResult = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource, configResource2 });
                 Assert.Equal(2, describeConfigsResult.Count);
                 Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
                 Assert.Equal("333", describeConfigsResult[1].Entries["flush.ms"].Value);

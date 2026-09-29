@@ -16,6 +16,7 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -28,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Transactions_WatermarkOffsets(string bootstrapServers)
+        public async Task Transactions_WatermarkOffsets(string bootstrapServers)
         {
             LogToFile("start Transactions_WatermarkOffsets");
 
@@ -45,9 +46,9 @@ namespace Confluent.Kafka.IntegrationTests
 
                 producer.InitTransactions(TimeSpan.FromSeconds(30));
                 producer.BeginTransaction();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message1" }).Wait();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message2" }).Wait();
-                producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message3" }).Wait();
+                await producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message1" }, TestContext.Current.CancellationToken);
+                await producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message2" }, TestContext.Current.CancellationToken);
+                await producer.ProduceAsync(topic.Name, new Message<string, string> { Key = "test", Value = "message3" }, TestContext.Current.CancellationToken);
 
                 WatermarkOffsets wo2 = new WatermarkOffsets(Offset.Unset, Offset.Unset);
                 for (int i=0; i<10; ++i)

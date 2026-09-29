@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -32,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     and values.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Consumer_Poll_DeserializationError(string bootstrapServers)
+        public async Task Consumer_Poll_DeserializationError(string bootstrapServers)
         {
             LogToFile("start Consumer_Poll_DeserializationError");
 
@@ -42,9 +43,9 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var keyData = Encoding.UTF8.GetBytes("key");
-                firstProduced = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Key = keyData }).Result.TopicPartitionOffset;
+                firstProduced = (await producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Key = keyData }, TestContext.Current.CancellationToken)).TopicPartitionOffset;
                 var valData = Encoding.UTF8.GetBytes("val");
-                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = valData });
+                await producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = valData }, TestContext.Current.CancellationToken);
                 Assert.True(producer.Flush(TimeSpan.FromSeconds(10)) == 0);
             }
 

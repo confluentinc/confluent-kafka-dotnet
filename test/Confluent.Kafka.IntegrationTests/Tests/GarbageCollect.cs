@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -32,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Segfault?
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void GarbageCollect(string bootstrapServers)
+        public async Task GarbageCollect(string bootstrapServers)
         {
             LogToFile("start GarbageCollect");
 
@@ -41,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test string", SerializationContext.Empty) }).Wait();
+                await producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test string", SerializationContext.Empty) }, TestContext.Current.CancellationToken);
             }
 
             using (var consumer = new TestConsumerBuilder<byte[], byte[]>(consumerConfig).Build())

@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Xunit;
 
@@ -27,7 +28,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     Test behavior when avro.serializer.auto.register.schemas == false.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void AutoRegisterSchemaDisabled(string bootstrapServers, string schemaRegistryServers)
+        public static async Task AutoRegisterSchemaDisabled(string bootstrapServers, string schemaRegistryServers)
         {
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
@@ -58,15 +59,13 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }))
                         .Build())
                 {
-                    Assert.Throws<SchemaRegistryException>(() =>
+                    await Assert.ThrowsAsync<SchemaRegistryException>(async () =>
                     {
                         string guidTopic = Guid.NewGuid().ToString();
                         try
                         {
-                            producer
-                                .ProduceAsync(guidTopic, new Message<string, int> { Key = "test", Value = 112 })
-                                .GetAwaiter()
-                                .GetResult();
+                            await producer
+                                .ProduceAsync(guidTopic, new Message<string, int> { Key = "test", Value = 112 }, TestContext.Current.CancellationToken);
                         }
                         catch (Exception e)
                         {
@@ -98,13 +97,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                         .Build())
                 {
-                    Assert.Throws<SchemaRegistryException>(() =>
+                    await Assert.ThrowsAsync<SchemaRegistryException>(async () =>
                     {
                         try
                         {
-                            producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 })
-                                .GetAwaiter()
-                                .GetResult();
+                            await producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }, TestContext.Current.CancellationToken);
                         }
                         catch (Exception e)
                         {
@@ -122,7 +119,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                         .Build())
                 {
-                    producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }, TestContext.Current.CancellationToken);
                 }
 
                 // config with avro.serializer.auto.register.schemas == false should work now.
@@ -133,7 +130,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                         .Build())
                 {
-                    producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }, TestContext.Current.CancellationToken);
                 }
 
                 // config with avro.serializer.use.latest.version == true should also work now.
@@ -144,7 +141,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                         .Build())
                 {
-                    producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
+                    await producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }, TestContext.Current.CancellationToken);
                 }
             }
         }

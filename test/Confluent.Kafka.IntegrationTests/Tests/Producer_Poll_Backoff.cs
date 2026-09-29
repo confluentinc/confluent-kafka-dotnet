@@ -73,7 +73,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 Assert.Equal(1, exceptionCount);
 
-                producer.Flush();
+                producer.Flush(TestContext.Current.CancellationToken);
             }
 
             Assert.Equal(0, Library.HandleCount);

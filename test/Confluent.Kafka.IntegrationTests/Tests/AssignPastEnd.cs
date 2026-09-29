@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -31,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     higher than the offset of the last message on a partition.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AssignPastEnd(string bootstrapServers)
+        public async Task AssignPastEnd(string bootstrapServers)
         {
             LogToFile("start AssignPastEnd");
 
@@ -48,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             DeliveryResult<Null, byte[]> dr;
             using (var producer = new TestProducerBuilder<Null, byte[]>(producerConfig).Build())
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, byte[]> { Value = Serializers.Utf8.Serialize(testString, SerializationContext.Empty) }).Result;
+                dr = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, byte[]> { Value = Serializers.Utf8.Serialize(testString, SerializationContext.Empty) }, TestContext.Current.CancellationToken);
                 Assert.True(dr.Offset >= 0);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }

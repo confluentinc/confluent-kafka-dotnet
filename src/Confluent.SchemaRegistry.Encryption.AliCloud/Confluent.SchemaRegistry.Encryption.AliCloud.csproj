@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+        <Authors>Confluent Inc.</Authors>
+        <Description>Provides field-level encryption for use with Confluent Schema Registry using Alibaba Cloud KMS</Description>
+        <Copyright>Copyright 2026 Confluent Inc.</Copyright>
+        <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/confluentinc/confluent-kafka-dotnet.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageIcon>confluent-logo.png</PackageIcon>
+        <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+        <PackageTags>Kafka;Confluent;Schema Registry;Encryption;AliCloud;Alibaba</PackageTags>
+        <PackageId>Confluent.SchemaRegistry.Encryption.AliCloud</PackageId>
+        <Title>Confluent.SchemaRegistry.Encryption.AliCloud</Title>
+        <AssemblyName>Confluent.SchemaRegistry.Encryption.AliCloud</AssemblyName>
+        <TargetFrameworks>$(TargetFrameworks);netstandard2.1;net462</TargetFrameworks>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Encryption.AliCloud.snk</AssemblyOriginatorKeyFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
+        <ProjectReference Include="..\Confluent.SchemaRegistry.Encryption\Confluent.SchemaRegistry.Encryption.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AlibabaCloud.SDK.Kms20160120" Version="2.1.0" />
+        <PackageReference Include="Aliyun.Credentials" Version="1.5.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\confluent-logo.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+</Project>

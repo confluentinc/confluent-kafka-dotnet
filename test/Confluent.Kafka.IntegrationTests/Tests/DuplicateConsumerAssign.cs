@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -34,7 +35,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     You should never do this, but the brokers don't actually prevent it.
         /// </remarks>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void DuplicateConsumerAssign(string bootstrapServers)
+        public async Task DuplicateConsumerAssign(string bootstrapServers)
         {
             LogToFile("start DuplicateConsumerAssign");
 
@@ -53,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
                 DeliveryResult<byte[], byte[]> dr;
                 using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig).Build())
                 {
-                    dr = producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize(testString, SerializationContext.Empty) }).Result;
+                    dr = await producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize(testString, SerializationContext.Empty) }, TestContext.Current.CancellationToken);
                     Assert.NotNull(dr);
                     producer.Flush(TimeSpan.FromSeconds(10));
                 }

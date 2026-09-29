@@ -16,6 +16,7 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.Kafka.Examples.AvroSpecific;
@@ -31,7 +32,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     (which has different code path within Consumer).
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void ConsumePartitionEOF(string bootstrapServers, string schemaRegistryServers)
+        public static async Task ConsumePartitionEOF(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig
             {
@@ -51,7 +52,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
                     .Build())
             {
-                producer.ProduceAsync(topic.Name, new Message<Null, User> { Value = new User { name = "test" } }).Wait();
+                await producer.ProduceAsync(topic.Name, new Message<Null, User> { Value = new User { name = "test" } }, TestContext.Current.CancellationToken);
 
                 var consumerConfig = new ConsumerConfig
                 {
@@ -72,11 +73,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     consumer.Subscribe(topic.Name);
 
-                    var cr1 = consumer.Consume();
+                    var cr1 = consumer.Consume(TestContext.Current.CancellationToken);
                     Assert.NotNull(cr1);
                     Assert.NotNull(cr1.Message);
                     Assert.False(cr1.IsPartitionEOF);
-                    var cr2 = consumer.Consume();
+                    var cr2 = consumer.Consume(TestContext.Current.CancellationToken);
                     Assert.NotNull(cr2);
                     Assert.Null(cr2.Message);
                     Assert.True(cr2.IsPartitionEOF);
@@ -101,7 +102,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     consumer.Subscribe(topic.Name);
 
-                    var cr1 = consumer.Consume();
+                    var cr1 = consumer.Consume(TestContext.Current.CancellationToken);
                     Assert.NotNull(cr1);
                     Assert.NotNull(cr1.Message);
                     Assert.False(cr1.IsPartitionEOF);

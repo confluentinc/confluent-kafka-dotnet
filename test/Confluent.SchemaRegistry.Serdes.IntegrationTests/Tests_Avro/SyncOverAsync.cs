@@ -91,10 +91,14 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         };
                     };
 
+                    // deliberately blocks via Task.WaitAll to test sync-over-async does not deadlock
+                    // under thread-pool exhaustion — do not convert to async.
+#pragma warning disable xUnit1031, xUnit1051
                     tasks.Add(Task.Run(actionCreator(i)));
                 }
 
                 Task.WaitAll(tasks.ToArray());
+#pragma warning restore xUnit1031, xUnit1051
             }
 
             ThreadPool.SetMaxThreads(originalWorkerThreads, originalCompletionPortThreads);

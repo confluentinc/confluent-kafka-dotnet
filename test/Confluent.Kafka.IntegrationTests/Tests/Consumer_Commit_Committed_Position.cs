@@ -30,10 +30,10 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///    Some simple tests for all variants of Commit (and also Committed and Position)
         /// </summary>
-        [SkippableTheory, MemberData(nameof(KafkaParameters))]
+        [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_Commit_Committed_Position(string bootstrapServers)
         {
-            Skip.If(!TestConsumerGroupProtocol.IsClassic(),
+            Assert.SkipWhen(!TestConsumerGroupProtocol.IsClassic(),
                     "FIXME: Why isn't this test working with KIP-848?");
 
             LogToFile("start Consumer_Commit_Committed_Position");

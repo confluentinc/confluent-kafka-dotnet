@@ -24,7 +24,7 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void SpecialValues()
         {
-            Assert.Equal(Partition.Any.Value, -1);
+            Assert.Equal(-1, Partition.Any.Value);
         }
 
         [Fact]

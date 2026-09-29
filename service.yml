@@ -16,5 +16,7 @@ semaphore:
     - global_job_config
 sonarqube:
   enable: true
+  languages:
+    - cs
   scanner_config:
     sonar.cs.vscoveragexml.reportsPaths: "**/*coverage.xml"

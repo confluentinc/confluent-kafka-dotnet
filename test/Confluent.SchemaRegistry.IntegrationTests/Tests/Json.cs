@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -59,7 +60,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 }";
 
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void Json(Config config)
+        public static async Task Json(Config config)
         {
             var srInitial = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
@@ -67,32 +68,32 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var subjectInitial = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
             var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName+"2", null);
 
-            var id1 = srInitial.RegisterSchemaAsync(subjectInitial, new Schema(TestJsonSchema, SchemaType.Json)).Result;
-            var schema1 = sr.GetSchemaAsync(id1).Result; // use a different sr instance to ensure a cached value is not read.
+            var id1 = await srInitial.RegisterSchemaAsync(subjectInitial, new Schema(TestJsonSchema, SchemaType.Json));
+            var schema1 = await sr.GetSchemaAsync(id1); // use a different sr instance to ensure a cached value is not read.
             Assert.Equal(SchemaType.Json, schema1.SchemaType);
             Assert.NotNull(schema1.SchemaString); // SR munges the schema (whitespace), so in general this won't equal the registered schema.
 
             // check that the id of the schema just registered can be retrieved.
-            var id = sr.GetSchemaIdAsync(subjectInitial, new Schema(schema1.SchemaString, SchemaType.Json)).Result;
+            var id = await sr.GetSchemaIdAsync(subjectInitial, new Schema(schema1.SchemaString, SchemaType.Json));
             Assert.Equal(id1, id);
 
             // re-register the munged schema (to a different subject) and check that it is not re-munged.
-            var id2 = sr.RegisterSchemaAsync(subject, schema1).Result;
-            var schema2 = sr.GetSchemaAsync(id2).Result;
+            var id2 = await sr.RegisterSchemaAsync(subject, schema1);
+            var schema2 = await sr.GetSchemaAsync(id2);
             Assert.Equal(schema1.SchemaString, schema2.SchemaString);
             Assert.Equal(schema1.SchemaType, schema2.SchemaType);
 
             // compatibility
-            var compat = sr.IsCompatibleAsync(subject, schema2).Result;
+            var compat = await sr.IsCompatibleAsync(subject, schema2);
             Assert.True(compat);
             var avroSchema = 
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
 
-            var compat2 = sr.IsCompatibleAsync(subject, avroSchema).Result;
+            var compat2 = await sr.IsCompatibleAsync(subject, avroSchema);
             Assert.False(compat2);
-            var compat3 = sr.IsCompatibleAsync(subject, new Schema(avroSchema, SchemaType.Avro)).Result;
+            var compat3 = await sr.IsCompatibleAsync(subject, new Schema(avroSchema, SchemaType.Avro));
             Assert.False(compat3);
         }
     }

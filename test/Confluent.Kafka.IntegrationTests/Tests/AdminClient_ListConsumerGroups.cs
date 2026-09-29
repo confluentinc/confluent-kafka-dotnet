@@ -21,6 +21,7 @@ using Xunit;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.TestsCommon;
 using System.Threading;
+using System.Threading.Tasks;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -37,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///         all returned groups should be of type opposite of T and G must not be included.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_ListConsumerGroups(string bootstrapServers)
+        public async Task AdminClient_ListConsumerGroups(string bootstrapServers)
         {
             var usedType = ConsumerGroupType.Consumer;
             var oppositeType = ConsumerGroupType.Classic;
@@ -89,18 +90,18 @@ namespace Confluent.Kafka.IntegrationTests
                     Thread.Sleep(2000);
 
                     // Our consumer group should be present with same group type option
-                    var groups = adminClient.ListConsumerGroupsAsync(listOptionsWithUsed).Result;
-                    Assert.Empty(groups.Valid.Where(group => group.Type != usedType));
-                    Assert.Single(groups.Valid.Where(group => group.GroupId == groupId));
+                    var groups = await adminClient.ListConsumerGroupsAsync(listOptionsWithUsed);
+                    Assert.DoesNotContain(groups.Valid, group => group.Type != usedType);
+                    Assert.Single(groups.Valid, group => group.GroupId == groupId);
                     
                     var group = groups.Valid.Find(group => group.GroupId == groupId);
                     Assert.Equal(ConsumerGroupState.Stable, group.State);
                     Assert.False(group.IsSimpleConsumerGroup);
 
                     // Our consumer group should not be present with opposite group type option
-                    groups = adminClient.ListConsumerGroupsAsync(listOptionsWithOpposite).Result;
-                    Assert.Empty(groups.Valid.Where(group => group.Type != oppositeType));
-                    Assert.Empty(groups.Valid.Where(group => group.GroupId == groupId));
+                    groups = await adminClient.ListConsumerGroupsAsync(listOptionsWithOpposite);
+                    Assert.DoesNotContain(groups.Valid, group => group.Type != oppositeType);
+                    Assert.DoesNotContain(groups.Valid, group => group.GroupId == groupId);
                 }
                 finally
                 {

@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using Xunit;
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
@@ -51,7 +52,7 @@ namespace Confluent.Kafka.UnitTests
         };
 
         [Fact]
-        public async void LocalTimeout()
+        public async Task LocalTimeout()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
@@ -68,7 +69,7 @@ namespace Confluent.Kafka.UnitTests
         }
         
         [Fact]
-        public async void EmptyUsers()
+        public async Task EmptyUsers()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {

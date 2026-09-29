@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Xunit;
@@ -30,7 +31,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     primitive types.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void PrimitiveTypes(string bootstrapServers, string schemaRegistryServers)
+        public static async Task PrimitiveTypes(string bootstrapServers, string schemaRegistryServers)
         {
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
 
@@ -61,9 +62,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
                         .Build())
                 {
-                    producer
-                        .ProduceAsync(stringTopic, new Message<string, string> { Key = "hello", Value = "world" })
-                        .Wait();
+                    await producer
+                        .ProduceAsync(stringTopic, new Message<string, string> { Key = "hello", Value = "world" }, TestContext.Current.CancellationToken);
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
 
@@ -73,9 +73,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<byte[]>(schemaRegistry))
                         .Build())
                 {
-                    producer
-                        .ProduceAsync(bytesTopic, new Message<byte[], byte[]> { Key = new byte[] { 1, 4, 11 }, Value = new byte[] {} })
-                        .Wait();
+                    await producer
+                        .ProduceAsync(bytesTopic, new Message<byte[], byte[]> { Key = new byte[] { 1, 4, 11 }, Value = new byte[] {} }, TestContext.Current.CancellationToken);
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
 
@@ -85,9 +84,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                         .Build())
                 {
-                    producer
-                        .ProduceAsync(intTopic, new Message<int, int> { Key = 42, Value = 43 })
-                        .Wait();
+                    await producer
+                        .ProduceAsync(intTopic, new Message<int, int> { Key = 42, Value = 43 }, TestContext.Current.CancellationToken);
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
 
@@ -97,9 +95,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<long>(schemaRegistry))
                         .Build())
                 {
-                    producer
-                        .ProduceAsync(longTopic, new Message<long, long> { Key = -32, Value = -33 })
-                        .Wait();
+                    await producer
+                        .ProduceAsync(longTopic, new Message<long, long> { Key = -32, Value = -33 }, TestContext.Current.CancellationToken);
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
 
@@ -109,9 +106,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<bool>(schemaRegistry))
                         .Build())
                 {
-                    producer
-                        .ProduceAsync(boolTopic, new Message<bool, bool> { Key = true, Value = false })
-                        .Wait();
+                    await producer
+                        .ProduceAsync(boolTopic, new Message<bool, bool> { Key = true, Value = false }, TestContext.Current.CancellationToken);
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
 
@@ -121,9 +117,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<float>(schemaRegistry))
                         .Build())
                 {
-                    producer
-                        .ProduceAsync(floatTopic, new Message<float, float> { Key = 44.0f, Value = 45.0f })
-                        .Wait();
+                    await producer
+                        .ProduceAsync(floatTopic, new Message<float, float> { Key = 44.0f, Value = 45.0f }, TestContext.Current.CancellationToken);
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
 
@@ -133,9 +128,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<double>(schemaRegistry))
                         .Build())
                 {
-                    producer
-                        .ProduceAsync(doubleTopic, new Message<double, double> { Key = 46.0, Value = 47.0 })
-                        .Wait();
+                    await producer
+                        .ProduceAsync(doubleTopic, new Message<double, double> { Key = 46.0, Value = 47.0 }, TestContext.Current.CancellationToken);
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
 
@@ -145,9 +139,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<Null>(schemaRegistry))
                         .Build())
                 {
-                    producer
-                        .ProduceAsync(nullTopic, new Message<Null,Null>())
-                        .Wait();
+                    await producer
+                        .ProduceAsync(nullTopic, new Message<Null,Null>(), TestContext.Current.CancellationToken);
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }
 

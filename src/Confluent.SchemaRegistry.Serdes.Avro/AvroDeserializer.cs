@@ -66,15 +66,17 @@ namespace Confluent.SchemaRegistry.Serdes
 
         public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig config = null, RuleRegistry ruleRegistry = null)
         {
+            VariantLogicalType.EnsureRegistered();
             this.schemaRegistryClient = schemaRegistryClient;
             this.config = config;
             this.ruleRegistry = ruleRegistry ?? RuleRegistry.GlobalInstance;
-            
+
             if (config == null) { return; }
 
             var nonAvroConfig = config
                 .Where(item => !item.Key.StartsWith("avro.") && !item.Key.StartsWith("rules.")
-                    && !item.Key.StartsWith("subject.name.strategy."));
+                    && !item.Key.StartsWith("subject.name.strategy.")
+                    && !item.Key.StartsWith("validation.rules."));
             if (nonAvroConfig.Count() > 0)
             {
                 throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {nonAvroConfig.First().Key}.");

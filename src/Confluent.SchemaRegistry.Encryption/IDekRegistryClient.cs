@@ -43,23 +43,26 @@ namespace Confluent.SchemaRegistry.Encryption
         /// </summary>
         /// <param name="name"></param>
         /// <param name="ignoreDeletedKeks"></param>
+        /// <param name="context">The Schema Registry context the KEK belongs to, or null for the default context.</param>
         /// <returns></returns>
-        public Task<RegisteredKek> GetKekAsync(string name, bool ignoreDeletedKeks);
+        public Task<RegisteredKek> GetKekAsync(string name, bool ignoreDeletedKeks, string context = null);
 
         /// <summary>
         ///     Create a KEK.
         /// </summary>
         /// <param name="kek"></param>
+        /// <param name="context">The Schema Registry context the KEK belongs to, or null for the default context.</param>
         /// <returns></returns>
-        public Task<RegisteredKek> CreateKekAsync(Kek kek);
+        public Task<RegisteredKek> CreateKekAsync(Kek kek, string context = null);
 
         /// <summary>
         ///     Update a KEK.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="kek"></param>
+        /// <param name="context">The Schema Registry context the KEK belongs to, or null for the default context.</param>
         /// <returns></returns>
-        public Task<RegisteredKek> UpdateKekAsync(string name, UpdateKek kek);
+        public Task<RegisteredKek> UpdateKekAsync(string name, UpdateKek kek, string context = null);
 
         /// <summary>
         ///     Get the list of DEKs.

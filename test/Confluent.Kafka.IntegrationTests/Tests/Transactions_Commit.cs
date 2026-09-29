@@ -54,8 +54,8 @@ namespace Confluent.Kafka.IntegrationTests
                     producer.Produce(topic.Name, new Message<string, string> { Key = "test key 1", Value = "test val 1" });
                     producer.CommitTransaction(defaultTimeout);
 
-                    var cr1 = consumer.Consume();
-                    var cr2 = consumer.Consume();
+                    var cr1 = consumer.Consume(TestContext.Current.CancellationToken);
+                    var cr2 = consumer.Consume(TestContext.Current.CancellationToken);
                     var cr3 = consumer.Consume(TimeSpan.FromMilliseconds(100)); // force the consumer to read over the final control message internally.
                     Assert.Equal(wm.High, cr1.Offset);
                     Assert.Equal(wm.High+2, cr2.Offset); // there should be a skipped offset due to a commit marker in the log.

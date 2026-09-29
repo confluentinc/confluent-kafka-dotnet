@@ -17,6 +17,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.TestsCommon;
@@ -30,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient ACL operations.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public async void AdminClient_AclOperations(string bootstrapServers)
+        public async Task AdminClient_AclOperations(string bootstrapServers)
         {
             LogToFile("start AdminClient_AclOperations");
 

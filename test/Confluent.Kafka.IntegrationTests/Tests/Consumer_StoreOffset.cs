@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -30,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Simple Consumer StoreOffsets test.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Consumer_StoreOffset(string bootstrapServers)
+        public async Task Consumer_StoreOffset(string bootstrapServers)
         {
             LogToFile("start Consumer_StoreOffset");
 
@@ -66,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
                 ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
 
-                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test store offset value", SerializationContext.Empty) }).Wait();
+                await producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test store offset value", SerializationContext.Empty) }, TestContext.Current.CancellationToken);
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 

@@ -51,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer1.Subscribe(topic.Name);
 
                 // wait until consumer is assigned to both partitions.
-                ConsumeResult<Null, string> cr = consumer1.Consume();
+                ConsumeResult<Null, string> cr = consumer1.Consume(TestContext.Current.CancellationToken);
                 Assert.Equal(2, consumer1.Assignment.Count);
 
                 // store offsets on both partitions should not throw.

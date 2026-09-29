@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -23,7 +24,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void GetId(Config config)
+        public static async Task GetId(Config config)
         {
             var topicName = Guid.NewGuid().ToString();
 
@@ -35,21 +36,14 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
             var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
-            var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
-            var id2 = sr.GetSchemaIdAsync(subject, testSchema1).Result;
+            var id = await sr.RegisterSchemaAsync(subject, testSchema1);
+            var id2 = await sr.GetSchemaIdAsync(subject, testSchema1);
 
             Assert.Equal(id, id2);
 
-            Assert.Throws<SchemaRegistryException>(() => 
+            await Assert.ThrowsAsync<SchemaRegistryException>(async () =>
             {
-                try
-                {
-                    sr.GetSchemaIdAsync(subject, "{\"type\": \"string\"}").Wait();
-                }
-                catch (AggregateException e)
-                {
-                    throw e.InnerException;
-                }
+                await sr.GetSchemaIdAsync(subject, "{\"type\": \"string\"}");
             });
         }
     }

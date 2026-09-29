@@ -31,14 +31,14 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_Poll(string bootstrapServers)
+        public async Task Producer_Poll(string bootstrapServers)
         {
             LogToFile("start Producer_Poll");
 
             using (var tempTopic = new TemporaryTopic(bootstrapServers, 1))
             using (var producer = new TestProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                var r = producer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "a message" }).Result;
+                var r = await producer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "a message" }, TestContext.Current.CancellationToken);
                 Assert.True(r.Status == PersistenceStatus.Persisted);
 
                 // should be no events to serve and this should block for 500ms.

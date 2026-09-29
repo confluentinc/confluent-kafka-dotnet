@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
                             producer.Produce(new TopicPartition(topic.Name, i), new Message<Null, string> { Value = "test" });
                         }
                     }
-                    producer.Flush();
+                    producer.Flush(TestContext.Current.CancellationToken);
 
                     for (int i=0; i<numPartitionsWithCommittedOffsets; ++i)
                     {
@@ -78,7 +78,7 @@ namespace Confluent.Kafka.IntegrationTests
                     {
                         if (DateTime.UtcNow - startTime > TimeSpan.FromSeconds(30))
                         {
-                            Assert.False(true, "Timed out waiting for consumption of messages to complete");
+                            Assert.Fail("Timed out waiting for consumption of messages to complete");
                             complete = true;
                         }
 
@@ -124,7 +124,7 @@ namespace Confluent.Kafka.IntegrationTests
                         }
                         catch
                         {
-                            Assert.False(true, "Failed to close consumer instance " + i);
+                            Assert.Fail("Failed to close consumer instance " + i);
                         }
                     }
                 }

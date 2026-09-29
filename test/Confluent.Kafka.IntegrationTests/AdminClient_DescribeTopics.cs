@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.Admin;
 
@@ -36,7 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     2. After creating Acls and with IncludeAuthorizedOperations.
         /// </summary>
         [Theory, MemberData(nameof(SaslPlainKafkaParameters))]
-        public async void AdminClient_DescribeTopics(string bootstrapServers,
+        public async Task AdminClient_DescribeTopics(string bootstrapServers,
             string admin, string adminSecret, string user, string userSecret)
         {
             LogToFile("start AdminClient_DescribeTopics");

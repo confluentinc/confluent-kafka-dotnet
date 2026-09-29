@@ -59,17 +59,23 @@ namespace Confluent.Kafka.IntegrationTests
                 int N = workerThreads+2;
                 for (int i=0; i<N; ++i)
                 {
-                    tasks.Add(producer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "test" }));
+                    tasks.Add(producer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "test" }, TestContext.Current.CancellationToken));
                 }
 
+                // deliberately blocks the calling thread via Task.WaitAll (rather than await) to test that
+                // producing via more concurrent tasks than there are thread pool worker threads does not deadlock.
+#pragma warning disable xUnit1031, xUnit1051
                 Task.WaitAll(tasks.ToArray());
+#pragma warning restore xUnit1031, xUnit1051
 
                 for (int i=0; i<N; ++i)
                 {
-                    tasks.Add(dProducer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "test" }));
+                    tasks.Add(dProducer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "test" }, TestContext.Current.CancellationToken));
                 }
 
+#pragma warning disable xUnit1031, xUnit1051
                 Task.WaitAll(tasks.ToArray());
+#pragma warning restore xUnit1031, xUnit1051
             }
 
             ThreadPool.SetMaxThreads(originalWorkerThreads, originalCompletionPortThreads);

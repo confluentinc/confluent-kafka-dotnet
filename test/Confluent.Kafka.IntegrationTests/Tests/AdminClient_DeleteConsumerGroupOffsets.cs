@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 using System.Linq;
+using System.Threading.Tasks;
 using Confluent.Kafka.TestsCommon;
 
 
@@ -30,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.DeleteConsumerGroupOffsets.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_DeleteConsumerGroupOffsets(string bootstrapServers)
+        public async Task AdminClient_DeleteConsumerGroupOffsets(string bootstrapServers)
         {
             if (!TestConsumerGroupProtocol.IsClassic())
             {
@@ -66,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(offsetToCommit, committedOffsets[0].Offset);
 
                 List<TopicPartition> topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic1.Name, 0) };
-                var res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
+                var res = await adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset);
                 Assert.Equal(groupId1, res.Group);
                 Assert.Single(res.Partitions);
                 Assert.Equal(0, res.Partitions[0].Partition.Value);
@@ -92,12 +93,11 @@ namespace Confluent.Kafka.IntegrationTests
                 topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic1.Name, 0) };
                 try
                 {
-                    res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
+                    res = await adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset);
                     Assert.True(false); // expecting exception.
                 }
-                catch (AggregateException ex)
+                catch (DeleteConsumerGroupOffsetsException dcgoe)
                 {
-                    var dcgoe = (DeleteConsumerGroupOffsetsException)ex.InnerException;
                     Assert.Equal(ErrorCode.Local_Partial, dcgoe.Error.Code);
                     Assert.Equal(groupId1, dcgoe.Result.Group);
                     Assert.Single(dcgoe.Result.Partitions);
@@ -118,7 +118,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(Offset.Unset, committedOffsets[0].Offset);
 
                 topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic2.Name, 0) };
-                res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
+                res = await adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset);
                 Assert.Equal(groupId1, res.Group);
                 Assert.Single(res.Partitions);
                 Assert.Equal(0, res.Partitions[0].Partition.Value);
@@ -138,7 +138,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Reset offset for partition 0
                 topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic3.Name, 0) };
-                res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
+                res = await adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset);
                 Assert.Equal(groupId1, res.Group);
                 Assert.Single(res.Partitions);
                 Assert.Equal(0, res.Partitions[0].Partition.Value);
@@ -156,7 +156,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     with the cooperative assignor.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_DeleteConsumerGroupOffsets_Cooperative(string bootstrapServers)
+        public async Task AdminClient_DeleteConsumerGroupOffsets_Cooperative(string bootstrapServers)
         {
             LogToFile("start AdminClient_DeleteConsumerGroupOffsets_Cooperative");
             var assignmentDone = false;
@@ -187,7 +187,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(offsetToCommit, committedOffsets[0].Offset);
 
                 List<TopicPartition> topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic1.Name, 0) };
-                var res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
+                var res = await adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset);
                 Assert.Equal(groupId1, res.Group);
                 Assert.Single(res.Partitions);
                 Assert.Equal(0, res.Partitions[0].Partition.Value);
@@ -208,7 +208,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(Offset.Unset, committedOffsets[0].Offset);
 
                     topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic2.Name, 0) };
-                    res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
+                    res = await adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset);
                     Assert.Equal(groupId1, res.Group);
                     Assert.Single(res.Partitions);
                     Assert.Equal(0, res.Partitions[0].Partition.Value);
@@ -229,7 +229,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Reset offset for partition 0
                 topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic3.Name, 0) };
-                res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
+                res = await adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset);
                 Assert.Equal(groupId1, res.Group);
                 Assert.Single(res.Partitions);
                 Assert.Equal(0, res.Partitions[0].Partition.Value);
@@ -259,12 +259,11 @@ namespace Confluent.Kafka.IntegrationTests
                 topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic1.Name, 0) };
                 try
                 {
-                    res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
+                    res = await adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset);
                     Assert.True(false); // expecting exception.
                 }
-                catch (AggregateException ex)
+                catch (DeleteConsumerGroupOffsetsException dcgoe)
                 {
-                    var dcgoe = (DeleteConsumerGroupOffsetsException)ex.InnerException;
                     Assert.Equal(ErrorCode.Local_Partial, dcgoe.Error.Code);
                     Assert.Equal(groupId1, dcgoe.Result.Group);
                     Assert.Single(dcgoe.Result.Partitions);

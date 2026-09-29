@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Xunit;
 
@@ -28,7 +29,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     throws a SerializationException.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void ProduceIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
+        public static async Task ProduceIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
@@ -53,9 +54,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
                     .Build())
             {
-                producer
-                    .ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" })
-                    .Wait();
+                await producer
+                    .ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" }, TestContext.Current.CancellationToken);
 
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
@@ -67,14 +67,12 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
                     .Build())
             {
-                Assert.Throws<SchemaRegistryException>(() =>
+                await Assert.ThrowsAsync<SchemaRegistryException>(async () =>
                 {
                     try
                     {
-                        producer
-                            .ProduceAsync(topic, new Message<int, string> { Key = 42, Value = "world" })
-                            .GetAwaiter()
-                            .GetResult();
+                        await producer
+                            .ProduceAsync(topic, new Message<int, string> { Key = 42, Value = "world" }, TestContext.Current.CancellationToken);
                     }
                     catch (Exception e)
                     {
@@ -91,14 +89,12 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                     .Build())
             {                
-                Assert.Throws<SchemaRegistryException>(() =>
+                await Assert.ThrowsAsync<SchemaRegistryException>(async () =>
                 {
                     try
                     {
-                        producer
-                            .ProduceAsync(topic, new Message<string, int> { Key = "world", Value = 42 })
-                            .GetAwaiter()
-                            .GetResult();
+                        await producer
+                            .ProduceAsync(topic, new Message<string, int> { Key = "world", Value = 42 }, TestContext.Current.CancellationToken);
                     }
                     catch (Exception e)
                     {

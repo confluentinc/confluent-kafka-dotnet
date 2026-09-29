@@ -44,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
                 try
                 {
                     var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(3));
-                    Assert.True(false, "Broker should not be reached here");
+                    Assert.Fail("Broker should not be reached here");
                 }
                 catch (KafkaException e)
                 {

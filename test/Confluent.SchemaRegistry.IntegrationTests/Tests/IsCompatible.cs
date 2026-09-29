@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -23,7 +24,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void IsCompatible_Topic(Config config)
+        public static async Task IsCompatible_Topic(Config config)
         {
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
@@ -42,20 +43,20 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var topicName = Guid.NewGuid().ToString();
             var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, "Confluent.Kafka.Examples.AvroSpecific.User");
 
-            sr.RegisterSchemaAsync(subject, testSchema1).Wait();
+            await sr.RegisterSchemaAsync(subject, testSchema1);
 
-            Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
-            Assert.True(sr.IsCompatibleAsync(subject, testSchema1).Result);
+            Assert.False(await sr.IsCompatibleAsync(subject, testSchema2));
+            Assert.True(await sr.IsCompatibleAsync(subject, testSchema1));
 
 
             // case 2: record not specified.
             topicName = Guid.NewGuid().ToString();
             subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
 
-            sr.RegisterSchemaAsync(subject, testSchema1).Wait();
+            await sr.RegisterSchemaAsync(subject, testSchema1);
 
-            Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
-            Assert.True(sr.IsCompatibleAsync(subject, testSchema1).Result);
+            Assert.False(await sr.IsCompatibleAsync(subject, testSchema2));
+            Assert.True(await sr.IsCompatibleAsync(subject, testSchema1));
 
 
             // Note: backwards / forwards compatibility scenarios are not tested here. This is really just testing the API call.

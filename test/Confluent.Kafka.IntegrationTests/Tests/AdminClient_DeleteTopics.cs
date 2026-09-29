@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Xunit;
@@ -32,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.CreateTopics.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_DeleteTopics(string bootstrapServers)
+        public async Task AdminClient_DeleteTopics(string bootstrapServers)
         {
             LogToFile("start AdminClient_DeleteTopics");
 
@@ -43,12 +44,12 @@ namespace Confluent.Kafka.IntegrationTests
             // test single delete topic.
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
+                await adminClient.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } });
                 Thread.Sleep(TimeSpan.FromSeconds(1));
 
                 Thread.Sleep(TimeSpan.FromSeconds(2)); // git the topic some time to be created.
-                adminClient.DeleteTopicsAsync(new List<string> { topicName1 }).Wait();
+                await adminClient.DeleteTopicsAsync(new List<string> { topicName1 });
             }
 
             // test
@@ -56,24 +57,23 @@ namespace Confluent.Kafka.IntegrationTests
             //  - check that explicitly giving options doesn't obviously not work.
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
+                await adminClient.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } });
                 Thread.Sleep(TimeSpan.FromSeconds(1));
 
                 Thread.Sleep(TimeSpan.FromSeconds(2));
                 try
                 {
-                    adminClient.DeleteTopicsAsync(
+                    await adminClient.DeleteTopicsAsync(
                         new List<string> { topicName2, topicName3 },
                         new DeleteTopicsOptions { RequestTimeout = TimeSpan.FromSeconds(30) }
-                    ).Wait();
+                    );
                 }
-                catch (AggregateException ex)
+                catch (DeleteTopicsException dte)
                 {
-                    var dte = (DeleteTopicsException) ex.InnerException;
                     Assert.Equal(2, dte.Results.Count);
-                    Assert.Single(dte.Results.Where(r => r.Error.IsError));
-                    Assert.Single(dte.Results.Where(r => !r.Error.IsError));
+                    Assert.Single(dte.Results, r => r.Error.IsError);
+                    Assert.Single(dte.Results, r => !r.Error.IsError);
                     Assert.Equal(topicName2, dte.Results.Where(r => !r.Error.IsError).First().Topic);
                     Assert.Equal(topicName3, dte.Results.Where(r => r.Error.IsError).First().Topic);
                 }

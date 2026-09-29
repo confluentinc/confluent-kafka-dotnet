@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -30,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Integration tests for Producing / consuming timestamps.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Timestamps(string bootstrapServers)
+        public async Task Timestamps(string bootstrapServers)
         {
             LogToFile("start Timestamps");
 
@@ -52,43 +53,47 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 // --- ProduceAsync, serializer case.
 
-                drs_task.Add(producer.ProduceAsync(
-                    singlePartitionTopic, 
-                    new Message<Null, string> { Value = "testvalue" }).Result);
-                
+                drs_task.Add(await producer.ProduceAsync(
+                    singlePartitionTopic,
+                    new Message<Null, string> { Value = "testvalue" }, TestContext.Current.CancellationToken));
+
                 // TimestampType: CreateTime
-                drs_task.Add(producer.ProduceAsync(
+                drs_task.Add(await producer.ProduceAsync(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<Null, string> 
-                    { 
-                        Value = "test-value", 
+                    new Message<Null, string>
+                    {
+                        Value = "test-value",
                         Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc))
-                    }).Result);
+                    }, TestContext.Current.CancellationToken));
 
                 // TimestampType: CreateTime (default)
-                drs_task.Add(producer.ProduceAsync(
+                drs_task.Add(await producer.ProduceAsync(
                     new TopicPartition(singlePartitionTopic, 0),
-                    new Message<Null, string> { Value = "test-value" }).Result);
+                    new Message<Null, string> { Value = "test-value" }, TestContext.Current.CancellationToken));
 
                 // TimestampType: LogAppendTime
+                // Deliberately uses .Result (not await) so the thrown ArgumentException is
+                // observed wrapped in an AggregateException, as asserted below.
                 Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         new TopicPartition(singlePartitionTopic, 0),
                         new Message<Null, string>
                         {
-                            Value = "test-value", 
-                            Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) 
-                        }).Result);
+                            Value = "test-value",
+                            Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime)
+                        }, TestContext.Current.CancellationToken).Result);
 
                 // TimestampType: NotAvailable
+                // Deliberately uses .Result (not await) so the thrown ArgumentException is
+                // observed wrapped in an AggregateException, as asserted below.
                 Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         new TopicPartition(singlePartitionTopic, 0),
-                        new Message<Null, string> 
-                        { 
+                        new Message<Null, string>
+                        {
                             Value = "test-value",
                             Timestamp = new Timestamp(10, TimestampType.NotAvailable)
-                        }).Result);
+                        }, TestContext.Current.CancellationToken).Result);
 
                 Action<DeliveryReport<Null, string>> dh 
                     = (DeliveryReport<Null, string> dr) => drs_produce.Add(dr);
@@ -145,31 +150,35 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 // --- ProduceAsync, byte[] case.
 
-                drs2_task.Add(producer.ProduceAsync(
+                drs2_task.Add(await producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Timestamp = Timestamp.Default }).Result);
+                    new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, TestContext.Current.CancellationToken));
 
                 // TimestampType: CreateTime
-                drs2_task.Add(producer.ProduceAsync(
+                drs2_task.Add(await producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) }).Result);
+                    new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) }, TestContext.Current.CancellationToken));
 
                 // TimestampType: CreateTime (default)
-                drs2_task.Add(producer.ProduceAsync(
+                drs2_task.Add(await producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Timestamp = Timestamp.Default }).Result);
+                    new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, TestContext.Current.CancellationToken));
 
                 // TimestampType: LogAppendTime
+                // Deliberately uses .Result (not await) so the thrown ArgumentException is
+                // observed wrapped in an AggregateException, as asserted below.
                 Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         singlePartitionTopic,
-                        new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }).Result);
+                        new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }, TestContext.Current.CancellationToken).Result);
 
                 // TimestampType: NotAvailable
+                // Deliberately uses .Result (not await) so the thrown ArgumentException is
+                // observed wrapped in an AggregateException, as asserted below.
                 Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         singlePartitionTopic,
-                        new Message<byte[], byte[]> { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }).Result);
+                        new Message<byte[], byte[]> { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }, TestContext.Current.CancellationToken).Result);
 
 
                 // --- begin produce, byte[] case.

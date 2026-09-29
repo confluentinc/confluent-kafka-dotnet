@@ -16,6 +16,7 @@
 
 using Xunit;
 using System;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 
@@ -29,7 +30,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         ///     schema that references well known google schemas.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        public static void ProduceConsumeGoogleRefProtobuf(string bootstrapServers, string schemaRegistryServers)
+        public static async Task ProduceConsumeGoogleRefProtobuf(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
@@ -47,7 +48,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 u.ReceivedTime = new Google.Protobuf.WellKnownTypes.Timestamp();
                 u.ReceivedTime.Seconds = 1591364591;
 
-                producer.ProduceAsync(topic.Name, new Message<string, WithGoogleRefs.TheRecord> { Key = "test1", Value = u }).Wait();
+                await producer.ProduceAsync(topic.Name, new Message<string, WithGoogleRefs.TheRecord> { Key = "test1", Value = u }, TestContext.Current.CancellationToken);
 
                 var consumerConfig = new ConsumerConfig
                 {
@@ -63,7 +64,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .Build())
                 {
                     consumer.Subscribe(topic.Name);
-                    var cr = consumer.Consume();
+                    var cr = consumer.Consume(TestContext.Current.CancellationToken);
                     Assert.Equal(u.ListType.Value, cr.Message.Value.ListType.Value);
                     Assert.Equal(u.ReceivedTime.Seconds, cr.Message.Value.ReceivedTime.Seconds);
                 }
@@ -72,7 +73,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 using (var consumer = new ConsumerBuilder<string, byte[]>(consumerConfig).Build())
                 {
                     consumer.Subscribe(topic.Name);
-                    var cr = consumer.Consume();
+                    var cr = consumer.Consume(TestContext.Current.CancellationToken);
                     // magic byte + schema id + expected array index length + at least one data byte.
                     Assert.True(cr.Message.Value.Length >= 1 + 4 + 1 + 1);
                     // magic byte
@@ -82,7 +83,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 }
 
                 // Check the referenced schemas are in schema registry.
-                var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
+                var subjects = await schemaRegistry.GetAllSubjectsAsync();
                 Assert.Contains("google/protobuf/timestamp.proto", subjects);
                 Assert.Contains("google/protobuf/wrappers.proto", subjects);
             }

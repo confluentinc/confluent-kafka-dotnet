@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.TestsCommon;
 
@@ -28,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests 
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void AdminClient_DeleteConsumerGroup(string bootstrapServers)
+        public async Task AdminClient_DeleteConsumerGroup(string bootstrapServers)
         {
             LogToFile("start AdminClient_DeleteConsumerGroup");
 
@@ -43,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // test single delete group
                 CreateConsumer(bootstrapServers, groupId, topic.Name);
 
-                admin.DeleteGroupsAsync(new List<string> { groupId }, new DeleteGroupsOptions()).Wait();
+                await admin.DeleteGroupsAsync(new List<string> { groupId }, new DeleteGroupsOptions());
 
                 var groups = admin.ListGroups(TimeSpan.FromSeconds(5));
                 Assert.DoesNotContain(groups, (group) => group.Group == groupId);
@@ -54,15 +55,14 @@ namespace Confluent.Kafka.IntegrationTests
 
                 try
                 {
-                    admin.DeleteGroupsAsync(new List<string> {groupId2, groupId3}, new DeleteGroupsOptions()).Wait();
+                    await admin.DeleteGroupsAsync(new List<string> {groupId2, groupId3}, new DeleteGroupsOptions());
                     Assert.True(false); // expecting exception.
                 }
-                catch (AggregateException ex)
+                catch (DeleteGroupsException dge)
                 {
-                    var dge = (DeleteGroupsException)ex.InnerException;
                     Assert.Equal(2, dge.Results.Count);
-                    Assert.Single(dge.Results.Where(r => r.Error.IsError));
-                    Assert.Single(dge.Results.Where(r => !r.Error.IsError));
+                    Assert.Single(dge.Results, r => r.Error.IsError);
+                    Assert.Single(dge.Results, r => !r.Error.IsError);
                     Assert.Equal(groupId2, dge.Results.Where(r => !r.Error.IsError).First().Group);
                     Assert.Equal(groupId3, dge.Results.Where(r => r.Error.IsError).First().Group);
                 }
