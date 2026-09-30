@@ -49,7 +49,6 @@ using System.Runtime.CompilerServices;
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.TopicPartitionTimestamp))]
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.WatermarkOffsets))]
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.Config))]
-[assembly: TypeForwardedTo(typeof(Confluent.Kafka.ConfigPropertyNames))]
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.IAsyncSerializer<>))]
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.IAsyncDeserializer<>))]
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.MessageComponentType))]

@@ -42,6 +42,8 @@ namespace Confluent.Kafka
             { "awsiam", "aws_iam"},
         };
 
+        private const string CancellationDelayMaxMsPropertyName = "dotnet.cancellation.delay.max.ms";
+
         /// <summary>
         ///     Snapshots an enumerable config into a dictionary, applying
         ///     last-key-wins semantics to match librdkafka's behavior.
@@ -245,7 +247,7 @@ namespace Confluent.Kafka
         ///     range: 1 &lt;= dotnet.cancellation.delay.max.ms &lt;= 10000
         ///     importance: low
         /// </summary>
-        public int CancellationDelayMaxMs { set { this.SetObject(ConfigPropertyNames.CancellationDelayMaxMs, value); } }
+        public int CancellationDelayMaxMs { set { this.SetObject(CancellationDelayMaxMsPropertyName, value); } }
 
         private const int DefaultCancellationDelayMaxMs = 100;
 
@@ -253,7 +255,7 @@ namespace Confluent.Kafka
             IEnumerable<KeyValuePair<string, string>> config, out int cancellationDelayMaxMs)
         {
             var cancellationDelayMaxString = config
-                .Where(prop => prop.Key == ConfigPropertyNames.CancellationDelayMaxMs)
+                .Where(prop => prop.Key == CancellationDelayMaxMsPropertyName)
                 .Select(a => a.Value)
                 .FirstOrDefault();
 
@@ -262,12 +264,12 @@ namespace Confluent.Kafka
                 if (!int.TryParse(cancellationDelayMaxString, out cancellationDelayMaxMs))
                 {
                     throw new ArgumentException(
-                        $"{ConfigPropertyNames.CancellationDelayMaxMs} must be a valid integer value.");
+                        $"{CancellationDelayMaxMsPropertyName} must be a valid integer value.");
                 }
                 if (cancellationDelayMaxMs < 1 || cancellationDelayMaxMs > 10000)
                 {
                     throw new ArgumentOutOfRangeException(
-                        $"{ConfigPropertyNames.CancellationDelayMaxMs} must be in the range 1 <= {ConfigPropertyNames.CancellationDelayMaxMs} <= 10000");
+                        $"{CancellationDelayMaxMsPropertyName} must be in the range 1 <= {CancellationDelayMaxMsPropertyName} <= 10000");
                 }
             }
             else
@@ -275,7 +277,7 @@ namespace Confluent.Kafka
                 cancellationDelayMaxMs = DefaultCancellationDelayMaxMs;
             }
 
-            return config.Where(prop => prop.Key != ConfigPropertyNames.CancellationDelayMaxMs);
+            return config.Where(prop => prop.Key != CancellationDelayMaxMsPropertyName);
         }
     }
 }

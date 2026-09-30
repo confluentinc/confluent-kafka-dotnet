@@ -53,7 +53,6 @@ namespace Confluent.Kafka.UnitTests
             typeof(TopicPartitionTimestamp),
             typeof(WatermarkOffsets),
             typeof(Config),
-            typeof(ConfigPropertyNames),
             typeof(IAsyncSerializer<>),
             typeof(IAsyncDeserializer<>),
             typeof(MessageComponentType),
@@ -74,6 +73,12 @@ namespace Confluent.Kafka.UnitTests
                 Assert.Same(type, kafkaAssembly.GetType(type.FullName, throwOnError: true));
                 Assert.Same(typeof(Error).Assembly, type.Assembly);
             }
+        }
+
+        [Fact]
+        public void ConfigPropertyNames_RemainsDefinedInConfluentKafkaAssembly()
+        {
+            Assert.Same(typeof(Producer<,>).Assembly, typeof(ConfigPropertyNames).Assembly);
         }
     }
 }
