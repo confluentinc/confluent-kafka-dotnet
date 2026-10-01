@@ -1202,7 +1202,7 @@ namespace Confluent.Kafka.Impl
             IntPtr rk,
             string topic,
             int partition,
-            IntPtr msgflags,
+            int msgflags,
             IntPtr val, UIntPtr len,
             IntPtr key, UIntPtr keylen,
             long timestamp,
