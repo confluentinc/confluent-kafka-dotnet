@@ -406,7 +406,7 @@ namespace Confluent.Kafka.Impl
                     handle,
                     topic,
                     partition,
-                    (IntPtr)MsgFlags.MSG_F_COPY,
+                    (int)MsgFlags.MSG_F_COPY,
                     pValue, (UIntPtr)valLength,
                     pKey, (UIntPtr)keyLength,
                     timestamp,
@@ -1312,13 +1312,13 @@ namespace Confluent.Kafka.Impl
             return list;
         }
 
-        static byte[] CopyBytes(IntPtr ptr, IntPtr len)
+        static byte[] CopyBytes(IntPtr ptr, int len)
         {
             byte[] data = null;
             if (ptr != IntPtr.Zero)
             {
-                data = new byte[(int) len];
-                Marshal.Copy(ptr, data, 0, (int) len);
+                data = new byte[len];
+                Marshal.Copy(ptr, data, 0, len);
             }
             return data;
         }
