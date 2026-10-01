@@ -38,6 +38,7 @@ using System.Runtime.CompilerServices;
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.Message<,>))]
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.MessageMetadata))]
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.MessageNullException))]
+[assembly: TypeForwardedTo(typeof(Confluent.Kafka.Null))]
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.Offset))]
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.Partition))]
 [assembly: TypeForwardedTo(typeof(Confluent.Kafka.PersistenceStatus))]

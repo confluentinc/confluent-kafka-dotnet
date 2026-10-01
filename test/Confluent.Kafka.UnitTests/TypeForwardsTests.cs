@@ -42,6 +42,7 @@ namespace Confluent.Kafka.UnitTests
             typeof(Message<,>),
             typeof(MessageMetadata),
             typeof(MessageNullException),
+            typeof(Null),
             typeof(Offset),
             typeof(Partition),
             typeof(PersistenceStatus),
