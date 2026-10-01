@@ -6,7 +6,7 @@
 * Pass context when clients make KEK calls to DEK Registry (#2642)
 * Add support for inline validation rules (#2651)
 * Add Variant, Decimal, and Timestamp CEL functions (#2653)
-* Add CI coverage for linux-s390x (IBM Z) and document s390x platform support
+* Add support for linux-s390x (IBM Z), with CI coverage on s390x
 
 ## Fixes
 

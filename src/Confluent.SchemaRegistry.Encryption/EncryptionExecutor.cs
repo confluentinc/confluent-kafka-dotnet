@@ -598,7 +598,8 @@ namespace Confluent.SchemaRegistry.Encryption
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(EncryptionExecutor.MagicByte);
-                    // BinaryWriter alone writes little endian; BinaryConverter writes big endian on every host.
+                    // The version is big endian on every host: BinaryConverter swaps the bytes only on
+                    // little-endian hosts, whereas BinaryWriter.Write(int) always writes little endian.
                     byte[] versionBytes = new byte[EncryptionExecutor.VersionSize];
                     BinaryConverter.WriteInt32(versionBytes, version);
                     writer.Write(versionBytes);
