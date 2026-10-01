@@ -261,7 +261,9 @@ docker pull -q "$DOTNET_IMAGE"
 docker image inspect --format '{{index .RepoDigests 0}}' "$DOTNET_IMAGE"
 
 # --network host so the tests reach the broker and Schema Registry on localhost.
-# A hard timeout so a hung test fails the job instead of holding the agent.
+# A hard timeout so a hung test fails the job instead of holding the agent. It is below
+# Semaphore's default 1-hour job limit, so it fires first and the cleanup trap still
+# stops the broker and Schema Registry.
 # Mono, the .NET runtime on s390x, suspends threads for garbage collection with signals by default,
 # and librdkafka blocks signals on its threads, which run the tests' log handlers. Cooperative
 # suspension doesn't use signals (see the s390x section of README.md).
@@ -271,7 +273,7 @@ if [[ $MODE == consumer ]]; then
     TEST_ENV+=(-e TEST_CONSUMER_GROUP_PROTOCOL=consumer)
 fi
 set +e
-timeout --kill-after=60 5400 docker run --name "$TEST_CONTAINER" -u 0 --network host \
+timeout --kill-after=60 2700 docker run --name "$TEST_CONTAINER" -u 0 --network host \
     "${TEST_ENV[@]}" \
     -v "$PWD:/work" -w /work \
     "$DOTNET_IMAGE" \
