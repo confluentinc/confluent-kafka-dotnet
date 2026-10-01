@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Confluent.Kafka\Confluent.Kafka.csproj" />
+    <ProjectReference Include="..\Confluent.Kafka.Abstractions\Confluent.Kafka.Abstractions.csproj" />
     <ProjectReference Include="..\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
   </ItemGroup>
 
