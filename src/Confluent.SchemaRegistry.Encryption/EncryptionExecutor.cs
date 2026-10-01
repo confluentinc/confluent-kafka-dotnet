@@ -22,6 +22,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.Shared;
 
 namespace Confluent.SchemaRegistry.Encryption
 {
@@ -597,7 +598,10 @@ namespace Confluent.SchemaRegistry.Encryption
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(EncryptionExecutor.MagicByte);
-                    writer.Write(IPAddress.HostToNetworkOrder(version));
+                    // BinaryWriter alone writes little endian; BinaryConverter writes big endian on every host.
+                    byte[] versionBytes = new byte[EncryptionExecutor.VersionSize];
+                    BinaryConverter.WriteInt32(versionBytes, version);
+                    writer.Write(versionBytes);
                     writer.Write(ciphertext);
                     return stream.ToArray();
                 }
@@ -613,7 +617,7 @@ namespace Confluent.SchemaRegistry.Encryption
                     int remainingSize = ciphertext.Length;
                     reader.ReadByte();
                     remainingSize--;
-                    int version = IPAddress.NetworkToHostOrder(reader.ReadInt32());
+                    BinaryConverter.ReadInt32(reader.ReadBytes(EncryptionExecutor.VersionSize), out int version);
                     remainingSize -= EncryptionExecutor.VersionSize;
                     byte[] remaining = reader.ReadBytes(remainingSize);
                     return (version, remaining);
