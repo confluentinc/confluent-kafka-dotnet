@@ -70,14 +70,22 @@ chmod +x run-unit-tests.sh
 # container, which doesn't inherit the agent's environment.
 docker pull -q registry.access.redhat.com/ubi9/dotnet-100
 docker image inspect --format '{{index .RepoDigests 0}}' registry.access.redhat.com/ubi9/dotnet-100
+
+# MONO_THREADS_SUSPEND=coop, as in the integration jobs: some unit tests build clients
+# with a log handler, which can hang Mono's default thread suspension (see README.md).
+# A hard timeout so a hung test fails the job instead of holding the agent. A timed-out
+# docker run leaves its container behind, so it is removed by name afterwards.
+TEST_CONTAINER=s390x-unit-tests
 set +e
-docker run --rm -u 0 \
+timeout --kill-after=60 1200 docker run --rm --name "$TEST_CONTAINER" -u 0 \
     -e DOTNET_CLI_TELEMETRY_OPTOUT=true \
+    -e MONO_THREADS_SUSPEND=coop \
     -e "CONFIGURATION=${CONFIGURATION:-Release}" \
     -v "$PWD:/work" -w /work \
     registry.access.redhat.com/ubi9/dotnet-100 \
     ./run-unit-tests.sh
 RET=$?
+docker rm -f "$TEST_CONTAINER" >/dev/null 2>&1 || true
 set -e
 
 # The container runs as root, so bin/ and obj/ come back root owned. Hand the
