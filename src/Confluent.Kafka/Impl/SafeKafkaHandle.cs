@@ -22,6 +22,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Internal;
 
@@ -1177,6 +1179,97 @@ namespace Confluent.Kafka.Impl
                 Librdkafka.mem_free(handle, strPtr);
                 return memberId;
             }
+        }
+
+        internal string ClusterId(int millisecondsTimeout)
+        {
+            ThrowIfHandleClosed();
+
+            IntPtr strPtr = Librdkafka.clusterid(handle, (IntPtr)millisecondsTimeout);
+            if (strPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            string clusterId = Util.Marshal.PtrToStringUTF8(strPtr);
+            Librdkafka.mem_free(handle, strPtr);
+            return clusterId;
+        }
+
+        // The cluster id resolution currently in flight, if any, shared by every
+        // caller of ClusterIdAsync on this handle.
+        private Task<string> clusterIdInFlight;
+
+        /// <summary>
+        ///     Resolve the cluster id without blocking the caller, waiting up to
+        ///     <paramref name="millisecondsTimeout" /> for it.
+        ///
+        ///     At most one resolution is in flight per handle: concurrent callers,
+        ///     including producers sharing this handle, all await the same task,
+        ///     and so share the deadline of the caller that started it. The outcome
+        ///     is not cached once the task completes - librdkafka caches the id
+        ///     itself once known, and a failed resolution is simply retried by the
+        ///     next caller.
+        /// </summary>
+        /// <returns>
+        ///     A task completing with the cluster id, or with null if it could not
+        ///     be retrieved within the timeout.
+        /// </returns>
+        internal Task<string> ClusterIdAsync(int millisecondsTimeout)
+        {
+            // Once known, librdkafka answers from its cache without waiting.
+            var cached = ClusterId(0);
+            if (cached != null)
+            {
+                return Task.FromResult(cached);
+            }
+
+            var inFlight = Volatile.Read(ref clusterIdInFlight);
+            if (inFlight != null)
+            {
+                return inFlight;
+            }
+
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            inFlight = Interlocked.CompareExchange(ref clusterIdInFlight, tcs.Task, null);
+            if (inFlight != null)
+            {
+                // Another caller started a resolution first; this one was never
+                // started, so it is simply dropped.
+                return inFlight;
+            }
+
+            // rd_kafka_clusterid blocks, so it occupies one thread pool thread
+            // for as long as it waits - one per handle, however many callers.
+            Task.Run(() =>
+            {
+                string clusterId = null;
+                Exception error = null;
+                try
+                {
+                    clusterId = ClusterId(millisecondsTimeout);
+                }
+                catch (Exception e)
+                {
+                    error = e;
+                }
+
+                // Cleared before completing, so that a caller woken by the
+                // completion that resolves again starts a fresh attempt rather
+                // than getting this completed task back.
+                Volatile.Write(ref clusterIdInFlight, null);
+
+                if (error != null)
+                {
+                    tcs.SetException(error);
+                }
+                else
+                {
+                    tcs.SetResult(clusterId);
+                }
+            });
+
+            return tcs.Task;
         }
 
         internal static List<TopicPartitionError> GetTopicPartitionErrorList(IntPtr listPtr)
