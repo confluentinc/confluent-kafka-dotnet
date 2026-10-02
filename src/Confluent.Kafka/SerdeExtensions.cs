@@ -24,7 +24,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Extension methods that interrogate a serializer or deserializer for
     ///     optional capabilities - <see cref="IClusterIdAware" /> and
-    ///     <see cref="ISerdeOwnedResources" /> - without requiring it to implement
+    ///     <see cref="ISerdeDisposable" /> - without requiring it to implement
     ///     them.
     ///
     ///     Every method here is safe to call on any serializer or deserializer,
@@ -104,7 +104,7 @@ namespace Confluent.Kafka
 
         private static void DisposeOwnedResources(object serde)
         {
-            if (serde is ISerdeOwnedResources owner)
+            if (serde is ISerdeDisposable owner)
             {
                 owner.DisposeOwnedResources();
             }

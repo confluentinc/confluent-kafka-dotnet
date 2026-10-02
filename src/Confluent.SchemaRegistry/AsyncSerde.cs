@@ -30,7 +30,7 @@ using Confluent.Kafka;
 
 namespace Confluent.SchemaRegistry
 {
-    public abstract class AsyncSerde<TParsedSchema> : IClusterIdAware, ISerdeOwnedResources
+    public abstract class AsyncSerde<TParsedSchema> : IClusterIdAware, ISerdeDisposable
     {
         protected ISchemaRegistryClient schemaRegistryClient;
         protected RuleRegistry ruleRegistry;

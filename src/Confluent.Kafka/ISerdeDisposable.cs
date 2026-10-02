@@ -35,7 +35,7 @@ namespace Confluent.Kafka
     ///     nothing to release. Use the <c>DisposeOwnedResources</c> extension methods
     ///     to release an arbitrary serializer or deserializer.
     /// </summary>
-    public interface ISerdeOwnedResources
+    public interface ISerdeDisposable
     {
         /// <summary>
         ///     Release the resources this instance created itself.

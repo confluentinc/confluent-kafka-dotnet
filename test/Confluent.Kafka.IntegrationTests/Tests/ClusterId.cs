@@ -211,7 +211,7 @@ namespace Confluent.Kafka.IntegrationTests
         }
 
         private class ClusterIdAwareSerializer
-            : ISerializer<string>, IClusterIdAware, ISerdeOwnedResources
+            : ISerializer<string>, IClusterIdAware, ISerdeDisposable
         {
             public Func<Task<string>> ClusterIdResolver { get; private set; }
             public int SetClusterIdResolverCallCount { get; private set; }
@@ -231,7 +231,7 @@ namespace Confluent.Kafka.IntegrationTests
         }
 
         private class ClusterIdAwareDeserializer
-            : IDeserializer<string>, IClusterIdAware, ISerdeOwnedResources
+            : IDeserializer<string>, IClusterIdAware, ISerdeDisposable
         {
             public Func<Task<string>> ClusterIdResolver { get; private set; }
             public bool Disposed { get; private set; }

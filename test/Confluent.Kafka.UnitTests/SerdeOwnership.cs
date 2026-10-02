@@ -315,7 +315,7 @@ namespace Confluent.Kafka.UnitTests
                 => throw new NotSupportedException("no cluster id here");
         }
 
-        private class TrackingSerializer : ISerializer<string>, ISerdeOwnedResources
+        private class TrackingSerializer : ISerializer<string>, ISerdeDisposable
         {
             public bool Disposed { get; private set; }
 
@@ -326,7 +326,7 @@ namespace Confluent.Kafka.UnitTests
                 => Serializers.Utf8.Serialize(data, context);
         }
 
-        private class TrackingAsyncSerializer : IAsyncSerializer<string>, ISerdeOwnedResources
+        private class TrackingAsyncSerializer : IAsyncSerializer<string>, ISerdeDisposable
         {
             public bool Disposed { get; private set; }
 
@@ -337,7 +337,7 @@ namespace Confluent.Kafka.UnitTests
                 => Task.FromResult(Serializers.Utf8.Serialize(data, context));
         }
 
-        private class TrackingDeserializer : IDeserializer<string>, ISerdeOwnedResources
+        private class TrackingDeserializer : IDeserializer<string>, ISerdeDisposable
         {
             public bool Disposed { get; private set; }
 
@@ -348,7 +348,7 @@ namespace Confluent.Kafka.UnitTests
                 => Deserializers.Utf8.Deserialize(data, isNull, context);
         }
 
-        private class TrackingAsyncDeserializer : IAsyncDeserializer<string>, ISerdeOwnedResources
+        private class TrackingAsyncDeserializer : IAsyncDeserializer<string>, ISerdeDisposable
         {
             public bool Disposed { get; private set; }
 
