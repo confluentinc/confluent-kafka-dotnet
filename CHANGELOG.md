@@ -5,17 +5,17 @@
 * Serializers and deserializers can now be supplied to a producer, dependent
   producer or consumer as a *builder*, which the client invokes during its own
   construction and then owns, disposing it (and any Schema Registry client it
-  created) when the client itself is disposed. See the [AvroGeneric](examples/AvroGeneric) example
+  created) when the client itself is disposed. See the [AvroGeneric](examples/AvroGeneric) example (#2661)
 * Schema Registry serde builders are now available for each supported format,
   each configurable with a Schema Registry client you own or the
   configuration to build one from. See the [AvroGeneric](examples/AvroGeneric),
-  [JsonSerialization](examples/JsonSerialization) and [Protobuf](examples/Protobuf) examples
+  [JsonSerialization](examples/JsonSerialization) and [Protobuf](examples/Protobuf) examples (#2661)
 * Producers, consumers and admin clients can now report the id of the Kafka
-  cluster they're connected to
+  cluster they're connected to (#2661)
 * The Kafka cluster id is now propagated to Schema Registry serializers and
   deserializers automatically, and resolved lazily on first use, so subject
   name strategies based on the cluster no longer need it configured by hand.
-  See the [AvroGenericAssociation](examples/AvroGenericAssociation) example
+  See the [AvroGenericAssociation](examples/AvroGenericAssociation) example (#2661)
 
 
 ## Enhancements
@@ -25,7 +25,7 @@
 * Add support for inline validation rules (#2651)
 * Add Variant, Decimal, and Timestamp CEL functions (#2653)
 * Add support for linux-s390x (IBM Z), with CI coverage on s390x (#2646)
-* Schema Registry examples now use the serde builder API
+* Schema Registry examples now use the serde builder API (#2661)
 
 ## Fixes
 
