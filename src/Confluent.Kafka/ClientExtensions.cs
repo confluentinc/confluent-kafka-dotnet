@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Confluent.Kafka
 {
@@ -7,6 +8,32 @@ namespace Confluent.Kafka
     /// </summary>
     public static class ClientExtensions
     {
+        /// <summary>
+        ///     Gets the id of the Kafka cluster this client
+        ///     is connected to.
+        ///
+        ///     The cluster id is retrieved from the broker
+        ///     metadata, so this call blocks until the
+        ///     metadata has been received, or until
+        ///     <paramref name="timeout" /> elapses.
+        /// </summary>
+        /// <param name="client">
+        ///     the instance of a <see cref="IClient"/>
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time to block waiting
+        ///     for the cluster id.
+        /// </param>
+        /// <returns>
+        ///     The Kafka cluster id, or null if it could not
+        ///     be retrieved within <paramref name="timeout" />.
+        /// </returns>
+        /// <remarks>
+        ///     Requires broker version &gt;= 0.10.0.
+        /// </remarks>
+        public static string ClusterId(this IClient client, TimeSpan timeout)
+            => client.Handle.LibrdkafkaHandle.ClusterId(timeout.TotalMillisecondsAsInt());
+
         /// <summary>
         ///     Set SASL/OAUTHBEARER token and metadata.
         ///     The SASL/OAUTHBEARER token refresh callback or

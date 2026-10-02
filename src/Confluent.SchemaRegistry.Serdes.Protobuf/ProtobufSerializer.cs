@@ -77,7 +77,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public ProtobufSerializer(ISchemaRegistryClient schemaRegistryClient, ProtobufSerializerConfig config = null, 
             RuleRegistry ruleRegistry = null) : base(schemaRegistryClient, config, ruleRegistry)
         {
-            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config, out this.associatedNameStrategy);
 
             if (config == null)
             {
@@ -375,5 +375,13 @@ namespace Confluent.SchemaRegistry.Serdes
             ValidationRules.ThrowIfFailed(violations);
         }
 
+        /// <summary>
+        ///     Take ownership of the schema registry client, so that it is disposed
+        ///     along with this serializer. Used by
+        ///     <see cref="ProtobufSerializerBuilder{T}" /> when it constructed the
+        ///     client itself.
+        /// </summary>
+        internal void OwnSchemaRegistryClient()
+            => ownsSchemaRegistryClient = true;
     }
 }

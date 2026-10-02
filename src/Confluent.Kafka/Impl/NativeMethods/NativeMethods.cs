@@ -312,6 +312,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern /* char * */ IntPtr rd_kafka_memberid(IntPtr rk);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* char * */ IntPtr rd_kafka_clusterid(IntPtr rk, IntPtr timeout_ms);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_Uuid_t * */IntPtr rd_kafka_Uuid_new(
                 long most_significant_bits,
                 long least_significant_bits
