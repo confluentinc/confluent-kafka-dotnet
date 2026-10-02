@@ -37,6 +37,8 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
         private const String OAuthBearerClientSecret = "<oauthbearer_client_secret>";
         private const String OAuthBearerTokenEndpointURL = "<token_endpoint_url>";
         private const String OAuthBearerScope = "<scope>";
+        // Required for Confluent Cloud.
+        private const String OAuthBearerExtensions = "logicalCluster=<lkc-id>,identityPoolId=<pool-id>";
         public static async Task Main(string[] args)
         {
             if (args.Length != 1)
@@ -57,7 +59,8 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
                 SaslOauthbearerClientId = OAuthBearerClientId,
                 SaslOauthbearerClientSecret = OAuthBearerClientSecret,
                 SaslOauthbearerTokenEndpointUrl = OAuthBearerTokenEndpointURL,
-                SaslOauthbearerScope = OAuthBearerScope
+                SaslOauthbearerScope = OAuthBearerScope,
+                SaslOauthbearerExtensions = OAuthBearerExtensions
             };
 
             var consumerConfig = new ConsumerConfig
@@ -70,6 +73,7 @@ namespace Confluent.Kafka.Examples.OAuthOIDC
                 SaslOauthbearerClientSecret = OAuthBearerClientSecret,
                 SaslOauthbearerTokenEndpointUrl = OAuthBearerTokenEndpointURL,
                 SaslOauthbearerScope = OAuthBearerScope,
+                SaslOauthbearerExtensions = OAuthBearerExtensions,
                 GroupId = groupId,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 EnableAutoOffsetStore = false
