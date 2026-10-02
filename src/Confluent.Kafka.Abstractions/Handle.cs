@@ -14,7 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka.Impl;
+using System.Runtime.InteropServices;
 
 
 namespace Confluent.Kafka
@@ -35,6 +35,6 @@ namespace Confluent.Kafka
 
         internal IClient Owner { get; set; }
 
-        internal SafeKafkaHandle LibrdkafkaHandle { get; set; }
+        internal SafeHandle LibrdkafkaHandle { get; set; }
     }
 }

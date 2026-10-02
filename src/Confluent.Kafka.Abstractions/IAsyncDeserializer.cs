@@ -21,24 +21,26 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
+    ///     A deserializer for use with <c>Consumer&lt;TKey,TValue&gt;</c>.
     /// </summary>
-    public interface IAsyncSerializer<T>
+    public interface IAsyncDeserializer<T>
     {
         /// <summary>
-        ///     Serialize the key or value of a <see cref="Message{TKey,TValue}" />
-        ///     instance.
+        ///     Deserialize a message key or value.
         /// </summary>
         /// <param name="data">
-        ///     The value to serialize.
+        ///     The raw byte data to deserialize.
+        /// </param>
+        /// <param name="isNull">
+        ///     True if this is a null value.
         /// </param>
         /// <param name="context">
-        ///     Context relevant to the serialize operation.
+        ///     Context relevant to the deserialize operation.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that
-        ///     completes with the serialized data.
+        ///     A <see cref="System.Threading.Tasks.Task" /> that completes
+        ///     with the deserialized value.
         /// </returns>
-        Task<byte[]> SerializeAsync(T data, SerializationContext context);
+        Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context);
     }
 }

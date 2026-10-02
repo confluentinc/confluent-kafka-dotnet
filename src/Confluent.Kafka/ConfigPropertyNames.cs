@@ -68,7 +68,7 @@ namespace Confluent.Kafka
             ///     A comma separated list of fields that may be optionally set
             ///     in <see cref="Confluent.Kafka.ConsumeResult{TKey,TValue}" />
             ///     objects returned by the
-            ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Consume(System.TimeSpan)" />
+            ///     <c>Consumer&lt;TKey,TValue&gt;.Consume(TimeSpan)</c>
             ///     method. Disabling fields that you do not require will improve 
             ///     throughput and reduce memory consumption. Allowed values:
             ///     headers, timestamp, topic, all, none
