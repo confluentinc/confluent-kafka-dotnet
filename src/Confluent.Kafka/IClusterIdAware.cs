@@ -56,6 +56,13 @@ namespace Confluent.Kafka
         ///     consumer must therefore not be used after that client is disposed,
         ///     unless the cluster id it needs was specified via configuration.
         ///
+        ///     A serializer or deserializer instance holds a single resolver. If one
+        ///     instance is shared by several clients, the resolver supplied last
+        ///     replaces the earlier ones, so every client sharing the instance
+        ///     resolves the cluster id of the last client it was handed to. Do not
+        ///     share an instance between clients connected to different clusters;
+        ///     let the client creates the serde instance through the builder.
+        ///
         ///     Implementations must ignore the resolver when the cluster id is not
         ///     relevant to their configuration, or when it was specified explicitly
         ///     via configuration, so that a configured cluster id is never
