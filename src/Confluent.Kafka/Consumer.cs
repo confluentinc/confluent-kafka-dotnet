@@ -845,7 +845,7 @@ namespace Confluent.Kafka
                 }
 
                 long timestampUnix = 0;
-                IntPtr timestampType = (IntPtr)TimestampType.NotAvailable;
+                int timestampType = (int)TimestampType.NotAvailable;
                 if (enableTimestampMarshaling)
                 {
                     timestampUnix = Librdkafka.message_timestamp(msgPtr, out timestampType);
