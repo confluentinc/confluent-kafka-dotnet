@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -89,6 +90,46 @@ namespace Confluent.Kafka.UnitTests
 
             await Assert.ThrowsAsync<ObjectDisposedException>(
                 async () => await handle.ClusterIdAsync(500));
+        }
+
+        [Fact]
+        public async Task DisposingWhileAResolutionIsInFlight_EndsItPromptly()
+        {
+            // The resolution timeout is well above the bounds asserted below, so
+            // neither Dispose nor the resolution may simply wait it out.
+            const int resolutionTimeoutMs = 10000;
+            var bound = TimeSpan.FromSeconds(3);
+
+            // Iterations whose resolution was woken inside the native wait, as
+            // opposed to never reaching it before the handle was closed.
+            int wokenInNativeWait = 0;
+
+            for (int i = 0; i < 5; i++)
+            {
+                var producer = new ProducerBuilder<Null, string>(UnreachableProducerConfig()).Build();
+                var inFlight = producer.Handle.LibrdkafkaHandle.ClusterIdAsync(resolutionTimeoutMs);
+
+                // Let the thread pool thread enter the native wait.
+                await Task.Delay(100, TestContext.Current.CancellationToken);
+                Assert.False(inFlight.IsCompleted);
+
+                var stopwatch = Stopwatch.StartNew();
+                producer.Dispose();
+                Assert.True(stopwatch.Elapsed < bound, $"Dispose took {stopwatch.Elapsed}");
+
+                var completed = await Task.WhenAny(inFlight, Task.Delay(bound, TestContext.Current.CancellationToken));
+                Assert.Same(inFlight, completed);
+                try
+                {
+                    Assert.Null(await inFlight);
+                    wokenInNativeWait++;
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+            }
+
+            Assert.True(wokenInNativeWait > 0, "No resolution reached the native wait before Dispose");
         }
     }
 }
