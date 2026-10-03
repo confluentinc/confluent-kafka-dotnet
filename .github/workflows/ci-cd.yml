@@ -1,0 +1,88 @@
+name: Kafka CI/CD Pipeline
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  ci:
+    name: Continuous integration
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ windows-latest, ubuntu-latest, macos-latest ]
+    env:
+      SOLUTION_PATH: Confluent.Kafka.sln
+    steps:
+      - if: matrix.os == 'windows-latest'
+        name: Install DocFX
+        id: install_docfx
+        shell: pwsh
+        run: |
+          choco install docfx -y
+
+      - name: Checkout repository
+        id: checkout_repo
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      # Automated GitHub tagging step
+
+      - name: Build solution
+        id: build_solution
+        shell: pwsh
+        run: |
+          dotnet add package librdkafka.redist --version 1.6.1
+          dotnet build $env:SOLUTION_PATH -c Release
+
+      - name: Run unit tests
+        id: run_unit_tests
+        shell: pwsh
+        run: |
+          dotnet test test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj -c Release --no-build
+
+          dotnet test test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj -c Release --no-build
+
+          dotnet test test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj -c Release --no-build
+
+    # Continuous delivery job
+
+      - if: matrix.os == 'windows-latest'
+        name: Create NuGet packages
+        id: create_nuget_pkgs
+        shell: pwsh
+        run: |
+          dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c Release -o Artifacts/
+
+          dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c Release -o Artifacts/
+
+          dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c Release -o Artifacts/
+
+          dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c Release -o Artifacts/
+
+          dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c Release -o Artifacts/
+
+      - if: matrix.os == 'windows-latest'
+        name: Generate docs archive and move to Artifacts/
+        id: gen_docs
+        shell: pwsh
+        run: |
+          docfx doc/docfx.json
+          7z a docs-$env:COMMIT_SHA.zip doc/_site/*
+          Move-Item -Path docs-$env:COMMIT_SHA.zip -Destination Artifacts/
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+
+      - if: matrix.os == 'windows-latest'
+        name: Upload NuGet packages as artifact
+        id: upload_nuget_pkgs
+        uses: actions/upload-artifact@v1
+        with:
+          name: Artifacts
+          path: Artifacts/
+
+      # Automated NuGet deployment step
+
+      # Automated GitHub release step
+
+# Built with ❤ by [Pipeline Foundation](https://pipeline.foundation)
