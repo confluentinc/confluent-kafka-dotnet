@@ -62,21 +62,29 @@ namespace Confluent.Kafka
         internal protected IDeserializer<TValue> ValueDeserializer { get; set; }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The configured key deserializer builder.
         /// </summary>
         internal protected IDeserializerBuilder<TKey> KeyDeserializerBuilder { get; set; }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The configured value deserializer builder.
         /// </summary>
         internal protected IDeserializerBuilder<TValue> ValueDeserializerBuilder { get; set; }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The configured async key deserializer builder.
         /// </summary>
         internal protected IAsyncDeserializerBuilder<TKey> AsyncKeyDeserializerBuilder { get; set; }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The configured async value deserializer builder.
         /// </summary>
         internal protected IAsyncDeserializerBuilder<TValue> AsyncValueDeserializerBuilder { get; set; }
@@ -312,6 +320,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Set the builder of the deserializer to use to deserialize keys.
         ///
         ///     In contrast to <see cref="SetKeyDeserializer(IDeserializer{TKey})" />, the
@@ -337,6 +347,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Set the builder of the deserializer to use to deserialize values.
         ///
         ///     In contrast to <see cref="SetValueDeserializer(IDeserializer{TValue})" />, the
@@ -362,6 +374,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Set the builder of the deserializer to use to deserialize keys.
         ///
         ///     The deserializer is constructed by the consumer, which supplies its own
@@ -389,6 +403,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Set the builder of the deserializer to use to deserialize values.
         ///
         ///     The deserializer is constructed by the consumer, which supplies its own

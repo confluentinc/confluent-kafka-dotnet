@@ -1,6 +1,6 @@
 # 2.16.0 (unreleased)
 
-## New features
+## New experimental features
 
 * Serializers and deserializers can now be supplied to a producer, dependent
   producer or consumer as a *builder*, which the client invokes during its own
@@ -16,6 +16,11 @@
   deserializers automatically, and resolved lazily on first use, so subject
   name strategies based on the cluster no longer need it configured by hand.
   See the [AvroGenericAssociation](examples/AvroGenericAssociation) example (#2661)
+* The serializer and deserializer builder APIs (`Set*SerializerBuilder` and
+  `Set*DeserializerBuilder` on the producer and consumer builders, the Schema
+  Registry serde builders), `IClusterIdAware`, `ISerdeDisposable`, `SerdeExtensions`
+  and the `ClusterId` client extension are **experimental**: they are subject to
+  change or removal in a future release (#2661)
 
 
 ## Enhancements

@@ -185,6 +185,8 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Supply a resolver for the id of the Kafka cluster the client is
         ///     connected to, to be used as the resource namespace when looking up
         ///     associations.
@@ -422,6 +424,8 @@ namespace Confluent.SchemaRegistry
             => strategy.ToAsyncDelegate(schemaRegistryClient, config, out _);
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Provide an async functional implementation corresponding to the enum value,
         ///     additionally exposing the <see cref="AssociatedNameStrategy" /> instance
         ///     backing it, if any.

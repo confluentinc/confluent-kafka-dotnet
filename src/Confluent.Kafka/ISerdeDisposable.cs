@@ -18,6 +18,8 @@
 namespace Confluent.Kafka
 {
     /// <summary>
+    ///     **EXPERIMENTAL**: subject to change or removal.
+    ///
     ///     Implemented by serializers and deserializers that hold disposable
     ///     resources they created themselves, and are therefore responsible for
     ///     releasing.

@@ -55,21 +55,29 @@ namespace Confluent.Kafka
         public IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The configured key serializer builder.
         /// </summary>
         public ISerializerBuilder<TKey> KeySerializerBuilder { get; set; }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The configured value serializer builder.
         /// </summary>
         public ISerializerBuilder<TValue> ValueSerializerBuilder { get; set; }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The configured async key serializer builder.
         /// </summary>
         public IAsyncSerializerBuilder<TKey> AsyncKeySerializerBuilder { get; set; }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The configured async value serializer builder.
         /// </summary>
         public IAsyncSerializerBuilder<TValue> AsyncValueSerializerBuilder { get; set; }
@@ -126,6 +134,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The builder of the serializer to use to serialize keys.
         ///
         ///     In contrast to <see cref="SetKeySerializer(ISerializer{TKey})" />, the
@@ -142,6 +152,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The builder of the serializer to use to serialize values.
         ///
         ///     In contrast to <see cref="SetValueSerializer(ISerializer{TValue})" />, the
@@ -158,6 +170,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The builder of the async serializer to use to serialize keys.
         ///
         ///     In contrast to <see cref="SetKeySerializer(IAsyncSerializer{TKey})" />, the
@@ -174,6 +188,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The builder of the async serializer to use to serialize values.
         ///
         ///     In contrast to <see cref="SetValueSerializer(IAsyncSerializer{TValue})" />, the

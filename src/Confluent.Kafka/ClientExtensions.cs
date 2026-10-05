@@ -9,6 +9,8 @@ namespace Confluent.Kafka
     public static class ClientExtensions
     {
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Gets the id of the Kafka cluster this client
         ///     is connected to.
         ///

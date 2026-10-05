@@ -21,6 +21,8 @@ using Confluent.Kafka;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
+    ///     **EXPERIMENTAL**: subject to change or removal.
+    ///
     ///     A builder of <see cref="AvroSerializer{T}" /> instances, for use with
     ///     <see cref="ProducerBuilder{TKey,TValue}.SetValueSerializerBuilder(IAsyncSerializerBuilder{TValue})" />
     ///     and its key counterpart.

@@ -21,6 +21,8 @@ using System.Net;
 namespace Confluent.SchemaRegistry
 {
     /// <summary>
+    ///     **EXPERIMENTAL**: subject to change or removal.
+    ///
     ///     A builder of <see cref="CachedSchemaRegistryClient" /> instances, covering
     ///     the client's entire input surface: its configuration, an optional
     ///     authentication header value provider, and an optional proxy.

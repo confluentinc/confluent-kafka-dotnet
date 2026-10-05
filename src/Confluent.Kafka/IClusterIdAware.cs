@@ -21,6 +21,8 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka
 {
     /// <summary>
+    ///     **EXPERIMENTAL**: subject to change or removal.
+    ///
     ///     Implemented by serializers and deserializers that can make use of the id
     ///     of the Kafka cluster the client is connected to.
     ///

@@ -36,6 +36,8 @@ namespace Confluent.SchemaRegistry
         protected RuleRegistry ruleRegistry;
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     The associated subject name strategy backing
         ///     <see cref="subjectNameStrategy" />, when that strategy is
         ///     <see cref="SubjectNameStrategy.Associated" />. Retained so that the
@@ -44,6 +46,8 @@ namespace Confluent.SchemaRegistry
         protected AssociatedNameStrategy associatedNameStrategy = null;
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Whether <see cref="schemaRegistryClient" /> was constructed by a serde
         ///     builder rather than supplied by the application, and is therefore
         ///     disposed along with this instance.

@@ -22,6 +22,8 @@ using Google.Protobuf;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
+    ///     **EXPERIMENTAL**: subject to change or removal.
+    ///
     ///     A builder of <see cref="ProtobufSerializer{T}" /> instances, for use with
     ///     <see cref="ProducerBuilder{TKey,TValue}.SetValueSerializerBuilder(IAsyncSerializerBuilder{TValue})" />
     ///     and its key counterpart.

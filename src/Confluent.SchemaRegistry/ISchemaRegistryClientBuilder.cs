@@ -18,6 +18,8 @@
 namespace Confluent.SchemaRegistry
 {
     /// <summary>
+    ///     **EXPERIMENTAL**: subject to change or removal.
+    ///
     ///     Defines a builder of <see cref="ISchemaRegistryClient" /> instances, for
     ///     use with the Schema Registry serde builders.
     ///

@@ -20,6 +20,8 @@ using System;
 namespace Confluent.SchemaRegistry
 {
     /// <summary>
+    ///     **EXPERIMENTAL**: subject to change or removal.
+    ///
     ///     Common configuration for the builders of Schema Registry serializers and
     ///     deserializers - how the Schema Registry client itself is obtained.
     ///

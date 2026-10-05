@@ -20,6 +20,8 @@ using System.Collections.Generic;
 namespace Confluent.Kafka
 {
     /// <summary>
+    ///     **EXPERIMENTAL**: subject to change or removal.
+    ///
     ///     Defines a builder of <see cref="IAsyncDeserializer{T}" /> instances, for use with
     ///     <see cref="ConsumerBuilder{TKey,TValue}.SetKeyDeserializerBuilder(IAsyncDeserializerBuilder{TKey})" />
     ///     and its value counterpart.

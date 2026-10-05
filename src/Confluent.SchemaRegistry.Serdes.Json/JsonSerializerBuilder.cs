@@ -26,6 +26,8 @@ using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.Generation.JsonSchemaG
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
+    ///     **EXPERIMENTAL**: subject to change or removal.
+    ///
     ///     A builder of <see cref="JsonSerializer{T}" /> instances, for use with
     ///     <see cref="ProducerBuilder{TKey,TValue}.SetValueSerializerBuilder(IAsyncSerializerBuilder{TValue})" />
     ///     and its key counterpart.

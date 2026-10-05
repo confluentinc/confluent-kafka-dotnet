@@ -22,6 +22,8 @@ using Confluent.Kafka.SyncOverAsync;
 namespace Confluent.Kafka
 {
     /// <summary>
+    ///     **EXPERIMENTAL**: subject to change or removal.
+    ///
     ///     Extension methods that interrogate a serializer or deserializer for
     ///     optional capabilities - <see cref="IClusterIdAware" /> and
     ///     <see cref="ISerdeDisposable" /> - without requiring it to implement
@@ -39,6 +41,8 @@ namespace Confluent.Kafka
     public static class SerdeExtensions
     {
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Supply a resolver for the id of the Kafka cluster the client is
         ///     connected to, if <paramref name="serializer" /> makes use of it.
         /// </summary>
@@ -46,6 +50,8 @@ namespace Confluent.Kafka
             => SetClusterIdResolver(Unwrap(serializer), clusterIdResolver);
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Supply a resolver for the id of the Kafka cluster the client is
         ///     connected to, if <paramref name="serializer" /> makes use of it.
         /// </summary>
@@ -53,6 +59,8 @@ namespace Confluent.Kafka
             => SetClusterIdResolver((object)serializer, clusterIdResolver);
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Supply a resolver for the id of the Kafka cluster the client is
         ///     connected to, if <paramref name="deserializer" /> makes use of it.
         /// </summary>
@@ -60,6 +68,8 @@ namespace Confluent.Kafka
             => SetClusterIdResolver(Unwrap(deserializer), clusterIdResolver);
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Supply a resolver for the id of the Kafka cluster the client is
         ///     connected to, if <paramref name="deserializer" /> makes use of it.
         /// </summary>
@@ -67,6 +77,8 @@ namespace Confluent.Kafka
             => SetClusterIdResolver((object)deserializer, clusterIdResolver);
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Release any resources <paramref name="serializer" /> created itself.
         ///     Resources supplied by the application are not released.
         /// </summary>
@@ -74,6 +86,8 @@ namespace Confluent.Kafka
             => DisposeOwnedResources(Unwrap(serializer));
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Release any resources <paramref name="serializer" /> created itself.
         ///     Resources supplied by the application are not released.
         /// </summary>
@@ -81,6 +95,8 @@ namespace Confluent.Kafka
             => DisposeOwnedResources((object)serializer);
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Release any resources <paramref name="deserializer" /> created itself.
         ///     Resources supplied by the application are not released.
         /// </summary>
@@ -88,6 +104,8 @@ namespace Confluent.Kafka
             => DisposeOwnedResources(Unwrap(deserializer));
 
         /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
         ///     Release any resources <paramref name="deserializer" /> created itself.
         ///     Resources supplied by the application are not released.
         /// </summary>
