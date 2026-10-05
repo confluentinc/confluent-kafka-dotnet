@@ -49,7 +49,7 @@ namespace Confluent.SchemaRegistry.Serdes
             AvroSerializerConfig config,
             RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
-            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config, out this.associatedNameStrategy);
 
             if (config == null) { return; }
 

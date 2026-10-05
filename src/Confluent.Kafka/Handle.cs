@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
 using Confluent.Kafka.Impl;
 
 
@@ -36,5 +37,12 @@ namespace Confluent.Kafka
         internal IClient Owner { get; set; }
 
         internal SafeKafkaHandle LibrdkafkaHandle { get; set; }
+
+        /// <summary>
+        ///     The configuration the owning client was constructed with. Handed to
+        ///     the serializer builders of a dependent producer, which has no
+        ///     configuration of its own.
+        /// </summary>
+        internal IEnumerable<KeyValuePair<string, string>> Config { get; set; }
     }
 }

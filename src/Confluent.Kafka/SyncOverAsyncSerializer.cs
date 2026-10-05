@@ -48,6 +48,14 @@ namespace Confluent.Kafka.SyncOverAsync
         private IAsyncSerializer<T> asyncSerializer { get; }
 
         /// <summary>
+        ///     The async serializer this instance delegates to. Exposed so that
+        ///     optional serializer capabilities can be resolved through the
+        ///     adapter - refer to <see cref="SerdeExtensions" />.
+        /// </summary>
+        internal IAsyncSerializer<T> AsyncSerializer
+            => asyncSerializer;
+
+        /// <summary>
         ///     Initializes a new SyncOverAsyncSerializer
         ///     instance.
         /// </summary>

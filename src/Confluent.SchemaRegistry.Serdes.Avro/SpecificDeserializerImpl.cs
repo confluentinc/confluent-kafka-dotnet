@@ -94,7 +94,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 );
             }
             
-            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config, out this.associatedNameStrategy);
 
             if (config == null) { return; }
 

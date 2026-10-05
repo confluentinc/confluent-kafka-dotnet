@@ -1,0 +1,381 @@
+// Copyright 2026 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Refer to LICENSE for more information.
+
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Reflection;
+using System.Threading.Tasks;
+using Confluent.Kafka;
+using Moq;
+using Xunit;
+
+namespace Confluent.SchemaRegistry.Serdes.UnitTests
+{
+    /// <summary>
+    ///     Tests for the Schema Registry serde builders: how the Schema Registry
+    ///     client is resolved, which combinations of settings are rejected, and who
+    ///     owns the resulting client.
+    /// </summary>
+    public class SerdeBuilderTests : BaseSerializeDeserializeTests
+    {
+        private static SchemaRegistryConfig Config()
+            => new SchemaRegistryConfig { Url = "http://localhost:8081" };
+
+        private static CachedSchemaRegistryClientBuilder ClientBuilder()
+            => new CachedSchemaRegistryClientBuilder().SetConfig(Config());
+
+        private static readonly IEnumerable<KeyValuePair<string, string>> ClientConfig =
+            new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("bootstrap.servers", "localhost:9092")
+            };
+
+        [Fact]
+        public void Build_FromAnInjectedClient()
+        {
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClient(schemaRegistryClient)
+                .Build(ClientConfig, false);
+
+            Assert.NotNull(serializer);
+        }
+
+        [Fact]
+        public void Build_FromConfiguration()
+        {
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryConfig(Config())
+                .Build(ClientConfig, false);
+
+            Assert.NotNull(serializer);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Build_ForBothKeyAndValue(bool isKey)
+        {
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClient(schemaRegistryClient)
+                .Build(ClientConfig, isKey);
+
+            var deserializer = new AvroDeserializerBuilder<int>()
+                .SetSchemaRegistryClient(schemaRegistryClient)
+                .Build(ClientConfig, isKey);
+
+            Assert.NotNull(serializer);
+            Assert.NotNull(deserializer);
+        }
+
+        [Fact]
+        public async Task Build_AppliesTheSerializerConfig()
+        {
+            // The Topic strategy registers under the topic name rather than an
+            // association - which shows the config reached the serde.
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClient(schemaRegistryClient)
+                .SetSerializerConfig(new AvroSerializerConfig
+                {
+                    SubjectNameStrategy = SubjectNameStrategy.Topic
+                })
+                .Build(ClientConfig, false);
+
+            await serializer.SerializeAsync(1,
+                new SerializationContext(MessageComponentType.Value, testTopic));
+
+            Assert.True(subjectStore.ContainsKey($"{testTopic}-value"));
+        }
+
+        [Fact]
+        public void Setters_Chain()
+        {
+            var builder = new AvroSerializerBuilder<int>();
+
+            var chained = builder
+                .SetSchemaRegistryConfig(Config())
+                .SetRuleRegistry(new RuleRegistry())
+                .SetSerializerConfig(new AvroSerializerConfig());
+
+            Assert.Same(builder, chained);
+        }
+
+        // Rejected combinations.
+
+        [Fact]
+        public void Reject_BothClientAndConfig()
+        {
+            var builder = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClient(schemaRegistryClient)
+                .SetSchemaRegistryConfig(Config());
+
+            var ex = Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+            Assert.Contains("one or the other", ex.Message);
+        }
+
+        [Fact]
+        public void Reject_NeitherClientNorConfig()
+        {
+            var builder = new AvroSerializerBuilder<int>();
+
+            var ex = Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+            Assert.Contains("must be specified", ex.Message);
+        }
+
+        [Fact]
+        public void Reject_ClientBuilderAlongsideAClient()
+        {
+            var builder = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClient(schemaRegistryClient)
+                .SetSchemaRegistryClientBuilder(ClientBuilder());
+
+            var ex = Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+            Assert.Contains("client builder", ex.Message);
+        }
+
+        [Fact]
+        public void Reject_ClientBuilderAlongsideAConfig()
+        {
+            var builder = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryConfig(Config())
+                .SetSchemaRegistryClientBuilder(ClientBuilder());
+
+            var ex = Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+            Assert.Contains("one or the other", ex.Message);
+        }
+
+        [Fact]
+        public void Reject_AClientBuilderWithNoConfig()
+        {
+            var builder = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClientBuilder(new CachedSchemaRegistryClientBuilder());
+
+            var ex = Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+            Assert.Contains("configuration must be specified", ex.Message);
+        }
+
+        [Fact]
+        public void Reject_DeserializerWithBothClientAndConfig()
+        {
+            var builder = new AvroDeserializerBuilder<int>()
+                .SetSchemaRegistryClient(schemaRegistryClient)
+                .SetSchemaRegistryConfig(Config());
+
+            Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+        }
+
+        // A serde constructor that throws must not leak a client the builder
+        // constructed for it; a client the application supplied is left alone.
+
+        private static AvroSerializerConfig UnknownParameter()
+        {
+            var config = new AvroSerializerConfig();
+            config.Set("avro.serializer.bogus", "true");
+            return config;
+        }
+
+        [Fact]
+        public void Build_DisposesAConstructedClient_WhenTheSerdeRejectsItsConfig()
+        {
+            var client = new Mock<ISchemaRegistryClient>();
+            var clientBuilder = new Mock<ISchemaRegistryClientBuilder>();
+            clientBuilder.Setup(b => b.Build()).Returns(client.Object);
+
+            var builder = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClientBuilder(clientBuilder.Object)
+                .SetSerializerConfig(UnknownParameter());
+
+            Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+
+            client.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public void Build_LeavesAnInjectedClientAlone_WhenTheSerdeRejectsItsConfig()
+        {
+            var client = new Mock<ISchemaRegistryClient>();
+
+            var builder = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClient(client.Object)
+                .SetSerializerConfig(UnknownParameter());
+
+            Assert.Throws<ArgumentException>(() => builder.Build(ClientConfig, false));
+
+            client.Verify(c => c.Dispose(), Times.Never);
+        }
+
+        // Client construction from configuration.
+
+        [Fact]
+        public void Build_UsesTheSuppliedAuthenticationProvider()
+        {
+            var provider = new StubAuthenticationHeaderValueProvider();
+
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClientBuilder(new CachedSchemaRegistryClientBuilder()
+                    .SetConfig(Config())
+                    .SetAuthenticationHeaderValueProvider(provider))
+                .Build(ClientConfig, false);
+
+            Assert.Same(provider, ResolvedClient(serializer).AuthHeaderProvider);
+        }
+
+        [Fact]
+        public void Build_UsesTheSuppliedProxy()
+        {
+            var proxy = new WebProxy("http://localhost:3128");
+
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClientBuilder(new CachedSchemaRegistryClientBuilder()
+                    .SetConfig(Config())
+                    .SetWebProxy(proxy))
+                .Build(ClientConfig, false);
+
+            Assert.Same(proxy, ResolvedClient(serializer).Proxy);
+        }
+
+        [Fact]
+        public void Build_AProviderIsReReadPerRequest()
+        {
+            // Credentials can only change inside a provider instance, since the
+            // client's provider is fixed once constructed. Confirm the provider is
+            // consulted on each call rather than cached.
+            var provider = new StubAuthenticationHeaderValueProvider();
+
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClientBuilder(new CachedSchemaRegistryClientBuilder()
+                    .SetConfig(Config())
+                    .SetAuthenticationHeaderValueProvider(provider))
+                .Build(ClientConfig, false);
+
+            var resolved = ResolvedClient(serializer).AuthHeaderProvider;
+
+            var first = resolved.GetAuthenticationHeader();
+            var second = resolved.GetAuthenticationHeader();
+
+            Assert.Equal("token-1", first.Parameter);
+            Assert.Equal("token-2", second.Parameter);
+        }
+
+        // Ownership of the schema registry client.
+
+        [Fact]
+        public void Ownership_AnInjectedClientIsNotOwned()
+        {
+            var clientMock = new Mock<ISchemaRegistryClient>();
+
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClient(clientMock.Object)
+                .Build(ClientConfig, false);
+
+            serializer.DisposeOwnedResources();
+
+            clientMock.Verify(x => x.Dispose(), Times.Never());
+        }
+
+        [Fact]
+        public void Ownership_AnInjectedClientSurvivesRepeatedDisposal()
+        {
+            var clientMock = new Mock<ISchemaRegistryClient>();
+
+            var deserializer = new AvroDeserializerBuilder<int>()
+                .SetSchemaRegistryClient(clientMock.Object)
+                .Build(ClientConfig, false);
+
+            deserializer.DisposeOwnedResources();
+            deserializer.DisposeOwnedResources();
+
+            clientMock.Verify(x => x.Dispose(), Times.Never());
+        }
+
+        [Fact]
+        public void Ownership_AConfiguredClientIsOwnedAndReleased()
+        {
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryConfig(Config())
+                .Build(ClientConfig, false);
+
+            Assert.True(Owns(serializer));
+
+            serializer.DisposeOwnedResources();
+
+            Assert.False(Owns(serializer));
+        }
+
+        [Fact]
+        public void Ownership_AConfiguredClientIsOwnedAndReleased_Deserializer()
+        {
+            var deserializer = new AvroDeserializerBuilder<int>()
+                .SetSchemaRegistryConfig(Config())
+                .Build(ClientConfig, false);
+
+            Assert.True(Owns(deserializer));
+
+            deserializer.DisposeOwnedResources();
+
+            Assert.False(Owns(deserializer));
+        }
+
+        [Fact]
+        public void Ownership_DisposingTwiceIsANoOp()
+        {
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryConfig(Config())
+                .Build(ClientConfig, false);
+
+            serializer.DisposeOwnedResources();
+            serializer.DisposeOwnedResources();
+
+            Assert.False(Owns(serializer));
+        }
+
+        [Fact]
+        public void Ownership_ASerdeConstructedDirectlyOwnsNothing()
+        {
+            var clientMock = new Mock<ISchemaRegistryClient>();
+            var serializer = new AvroSerializer<int>(clientMock.Object);
+
+            serializer.DisposeOwnedResources();
+
+            clientMock.Verify(x => x.Dispose(), Times.Never());
+        }
+
+        private static bool Owns(object serde)
+            => (bool)serde.GetType()
+                .GetField("ownsSchemaRegistryClient",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(serde);
+
+        private static ISchemaRegistryClient ResolvedClient(object serde)
+            => (ISchemaRegistryClient)serde.GetType()
+                .GetField("schemaRegistryClient",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(serde);
+
+        /// <summary>
+        ///     A provider that returns a different value on each call, standing in
+        ///     for credentials that rotate over the lifetime of a client.
+        /// </summary>
+        private class StubAuthenticationHeaderValueProvider : IAuthenticationHeaderValueProvider
+        {
+            private int calls;
+
+            public AuthenticationHeaderValue GetAuthenticationHeader()
+                => new AuthenticationHeaderValue("Bearer", $"token-{++calls}");
+        }
+    }
+}
