@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading.Tasks;
+using Confluent.Kafka;
 
 
 namespace Confluent.SchemaRegistry
@@ -209,9 +211,15 @@ namespace Confluent.SchemaRegistry
         ///     disposed along with it. Invoked only when the client was constructed
         ///     here.
         /// </param>
+        /// <param name="init">
+        ///     Optional setup run to completion on the constructed serde, for
+        ///     anything the builder's setters do not cover. If it throws, the serde's
+        ///     owned resources are released before the exception propagates.
+        /// </param>
         protected TSerde ConstructSerde<TSerde>(
             Func<ISchemaRegistryClient, TSerde> construct,
-            Action<TSerde> ownSchemaRegistryClient)
+            Action<TSerde> ownSchemaRegistryClient,
+            Func<TSerde, Task> init = null)
         {
             var client = ResolveSchemaRegistryClient(out bool owned);
 
@@ -232,6 +240,21 @@ namespace Confluent.SchemaRegistry
             if (owned)
             {
                 ownSchemaRegistryClient(serde);
+            }
+
+            if (init != null)
+            {
+                try
+                {
+                    // Build cannot await; run on the thread pool so that a
+                    // synchronization context on the caller cannot deadlock.
+                    Task.Run(() => init(serde)).GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    (serde as ISerdeDisposable)?.DisposeOwnedResources();
+                    throw;
+                }
             }
 
             return serde;

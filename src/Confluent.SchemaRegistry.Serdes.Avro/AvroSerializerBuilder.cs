@@ -14,7 +14,9 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 
 
@@ -43,6 +45,7 @@ namespace Confluent.SchemaRegistry.Serdes
         : SchemaRegistrySerdeBuilder<AvroSerializerBuilder<T>>, IAsyncSerializerBuilder<T>
     {
         private AvroSerializerConfig serializerConfig;
+        private Func<AvroSerializer<T>, Task> serializerInit;
 
         /// <summary>
         ///     The serializer configuration (refer to
@@ -54,10 +57,25 @@ namespace Confluent.SchemaRegistry.Serdes
             return this;
         }
 
+        /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
+        ///     Setup to run on the serializer once it has been built, for anything
+        ///     the other setters do not cover. It runs to completion within
+        ///     <c>Build</c>; if it throws, the serializer's owned resources are
+        ///     released and the exception propagates.
+        /// </summary>
+        public AvroSerializerBuilder<T> SetSerializerInit(Func<AvroSerializer<T>, Task> serializerInit)
+        {
+            this.serializerInit = serializerInit;
+            return this;
+        }
+
         /// <inheritdoc />
         public IAsyncSerializer<T> Build(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
             => ConstructSerde(
                 client => new AvroSerializer<T>(client, serializerConfig, ruleRegistry),
-                serializer => serializer.OwnSchemaRegistryClient());
+                serializer => serializer.OwnSchemaRegistryClient(),
+                serializerInit);
     }
 }

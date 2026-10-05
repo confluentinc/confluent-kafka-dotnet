@@ -14,7 +14,9 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Google.Protobuf;
 
@@ -46,6 +48,7 @@ namespace Confluent.SchemaRegistry.Serdes
         where T : class, IMessage<T>, new()
     {
         private ProtobufDeserializerConfig deserializerConfig;
+        private Func<ProtobufDeserializer<T>, Task> deserializerInit;
 
         /// <summary>
         ///     Protobuf messages are deserialized into the generated type, so no
@@ -65,10 +68,25 @@ namespace Confluent.SchemaRegistry.Serdes
             return this;
         }
 
+        /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
+        ///     Setup to run on the deserializer once it has been built, for anything
+        ///     the other setters do not cover. It runs to completion within
+        ///     <c>Build</c>; if it throws, the deserializer's owned resources are
+        ///     released and the exception propagates.
+        /// </summary>
+        public ProtobufDeserializerBuilder<T> SetDeserializerInit(Func<ProtobufDeserializer<T>, Task> deserializerInit)
+        {
+            this.deserializerInit = deserializerInit;
+            return this;
+        }
+
         /// <inheritdoc />
         public IAsyncDeserializer<T> Build(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
             => ConstructSerde(
                 client => new ProtobufDeserializer<T>(client, deserializerConfig, ruleRegistry),
-                deserializer => deserializer.OwnSchemaRegistryClient());
+                deserializer => deserializer.OwnSchemaRegistryClient(),
+                deserializerInit);
     }
 }

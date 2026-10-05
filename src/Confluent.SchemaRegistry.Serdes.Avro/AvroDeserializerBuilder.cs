@@ -14,7 +14,9 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 
 
@@ -44,6 +46,7 @@ namespace Confluent.SchemaRegistry.Serdes
         : SchemaRegistrySerdeBuilder<AvroDeserializerBuilder<T>>, IAsyncDeserializerBuilder<T>
     {
         private AvroDeserializerConfig deserializerConfig;
+        private Func<AvroDeserializer<T>, Task> deserializerInit;
 
         /// <summary>
         ///     The deserializer configuration (refer to
@@ -55,10 +58,25 @@ namespace Confluent.SchemaRegistry.Serdes
             return this;
         }
 
+        /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
+        ///     Setup to run on the deserializer once it has been built, for anything
+        ///     the other setters do not cover. It runs to completion within
+        ///     <c>Build</c>; if it throws, the deserializer's owned resources are
+        ///     released and the exception propagates.
+        /// </summary>
+        public AvroDeserializerBuilder<T> SetDeserializerInit(Func<AvroDeserializer<T>, Task> deserializerInit)
+        {
+            this.deserializerInit = deserializerInit;
+            return this;
+        }
+
         /// <inheritdoc />
         public IAsyncDeserializer<T> Build(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
             => ConstructSerde(
                 client => new AvroDeserializer<T>(client, deserializerConfig, ruleRegistry),
-                deserializer => deserializer.OwnSchemaRegistryClient());
+                deserializer => deserializer.OwnSchemaRegistryClient(),
+                deserializerInit);
     }
 }

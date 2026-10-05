@@ -354,6 +354,84 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             clientMock.Verify(x => x.Dispose(), Times.Never());
         }
 
+        // Init callbacks.
+
+        [Fact]
+        public void SerializerInit_ReceivesTheBuiltSerializer()
+        {
+            AvroSerializer<int> received = null;
+
+            var serializer = new AvroSerializerBuilder<int>()
+                .SetSchemaRegistryClient(schemaRegistryClient)
+                .SetSerializerInit(s =>
+                {
+                    received = s;
+                    return Task.CompletedTask;
+                })
+                .Build(ClientConfig, false);
+
+            Assert.Same(serializer, received);
+        }
+
+        [Fact]
+        public void DeserializerInit_IsAwaitedBeforeBuildReturns()
+        {
+            var completed = false;
+
+            var deserializer = new AvroDeserializerBuilder<int>()
+                .SetSchemaRegistryClient(schemaRegistryClient)
+                .SetDeserializerInit(async d =>
+                {
+                    await Task.Delay(50);
+                    completed = true;
+                })
+                .Build(ClientConfig, false);
+
+            Assert.True(completed);
+            Assert.NotNull(deserializer);
+        }
+
+        [Fact]
+        public void SerializerInit_Throwing_DisposesTheOwnedClientAndPropagates()
+        {
+            var clientMock = new Mock<ISchemaRegistryClient>();
+            var clientBuilder = new Mock<ISchemaRegistryClientBuilder>();
+            clientBuilder.Setup(x => x.Build()).Returns(clientMock.Object);
+
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                new AvroSerializerBuilder<int>()
+                    .SetSchemaRegistryClientBuilder(clientBuilder.Object)
+                    .SetSerializerInit(_ => throw new InvalidOperationException("init"))
+                    .Build(ClientConfig, false));
+
+            Assert.Equal("init", ex.Message);
+            clientMock.Verify(x => x.Dispose(), Times.Once());
+        }
+
+        [Fact]
+        public void SerializerInit_Throwing_LeavesASuppliedClientAlone()
+        {
+            var clientMock = new Mock<ISchemaRegistryClient>();
+
+            Assert.Throws<InvalidOperationException>(() =>
+                new AvroSerializerBuilder<int>()
+                    .SetSchemaRegistryClient(clientMock.Object)
+                    .SetSerializerInit(_ => throw new InvalidOperationException())
+                    .Build(ClientConfig, false));
+
+            clientMock.Verify(x => x.Dispose(), Times.Never());
+        }
+
+        [Fact]
+        public void InitSetters_Chain()
+        {
+            var serializerBuilder = new JsonSerializerBuilder<string>();
+            var deserializerBuilder = new AvroDeserializerBuilder<int>();
+
+            Assert.Same(serializerBuilder, serializerBuilder.SetSerializerInit(_ => Task.CompletedTask));
+            Assert.Same(deserializerBuilder, deserializerBuilder.SetDeserializerInit(_ => Task.CompletedTask));
+        }
+
         private static bool Owns(object serde)
             => (bool)serde.GetType()
                 .GetField("ownsSchemaRegistryClient",

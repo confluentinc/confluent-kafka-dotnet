@@ -14,7 +14,9 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 #if NET8_0_OR_GREATER
 using NewtonsoftJsonSchemaGeneratorSettings = NJsonSchema.NewtonsoftJson.Generation.NewtonsoftJsonSchemaGeneratorSettings;
@@ -49,6 +51,7 @@ namespace Confluent.SchemaRegistry.Serdes
         where T : class
     {
         private JsonSerializerConfig serializerConfig;
+        private Func<JsonSerializer<T>, Task> serializerInit;
         private NewtonsoftJsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         private Schema schema;
 
@@ -83,6 +86,20 @@ namespace Confluent.SchemaRegistry.Serdes
             return this;
         }
 
+        /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
+        ///     Setup to run on the serializer once it has been built, for anything
+        ///     the other setters do not cover. It runs to completion within
+        ///     <c>Build</c>; if it throws, the serializer's owned resources are
+        ///     released and the exception propagates.
+        /// </summary>
+        public JsonSerializerBuilder<T> SetSerializerInit(Func<JsonSerializer<T>, Task> serializerInit)
+        {
+            this.serializerInit = serializerInit;
+            return this;
+        }
+
         /// <inheritdoc />
         public IAsyncSerializer<T> Build(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
             => ConstructSerde(
@@ -91,6 +108,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         client, serializerConfig, jsonSchemaGeneratorSettings, ruleRegistry)
                     : new JsonSerializer<T>(
                         client, schema, serializerConfig, jsonSchemaGeneratorSettings, ruleRegistry),
-                serializer => serializer.OwnSchemaRegistryClient());
+                serializer => serializer.OwnSchemaRegistryClient(),
+                serializerInit);
     }
 }
