@@ -50,13 +50,13 @@ namespace Confluent.Kafka
         ///     report corresponding to the produce request,
         ///     or an exception if an error occured.
         /// </returns>
-        /// <exception cref="Confluent.Kafka.ProduceException{TKey,TValue}">
+        /// <remarks>
         ///     Thrown in response to any produce request
         ///     that was unsuccessful for any reason
         ///     (excluding user application logic errors).
-        ///     The Error property of the exception provides
-        ///     more detailed information.
-        /// </exception>
+        ///     The resulting <c>ProduceException&lt;TKey,TValue&gt;</c> provides
+        ///     more detailed information through its Error property.
+        /// </remarks>
         /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
@@ -86,13 +86,13 @@ namespace Confluent.Kafka
         ///     report corresponding to the produce request,
         ///     or an exception if an error occured.
         /// </returns>
-        /// <exception cref="ProduceException{TKey,TValue}">
+        /// <remarks>
         ///     Thrown in response to any produce request
         ///     that was unsuccessful for any reason
         ///     (excluding user application logic errors).
-        ///     The Error property of the exception provides
-        ///     more detailed information.
-        /// </exception>
+        ///     The resulting <c>ProduceException&lt;TKey,TValue&gt;</c> provides
+        ///     more detailed information through its Error property.
+        /// </remarks>
         /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
@@ -119,7 +119,7 @@ namespace Confluent.Kafka
         ///     with a delivery report corresponding to the
         ///     produce request (if enabled).
         /// </param>
-        /// <exception cref="Confluent.Kafka.ProduceException{TKey,TValue}">
+        /// <remarks>
         ///     Thrown in response to any error that is known
         ///     immediately (excluding user application logic
         ///     errors), for example ErrorCode.Local_QueueFull.
@@ -128,7 +128,9 @@ namespace Confluent.Kafka
         ///     parameter (if specified). The Error property of
         ///     the exception / delivery report provides more
         ///     detailed information.
-        /// </exception>
+        ///     The synchronous exception type is
+        ///     <c>ProduceException&lt;TKey,TValue&gt;</c>.
+        /// </remarks>
         /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
@@ -159,7 +161,7 @@ namespace Confluent.Kafka
         ///     with a delivery report corresponding to the
         ///     produce request (if enabled).
         /// </param>
-        /// <exception cref="ProduceException{TKey,TValue}">
+        /// <remarks>
         ///     Thrown in response to any error that is known
         ///     immediately (excluding user application logic errors),
         ///     for example ErrorCode.Local_QueueFull. Asynchronous
@@ -168,7 +170,9 @@ namespace Confluent.Kafka
         ///     parameter (if specified). The Error property of the
         ///     exception / delivery report provides more detailed
         ///     information.
-        /// </exception>
+        ///     The synchronous exception type is
+        ///     <c>ProduceException&lt;TKey,TValue&gt;</c>.
+        /// </remarks>
         /// <exception cref="System.ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
@@ -311,9 +315,9 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
-        /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
-        /// </exception>
+        /// <remarks>
+        ///     Retriable failures are reported as <c>KafkaRetriableException</c>.
+        /// </remarks>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
         /// </exception>
@@ -379,14 +383,11 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
-        /// <exception cref="KafkaTxnRequiresAbortException">
-        ///     Thrown if the application must call AbortTransaction and
-        ///     start a new transaction with BeginTransaction if it
-        ///     wishes to proceed with transactions.
-        /// </exception>
-        /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
-        /// </exception>
+        /// <remarks>
+        ///     An abortable transaction failure is reported as
+        ///     <c>KafkaTxnRequiresAbortException</c>. Retriable failures are
+        ///     reported as <c>KafkaRetriableException</c>.
+        /// </remarks>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
         /// </exception>
@@ -417,14 +418,11 @@ namespace Confluent.Kafka
         ///     messages are delivered before attempting to commit the
         ///     transaction.
         /// </remark>
-        /// <exception cref="KafkaTxnRequiresAbortException">
-        ///     Thrown if the application must call AbortTransaction and
-        ///     start a new transaction with BeginTransaction if it
-        ///     wishes to proceed with transactions.
-        /// </exception>
-        /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
-        /// </exception>
+        /// <remarks>
+        ///     An abortable transaction failure is reported as
+        ///     <c>KafkaTxnRequiresAbortException</c>. Retriable failures are
+        ///     reported as <c>KafkaRetriableException</c>.
+        /// </remarks>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
         /// </exception>
@@ -452,12 +450,9 @@ namespace Confluent.Kafka
         ///     expires, which ever comes first. On timeout the application may
         ///     call the function again.
         /// </remark>
-        /// <param name="timeout">
-        ///     The maximum length of time this method may block.
-        /// </param>
-        /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
-        /// </exception>
+        /// <remarks>
+        ///     Retriable failures are reported as <c>KafkaRetriableException</c>.
+        /// </remarks>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
         /// </exception>
@@ -479,9 +474,9 @@ namespace Confluent.Kafka
         ///     times out (ProducerConfig.TransactionTimeoutMs), which ever comes
         ///     first. On timeout the application may call the function again.
         /// </remark>
-        /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
-        /// </exception>
+        /// <remarks>
+        ///     Retriable failures are reported as <c>KafkaRetriableException</c>.
+        /// </remarks>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
         /// </exception>
@@ -526,16 +521,13 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
+        /// <remarks>
+        ///     Abortable transaction failures are reported as
+        ///     <c>KafkaTxnRequiresAbortException</c>. Retriable failures are
+        ///     reported as <c>KafkaRetriableException</c>.
+        /// </remarks>
         /// <exception cref="System.ArgumentException">
         ///     Thrown if group metadata is invalid.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.KafkaTxnRequiresAbortException">
-        ///     Thrown if the application must call AbortTransaction and
-        ///     start a new transaction with BeginTransaction if it
-        ///     wishes to proceed with transactions.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
         /// </exception>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown on all other errors.

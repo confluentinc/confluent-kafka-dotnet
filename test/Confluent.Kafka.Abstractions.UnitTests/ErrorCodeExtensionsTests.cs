@@ -1,4 +1,4 @@
-// Copyright 2020 Confluent Inc.
+// Copyright 2026 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka;
+using Xunit;
 
-namespace Confluent.Kafka
+namespace Confluent.Kafka.Abstractions.UnitTests;
+
+public class ErrorCodeExtensionsTests
 {
-    /// <summary>
-    ///     The concrete internal implementation of <see cref="IConsumerGroupMetadata"/>.
-    ///     Obtained via Consumer.ConsumerGroupMetadata and passed to
-    ///     IProducer.SendOffsetsToTransaction.
-    /// </summary>
-    internal class ConsumerGroupMetadata : IConsumerGroupMetadata
+    [Fact]
+    public void GetReason_WhenKafkaIsNotReferenced_ReturnsEnumMemberName()
     {
-        internal byte[] serializedMetadata;
+        Assert.Equal(nameof(ErrorCode.Local_BadCompression), ErrorCode.Local_BadCompression.GetReason());
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Confluent.Kafka.Impl;
 
 namespace Confluent.Kafka
 {
@@ -41,7 +42,7 @@ namespace Confluent.Kafka
         /// <seealso cref="OAuthBearerSetTokenFailure"/>
         public static void OAuthBearerSetToken(this IClient client, string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions = null)
         {
-            client.Handle.LibrdkafkaHandle.OAuthBearerSetToken(tokenValue, lifetimeMs, principalName, extensions);
+            ((SafeKafkaHandle)client.Handle.LibrdkafkaHandle).OAuthBearerSetToken(tokenValue, lifetimeMs, principalName, extensions);
         }
 
         /// <summary>
@@ -59,7 +60,7 @@ namespace Confluent.Kafka
         /// <seealso cref="OAuthBearerSetToken"/>
         public static void OAuthBearerSetTokenFailure(this IClient client, string error)
         {
-            client.Handle.LibrdkafkaHandle.OAuthBearerSetTokenFailure(error);
+            ((SafeKafkaHandle)client.Handle.LibrdkafkaHandle).OAuthBearerSetTokenFailure(error);
         }
     }
 }

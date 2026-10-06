@@ -26,6 +26,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void StringRepresentation()
         {
+            Library.Load();
+
             // Success case
             var description = new UserScramCredentialsDescription
             {

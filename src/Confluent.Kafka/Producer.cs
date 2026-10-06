@@ -75,9 +75,9 @@ namespace Confluent.Kafka
         private Handle borrowedHandle;
 
         private SafeKafkaHandle KafkaHandle
-            => ownedKafkaHandle != null 
+            => ownedKafkaHandle != null
                 ? ownedKafkaHandle
-                : borrowedHandle.LibrdkafkaHandle;
+                : (SafeKafkaHandle)borrowedHandle.LibrdkafkaHandle;
 
         private List<GCHandle> partitionerHandles = new List<GCHandle>();
 

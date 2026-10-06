@@ -891,20 +891,4 @@ namespace Confluent.Kafka
         /// </summary>
         RebootstrapRequired = 129,
     };
-
-    /// <summary>
-    ///     Provides extension methods on the ErrorCode enumeration.
-    /// </summary>
-    public static class ErrorCodeExtensions
-    {
-        /// <summary>
-        ///     Returns the static error string associated with 
-        ///     the particular ErrorCode value.
-        /// </summary>
-        public static string GetReason(this ErrorCode code)
-        {
-            Impl.Librdkafka.Initialize(null);
-            return Internal.Util.Marshal.PtrToStringUTF8(Impl.Librdkafka.err2str(code));
-        }
-    }
 }

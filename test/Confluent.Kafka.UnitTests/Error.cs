@@ -25,6 +25,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void Constuctor()
         {
+            Library.Load();
+
             var e1 = new Error(ErrorCode.Local_BadCompression);
             Assert.Equal(ErrorCode.Local_BadCompression, e1.Code);
             Assert.NotNull(e1.Reason);
