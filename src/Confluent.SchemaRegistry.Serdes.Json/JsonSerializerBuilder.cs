@@ -93,6 +93,16 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     the other setters do not cover. It runs to completion within
         ///     <c>Build</c>; if it throws, the serializer's owned resources are
         ///     released and the exception propagates.
+        ///
+        ///     Do not serialize from it. It runs while the producer is still
+        ///     being constructed, before the serializer has been handed the
+        ///     resolver for the Kafka cluster id, so a subject name strategy that
+        ///     depends on that id - such as <see cref="AssociatedNameStrategy" /> - would
+        ///     resolve, and cache, the wrong subject. To warm the serializer up,
+        ///     serialize once the client has been constructed, or supply a serializer
+        ///     constructed directly with
+        ///     <see cref="AssociatedNameStrategy.KafkaClusterIdConfig" /> configured
+        ///     instead of using the builder.
         /// </summary>
         public JsonSerializerBuilder<T> SetSerializerInit(Func<JsonSerializer<T>, Task> serializerInit)
         {

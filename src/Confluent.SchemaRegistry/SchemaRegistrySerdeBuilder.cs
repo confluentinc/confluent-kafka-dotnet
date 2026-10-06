@@ -214,7 +214,9 @@ namespace Confluent.SchemaRegistry
         /// <param name="init">
         ///     Optional setup run to completion on the constructed serde, for
         ///     anything the builder's setters do not cover. If it throws, the serde's
-        ///     owned resources are released before the exception propagates.
+        ///     owned resources are released before the exception propagates. It
+        ///     runs before the serde has been handed the cluster id resolver, so it
+        ///     must not serialize or deserialize.
         /// </param>
         protected TSerde ConstructSerde<TSerde>(
             Func<ISchemaRegistryClient, TSerde> construct,
