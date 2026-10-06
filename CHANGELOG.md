@@ -1,12 +1,36 @@
 # 2.16.0 (unreleased)
 
+## New experimental features
+
+* Serializers and deserializers can now be supplied to a producer, dependent
+  producer or consumer as a *builder*, which the client invokes during its own
+  construction and then owns, disposing it (and any Schema Registry client it
+  created) when the client itself is disposed. See the [AvroGeneric](examples/AvroGeneric) example (#2661)
+* Schema Registry serde builders are now available for each supported format,
+  each configurable with a Schema Registry client you own or the
+  configuration to build one from. See the [AvroGeneric](examples/AvroGeneric),
+  [JsonSerialization](examples/JsonSerialization) and [Protobuf](examples/Protobuf) examples (#2661)
+* Producers, consumers and admin clients can now report the id of the Kafka
+  cluster they're connected to (#2661)
+* The Kafka cluster id is now propagated to Schema Registry serializers and
+  deserializers automatically, and resolved lazily on first use, so subject
+  name strategies based on the cluster no longer need it configured by hand.
+  See the [AvroGenericAssociation](examples/AvroGenericAssociation) example (#2661)
+* The serializer and deserializer builder APIs (`Set*SerializerBuilder` and
+  `Set*DeserializerBuilder` on the producer and consumer builders, the Schema
+  Registry serde builders), `IClusterIdAware`, `ISerdeDisposable`, `SerdeExtensions`
+  and the `ClusterId` client extension are **experimental**: they are subject to
+  change or removal in a future release (#2661)
+
+
 ## Enhancements
 
 * Add support for saving Azure key version with DEK (#2641)
 * Pass context when clients make KEK calls to DEK Registry (#2642)
 * Add support for inline validation rules (#2651)
 * Add Variant, Decimal, and Timestamp CEL functions (#2653)
-* Add support for linux-s390x (IBM Z), with CI coverage on s390x
+* Add support for linux-s390x (IBM Z), with CI coverage on s390x (#2646)
+* Schema Registry examples now use the serde builder API (#2661)
 
 ## Fixes
 

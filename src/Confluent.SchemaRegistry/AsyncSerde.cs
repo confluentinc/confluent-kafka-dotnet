@@ -30,10 +30,29 @@ using Confluent.Kafka;
 
 namespace Confluent.SchemaRegistry
 {
-    public abstract class AsyncSerde<TParsedSchema>
+    public abstract class AsyncSerde<TParsedSchema> : IClusterIdAware, ISerdeDisposable
     {
         protected ISchemaRegistryClient schemaRegistryClient;
         protected RuleRegistry ruleRegistry;
+
+        /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
+        ///     The associated subject name strategy backing
+        ///     <see cref="subjectNameStrategy" />, when that strategy is
+        ///     <see cref="SubjectNameStrategy.Associated" />. Retained so that the
+        ///     Kafka cluster id resolver can be supplied after construction.
+        /// </summary>
+        protected AssociatedNameStrategy associatedNameStrategy = null;
+
+        /// <summary>
+        ///     **EXPERIMENTAL**: subject to change or removal.
+        ///
+        ///     Whether <see cref="schemaRegistryClient" /> was constructed by a serde
+        ///     builder rather than supplied by the application, and is therefore
+        ///     disposed along with this instance.
+        /// </summary>
+        protected bool ownsSchemaRegistryClient = false;
 
         protected int useSchemaId = -1;
         protected bool useLatestVersion = false;
@@ -68,6 +87,20 @@ namespace Confluent.SchemaRegistry
 
             this.validationRulesExecution = config.ValidationRulesExecution;
             this.validationRulesFailFast = config.ValidationRulesFailFast;
+        }
+
+        /// <inheritdoc />
+        public void SetClusterIdResolver(Func<Task<string>> clusterIdResolver)
+            => associatedNameStrategy?.SetClusterIdResolver(clusterIdResolver);
+
+        /// <inheritdoc />
+        public virtual void DisposeOwnedResources()
+        {
+            if (ownsSchemaRegistryClient)
+            {
+                schemaRegistryClient?.Dispose();
+                ownsSchemaRegistryClient = false;
+            }
         }
 
         /// <summary>
