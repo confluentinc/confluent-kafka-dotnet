@@ -1,4 +1,4 @@
-# 2.16.0 (RC1)
+# 2.16.0
 
 ## New experimental features
 
