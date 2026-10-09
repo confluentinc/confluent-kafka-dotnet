@@ -213,6 +213,9 @@ namespace Confluent.Kafka
         ///     The resources with their configs
         ///     (topic is the only resource type with configs
         ///     that can be updated currently).
+        ///     To associate or update a topic's subject association, use a SET operation
+        ///     on <c>confluent.value.association</c> (or <c>confluent.key.association</c>).
+        ///     To remove an association, use a DELETE operation on the same key.
         /// </param>
         /// <param name="options">
         ///     The options to use when altering configs.
@@ -242,7 +245,9 @@ namespace Confluent.Kafka
         ///     The options to use when describing configs.
         /// </param>
         /// <returns>
-        ///     Configs for the specified resources.
+        ///     Configs for the specified resources. For topics with an explicit
+        ///     subject association, the result includes <c>confluent.value.association</c>
+        ///     and <c>confluent.key.association</c> entries.
         /// </returns>
         Task<List<DescribeConfigsResult>> DescribeConfigsAsync(IEnumerable<ConfigResource> resources, DescribeConfigsOptions options = null);
 
