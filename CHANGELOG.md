@@ -30,7 +30,7 @@
 * Add support for inline validation rules (#2651)
 * Add Variant, Decimal, and Timestamp CEL functions (#2653)
 * Add support for linux-s390x (IBM Z), with CI coverage on s390x (#2646)
-* Add support for Alicloud KMS provider with CSFLE/CSPE (#2648)
+* Add support for AliCloud KMS provider with CSFLE/CSPE (#2648)
 * Schema Registry examples now use the serde builder API (#2661)
 
 ## Fixes
