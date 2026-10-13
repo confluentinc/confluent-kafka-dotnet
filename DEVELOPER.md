@@ -7,7 +7,7 @@ This document provides information useful to developers working on confluent-kaf
 
 Nuget packages are built automatically by Semaphore CI corresponding to every commit to a PR or master branch as well as release tags. For further details, inspect the [.semaphore/semaphore.yml](.semaphore/semaphore.yml) file.
 
-Pushing a release tag also fires the **Mend SCA + SAST Scan** block, which triggers the
+Pushing a release tag (`vX.Y.Z...`) also fires the **Mend SCA + SAST Scan** block, which triggers the
 ad hoc `mend-source-scan` task in `appsec-semaphore-workflows` (via `sem-trigger`) to run
 a Mend SCA (`mend dep`) and SAST (`mend sast`) scan against the tagged source. This runs
 out-of-band: the trigger call itself is fire-and-forget (bounded by a 60s local timeout)

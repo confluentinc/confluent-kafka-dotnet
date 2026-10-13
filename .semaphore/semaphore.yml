@@ -135,7 +135,7 @@ blocks:
             - artifact push workflow artifacts
   - name: "Mend SCA + SAST Scan"
     run:
-      when: "tag =~ '.*'"
+      when: "tag =~ '^v[0-9]\\.'"
     dependencies: []
     task:
       agent:
@@ -156,7 +156,8 @@ blocks:
               timeout 60 sem-trigger -p appsec-semaphore-workflows -t mend-source-scan \
                 -i "REPO:confluentinc/confluent-kafka-dotnet" \
                 -i "REF:${SEMAPHORE_GIT_TAG_NAME}" \
-                -i "VERSION:${SEMAPHORE_GIT_TAG_NAME}" \
+                -i "VERSION:${SEMAPHORE_GIT_TAG_NAME#v}" \
+                -i "SCAN_ID:confluent-kafka-dotnet-${SEMAPHORE_GIT_TAG_NAME}" \
                 -i "PRODUCT_FAMILY:COSS" \
                 || echo "WARNING: failed to trigger Mend SCA+SAST scan (or timed out after 60s); continuing without failing the release" >&2
   - name: 'Integration tests and documentation'
