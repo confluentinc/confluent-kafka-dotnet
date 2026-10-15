@@ -230,7 +230,10 @@ namespace Confluent.Kafka
         ///     Warning: Log handlers are called spontaneously from internal
         ///     librdkafka threads and the application must not call any
         ///     Confluent.Kafka APIs from within a log handler or perform any
-        ///     prolonged operations.
+        ///     prolonged operations. <see cref="IConsumer{TKey,TValue}.MemberId" />
+        ///     is an exception: reading it from a log handler returns the last
+        ///     member id observed on the application thread, or null if none
+        ///     has been observed yet.
         ///
         ///     Exceptions: Any exception thrown by your log handler will be
         ///     silently ignored.

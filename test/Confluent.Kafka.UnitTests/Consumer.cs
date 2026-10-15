@@ -85,6 +85,32 @@ namespace Confluent.Kafka.UnitTests
             { }
         }
 
+        [Fact]
+        public void MemberId_in_log_handler_returns()
+        {
+            var sawLog = 0;
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(new ConsumerConfig
+            {
+                BootstrapServers = "localhost:65535",
+                GroupId = Guid.NewGuid().ToString(),
+                Debug = "broker",
+                SocketTimeoutMs = 50,
+                ReconnectBackoffMs = 50,
+                ReconnectBackoffMaxMs = 50
+            }).SetLogHandler((c, message) =>
+            {
+                var memberId = c.MemberId;
+                System.Threading.Interlocked.Increment(ref sawLog);
+                GC.KeepAlive(memberId);
+                GC.KeepAlive(message);
+            }).Build())
+            {
+                consumer.Consume(TimeSpan.FromMilliseconds(200));
+            }
+
+            Assert.True(System.Threading.Volatile.Read(ref sawLog) > 0);
+        }
+
         private static ConsumerConfig CreateValidConfiguration()
         {
             return new ConsumerConfig
