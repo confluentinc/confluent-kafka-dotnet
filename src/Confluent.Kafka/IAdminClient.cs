@@ -213,9 +213,12 @@ namespace Confluent.Kafka
         ///     The resources with their configs
         ///     (topic is the only resource type with configs
         ///     that can be updated currently).
-        ///     To associate or update a topic's subject association, use a SET operation
-        ///     on <c>confluent.value.association</c> (or <c>confluent.key.association</c>).
-        ///     To remove an association, use a DELETE operation on the same key.
+        ///     On Confluent Server and Confluent Cloud, a topic's Schema
+        ///     Registry subject association can be set or updated with a SET
+        ///     operation on <c>confluent.value.association</c> or
+        ///     <c>confluent.key.association</c>, and removed with a DELETE
+        ///     operation on the same config. Apache Kafka doesn't recognize
+        ///     these configs.
         /// </param>
         /// <param name="options">
         ///     The options to use when altering configs.
@@ -245,9 +248,11 @@ namespace Confluent.Kafka
         ///     The options to use when describing configs.
         /// </param>
         /// <returns>
-        ///     Configs for the specified resources. For topics with an explicit
-        ///     subject association, the result includes <c>confluent.value.association</c>
-        ///     and <c>confluent.key.association</c> entries.
+        ///     Configs for the specified resources. On Confluent Server and
+        ///     Confluent Cloud, the result for a topic with a Schema Registry
+        ///     subject association includes <c>confluent.value.association</c>
+        ///     and/or <c>confluent.key.association</c> entries. Apache Kafka
+        ///     doesn't recognize these configs.
         /// </returns>
         Task<List<DescribeConfigsResult>> DescribeConfigsAsync(IEnumerable<ConfigResource> resources, DescribeConfigsOptions options = null);
 

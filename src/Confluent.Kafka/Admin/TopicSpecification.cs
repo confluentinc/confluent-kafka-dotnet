@@ -28,8 +28,11 @@ namespace Confluent.Kafka.Admin
     {
         /// <summary>
         ///     The configuration to use to create the new topic.
-        ///     To associate a schema with this topic at creation time, set
-        ///     <c>confluent.value.association</c> (and optionally <c>confluent.key.association</c>).
+        ///     On Confluent Server and Confluent Cloud, the topic configs
+        ///     <c>confluent.value.association</c> and
+        ///     <c>confluent.key.association</c> can be set here to associate
+        ///     the topic's value and/or key with a Schema Registry subject at
+        ///     creation time. Apache Kafka doesn't recognize these configs.
         /// </summary>
         public Dictionary<string, string> Configs { get; set; }
 
