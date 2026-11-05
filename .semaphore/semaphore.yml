@@ -51,6 +51,26 @@ blocks:
             - dotnet --list-sdks
             - dotnet restore -p:TargetFramework=net10.0
             - make test-latest  
+  - name: 'Linux s390x'
+    dependencies: [ ]
+    task:
+      # Runs natively on the s390x (IBM Z) Semaphore agent.
+      agent:
+        machine:
+          type: s1-ubuntu-24-s390x-4
+      jobs:
+        - name: 'Build and test'
+          commands:
+            - scripts/run-tests-s390x.sh
+        - name: 'Build and test with "classic" protocol'
+          commands:
+            - scripts/run-integration-tests-s390x.sh classic
+        - name: 'Build and test with "consumer" protocol'
+          commands:
+            - scripts/run-integration-tests-s390x.sh consumer
+        - name: 'Schema registry and serdes integration tests'
+          commands:
+            - scripts/run-integration-tests-s390x.sh schema-registry
   - name: 'Windows x64'
     dependencies: [ ]
     task:

@@ -1,11 +1,46 @@
-# 2.16.0 (unreleased)
+# 2.16.0
+
+## New experimental features
+
+* Serializers and deserializers can now be supplied to a producer, dependent
+  producer or consumer as a *builder*, which the client invokes during its own
+  construction and then owns, disposing it (and any Schema Registry client it
+  created) when the client itself is disposed. See the [AvroGeneric](examples/AvroGeneric) example (#2661)
+* Schema Registry serde builders are now available for each supported format,
+  each configurable with a Schema Registry client you own or the
+  configuration to build one from. See the [AvroGeneric](examples/AvroGeneric),
+  [JsonSerialization](examples/JsonSerialization) and [Protobuf](examples/Protobuf) examples (#2661)
+* Producers, consumers and admin clients can now report the id of the Kafka
+  cluster they're connected to (#2661)
+* The Kafka cluster id is now propagated to Schema Registry serializers and
+  deserializers automatically, and resolved lazily on first use, so subject
+  name strategies based on the cluster no longer need it configured by hand.
+  See the [AvroGenericAssociation](examples/AvroGenericAssociation) example (#2661)
+* The serializer and deserializer builder APIs (`Set*SerializerBuilder` and
+  `Set*DeserializerBuilder` on the producer and consumer builders, the Schema
+  Registry serde builders), `IClusterIdAware`, `ISerdeDisposable`, `SerdeExtensions`
+  and the `ClusterId` client extension are **experimental**: they are subject to
+  change or removal in a future release (#2661)
+
 
 ## Enhancements
-
+* References librdkafka.redist 2.16.0. Refer to the [librdkafka v2.16.0 release notes](https://github.com/confluentinc/librdkafka/releases/tag/v2.16.0) for more information
 * Add support for saving Azure key version with DEK (#2641)
 * Pass context when clients make KEK calls to DEK Registry (#2642)
 * Add support for inline validation rules (#2651)
 * Add Variant, Decimal, and Timestamp CEL functions (#2653)
+* Add support for linux-s390x (IBM Z), with CI coverage on s390x (#2646)
+* Add support for AliCloud KMS provider with CSFLE/CSPE (#2648)
+* Schema Registry examples now use the serde builder API (#2661)
+
+## Fixes
+
+* Fix the CSFLE ciphertext version field being written little-endian on big-endian
+  platforms, which made encrypted fields unreadable across architectures
+* Fix message `Timestamp.Type` being read as `NotAvailable` on big-endian platforms
+  (e.g. s390x): librdkafka's `rd_kafka_timestamp_type_t` out-parameter (a 32-bit enum)
+  was marshalled as a pointer-sized `IntPtr`, so the value landed in the high word and
+  was truncated to `0` on big-endian
 
 
 # 2.15.1

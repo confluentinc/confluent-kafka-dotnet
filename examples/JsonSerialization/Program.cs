@@ -15,7 +15,6 @@
 // Refer to LICENSE for more information.
 
 using Confluent.Kafka;
-using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using System;
@@ -107,7 +106,9 @@ namespace Confluent.Kafka.Examples.JsonSerialization
                 using (var consumer =
                     new ConsumerBuilder<string, User>(consumerConfig)
                         .SetKeyDeserializer(Deserializers.Utf8)
-                        .SetValueDeserializer(new JsonDeserializer<User>().AsSyncOverAsync())
+                        // The JSON schema is derived from the target type, so no
+                        // schema registry client is needed here.
+                        .SetValueDeserializerBuilder(new JsonDeserializerBuilder<User>())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -136,10 +137,11 @@ namespace Confluent.Kafka.Examples.JsonSerialization
                 }
             });
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetValueSerializer(new JsonSerializer<User>(schemaRegistry, jsonSerializerConfig))
+                    .SetValueSerializerBuilder(new JsonSerializerBuilder<User>()
+                        .SetSchemaRegistryConfig(schemaRegistryConfig)
+                        .SetSerializerConfig(jsonSerializerConfig))
                     .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter first names, q to exit.");

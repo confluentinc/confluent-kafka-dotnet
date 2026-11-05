@@ -44,6 +44,7 @@
     <ItemGroup>
         <Compile Include="..\Shared\SetEqualityComparer.cs" Link="Includes/SetEqualityComparer.cs"/>
         <Compile Include="..\Shared\DictionaryEqualityComparer.cs" Link="Includes/DictionaryEqualityComparer.cs"/>
+        <Compile Include="..\Shared\BinaryConverter.cs" Link="Includes/BinaryConverter.cs"/>
     </ItemGroup>
 
     <!-- Vendored source code for packages that are not strongly named -->

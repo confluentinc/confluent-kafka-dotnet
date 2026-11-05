@@ -103,7 +103,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
-            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config, out this.associatedNameStrategy);
 
             if (config == null) { return; }
 
@@ -336,8 +336,17 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             JsonSchemaResolver utils = new JsonSchemaResolver(
                 schemaRegistryClient, schema, jsonSchemaGeneratorSettings);
-            
+
             return await utils.GetResolvedSchema().ConfigureAwait(false);
         }
+
+        /// <summary>
+        ///     Take ownership of the schema registry client, so that it is disposed
+        ///     along with this deserializer. Used by
+        ///     <see cref="JsonDeserializerBuilder{T}" /> when it constructed the
+        ///     client itself.
+        /// </summary>
+        internal void OwnSchemaRegistryClient()
+            => ownsSchemaRegistryClient = true;
     }
 }

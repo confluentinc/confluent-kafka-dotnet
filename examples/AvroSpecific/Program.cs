@@ -17,7 +17,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 
@@ -67,10 +66,12 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
             {
-                using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+                // The consumer builds the deserializer from the schema registry
+                // configuration, and owns the resulting schema registry client.
                 using (var consumer =
                     new ConsumerBuilder<string, User>(consumerConfig)
-                        .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializerBuilder(new AvroDeserializerBuilder<User>()
+                            .SetSchemaRegistryConfig(schemaRegistryConfig))
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -99,10 +100,11 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 }
             });
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry, avroSerializerConfig))
+                    .SetValueSerializerBuilder(new AvroSerializerBuilder<User>()
+                        .SetSchemaRegistryConfig(schemaRegistryConfig)
+                        .SetSerializerConfig(avroSerializerConfig))
                     .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");

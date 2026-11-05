@@ -115,7 +115,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.schemaText = schema.ToJson();
             this.schemaFullname = schema.Title;
             
-            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config, out this.associatedNameStrategy);
 
             if (config == null) { return; }
 
@@ -356,5 +356,12 @@ namespace Confluent.SchemaRegistry.Serdes
             ValidationRules.ThrowIfFailed(violations);
         }
 
+        /// <summary>
+        ///     Take ownership of the schema registry client, so that it is disposed
+        ///     along with this serializer. Used by <see cref="JsonSerializerBuilder{T}" />
+        ///     when it constructed the client itself.
+        /// </summary>
+        internal void OwnSchemaRegistryClient()
+            => ownsSchemaRegistryClient = true;
     }
 }

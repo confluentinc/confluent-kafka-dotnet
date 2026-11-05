@@ -43,7 +43,7 @@ namespace Confluent.SchemaRegistry.Serdes
             AvroDeserializerConfig config,
             RuleRegistry ruleRegistry) : base(schemaRegistryClient, config, ruleRegistry)
         {
-            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config);
+            this.subjectNameStrategy = (config?.SubjectNameStrategy ?? SubjectNameStrategy.Associated).ToAsyncDelegate(schemaRegistryClient, config, out this.associatedNameStrategy);
 
             if (config == null) { return; }
 
@@ -97,10 +97,10 @@ namespace Confluent.SchemaRegistry.Serdes
                             .ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
-                payload = await ExecuteRules(isKey, subject, topic, headers, RulePhase.Encoding, RuleMode.Read,
+                var ruleResult = await ExecuteRules(isKey, subject, topic, headers, RulePhase.Encoding, RuleMode.Read,
                         null, writerSchemaJson, payload, null)
-                    .ContinueWith(t => t.Result is byte[] bytes ? new ReadOnlyMemory<byte>(bytes) : (ReadOnlyMemory<byte>)t.Result)
                     .ConfigureAwait(continueOnCapturedContext: false);
+                payload = ruleResult is byte[] bytes ? new ReadOnlyMemory<byte>(bytes) : (ReadOnlyMemory<byte>)ruleResult;
 
                 if (latestSchema != null)
                 {
@@ -131,8 +131,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
 
                     JToken json = JToken.Parse(jsonString);
-                    json = await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
-                        .ContinueWith(t => (JToken)t.Result)
+                    json = (JToken)await ExecuteMigrations(migrations, isKey, subject, topic, headers, json)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     readerSchemaJson = latestSchema;
                     readerSchema = await GetParsedSchema(readerSchemaJson).ConfigureAwait(false);
@@ -165,9 +164,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     return await AvroUtils.Transform(ctx, readerSchema, message, transform).ConfigureAwait(false);
                 };
-                data = await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read,
+                data = (GenericRecord)await ExecuteRules(isKey, subject, topic, headers, RuleMode.Read,
                         null, readerSchemaJson, data, fieldTransformer)
-                    .ContinueWith(t => (GenericRecord)t.Result)
                     .ConfigureAwait(continueOnCapturedContext: false);
 
                 return data;

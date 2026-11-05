@@ -112,7 +112,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* int64_t */ long rd_kafka_message_timestamp(
                 /* rd_kafka_message_t * */ IntPtr rkmessage,
-                /* r_kafka_timestamp_type_t * */ out IntPtr tstype);
+                /* r_kafka_timestamp_type_t * */ out int tstype);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_message_headers(
@@ -314,6 +314,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* char * */ IntPtr rd_kafka_memberid(IntPtr rk);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* char * */ IntPtr rd_kafka_clusterid(IntPtr rk, IntPtr timeout_ms);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_Uuid_t * */IntPtr rd_kafka_Uuid_new(

@@ -49,6 +49,14 @@ namespace Confluent.Kafka.SyncOverAsync
         private IAsyncDeserializer<T> asyncDeserializer { get; }
 
         /// <summary>
+        ///     The async deserializer this instance delegates to. Exposed so that
+        ///     optional deserializer capabilities can be resolved through the
+        ///     adapter - refer to <see cref="SerdeExtensions" />.
+        /// </summary>
+        internal IAsyncDeserializer<T> AsyncDeserializer
+            => asyncDeserializer;
+
+        /// <summary>
         ///     Initializes a new SyncOverAsyncDeserializer.
         /// </summary>
         public SyncOverAsyncDeserializer(IAsyncDeserializer<T> asyncDeserializer)
