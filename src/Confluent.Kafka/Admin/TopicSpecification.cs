@@ -28,7 +28,7 @@ namespace Confluent.Kafka.Admin
     {
         /// <summary>
         ///     The configuration to use to create the new topic.
-        ///     On Confluent Server and Confluent Cloud, the topic configs
+        ///     On Confluent Platform and Confluent Cloud, the topic configs
         ///     <c>confluent.value.association</c> and
         ///     <c>confluent.key.association</c> can be set here to associate
         ///     the topic's value and/or key with a Schema Registry subject at

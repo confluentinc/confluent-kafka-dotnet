@@ -213,7 +213,7 @@ namespace Confluent.Kafka
         ///     The resources with their configs
         ///     (topic is the only resource type with configs
         ///     that can be updated currently).
-        ///     On Confluent Server and Confluent Cloud, a topic's Schema
+        ///     On Confluent Platform and Confluent Cloud, a topic's Schema
         ///     Registry subject association can be set or updated with a SET
         ///     operation on <c>confluent.value.association</c> or
         ///     <c>confluent.key.association</c>, and removed with a DELETE
@@ -248,7 +248,7 @@ namespace Confluent.Kafka
         ///     The options to use when describing configs.
         /// </param>
         /// <returns>
-        ///     Configs for the specified resources. On Confluent Server and
+        ///     Configs for the specified resources. On Confluent Platform and
         ///     Confluent Cloud, the result for a topic with a Schema Registry
         ///     subject association includes <c>confluent.value.association</c>
         ///     and/or <c>confluent.key.association</c> entries. Apache Kafka
