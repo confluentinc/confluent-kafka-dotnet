@@ -1481,6 +1481,39 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         }
 
         [Fact]
+        public async Task GenericRecordCELReadConditionFail()
+        {
+            var schemaStr = User._SCHEMA.ToString();
+            var subject = $"{testTopic}-value";
+            var schema = new RegisteredSchema(subject, 1, 1, schemaStr, SchemaType.Avro, null);
+            schema.RuleSet = new RuleSet(new List<Rule>(),
+                new List<Rule>
+                {
+                    new Rule("readName", RuleKind.Condition, RuleMode.Read, "CEL", null, null,
+                        "message.name != 'awesome'", null, "ERROR", false)
+                }
+            );
+            store[schemaStr] = 1;
+            subjectStore[subject] = new List<RegisteredSchema> { schema };
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient, new AvroSerializerConfig
+            {
+                AutoRegisterSchemas = false,
+                UseLatestVersion = true
+            });
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient);
+            var user = new GenericRecord((RecordSchema) User._SCHEMA);
+            user.Add("name", "awesome");
+            user.Add("favorite_number", 100);
+            user.Add("favorite_color", "blue");
+            var context = new SerializationContext(MessageComponentType.Value, testTopic, new Headers());
+            var bytes = await serializer.SerializeAsync(user, context);
+
+            var failure = await Assert.ThrowsAsync<System.Runtime.Serialization.SerializationException>(
+                () => deserializer.DeserializeAsync(bytes, false, context));
+            Assert.IsType<RuleConditionException>(failure.InnerException);
+        }
+
+        [Fact]
         public async Task GenericRecordCELConditionEmail()
         {
             var schemaStr = User._SCHEMA.ToString();
