@@ -156,9 +156,19 @@ namespace Confluent.Kafka
         private Action<LogMessage> logHandler;
         private object loggerLockObj = new object();
         private Librdkafka.LogDelegate logCallbackDelegate;
+
+        // librdkafka invokes the log callback with the client lock held.
+        // rd_kafka_memberid takes that same lock, so MemberId must not call
+        // into librdkafka from this thread.
+        [ThreadStatic]
+        private static int logHandlerDepth;
+
+        private volatile string cachedMemberId;
+
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
+            logHandlerDepth++;
             try
             {
                 // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
@@ -168,6 +178,10 @@ namespace Confluent.Kafka
             catch (Exception)
             {
                 // Eat any exception thrown by user log handler code.
+            }
+            finally
+            {
+                logHandlerDepth--;
             }
         }
 
@@ -575,7 +589,19 @@ namespace Confluent.Kafka
 
         /// <inheritdoc/>
         public string MemberId
-            => kafkaHandle.MemberId;
+        {
+            get
+            {
+                if (logHandlerDepth > 0)
+                {
+                    return cachedMemberId;
+                }
+
+                var memberId = kafkaHandle.MemberId;
+                cachedMemberId = memberId;
+                return memberId;
+            }
+        }
 
 
         /// <inheritdoc/>
@@ -908,6 +934,14 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
+            // Logs emitted while polling are delivered on a librdkafka thread
+            // that already holds the client lock. Record the member id first
+            // so a log handler can read it without taking that lock again.
+            if (logHandler != null)
+            {
+                cachedMemberId = kafkaHandle.MemberId;
+            }
+
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
 
             if (this.handlerException != null)
