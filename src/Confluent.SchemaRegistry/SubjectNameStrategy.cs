@@ -341,7 +341,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Cache key for the association registry lookup, based on topic, isKey, and recordType.
         /// </summary>
-        private readonly struct CacheKey : IEquatable<CacheKey>
+        internal readonly struct CacheKey : IEquatable<CacheKey>
         {
             public readonly string Topic;
             public readonly bool IsKey;
@@ -459,20 +459,70 @@ namespace Confluent.SchemaRegistry
             switch (strategy)
             {
                 case SubjectNameStrategy.Topic:
-                    return (context, recordType) => Task.FromResult(
-                        $"{context.Topic}" + (context.Component == MessageComponentType.Key ? "-key" : "-value"));
+                    return new CachedSubjectNameTasks(
+                        (context, recordType) =>
+                            $"{context.Topic}" + (context.Component == MessageComponentType.Key ? "-key" : "-value")).Get;
                 case SubjectNameStrategy.Record:
-                    return (context, recordType) => Task.FromResult(recordType != null ? $"{recordType}" : null);
+                    return new CachedSubjectNameTasks(
+                        (context, recordType) => recordType != null ? $"{recordType}" : null).Get;
                 case SubjectNameStrategy.TopicRecord:
-                    return (context, recordType) => Task.FromResult(recordType != null ? $"{context.Topic}-{recordType}" : null);
+                    return new CachedSubjectNameTasks(
+                        (context, recordType) => recordType != null ? $"{context.Topic}-{recordType}" : null).Get;
                 case SubjectNameStrategy.Associated:
                     var associatedStrategy = new AssociatedNameStrategy(schemaRegistryClient, config);
                     associatedNameStrategy = associatedStrategy;
                     return (context, recordType) => associatedStrategy.GetSubjectNameAsync(context, recordType);
                 case SubjectNameStrategy.None:
-                    return (context, recordType) => Task.FromResult<string>(null);
+                    return (context, recordType) => NullSubjectTask;
                 default:
                     throw new ArgumentException($"Unknown SubjectNameStrategy: {strategy}");
+            }
+        }
+
+        private static readonly Task<string> NullSubjectTask = Task.FromResult<string>(null);
+
+        /// <summary>
+        ///     Memoizes the completed subject name tasks produced by a stateless
+        ///     subject name function, so that serializing / deserializing a message
+        ///     allocates neither the subject name string nor a task once the
+        ///     (topic, component, record type) combination has been seen.
+        /// </summary>
+        private sealed class CachedSubjectNameTasks
+        {
+            private const int Capacity = 1000;
+
+            private readonly Func<SerializationContext, string, string> compute;
+            private readonly ConcurrentDictionary<AssociatedNameStrategy.CacheKey, Task<string>> cache =
+                new ConcurrentDictionary<AssociatedNameStrategy.CacheKey, Task<string>>();
+
+            public CachedSubjectNameTasks(Func<SerializationContext, string, string> compute)
+            {
+                this.compute = compute;
+            }
+
+            public Task<string> Get(SerializationContext context, string recordType)
+            {
+                var key = new AssociatedNameStrategy.CacheKey(
+                    context.Topic, context.Component == MessageComponentType.Key, recordType);
+
+                if (cache.TryGetValue(key, out var task))
+                {
+                    return task;
+                }
+
+                var subject = compute(context, recordType);
+                if (subject == null)
+                {
+                    return NullSubjectTask;
+                }
+
+                task = Task.FromResult(subject);
+                // Clean cache if it's getting too large
+                if (cache.Count >= Capacity)
+                {
+                    cache.Clear();
+                }
+                return cache.GetOrAdd(key, task);
             }
         }
 

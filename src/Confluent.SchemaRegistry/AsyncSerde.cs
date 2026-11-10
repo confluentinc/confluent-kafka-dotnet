@@ -137,22 +137,27 @@ namespace Confluent.SchemaRegistry
             return executor;
         }
 
-        protected async Task<string> GetSubjectName(string topic, bool isKey, string recordType)
+        // Not async, so that the task returned by the (cached) subject name strategy
+        // is passed through as is, rather than being wrapped in a new one per message.
+        protected Task<string> GetSubjectName(string topic, bool isKey, string recordType)
         {
-            string subject = this.subjectNameStrategy != null
-                // use the subject name strategy specified in the serializer config if available.
-                ? await this.subjectNameStrategy(
+            // use the subject name strategy specified in the serializer config if available.
+            if (this.subjectNameStrategy != null)
+            {
+                return this.subjectNameStrategy(
                     new SerializationContext(
                         isKey ? MessageComponentType.Key : MessageComponentType.Value,
                         topic),
-                    recordType).ConfigureAwait(false)
-                // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                : schemaRegistryClient == null
-                    ? null
-                    : isKey
-                        ? schemaRegistryClient.ConstructKeySubjectName(topic, recordType)
-                        : schemaRegistryClient.ConstructValueSubjectName(topic, recordType);
-            return subject;
+                    recordType);
+            }
+
+            // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
+            string subject = schemaRegistryClient == null
+                ? null
+                : isKey
+                    ? schemaRegistryClient.ConstructKeySubjectName(topic, recordType)
+                    : schemaRegistryClient.ConstructValueSubjectName(topic, recordType);
+            return Task.FromResult(subject);
         }
 
         protected async Task<(Schema, TParsedSchema)> GetWriterSchema(string subject, SchemaId writerId, string format = null)
