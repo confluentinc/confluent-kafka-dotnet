@@ -86,6 +86,10 @@ namespace Confluent.Kafka
         private bool ownsValueSerializer;
         private Handle borrowedHandle;
 
+        // Client name captured from the native handle while no handle is assigned yet
+        // (i.e. for log callbacks raised from within rd_kafka_new).
+        private volatile string nameDuringConstruction;
+
         // The configuration this producer was constructed with, carried on its
         // Handle so that a dependent producer can hand it to serializer builders.
         private IEnumerable<KeyValuePair<string, string>> clientConfig;
@@ -203,7 +207,9 @@ namespace Confluent.Kafka
             if (ownedKafkaHandle != null && ownedKafkaHandle.IsClosed) { return; }
             try
             {
-                logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+                var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
+                if (ownedKafkaHandle == null) { nameDuringConstruction = name; }
+                logHandler?.Invoke(new LogMessage(name, level, fac, buf));
             }
             catch (Exception)
             {
@@ -499,7 +505,9 @@ namespace Confluent.Kafka
 
         /// <inheritdoc/>
         public string Name
-            => KafkaHandle.Name;
+            => ownedKafkaHandle != null ? ownedKafkaHandle.Name
+             : borrowedHandle != null ? borrowedHandle.LibrdkafkaHandle.Name
+             : nameDuringConstruction;
 
 
         /// <inheritdoc/>
