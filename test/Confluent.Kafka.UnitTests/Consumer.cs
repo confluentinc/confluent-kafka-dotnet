@@ -85,6 +85,16 @@ namespace Confluent.Kafka.UnitTests
             { }
         }
 
+        [Fact]
+        public void NameAvailableDuringConstruction()
+            => ProducerTests.VerifyNameDuringBuild("consumer-name-test", onLog =>
+                new ConsumerBuilder<byte[], byte[]>(new ConsumerConfig
+                {
+                    BootstrapServers = "localhost:1", GroupId = "g", ClientId = "consumer-name-test", Debug = "all"
+                })
+                .SetLogHandler((c, m) => onLog(c))
+                .Build());
+
         private static ConsumerConfig CreateValidConfiguration()
         {
             return new ConsumerConfig

@@ -1543,6 +1543,10 @@ namespace Confluent.Kafka
         private IClient ownedClient;
         private Handle handle;
 
+        // Name of the underlying producer, captured from log callbacks raised
+        // while it is being built (before kafkaHandle is available).
+        private volatile string nameDuringConstruction;
+
         private SafeKafkaHandle kafkaHandle
             => handle.LibrdkafkaHandle;
 
@@ -1575,7 +1579,7 @@ namespace Confluent.Kafka
 
             // build a producer instance to use as the underlying client.
             var producerBuilder = new ProducerBuilder<Null, Null>(config);
-            if (builder.LogHandler != null) { producerBuilder.SetLogHandler((_, logMessage) => builder.LogHandler(this, logMessage)); }
+            if (builder.LogHandler != null) { producerBuilder.SetLogHandler((client, logMessage) => { nameDuringConstruction = client.Name; builder.LogHandler(this, logMessage); }); }
             if (builder.ErrorHandler != null) { producerBuilder.SetErrorHandler((_, error) => builder.ErrorHandler(this, error)); }
             if (builder.StatisticsHandler != null) { producerBuilder.SetStatisticsHandler((_, stats) => builder.StatisticsHandler(this, stats)); }
             if (builder.OAuthBearerTokenRefreshHandler != null) { producerBuilder.SetOAuthBearerTokenRefreshHandler(builder.OAuthBearerTokenRefreshHandler); }
@@ -1641,7 +1645,7 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.IClient.Name" />
         /// </summary>
         public string Name
-            => kafkaHandle.Name;
+            => handle != null ? kafkaHandle.Name : nameDuringConstruction;
 
 
         /// <summary>
