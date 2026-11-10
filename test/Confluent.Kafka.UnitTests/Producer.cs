@@ -76,7 +76,7 @@ namespace Confluent.Kafka.UnitTests
             => VerifyNameDuringBuild("producer-name-test", onLog =>
                 new ProducerBuilder<byte[], byte[]>(new ProducerConfig
                 {
-                    BootstrapServers = "127.0.0.1:1", ClientId = "producer-name-test", Debug = "all"
+                    BootstrapServers = "localhost:1", ClientId = "producer-name-test", Debug = "all"
                 })
                 .SetLogHandler((c, m) => onLog(c))
                 .Build());
@@ -86,7 +86,7 @@ namespace Confluent.Kafka.UnitTests
             => VerifyNameDuringBuild("admin-name-test", onLog =>
                 new AdminClientBuilder(new AdminClientConfig
                 {
-                    BootstrapServers = "127.0.0.1:1", ClientId = "admin-name-test", Debug = "all"
+                    BootstrapServers = "localhost:1", ClientId = "admin-name-test", Debug = "all"
                 })
                 .SetLogHandler((c, m) => onLog(c))
                 .Build());
@@ -95,7 +95,7 @@ namespace Confluent.Kafka.UnitTests
         public void DependentProducer_NameMatchesOwner()
         {
             using (var owner = new ProducerBuilder<byte[], byte[]>(new ProducerConfig
-                { BootstrapServers = "127.0.0.1:1", ClientId = "dependent-name-test" }).Build())
+                { BootstrapServers = "localhost:1", ClientId = "dependent-name-test" }).Build())
             using (var dependent = new DependentProducerBuilder<string, string>(owner.Handle).Build())
             {
                 Assert.StartsWith("dependent-name-test", dependent.Name);
