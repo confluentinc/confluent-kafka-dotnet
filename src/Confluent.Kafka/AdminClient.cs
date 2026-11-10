@@ -1602,6 +1602,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListGroups(TimeSpan)" />
         /// </summary>
+        [Obsolete("Superseded by ListConsumerGroupsAsync and DescribeConsumerGroupsAsync. This method will be removed in a future release.")]
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
@@ -1609,6 +1610,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListGroup(string, TimeSpan)" />
         /// </summary>
+        [Obsolete("Superseded by ListConsumerGroupsAsync and DescribeConsumerGroupsAsync. This method will be removed in a future release.")]
         public GroupInfo ListGroup(string group, TimeSpan timeout)
             => kafkaHandle.ListGroup(group, timeout.TotalMillisecondsAsInt());
 
