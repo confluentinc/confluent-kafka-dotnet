@@ -66,15 +66,36 @@ namespace Confluent.SchemaRegistry.UnitTests
         [InlineData(SubjectNameStrategy.Topic)]
         [InlineData(SubjectNameStrategy.Record)]
         [InlineData(SubjectNameStrategy.TopicRecord)]
-        [InlineData(SubjectNameStrategy.None)]
-        public void RepeatedCalls_ReuseTheSameTask(SubjectNameStrategy kind)
+        public async Task RepeatedCalls_CompleteSynchronouslyWithTheSameString(SubjectNameStrategy kind)
         {
             var strategy = kind.ToAsyncDelegate();
+            var first = await strategy(Value("t"), "my.Record");
 
-            var first = strategy(Value("t"), "my.Record");
             var second = strategy(Value("t"), "my.Record");
 
-            Assert.Same(first, second);
+            Assert.True(second.IsCompletedSuccessfully);
+            Assert.Same(first, second.Result);
+        }
+
+        [Fact]
+        public void None_CompletesSynchronously()
+        {
+            var result = SubjectNameStrategy.None.ToAsyncDelegate()(Value("t"), "my.Record");
+
+            Assert.True(result.IsCompletedSuccessfully);
+            Assert.Null(result.Result);
+        }
+
+        [Fact]
+        public async Task Associated_CompletesSynchronouslyOnceCached()
+        {
+            var strategy = SubjectNameStrategy.Associated.ToAsyncDelegate();
+            Assert.Equal("t-value", await strategy(Value("t"), null));
+
+            var cached = strategy(Value("t"), null);
+
+            Assert.True(cached.IsCompletedSuccessfully);
+            Assert.Equal("t-value", cached.Result);
         }
 
         [Fact]
@@ -93,11 +114,19 @@ namespace Confluent.SchemaRegistry.UnitTests
         {
             var strategy = SubjectNameStrategy.Topic.ToAsyncDelegate();
 
-            for (int i = 0; i < 3000; i++)
+            var first = await strategy(Value("topic0"), null);
+            Assert.Same(first, await strategy(Value("topic0"), null));
+
+            for (int i = 1; i < 3000; i++)
             {
                 Assert.Equal($"topic{i}-value", await strategy(Value($"topic{i}"), null));
             }
-            Assert.Equal("topic0-value", await strategy(Value("topic0"), null));
+
+            // The cache was cleared on the way, so the subject is recomputed:
+            // an equal string, but not the instance cached before the eviction.
+            var afterEviction = await strategy(Value("topic0"), null);
+            Assert.Equal("topic0-value", afterEviction);
+            Assert.NotSame(first, afterEviction);
         }
     }
 }

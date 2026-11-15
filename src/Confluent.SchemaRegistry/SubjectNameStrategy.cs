@@ -47,7 +47,7 @@ namespace Confluent.SchemaRegistry
     /// <param name="recordType">
     ///     The type name of the data being written.
     /// </param>
-    public delegate Task<string> AsyncSubjectNameStrategyDelegate(SerializationContext context, string recordType);
+    public delegate ValueTask<string> AsyncSubjectNameStrategyDelegate(SerializationContext context, string recordType);
 
 
     /// <summary>
@@ -241,50 +241,56 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Asynchronously gets the subject name for the given serialization context and record type.
+        ///     Completes synchronously, without allocating, when the subject name is already cached.
         /// </summary>
         /// <param name="context">The serialization context.</param>
         /// <param name="recordType">The type name of the data being written.</param>
-        /// <returns>A task that resolves to the subject name.</returns>
-        public async Task<string> GetSubjectNameAsync(SerializationContext context, string recordType)
+        /// <returns>A value task that resolves to the subject name.</returns>
+        public ValueTask<string> GetSubjectNameAsync(SerializationContext context, string recordType)
         {
             if (context.Topic == null)
             {
-                return null;
+                return default;
             }
 
             var cacheKey = new CacheKey(context.Topic, context.Component == MessageComponentType.Key, recordType);
 
-            if (!subjectNameCache.TryGetValue(cacheKey, out var associatedSubject))
+            return subjectNameCache.TryGetValue(cacheKey, out var cachedSubject)
+                ? new ValueTask<string>(cachedSubject)
+                : new ValueTask<string>(ResolveSubjectNameAsync(context, recordType, cacheKey));
+        }
+
+        private async Task<string> ResolveSubjectNameAsync(
+            SerializationContext context, string recordType, CacheKey cacheKey)
+        {
+            var lookupSubject = schemaRegistryClient != null
+                ? await LookupAssociationAsync(context).ConfigureAwait(false)
+                : null;
+            string subjectToCache;
+            if (lookupSubject != null)
             {
-                var lookupSubject = schemaRegistryClient != null
-                    ? await LookupAssociationAsync(context).ConfigureAwait(false)
-                    : null;
-                string subjectToCache;
-                if (lookupSubject != null)
-                {
-                    subjectToCache = lookupSubject;
-                }
-                else if (fallbackSubjectNameStrategy != SubjectNameStrategy.None)
-                {
-                    // No association found — apply fallback and cache the final subject name.
-                    subjectToCache = GetFallbackSubjectName(context, recordType);
-                }
-                else
-                {
-                    throw new InvalidOperationException(
-                        $"No associated subject found for topic {context.Topic}");
-                }
-                // Clean cache if it's getting too large
-                if (subjectNameCache.Count >= DefaultCacheCapacity)
-                {
-                    subjectNameCache.Clear();
-                }
-                associatedSubject = subjectToCache;
-                if (!subjectNameCache.TryAdd(cacheKey, subjectToCache)
-                    && subjectNameCache.TryGetValue(cacheKey, out var existingSubject))
-                {
-                    associatedSubject = existingSubject;
-                }
+                subjectToCache = lookupSubject;
+            }
+            else if (fallbackSubjectNameStrategy != SubjectNameStrategy.None)
+            {
+                // No association found — apply fallback and cache the final subject name.
+                subjectToCache = GetFallbackSubjectName(context, recordType);
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"No associated subject found for topic {context.Topic}");
+            }
+            // Clean cache if it's getting too large
+            if (subjectNameCache.Count >= DefaultCacheCapacity)
+            {
+                subjectNameCache.Clear();
+            }
+            var associatedSubject = subjectToCache;
+            if (!subjectNameCache.TryAdd(cacheKey, subjectToCache)
+                && subjectNameCache.TryGetValue(cacheKey, out var existingSubject))
+            {
+                associatedSubject = existingSubject;
             }
             return associatedSubject;
         }
@@ -459,70 +465,67 @@ namespace Confluent.SchemaRegistry
             switch (strategy)
             {
                 case SubjectNameStrategy.Topic:
-                    return new CachedSubjectNameTasks(
+                    return new CachedSubjectNames(
                         (context, recordType) =>
                             $"{context.Topic}" + (context.Component == MessageComponentType.Key ? "-key" : "-value")).Get;
                 case SubjectNameStrategy.Record:
-                    return new CachedSubjectNameTasks(
+                    return new CachedSubjectNames(
                         (context, recordType) => recordType != null ? $"{recordType}" : null).Get;
                 case SubjectNameStrategy.TopicRecord:
-                    return new CachedSubjectNameTasks(
+                    return new CachedSubjectNames(
                         (context, recordType) => recordType != null ? $"{context.Topic}-{recordType}" : null).Get;
                 case SubjectNameStrategy.Associated:
                     var associatedStrategy = new AssociatedNameStrategy(schemaRegistryClient, config);
                     associatedNameStrategy = associatedStrategy;
                     return (context, recordType) => associatedStrategy.GetSubjectNameAsync(context, recordType);
                 case SubjectNameStrategy.None:
-                    return (context, recordType) => NullSubjectTask;
+                    return (context, recordType) => default;
                 default:
                     throw new ArgumentException($"Unknown SubjectNameStrategy: {strategy}");
             }
         }
 
-        private static readonly Task<string> NullSubjectTask = Task.FromResult<string>(null);
-
         /// <summary>
-        ///     Memoizes the completed subject name tasks produced by a stateless
-        ///     subject name function, so that serializing / deserializing a message
-        ///     allocates neither the subject name string nor a task once the
-        ///     (topic, component, record type) combination has been seen.
+        ///     Memoizes the subject names produced by a stateless subject name function,
+        ///     so that serializing / deserializing a message allocates neither the
+        ///     subject name string nor a task once the (topic, component, record type)
+        ///     combination has been seen.
         /// </summary>
-        private sealed class CachedSubjectNameTasks
+        private sealed class CachedSubjectNames
         {
             private const int Capacity = 1000;
 
             private readonly Func<SerializationContext, string, string> compute;
-            private readonly ConcurrentDictionary<AssociatedNameStrategy.CacheKey, Task<string>> cache =
-                new ConcurrentDictionary<AssociatedNameStrategy.CacheKey, Task<string>>();
+            private readonly ConcurrentDictionary<AssociatedNameStrategy.CacheKey, string> cache =
+                new ConcurrentDictionary<AssociatedNameStrategy.CacheKey, string>();
 
-            public CachedSubjectNameTasks(Func<SerializationContext, string, string> compute)
+            public CachedSubjectNames(Func<SerializationContext, string, string> compute)
             {
                 this.compute = compute;
             }
 
-            public Task<string> Get(SerializationContext context, string recordType)
+            public ValueTask<string> Get(SerializationContext context, string recordType)
             {
                 var key = new AssociatedNameStrategy.CacheKey(
                     context.Topic, context.Component == MessageComponentType.Key, recordType);
 
-                if (cache.TryGetValue(key, out var task))
+                if (cache.TryGetValue(key, out var subject))
                 {
-                    return task;
+                    return new ValueTask<string>(subject);
                 }
 
-                var subject = compute(context, recordType);
+                subject = compute(context, recordType);
                 if (subject == null)
                 {
-                    return NullSubjectTask;
+                    return default;
                 }
 
-                task = Task.FromResult(subject);
                 // Clean cache if it's getting too large
                 if (cache.Count >= Capacity)
                 {
                     cache.Clear();
                 }
-                return cache.GetOrAdd(key, task);
+                return new ValueTask<string>(cache.GetOrAdd(key, subject));
             }
         }
 

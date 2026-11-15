@@ -137,9 +137,9 @@ namespace Confluent.SchemaRegistry
             return executor;
         }
 
-        // Not async, so that the task returned by the (cached) subject name strategy
-        // is passed through as is, rather than being wrapped in a new one per message.
-        protected Task<string> GetSubjectName(string topic, bool isKey, string recordType)
+        // Not async, so that the result of the (cached) subject name strategy is
+        // passed through as is, rather than being wrapped in a new task per message.
+        protected ValueTask<string> GetSubjectName(string topic, bool isKey, string recordType)
         {
             // use the subject name strategy specified in the serializer config if available.
             if (this.subjectNameStrategy != null)
@@ -157,7 +157,7 @@ namespace Confluent.SchemaRegistry
                 : isKey
                     ? schemaRegistryClient.ConstructKeySubjectName(topic, recordType)
                     : schemaRegistryClient.ConstructValueSubjectName(topic, recordType);
-            return Task.FromResult(subject);
+            return new ValueTask<string>(subject);
         }
 
         protected async Task<(Schema, TParsedSchema)> GetWriterSchema(string subject, SchemaId writerId, string format = null)
