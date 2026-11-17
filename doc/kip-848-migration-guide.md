@@ -49,7 +49,9 @@ number of calls can vary: there isn't a call for each rebalance.
 
 ##### Manual partition assignment
 
-- You can still use `Assign()` before being subscribed but after subscribing you can only use `IncrementalAssign()` and `IncrementalUnassign()`.
+- With `GroupProtocol=Consumer`, manual assignment using `Assign()` and `Unassign()` is supported only if the consumer has **never called `Subscribe()`**. After the first `Subscribe()`, these methods fail with `Local_State`, even after `Unsubscribe()`; use `IncrementalAssign()` and `IncrementalUnassign()` instead for manual assignment.
+- While subscribed, assignments and revocations are incremental. The .NET client calls `IncrementalAssign()` and `IncrementalUnassign()` internally after the rebalance handlers return (or automatically when no handlers are configured).
+- Do not call `Assign()`, `Unassign()`, `IncrementalAssign()`, or `IncrementalUnassign()` from rebalance handlers. The `Func` overload of `SetPartitionsAssignedHandler()` may return starting offsets for the partitions it receives, but must not change that set of partitions; use the `Action` overloads of `SetPartitionsRevokedHandler()` and `SetPartitionsLostHandler()` for incremental rebalancing, since their `Func` overloads are not supported.
 
 ##### Static Group Membership
 
