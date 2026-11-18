@@ -2,14 +2,18 @@
 
 ## Upgrade considerations
 
-* **Potentially breaking:** `AsyncSubjectNameStrategyDelegate` and
-  `AssociatedNameStrategy.GetSubjectNameAsync` now return `ValueTask<string>`
+* **Breaking:** `AsyncSubjectNameStrategyDelegate`,
+  `AssociatedNameStrategy.GetSubjectNameAsync`, and the protected
+  `AsyncSerde<TParsedSchema>.GetSubjectName` method now return `ValueTask<string>`
   instead of `Task<string>`, so that resolving a cached subject name no longer
-  allocates. Code that calls them and `await`s the result is unaffected. Code
-  that needs a `Task<string>` (for example to pass it to `Task.WhenAll`, or to
-  await it more than once) should call `.AsTask()`, and custom subject name
-  strategy delegates must return a `ValueTask<string>` (for example
-  `new ValueTask<string>(subject)`). Both were introduced in 2.14.0.
+  allocates. This is a binary-incompatible change: assemblies compiled against
+  the previous signatures must be rebuilt, including custom serdes that use them.
+  Calls that simply `await` the result remain source-compatible. Code that needs
+  a `Task<string>` (for example to pass it to `Task.WhenAll`, or to await it more
+  than once) should call `.AsTask()`, and custom subject name strategy delegates
+  must return a `ValueTask<string>` (for example `new ValueTask<string>(subject)`).
+  The delegate and `AssociatedNameStrategy.GetSubjectNameAsync` were introduced
+  in 2.14.0.
 
 ## Enhancements
 
