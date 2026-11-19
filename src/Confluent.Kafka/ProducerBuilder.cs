@@ -57,7 +57,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A builder class for <see cref="IProducer{TKey,TValue}" />.
     /// </summary>
-    public class ProducerBuilder<TKey, TValue>
+    public class ProducerBuilder<TKey, TValue> : IProducerBuilder<TKey, TValue>
     {
         /// <summary>
         ///     The config dictionary.

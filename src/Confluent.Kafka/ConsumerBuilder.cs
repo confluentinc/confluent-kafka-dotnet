@@ -24,7 +24,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A builder class for <see cref="IConsumer{TKey,TValue}" />.
     /// </summary>
-    public class ConsumerBuilder<TKey, TValue>
+    public class ConsumerBuilder<TKey, TValue> : IConsumerBuilder<TKey, TValue>
     {
         /// <summary>
         ///     The config dictionary.
