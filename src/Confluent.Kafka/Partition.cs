@@ -28,7 +28,7 @@ namespace Confluent.Kafka
     ///     its purpose is to add some syntactical sugar 
     ///     related to special values.
     /// </remarks>
-    public struct Partition : IEquatable<Partition>
+    public struct Partition : IEquatable<Partition>, IComparable<Partition>
     {
         private const int RD_KAFKA_PARTITION_UA = -1;
 
@@ -224,5 +224,31 @@ namespace Confluent.Kafka
                     return $"[{Value}]";
             }
         }
+
+        /// <summary>Compares the current instance with another object of the same type and returns an integer that indicates whether the current instance precedes, follows, or occurs in the same position in the sort order as the other object.</summary>
+        /// <param name="other">An object to compare with this instance.</param>
+        /// <returns>
+        ///     <para>A value that indicates the relative order of the objects being compared. The return value has these meanings:</para>
+        ///     <list type="table">
+        ///         <listheader>
+        ///             <term>Value</term>
+        ///             <description>Meaning</description>
+        ///         </listheader>
+        ///         <item>
+        ///             <term>Less than zero</term>
+        ///             <description>This instance precedes <paramref name="other" /> in the sort order.</description>
+        ///         </item>
+        ///         <item>
+        ///             <term>Zero</term>
+        ///             <description>This instance occurs in the same position in the sort order as <paramref name="other" />.</description>
+        ///         </item>
+        ///         <item>
+        ///             <term>Greater than zero</term>
+        ///             <description>This instance follows <paramref name="other" /> in the sort order.</description>
+        ///         </item>
+        ///     </list>
+        /// </returns>
+        public int CompareTo(Partition other)
+            => Value.CompareTo(other.Value);
     }
 }
