@@ -155,6 +155,9 @@ namespace Confluent.Kafka
 
         private Action<LogMessage> logHandler;
         private object loggerLockObj = new object();
+        // Client name captured from the native handle while kafkaHandle is still null
+        // (i.e. for log callbacks raised from within rd_kafka_new).
+        private volatile string nameDuringConstruction;
         private Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
@@ -163,7 +166,9 @@ namespace Confluent.Kafka
             {
                 // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
                 // Note: kafkaHandle can be null if the callback is during construction (in that case the delegate should be called).
-                logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+                var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
+                if (kafkaHandle == null) { nameDuringConstruction = name; }
+                logHandler?.Invoke(new LogMessage(name, level, fac, buf));
             }
             catch (Exception)
             {
@@ -588,7 +593,7 @@ namespace Confluent.Kafka
 
         /// <inheritdoc/>
         public string Name
-            => kafkaHandle.Name;
+            => kafkaHandle != null ? kafkaHandle.Name : nameDuringConstruction;
 
 
         /// <inheritdoc/>
