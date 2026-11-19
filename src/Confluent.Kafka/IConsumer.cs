@@ -115,6 +115,12 @@ namespace Confluent.Kafka
         ///     Gets the (dynamic) group member id of
         ///     this consumer (as set by the broker).
         /// </summary>
+        /// <remarks>
+        ///     Safe to read from a log handler. In that
+        ///     case the value is the last member id
+        ///     observed on the application thread, or
+        ///     null if none has been observed yet.
+        /// </remarks>
         string MemberId { get; }
 
 
