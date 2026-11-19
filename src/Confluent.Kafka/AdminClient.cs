@@ -1577,6 +1577,9 @@ namespace Confluent.Kafka
             var producerBuilder = new ProducerBuilder<Null, Null>(config);
             if (builder.LogHandler != null) { producerBuilder.SetLogHandler((_, logMessage) => builder.LogHandler(this, logMessage)); }
             if (builder.ErrorHandler != null) { producerBuilder.SetErrorHandler((_, error) => builder.ErrorHandler(this, error)); }
+#if NET6_0_OR_GREATER
+            if (builder.StatisticsUtf8Handler != null) { producerBuilder.SetStatisticsUtf8Handler((stats, _) => builder.StatisticsUtf8Handler(stats, this)); }
+#endif
             if (builder.StatisticsHandler != null) { producerBuilder.SetStatisticsHandler((_, stats) => builder.StatisticsHandler(this, stats)); }
             if (builder.OAuthBearerTokenRefreshHandler != null) { producerBuilder.SetOAuthBearerTokenRefreshHandler(builder.OAuthBearerTokenRefreshHandler); }
             this.ownedClient = producerBuilder.Build();
