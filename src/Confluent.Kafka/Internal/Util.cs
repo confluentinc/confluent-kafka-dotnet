@@ -20,6 +20,9 @@ using System.Text;
 using SystemMarshal = System.Runtime.InteropServices.Marshal;
 using SystemGCHandle = System.Runtime.InteropServices.GCHandle;
 using SystemGCHandleType = System.Runtime.InteropServices.GCHandleType;
+#if NET5_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 
 namespace Confluent.Kafka.Internal
@@ -84,7 +87,11 @@ namespace Confluent.Kafka.Internal
                 return Encoding.UTF8.GetString((byte*)strPtr, (int)strLength);
             }
 
-            public static T PtrToStructure<T>(IntPtr ptr)
+            public static T PtrToStructure<
+#if NET5_0_OR_GREATER
+                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)]
+#endif
+                T>(IntPtr ptr)
             {
                 return SystemMarshal.PtrToStructure<T>(ptr);
             }
