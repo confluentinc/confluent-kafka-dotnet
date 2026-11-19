@@ -1,3 +1,28 @@
+# 2.17.0
+
+## Upgrade considerations
+
+* **Breaking:** `AsyncSubjectNameStrategyDelegate`,
+  `AssociatedNameStrategy.GetSubjectNameAsync`, and the protected
+  `AsyncSerde<TParsedSchema>.GetSubjectName` method now return `ValueTask<string>`
+  instead of `Task<string>`, so that resolving a cached subject name no longer
+  allocates. This is a binary-incompatible change: assemblies compiled against
+  the previous signatures must be rebuilt, including custom serdes that use them.
+  Calls that simply `await` the result remain source-compatible. Code that needs
+  a `Task<string>` (for example to pass it to `Task.WhenAll`, or to await it more
+  than once) should call `.AsTask()`, and custom subject name strategy delegates
+  must return a `ValueTask<string>` (for example `new ValueTask<string>(subject)`).
+  The delegate and `AssociatedNameStrategy.GetSubjectNameAsync` were introduced
+  in 2.14.0.
+
+## Enhancements
+
+* Reduce per-message allocations in Schema Registry serializers and
+  deserializers: subject names for the `Topic`, `Record` and `TopicRecord`
+  strategies are now cached, and looking up an already-resolved subject name
+  with any strategy, including the default `Associated` strategy, no longer
+  allocates a task
+
 # 2.16.0
 
 ## New experimental features
