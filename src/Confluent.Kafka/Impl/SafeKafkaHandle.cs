@@ -368,6 +368,7 @@ namespace Confluent.Kafka.Impl
             IReadOnlyList<IHeader> headers,
             IntPtr opaque)
         {
+            ThrowIfHandleClosed();
             var pValue = IntPtr.Zero;
             var pKey = IntPtr.Zero;
 
@@ -526,6 +527,7 @@ namespace Confluent.Kafka.Impl
 
         internal void InitTransactions(int millisecondsTimeout)
         {
+            ThrowIfHandleClosed();
             var error = new Error(Librdkafka.init_transactions(this.handle, (IntPtr)millisecondsTimeout));
             if (error.Code != ErrorCode.NoError)
             {
@@ -539,6 +541,7 @@ namespace Confluent.Kafka.Impl
 
         internal void BeginTransaction()
         {
+            ThrowIfHandleClosed();
             var error = new Error(Librdkafka.begin_transaction(this.handle));
             if (error.Code != ErrorCode.NoError)
             {
@@ -548,6 +551,7 @@ namespace Confluent.Kafka.Impl
 
         internal void CommitTransaction(int millisecondsTimeout)
         {
+            ThrowIfHandleClosed();
             var error = new Error(Librdkafka.commit_transaction(this.handle, (IntPtr)millisecondsTimeout));
             if (error.Code != ErrorCode.NoError)
             {
@@ -565,6 +569,7 @@ namespace Confluent.Kafka.Impl
 
         internal void AbortTransaction(int millisecondsTimeout)
         {
+            ThrowIfHandleClosed();
             var error = new Error(Librdkafka.abort_transaction(this.handle, (IntPtr)millisecondsTimeout));
             if (error.Code != ErrorCode.NoError)
             {
@@ -578,6 +583,7 @@ namespace Confluent.Kafka.Impl
 
         internal void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, int millisecondsTimeout)
         {
+            ThrowIfHandleClosed();
             if (!(groupMetadata is ConsumerGroupMetadata))
             {
                 throw new ArgumentException("groupMetadata object must be a value acquired via Consumer.ConsumerGroupMetadata.");
