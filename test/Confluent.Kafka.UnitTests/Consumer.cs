@@ -92,7 +92,7 @@ namespace Confluent.Kafka.UnitTests
                 {
                     BootstrapServers = "localhost:1", GroupId = "g", ClientId = "consumer-name-test", Debug = "all"
                 })
-                .SetLogHandler((c, m) => onLog(c))
+                .SetLogHandler((c, m) => onLog(c, m))
                 .Build());
 
         private static ConsumerConfig CreateValidConfiguration()

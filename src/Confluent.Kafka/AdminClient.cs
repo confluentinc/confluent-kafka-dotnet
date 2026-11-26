@@ -1579,7 +1579,7 @@ namespace Confluent.Kafka
 
             // build a producer instance to use as the underlying client.
             var producerBuilder = new ProducerBuilder<Null, Null>(config);
-            if (builder.LogHandler != null) { producerBuilder.SetLogHandler((client, logMessage) => { nameDuringConstruction = client.Name; builder.LogHandler(this, logMessage); }); }
+            if (builder.LogHandler != null) { producerBuilder.SetLogHandler((_, logMessage) => { if (handle == null) { nameDuringConstruction = logMessage.Name; } builder.LogHandler(this, logMessage); }); }
             if (builder.ErrorHandler != null) { producerBuilder.SetErrorHandler((_, error) => builder.ErrorHandler(this, error)); }
             if (builder.StatisticsHandler != null) { producerBuilder.SetStatisticsHandler((_, stats) => builder.StatisticsHandler(this, stats)); }
             if (builder.OAuthBearerTokenRefreshHandler != null) { producerBuilder.SetOAuthBearerTokenRefreshHandler(builder.OAuthBearerTokenRefreshHandler); }

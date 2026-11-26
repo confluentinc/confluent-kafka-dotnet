@@ -505,9 +505,7 @@ namespace Confluent.Kafka
 
         /// <inheritdoc/>
         public string Name
-            => ownedKafkaHandle != null ? ownedKafkaHandle.Name
-             : borrowedHandle != null ? borrowedHandle.LibrdkafkaHandle.Name
-             : nameDuringConstruction;
+            => (ownedKafkaHandle ?? borrowedHandle?.LibrdkafkaHandle)?.Name ?? nameDuringConstruction;
 
 
         /// <inheritdoc/>

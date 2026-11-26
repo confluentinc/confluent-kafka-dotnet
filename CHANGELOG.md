@@ -1,3 +1,14 @@
+# Unreleased
+
+## Fixes
+
+* Fix a `NullReferenceException` thrown by `IClient.Name` on consumers, producers and
+  admin clients when it was read from a log handler while the client was still being
+  built (for example with `ClientId` set and debug logging enabled). librdkafka can
+  invoke the log callback before the client has its native handle, so `Name` now
+  returns the client name in that window instead of throwing
+
+
 # 2.16.0
 
 ## New experimental features
