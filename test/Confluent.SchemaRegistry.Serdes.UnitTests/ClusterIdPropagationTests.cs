@@ -311,7 +311,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             // A resolver returns null when the client could not reach a broker in
             // time. That must not silently degrade to the wildcard namespace.
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => strategy.GetSubjectNameAsync(ValueContext(testTopic), null));
+                () => strategy.GetSubjectNameAsync(ValueContext(testTopic), null).AsTask());
 
             resolved = ClusterId;
 
@@ -352,7 +352,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 () => Task.FromException<string>(new ObjectDisposedException("handle")));
 
             await Assert.ThrowsAsync<ObjectDisposedException>(
-                () => strategy.GetSubjectNameAsync(ValueContext(testTopic), null));
+                () => strategy.GetSubjectNameAsync(ValueContext(testTopic), null).AsTask());
         }
 
         private static SerializationContext ValueContext(string topic)
