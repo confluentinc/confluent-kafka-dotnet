@@ -37,6 +37,16 @@ internal class ReadOnlyMemoryStream : Stream
     {
     }
 
+    public override int ReadByte()
+    {
+        if (Position >= data.Length)
+            return -1;
+
+        var value = data.Span[(int) Position];
+        Position++;
+        return value;
+    }
+
     public override int Read(byte[] buffer, int offset, int count)
     {
         if (buffer == null)
