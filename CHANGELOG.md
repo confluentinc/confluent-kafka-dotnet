@@ -1,3 +1,10 @@
+# Unreleased
+
+## Fixes
+
+* Fix a `NullReferenceException` when reading `IClient.Name` from a log handler while a
+  consumer, producer or admin client is still being constructed
+
 # 2.17.0
 
 ## Upgrade considerations
